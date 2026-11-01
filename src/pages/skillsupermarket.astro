@@ -2061,5 +2061,35 @@ function backToHomeList() {
             alert("調整萬事分失敗: " + err.message);
         }
     }
+    
+//支援 MailChannels 發信
+    async function sendTaskNotification(post, heroName, heroContact) {
+    if (!post.clientemail) return; // 如果發布者沒有留信箱就跳過
+
+    try {
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                toEmail: post.clientemail,
+                toName: post.clientname,
+                taskTitle: post.tasktitle,
+                heroName: heroName,
+                heroContact: heroContact
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            console.log("Email 通知信已成功寄出！");
+        } else {
+            console.error("發信失敗:", result.error);
+        }
+    } catch (err) {
+        console.error("網路請求發生錯誤:", err);
+    }
+}
 </script>
 </BaseLayout>
