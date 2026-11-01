@@ -141,15 +141,20 @@ const formattedContent = club.content ? club.content.replace(/\n/g, '<br>') : ''
   .nav-btn { 
             font-size: 28px;
             color: #888;
+            background: none; /* 清除原生按鈕或預設背景色 */
             text-decoration: none;
             padding: 0 10px;
             line-height: 1;
             transition: color 0.2s ease, transform 0.2s ease;
             user-select: none;
   }
-  .nav-btn:hover { background: #61bde1; }
+  .nav-btn:hover { 
+            background: none; /* 清除原生按鈕或預設背景色 */
+            color: #1465A3;    /* 改為滑鼠移上去時只變更文字顏色 (或保持 #888) */
+            transform: scale(1.1); /* 可選：加一點點放大效果，增加互動感 */
+          }
   /* 標題置中與左右按鈕設計 */
-        .talk-header-wrap {
+        .club-header-wrap {
             display: flex;
             justify-content: center;
             align-items: center;
