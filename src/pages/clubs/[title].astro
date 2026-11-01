@@ -147,10 +147,13 @@ const formattedContent = club.content ? club.content.replace(/\n/g, '<br>') : ''
             line-height: 1;
             transition: color 0.2s ease, transform 0.2s ease;
             user-select: none;
+            border: none;     
+        outline: none;    /* 移除點擊時的藍色外框 */
   }
   .nav-btn:hover { 
             background: none; /* 清除原生按鈕或預設背景色 */
             color: #1465A3;    /* 改為滑鼠移上去時只變更文字顏色 (或保持 #888) */
+            border: none;   
             transform: scale(1.1); /* 可選：加一點點放大效果，增加互動感 */
           }
   /* 標題置中與左右按鈕設計 */
@@ -158,7 +161,7 @@ const formattedContent = club.content ? club.content.replace(/\n/g, '<br>') : ''
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 10px;
             margin-bottom: 40px;
             position: relative;
         }
