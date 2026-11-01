@@ -1795,27 +1795,53 @@ function backToHomeList() {
     }
 
     async function handleJoinSubmit(event) {
-        event.preventDefault();
-        const postId = document.getElementById('join-post-id').value;
-        const newHero = {
-            name: document.getElementById('join-name').value.trim(),
-            contact: document.getElementById('join-ig').value.trim()
-        };
+    event.preventDefault();
+    const postId = document.getElementById('join-post-id').value;
+    const newHero = {
+        name: document.getElementById('join-name').value.trim(),
+        contact: document.getElementById('join-ig').value.trim()
+    };
 
-        const post = posts.find(p => String(p.id) === String(postId));
-        if (!post) return;
+    const post = posts.find(p => String(p.id) === String(postId));
+    if (!post) return;
 
-        const updatedHeroes = [...(post.heroeslist || []), newHero];
+    const updatedHeroes = [...(post.heroeslist || []), newHero];
 
-        try {
-            const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
-            if (error) throw error;
-            closeJoinModal();
-            await fetchPostsFromSupabase();
-            alert("🎉 恭喜！您已成功接單，請等候發布者與您聯繫。");
-        } catch (err) { alert("接受委託失敗: " + err.message); }
+    try {
+        // 1. 更新 Supabase 資料庫
+        const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
+        if (error) throw error;
+
+        // ==========================================
+        // 2. 💡 加上這段：發送 Email 通知任務發起人
+        // ==========================================
+        if (post.clientemail) {
+            try {
+                await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        toEmail: post.clientemail,
+                        toName: post.clientname || "任務發起人",
+                        taskTitle: post.tasktitle || post.title || "鄰里任務", // 兼容不同的標題欄位名稱
+                        heroName: newHero.name,
+                        heroContact: newHero.contact
+                    })
+                });
+                console.log("Email 通知請求已送出");
+            } catch (emailErr) {
+                console.error("背景發信失敗（不影響接單結果）：", emailErr);
+            }
+        }
+
+        // 3. 原本的收尾動作
+        closeJoinModal();
+        await fetchPostsFromSupabase();
+        alert("🎉 恭喜！您已成功接單，已自動發送通知信給發布者！");
+    } catch (err) { 
+        alert("接受委託失敗: " + err.message); 
     }
-
+}
     async function handleFormSubmit(event) {
         event.preventDefault();
         
@@ -2062,35 +2088,5 @@ function backToHomeList() {
         }
     }
 
-//支援 MailChannels 發信
-    async function sendTaskNotification(post, heroName, heroContact) {
-    if (!post.clientemail) return; // 如果發布者沒有留信箱就跳過
-
-    try {
-        const response = await fetch('/api/send-email', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                toEmail: post.clientemail,
-                toName: post.clientname,
-                taskTitle: post.tasktitle,
-                heroName: heroName,
-                heroContact: heroContact
-            })
-        });
-
-        const result = await response.json();
-        console.log("發信 API 回傳結果：", result); // 👈 打開瀏覽器 F12 主控台看這裡
-        if (result.success) {
-            console.log("Email 通知信已成功寄出！");
-        } else {
-            console.error("發信失敗:", result.error);
-        }
-    } catch (err) {
-        console.error("網路請求發生錯誤:", err);
-    }
-}
 </script>
 </BaseLayout>
