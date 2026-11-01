@@ -3,20 +3,19 @@ export async function POST({ request }) {
     const { toEmail, toName, taskTitle, heroName, heroContact } = await request.json();
 
     if (!toEmail || !taskTitle) {
-      return new Response(JSON.stringify({ error: "缺少必要參數" }), {
+      return new Response(JSON.stringify({ success: false, error: "缺少必要參數 (toEmail 或 taskTitle)" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // MailChannels 官方免費發信 API 酬載
     const mailChannelsPayload = {
       personalizations: [
         {
           to: [{ email: toEmail, name: toName || "任務發起人" }],
         },
       ],
-      // ⚠️ 請記得把這裡換成你在 Cloudflare 有管轄的真實網域信箱
+      // ⚠️ 確保這裡的網域是 studioslowpace.com
       from: { email: "noreply@studioslowpace.com", name: "鄰里萬事屋" },
       subject: `【萬事屋通知】你的任務「${taskTitle}」已被接單！`,
       content: [
@@ -38,13 +37,16 @@ export async function POST({ request }) {
         headers: { "Content-Type": "application/json" },
       });
     } else {
+      // 💡 抓取 MailChannels 回傳的真實錯誤文字
       const errorText = await mailResponse.text();
-      return new Response(JSON.stringify({ success: false, error: errorText }), {
+      console.error("MailChannels 拒絕發信:", errorText);
+      return new Response(JSON.stringify({ success: false, error: `MailChannels 錯誤: ${errorText}` }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
   } catch (err) {
+    console.error("API 執行發生例外錯誤:", err.message);
     return new Response(JSON.stringify({ success: false, error: err.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
