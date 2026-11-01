@@ -28,7 +28,11 @@ export async function POST({ request }) {
 
     const mailResponse = await fetch("https://api.mailchannels.net/tx/v1/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Cloudflare-Worker-MailChannels-Client"
+      },
       body: JSON.stringify(mailChannelsPayload),
     });
 
