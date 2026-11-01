@@ -16,7 +16,7 @@ export async function POST({ request }) {
         },
       ],
       // ⚠️ 確保這裡的網域是 studioslowpace.com
-      from: { email: "noreply@studioslowpace.com", name: "鄰里萬事屋" },
+      from: { email: "noreply@day3-8i2.pages.dev", name: "鄰里萬事屋" },
       subject: `【萬事屋通知】你的任務「${taskTitle}」已被接單！`,
       content: [
         {
