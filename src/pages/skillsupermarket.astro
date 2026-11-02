@@ -1136,6 +1136,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     <div><label class="input-label">慣常使用的技能</label><input type="text" id="skillTagInput" required class="input-field input-field-stone" placeholder="日常會使用的技能/興趣" autocomplete="off"></div>
                     <div><label class="input-label">聯絡方法</label><input type="text" id="skillContactInput" required class="input-field input-field-stone" placeholder="🔒 僅平台持有人可見" autocomplete="off"></div>
                     <div><label class="input-label">正在研習的興趣</label><input type="text" id="skillLearningInput" required class="input-field input-field-stone" placeholder="學習中的技能/興趣" autocomplete="off"></div>
+                    <div><label class="input-label">您的Email (只作通知，可選填)</label><input type="text" id="skillEmailInput" required class="input-field input-field-stone" placeholder="🔒 僅平台持有人可見" autocomplete="off"></div>
                 </div>
                 <div>
                     <label class="input-label">社會認可的資格</label>
@@ -1907,7 +1908,8 @@ function backToHomeList() {
             learning: document.getElementById('skillLearningInput').value.trim(),
             contact: document.getElementById('skillContactInput').value.trim(),
             description: document.getElementById('skillDescInput').value.trim(),
-            emoji: document.getElementById('skill-selected-emoji').value
+            emoji: document.getElementById('skill-selected-emoji').value.trim(),
+            email: document.getElementById('skillEmailInput').value
         };
 
         if (!data.name || !data.contact) {
@@ -1919,7 +1921,7 @@ function backToHomeList() {
             const { error } = await client.from(TABLE_NAME).insert([data]);
             if (error) throw error;
             
-            await updateUserPointsInSupabase(data.contact, data.name, +1);
+            await updateUserPointsInSupabase(data.contact, data.name, +1, data.email);
 
             closeSkillModal();
             await fetchSkillsFromSupabase();
