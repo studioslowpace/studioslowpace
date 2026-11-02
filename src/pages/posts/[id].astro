@@ -270,6 +270,54 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             }
         }
 
+        // 💡 共用的用戶積分與 Email 同步更新函式
+        async function updateUserPointsInSupabase(contact, name, pointChange, email) {
+            if (!contact) return;
+            const cleanContact = contact.trim();
+            const cleanName = (name && name !== '神祕鄰里人') ? name : null;
+            const cleanEmail = email ? email.trim() : null;
+
+            try {
+                const { data: existing, error: fetchError } = await client
+                    .from('alluser_record')
+                    .select('*')
+                    .eq('contact', cleanContact)
+                    .maybeSingle();
+
+                if (fetchError) throw fetchError;
+
+                if (existing) {
+                    const newAmount = (existing.amount || 0) + pointChange;
+                    const updateData = { amount: newAmount };
+                    if (cleanName) updateData.name = cleanName;
+                    if (cleanEmail) updateData.email = cleanEmail;
+
+                    const { error: updateError } = await client
+                        .from('alluser_record')
+                        .update(updateData)
+                        .eq('id', existing.id);
+
+                    if (updateError) throw updateError;
+                } else {
+                    const newRecord = {
+                        contact: cleanContact,
+                        name: cleanName || '神祕鄰里人',
+                        amount: pointChange,
+                        email: cleanEmail || ''
+                    };
+
+                    const { error: insertError } = await client
+                        .from('alluser_record')
+                        .insert([newRecord]);
+
+                    if (insertError) throw insertError;
+                }
+            } catch (err) {
+                console.error("更新用戶積分失敗:", err.message);
+                alert("⚠️ 寫入 alluser_record 失敗: " + err.message);
+            }
+        }
+
         function renderSinglePostView(postId) {
             const post = posts.find(p => String(p.id) === String(postId));
             const targetDiv = document.getElementById('single-post-render-target');
@@ -368,7 +416,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 openCompleteModal(e.currentTarget.getAttribute('data-post-id'));
             });
             document.getElementById('btn-open-join-detail')?.addEventListener('click', (e) => {
-                alert('開啟接單視窗');
+                // 如果有接單互動彈窗，可在此處呼叫對應的開啟函式
+                alert('請至大廳或對應區塊進行接單登記');
             });
             document.getElementById('btn-verify-inline-pwd')?.addEventListener('click', (e) => {
                 const pwd = document.getElementById('inline-pwd-input').value;
@@ -440,12 +489,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
             let cName = null;
             let cContact = null;
+            let cEmail = null;
 
             if(selectedRadio.value !== 'none') {
                 const heroIndex = parseInt(selectedRadio.value);
                 const chosenHero = post.heroeslist[heroIndex];
                 cName = chosenHero.name;
                 cContact = chosenHero.contact;
+                cEmail = chosenHero.email; // 💡 確實抓取英雄的 Email
             }
 
             try {
@@ -460,8 +511,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 
                 if (error) throw error;
                 
+                // 💡 當有指定英雄完成時，自動為其增加 1 點萬事分並同步紀錄 Email
+                if (cContact) {
+                    await updateUserPointsInSupabase(cContact, cName, +1, cEmail);
+                }
+                
                 closeCompleteModal();
                 await fetchPostsFromSupabase();
+                
                 if(cName) {
                     alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
                 } else {

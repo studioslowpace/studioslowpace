@@ -51,13 +51,6 @@ const formattedContent = talk.description ? talk.description.replace(/\n/g, '<br
         <!-- 主卡片：無顏色、無框線、無預設陰影 -->
         <div class="talk-main-card">
             
-            <!-- 管理員修改按鈕行 -->
-            <div class="admin-badge-row">
-                <div id="admin-action-btns" style="display: none;">
-                    <button class="btn-edit" onclick={`window.openEditModal(${talk.id})`}>修改</button>
-                </div>
-            </div>
-
             <!-- 頂部標題置中，帶有左右切換按鈕 -->
             <div class="talk-header-wrap">
                 <!-- 左切換按鈕 (上一篇) -->
