@@ -1081,6 +1081,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <div class="form-row-grid">
                     <div><label class="input-label">您的稱呼</label><input type="text" id="clientNameInput" required class="input-field" autocomplete="off"></div>
                     <div><label class="input-label">您的聯絡方式 (IG / 電話)</label><input type="text" id="clientContactInput" required class="input-field" placeholder="🔒 僅平台持有人可見" autocomplete="off"></div>
+                    <div><label class="input-label">您的Email (只作通知，可選填)</label><input type="text" id="clientEmailInput" required class="input-field" placeholder="若有人接受您的委託，系統會自動以Email 通知您" autocomplete="off"></div>
                 </div>
                 <div class="form-row-grid">
                     <div><label class="input-label">限制條件 (如無請填 / )</label><input type="text" id="taskTagInput" required class="input-field" placeholder="指定特定條件持有者" autocomplete="off"></div>
@@ -1318,6 +1319,7 @@ function refreshView() {
         if (!contact) return;
         const cleanContact = contact.trim();
         const cleanName = (name && name !== '神祕鄰里人') ? name : null;
+        const cleanEmail = email ? email.trim() : null; // 處理 email
 
         try {
             const { data: existing, error: fetchError } = await client
@@ -1332,6 +1334,7 @@ function refreshView() {
                 const newAmount = (existing.amount || 0) + pointChange;
                 const updateData = { amount: newAmount };
                 if (cleanName) updateData.name = cleanName;
+                if (cleanEmail) updateData.email = cleanEmail; // 如果有提供新 email 則更新
 
                 const { error: updateError } = await client
                     .from('alluser_record')
@@ -1344,6 +1347,7 @@ function refreshView() {
                     contact: cleanContact,
                     name: cleanName || '神祕鄰里人',
                     amount: pointChange
+                    email: cleanEmail || '' // 新增時寫入 email
                 };
 
                 const { error: insertError } = await client
@@ -1847,6 +1851,7 @@ function backToHomeList() {
         
         const clientContact = document.getElementById('clientContactInput').value.trim();
         const clientName = document.getElementById('clientNameInput').value.trim();
+        const clientEmail = document.getElementById('clientEmailInput').value.trim();
         
         const allScores = countAllPoints();
         const userScore = allScores[clientContact]?.points || 0;
@@ -1873,7 +1878,8 @@ function backToHomeList() {
             cardbgcolor: bgColors[Math.floor(Math.random() * bgColors.length)],
             iscompleted: false,
             heroeslist: [],
-            password: document.getElementById('postPasswordInput').value.trim()
+            password: document.getElementById('postPasswordInput').value.trim(),
+            clientemail: clientEmail
         };
 
         try {
