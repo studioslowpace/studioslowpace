@@ -1315,7 +1315,7 @@ function refreshView() {
         return scores;
     }
 
-    async function updateUserPointsInSupabase(contact, name, pointChange) {
+    async function updateUserPointsInSupabase(contact, name, pointChange, email) {
         if (!contact) return;
         const cleanContact = contact.trim();
         const cleanName = (name && name !== '神祕鄰里人') ? name : null;
@@ -1789,7 +1789,7 @@ function backToHomeList() {
             closeCompleteModal();
             if(currentViewingPostId === postId) backToHomeList();
             await fetchPostsFromSupabase();
-            await updateUserPointsInSupabase(cContact, cName, 1);
+            await updateUserPointsInSupabase(cContact, cName, 1, clientEmail);
             if(cName) {
                 alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
             } else {
@@ -1886,7 +1886,7 @@ function backToHomeList() {
             const { error } = await client.from(POSTS_TABLE).insert([newPost]);
             if (error) throw error;
 
-            await updateUserPointsInSupabase(clientContact, clientName, -1);
+            await updateUserPointsInSupabase(clientContact, clientName, -1, clientEmail);
 
             closeUploadModal();
             setupRandomDefaultAvatar();
