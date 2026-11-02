@@ -304,6 +304,54 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             }
         }
 
+         async function handleJoinSubmit(event) {
+    event.preventDefault();
+    const postId = document.getElementById('join-post-id').value;
+    const newHero = {
+        name: document.getElementById('join-name').value.trim(),
+        contact: document.getElementById('join-ig').value.trim()
+    };
+
+    const post = posts.find(p => String(p.id) === String(postId));
+    if (!post) return;
+
+    const updatedHeroes = [...(post.heroeslist || []), newHero];
+
+    try {
+        // 1. 更新 Supabase 資料庫
+        const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
+        if (error) throw error;
+
+        // ==========================================
+        // 2. 💡 加上這段：發送 Email 通知任務發起人
+        // ==========================================
+        if (post.clientemail) {
+            try {
+                await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        toEmail: post.clientemail,
+                        toName: post.clientname || "任務發起人",
+                        taskTitle: post.tasktitle || post.title || "鄰里任務", // 兼容不同的標題欄位名稱
+                        heroName: newHero.name,
+                        heroContact: newHero.contact
+                    })
+                });
+                console.log("Email 通知請求已送出");
+            } catch (emailErr) {
+                console.error("背景發信失敗（不影響接單結果）：", emailErr);
+            }
+        }
+
+        // 3. 原本的收尾動作
+        closeJoinModal();
+        await fetchPostsFromSupabase();
+        alert("🎉 恭喜！您已成功接單，已自動發送通知信給發布者！");
+    } catch (err) { 
+        alert("接受委託失敗: " + err.message); 
+    }
+}
         // 💡 共用的用戶積分與 Email 同步更新函式
         async function updateUserPointsInSupabase(contact, name, pointChange, email) {
             if (!contact) return;
@@ -511,7 +559,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
     function closeCompleteModal() { document.getElementById('complete-modal').classList.add('hidden'); }
 
-    async function submitCompleteTask() {
+async function submitCompleteTask() {
         const postId = document.getElementById('complete-post-id').value;
         const post = posts.find(p => String(p.id) === String(postId));
         if(!post) return;
@@ -521,12 +569,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
         let cName = null;
         let cContact = null;
+        let cEmail = null; // 準備抓取英雄的 Email
 
         if(selectedRadio.value !== 'none') {
             const heroIndex = parseInt(selectedRadio.value);
             const chosenHero = post.heroeslist[heroIndex];
             cName = chosenHero.name;
             cContact = chosenHero.contact;
+            cEmail = chosenHero.email; // 假設 hero 物件裡有 email，若無則傳 null
         }
 
         try {
@@ -542,9 +592,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             if (error) throw error;
             
             closeCompleteModal();
-            if(currentViewingPostId === postId) backToHomeList();
+            if(typeof currentViewingPostId !== 'undefined' && currentViewingPostId === postId && typeof backToHomeList === 'function') {
+                backToHomeList();
+            }
             await fetchPostsFromSupabase();
-            await updateUserPointsInSupabase(cContact, cName, 1, clientEmail);
+            
+            // 💡 修正：傳入正確的 cEmail 變數，而不是未定義的 clientEmail
+            if (cContact) {
+                await updateUserPointsInSupabase(cContact, cName, 1, cEmail);
+            }
+
             if(cName) {
                 alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
             } else {
@@ -553,62 +610,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         } catch (err) { alert("更新結案狀態失敗: " + err.message); }
     }
 
-        window.addEventListener('DOMContentLoaded', initPage);
-
-            async function handleJoinSubmit(event) {
-    event.preventDefault();
-    const postId = document.getElementById('join-post-id').value;
-    const newHero = {
-        name: document.getElementById('join-name').value.trim(),
-        contact: document.getElementById('join-ig').value.trim()
-    };
-
-    const post = posts.find(p => String(p.id) === String(postId));
-    if (!post) return;
-
-    const updatedHeroes = [...(post.heroeslist || []), newHero];
-
-    try {
-        // 1. 更新 Supabase 資料庫
-        const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
-        if (error) throw error;
-
-        // ==========================================
-        // 2. 💡 加上這段：發送 Email 通知任務發起人
-        // ==========================================
-        if (post.clientemail) {
-            try {
-                await fetch('/api/send-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        toEmail: post.clientemail,
-                        toName: post.clientname || "任務發起人",
-                        taskTitle: post.tasktitle || post.title || "鄰里任務", // 兼容不同的標題欄位名稱
-                        heroName: newHero.name,
-                        heroContact: newHero.contact
-                    })
-                });
-                console.log("Email 通知請求已送出");
-            } catch (emailErr) {
-                console.error("背景發信失敗（不影響接單結果）：", emailErr);
-            }
-        }
-
-        // 3. 原本的收尾動作
-        closeJoinModal();
-        await fetchPostsFromSupabase();
-        alert("🎉 恭喜！您已成功接單，已自動發送通知信給發布者！");
-    } catch (err) { 
-        alert("接受委託失敗: " + err.message); 
-    }
-}
-
     function initEventListeners() {
         document.getElementById('btn-close-complete')?.addEventListener('click', closeCompleteModal);
         document.getElementById('btn-cancel-complete')?.addEventListener('click', closeCompleteModal);
         document.getElementById('btn-confirm-complete')?.addEventListener('click', submitCompleteTask);
     }
+
+    // 確保頁面載入時會執行事件綁定
+    window.addEventListener('DOMContentLoaded', () => {
+        initPage();
+        initEventListeners();
+    });
     </script>
 
 </BaseLayout>
