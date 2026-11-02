@@ -497,10 +497,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             document.getElementById('btn-open-complete-modal')?.addEventListener('click', (e) => {
                 openCompleteModal(e.currentTarget.getAttribute('data-post-id'));
             });
-            document.getElementById('btn-open-join-detail')?.addEventListener('click', (e) => {
-                // 如果有接單互動彈窗，可在此處呼叫對應的開啟函式
-                alert('請至大廳或對應區塊進行接單登記');
-            });
+         document.getElementById('btn-open-join-detail')?.addEventListener('click', (e) => {
+    const postId = e.currentTarget.getAttribute('data-post-id');
+    openJoinModal(postId); // 呼叫開啟接單彈窗的函式
+});
             document.getElementById('btn-verify-inline-pwd')?.addEventListener('click', (e) => {
                 const pwd = document.getElementById('inline-pwd-input').value;
                 if(pwd === post.password) {
@@ -558,6 +558,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     }
 
     function closeCompleteModal() { document.getElementById('complete-modal').classList.add('hidden'); }
+      function openJoinModal(postId) { document.getElementById('join-post-id').value = postId; document.getElementById('join-modal').classList.remove('hidden'); }
+    function closeJoinModal() { document.getElementById('join-modal').classList.add('hidden'); document.getElementById('join-form').reset(); }
 
 async function submitCompleteTask() {
         const postId = document.getElementById('complete-post-id').value;
