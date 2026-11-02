@@ -220,20 +220,54 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <div class="loading-box">正在載入委託內容...</div>
         </div>
     </div>
+  <!-- 接單彈窗 -->
+    <div id="join-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i data-lucide="shield-alert" class="modal-title-icon"></i>
+                    <span>填寫您的資料</span>
+                </h3>
+                <button id="btn-close-join" class="btn-modal-close">
+                    <i data-lucide="x" class="modal-close-icon"></i>
+                </button>
+            </div>
+            <form id="join-form" class="form-spacing">
+                <input type="hidden" id="join-post-id">
+                <div>
+                    <label class="input-label">您的姓名 / 稱呼</label>
+                    <input type="text" id="join-name" required class="input-field">
+                </div>
+                <div>
+                    <label class="input-label">您的聯絡方式 (IG / 電話)</label>
+                    <input type="text" id="join-ig" required class="input-field">
+                </div>
+                <button type="submit" class="btn-form-submit-orange">確認接下此委託</button>
+            </form>
+        </div>
+    </div>
 
-    <!-- 結案互動彈窗 -->
-    <div class="modal-overlay" id="complete-modal">
-        <div class="modal-card">
-            <h3 class="modal-title">✔️ 確認結案與給分</h3>
-            <p class="modal-desc">請選擇是哪位英雄完成了此項委託：</p>
-            <input type="hidden" id="complete-post-id">
-            <div id="heroes-select-container" class="heroes-select-box"></div>
-            <div class="modal-btn-group">
-                <button onclick="closeCompleteModal()" class="btn-cancel-modal">取消</button>
-                <button onclick="submitCompleteTask()" class="btn-confirm-modal">確認送出結案</button>
+    <!-- 結案彈窗 -->
+    <div id="complete-modal" class="hidden modal-overlay">
+        <div class="modal-content max-w-sm">
+            <div class="modal-header">
+                <h3 class="modal-title modal-title-emerald">✨ <span>圓滿結案與發放萬事分</span></h3>
+                <button id="btn-close-complete" class="btn-modal-close">
+                    <i data-lucide="x" class="modal-close-icon"></i>
+                </button>
+            </div>
+            <div class="form-spacing">
+                <p class="modal-text-desc">請選出本次協助您完成委託的鄰里人英雄。</p>
+                <input type="hidden" id="complete-post-id">
+                <div id="heroes-select-container" class="modal-list-container"></div>
+                <div class="modal-footer-actions">
+                    <button id="btn-cancel-complete" class="btn-modal-cancel">取消</button>
+                    <button id="btn-confirm-complete" class="btn-modal-confirm-emerald">確認結案並送出分數</button>
+                </div>
             </div>
         </div>
     </div>
+    
 
     <!-- ==========================================
          ⚡ JavaScript 邏輯控制 (零行內樣式)
@@ -438,96 +472,143 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             setTimeout(() => { lucide.createIcons(); }, 100);
         }
 
-        function openCompleteModal(postId) {
-            const post = posts.find(p => String(p.id) === String(postId));
-            if(!post) return;
+            function openCompleteModal(postId) {
+        const post = posts.find(p => String(p.id) === String(postId));
+        if(!post) return;
 
-            document.getElementById('complete-post-id').value = postId;
-            const container = document.getElementById('heroes-select-container');
-            container.innerHTML = '';
+        document.getElementById('complete-post-id').value = postId;
+        const container = document.getElementById('heroes-select-container');
+        container.innerHTML = '';
 
-            const hList = post.heroeslist || [];
-            
-            const noOneDiv = document.createElement('label');
-            noOneDiv.className = "radio-label-none";
-            noOneDiv.innerHTML = `
-                <input type="radio" name="selected-complete-hero" value="none" checked>
+        const hList = post.heroeslist || [];
+        
+        const noOneDiv = document.createElement('label');
+        noOneDiv.className = "flex items-center space-x-3 bg-gray-50 p-3 rounded-xl border border-gray-200 cursor-pointer block hover:bg-gray-100";
+        noOneDiv.innerHTML = `
+            <input type="radio" name="selected-complete-hero" value="none" checked class="text-emerald-600 focus:ring-emerald-500">
+            <div>
+                <p class="text-xs font-bold text-gray-700">❌ 沒有人完成 / 取消此委託</p>
+                <p class="text-[10px] text-gray-400">（本案會封存，但不會發放萬事分）</p>
+            </div>
+        `;
+        container.appendChild(noOneDiv);
+
+        hList.forEach((hero, index) => {
+            const item = document.createElement('label');
+            item.className = "flex items-center space-x-3 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100 cursor-pointer block hover:bg-emerald-50";
+            item.innerHTML = `
+                <input type="radio" name="selected-complete-hero" value="${index}" class="text-emerald-600 focus:ring-emerald-500">
                 <div>
-                    <p class="radio-text-title">❌ 沒有人完成 / 取消此委託</p>
-                    <p class="radio-text-sub">（本案會封存，但不會發放萬事分）</p>
+                    <p class="text-xs font-bold text-emerald-950">🥷 英雄：${hero.name}</p>
+                    <p class="text-[10px] text-emerald-700/70">聯絡管道：${hero.contact}</p>
                 </div>
             `;
-            container.appendChild(noOneDiv);
+            container.appendChild(item);
+        });
 
-            hList.forEach((hero, index) => {
-                const item = document.createElement('label');
-                item.className = "radio-label-hero";
-                item.innerHTML = `
-                    <input type="radio" name="selected-complete-hero" value="${index}">
-                    <div>
-                        <p class="radio-hero-title">🥷 英雄：${hero.name}</p>
-                        <p class="radio-hero-sub">聯絡管道：${hero.contact}</p>
-                    </div>
-                `;
-                container.appendChild(item);
-            });
+        document.getElementById('complete-modal').classList.remove('hidden');
+    }
 
-            document.getElementById('complete-modal').classList.add('active');
+    function closeCompleteModal() { document.getElementById('complete-modal').classList.add('hidden'); }
+
+    async function submitCompleteTask() {
+        const postId = document.getElementById('complete-post-id').value;
+        const post = posts.find(p => String(p.id) === String(postId));
+        if(!post) return;
+
+        const selectedRadio = document.querySelector('input[name="selected-complete-hero"]:checked');
+        if(!selectedRadio) { alert("請選擇一項結案條件。"); return; }
+
+        let cName = null;
+        let cContact = null;
+
+        if(selectedRadio.value !== 'none') {
+            const heroIndex = parseInt(selectedRadio.value);
+            const chosenHero = post.heroeslist[heroIndex];
+            cName = chosenHero.name;
+            cContact = chosenHero.contact;
         }
 
-        function closeCompleteModal() { 
-            document.getElementById('complete-modal').classList.remove('active'); 
-        }
-
-        async function submitCompleteTask() {
-            const postId = document.getElementById('complete-post-id').value;
-            const post = posts.find(p => String(p.id) === String(postId));
-            if(!post) return;
-
-            const selectedRadio = document.querySelector('input[name="selected-complete-hero"]:checked');
-            if(!selectedRadio) { alert("請選擇一項結案條件。"); return; }
-
-            let cName = null;
-            let cContact = null;
-            let cEmail = null;
-
-            if(selectedRadio.value !== 'none') {
-                const heroIndex = parseInt(selectedRadio.value);
-                const chosenHero = post.heroeslist[heroIndex];
-                cName = chosenHero.name;
-                cContact = chosenHero.contact;
-                cEmail = chosenHero.email; // 💡 確實抓取英雄的 Email
+        try {
+            const { error } = await client
+                .from(POSTS_TABLE)
+                .update({ 
+                    iscompleted: true,
+                    completed_by_name: cName,
+                    completed_by_contact: cContact
+                })
+                .eq('id', postId);
+            
+            if (error) throw error;
+            
+            closeCompleteModal();
+            if(currentViewingPostId === postId) backToHomeList();
+            await fetchPostsFromSupabase();
+            await updateUserPointsInSupabase(cContact, cName, 1, clientEmail);
+            if(cName) {
+                alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
+            } else {
+                alert("🏮 委託已關閉結案。");
             }
-
-            try {
-                const { error } = await client
-                    .from(POSTS_TABLE)
-                    .update({ 
-                        iscompleted: true,
-                        completed_by_name: cName,
-                        completed_by_contact: cContact
-                    })
-                    .eq('id', postId);
-                
-                if (error) throw error;
-                
-                // 💡 當有指定英雄完成時，自動為其增加 1 點萬事分並同步紀錄 Email
-                if (cContact) {
-                    await updateUserPointsInSupabase(cContact, cName, +1, cEmail);
-                }
-                
-                closeCompleteModal();
-                await fetchPostsFromSupabase();
-                
-                if(cName) {
-                    alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
-                } else {
-                    alert("🏮 委託已關閉結案。");
-                }
-            } catch (err) { alert("更新結案狀態失敗: " + err.message); }
-        }
+        } catch (err) { alert("更新結案狀態失敗: " + err.message); }
+    }
 
         window.addEventListener('DOMContentLoaded', initPage);
+
+            async function handleJoinSubmit(event) {
+    event.preventDefault();
+    const postId = document.getElementById('join-post-id').value;
+    const newHero = {
+        name: document.getElementById('join-name').value.trim(),
+        contact: document.getElementById('join-ig').value.trim()
+    };
+
+    const post = posts.find(p => String(p.id) === String(postId));
+    if (!post) return;
+
+    const updatedHeroes = [...(post.heroeslist || []), newHero];
+
+    try {
+        // 1. 更新 Supabase 資料庫
+        const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
+        if (error) throw error;
+
+        // ==========================================
+        // 2. 💡 加上這段：發送 Email 通知任務發起人
+        // ==========================================
+        if (post.clientemail) {
+            try {
+                await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        toEmail: post.clientemail,
+                        toName: post.clientname || "任務發起人",
+                        taskTitle: post.tasktitle || post.title || "鄰里任務", // 兼容不同的標題欄位名稱
+                        heroName: newHero.name,
+                        heroContact: newHero.contact
+                    })
+                });
+                console.log("Email 通知請求已送出");
+            } catch (emailErr) {
+                console.error("背景發信失敗（不影響接單結果）：", emailErr);
+            }
+        }
+
+        // 3. 原本的收尾動作
+        closeJoinModal();
+        await fetchPostsFromSupabase();
+        alert("🎉 恭喜！您已成功接單，已自動發送通知信給發布者！");
+    } catch (err) { 
+        alert("接受委託失敗: " + err.message); 
+    }
+}
+
+    function initEventListeners() {
+        document.getElementById('btn-close-complete')?.addEventListener('click', closeCompleteModal);
+        document.getElementById('btn-cancel-complete')?.addEventListener('click', closeCompleteModal);
+        document.getElementById('btn-confirm-complete')?.addEventListener('click', submitCompleteTask);
+    }
     </script>
 
 </BaseLayout>
