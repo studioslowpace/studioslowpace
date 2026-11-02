@@ -9,15 +9,24 @@ export async function POST({ request }) {
       });
     }
 
-    // 呼叫 Resend 發信 API
+    // 💡 從 Cloudflare / Astro 的環境變數中讀取 API Key，而不是直接寫死
+    const RESEND_API_KEY = import.meta.env.RESEND_API_KEY;
+
+    if (!RESEND_API_KEY) {
+      return new Response(JSON.stringify({ success: false, error: "伺服器未設定 Resend API Key" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "re_bZzVTVy8_7Q42tT9J59Hs53sZrPxZmRzV", // 👈 請把這裡換成你從 Resend 複製的 API Key
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "鄰里萬事屋 <noreply@studioslowpace.com>", // 測試時可先用 Resend 官方驗證網域
+        from: "鄰里萬事屋 <noreply@studioslowpace.com>",
         to: [toEmail],
         subject: `【萬事屋通知】你的任務「${taskTitle}」已被接單！`,
         text: `哈囉 ${toName || "鄰里人"}：\n\n太棒了！你的任務「${taskTitle}」剛剛有鄰里英雄 ${heroName}（聯絡方式：${heroContact}）接單囉！\n\n請盡快與他聯繫並完成後續互動！\n\n- 鄰里萬事屋團隊`,
