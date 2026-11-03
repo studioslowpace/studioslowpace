@@ -8,6 +8,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
          🎨 樣式完全獨立區 (Style Section)
          ========================================== -->
     <style is:global>
+
+        *, *::before, *::after { box-sizing: border-box; }
+         body { margin: 0; padding: 0 }
+
         .post-detail-container {
             max-width: 48rem;
             margin: 2rem auto;
@@ -19,6 +23,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         }
         @media (min-width: 768px) {
             .post-detail-container { padding: 2.5rem; }
+            
+        }
+
+        @media (max-width: 767px) {
+            .post-title { font-size: 1.2rem;}
         }
 
         .post-header {
