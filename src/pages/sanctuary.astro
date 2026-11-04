@@ -2,23 +2,40 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 晴空文青共讀空間">
-  <!-- 1. 創角 Modal -->
+<Layout title="空間客舍 · 大視野晴空共讀空間">
+  <!-- 1. 創角與頭像選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 空間客舍 · 晴空書友登入 ◆</span></div>
+      <div class="rpg-title-bar"><span>◆ 空間客舍 · 選擇你的分身 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">午後的長沙灣天空湛藍。請留下你的稱號，並選擇今日的讀者身份：</p>
-        <input type="text" id="rpg-name-input" placeholder="例如：尋書人、阿朗..." maxlength="12" autofocus />
+        <p class="rpg-text">午後的長沙灣天空湛藍。請選擇你的分身造型與書友身份：</p>
+        
+        <!-- 頭像選擇區 -->
+        <div class="avatar-selector-label">選擇分身造型：</div>
+        <div class="avatar-selector-group">
+          <label class="avatar-card">
+            <input type="radio" name="player-avatar" value="/assets/player1.png" checked />
+            <img src="/assets/player1.png" alt="Player 1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <span class="avatar-fallback" style="display:none;">👤 P1</span>
+            <span class="avatar-name">分身一號</span>
+          </label>
+          <label class="avatar-card">
+            <input type="radio" name="player-avatar" value="/assets/player2.png" />
+            <img src="/assets/player2.png" alt="Player 2" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <span class="avatar-fallback" style="display:none;">👤 P2</span>
+            <span class="avatar-name">分身二號</span>
+          </label>
+        </div>
+
+        <input type="text" id="rpg-name-input" placeholder="輸入你的稱號（例：尋書人）" maxlength="12" autofocus />
         
         <div class="role-selector-group">
           <label class="role-chip"><input type="radio" name="user-role" value="晴空選書" checked /> ☁️ 晴空選書</label>
           <label class="role-chip"><input type="radio" name="user-role" value="散文漫遊" /> 🍃 散文漫遊</label>
           <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
-          <label class="role-chip"><input type="radio" name="user-role" value="浪費時間" /> ☕ 浪費時間</label>
         </div>
 
-        <button id="rpg-start-btn" class="rpg-btn">▶ 推開晴空之門</button>
+        <button id="rpg-start-btn" class="rpg-btn">▶ 進入晴空客舍</button>
       </div>
     </div>
   </div>
@@ -79,8 +96,9 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </header>
 
+    <!-- 放大寬敞的畫布容器 -->
     <div class="canvas-wrapper">
-      <canvas id="rpg-canvas" width="832" height="416"></canvas>
+      <canvas id="rpg-canvas" width="960" height="540"></canvas>
     </div>
 
     <footer class="rpg-footer">
@@ -100,228 +118,68 @@ import Layout from '../layouts/Layout.astro';
   </main>
 
   <style is:global>
-    /* 🎨 文青天空藍色系設計 */
-    body { 
-      background-color: #0f172a; 
-      color: #cbd5e1; 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, serif; 
-      margin: 0; 
-      padding: 0; 
-      overflow: hidden; 
-    }
-    
-    .rpg-modal-overlay { 
-      position: fixed; inset: 0; 
-      background: rgba(15, 23, 42, 0.75); 
-      backdrop-filter: blur(6px); 
-      display: flex; align-items: center; justify-content: center; 
-      z-index: 100; 
-    }
-    
-    .rpg-window { 
-      background: #1e293b; 
-      border: 1px solid #334155; 
-      border-radius: 12px; 
-      width: 90%; max-width: 420px; 
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); 
-    }
-    
-    .rpg-title-bar { 
-      background: #0f172a; 
-      color: #38bdf8; 
-      padding: 12px 18px; 
-      font-size: 13px; 
-      font-weight: 500; 
-      letter-spacing: 0.05em;
-      border-top-left-radius: 11px;
-      border-top-right-radius: 11px;
-      border-bottom: 1px solid #334155; 
-    }
-    
+    body { background-color: #0f172a; color: #cbd5e1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; }
+    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .rpg-window { background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 90%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    .rpg-title-bar { background: #0f172a; color: #38bdf8; padding: 12px 18px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #334155; }
     .rpg-content { padding: 22px; }
+    .rpg-text { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.6; }
     
-    .rpg-text { 
-      font-size: 13px; 
-      color: #94a3b8; 
-      margin-bottom: 16px; 
-      line-height: 1.7; 
-    }
-    
-    .rpg-window input[type="text"], .rpg-window input[type="number"] { 
-      width: 100%; 
-      background: #0f172a; 
-      border: 1px solid #334155; 
-      color: #f8fafc; 
-      padding: 10px 14px; 
-      font-family: inherit; 
-      font-size: 13px; 
-      box-sizing: border-box; 
-      margin-bottom: 16px; 
-      outline: none; 
-      border-radius: 8px; 
-      transition: border-color 0.2s;
-    }
-    .rpg-window input[type="text"]:focus, .rpg-window input[type="number"]:focus {
-      border-color: #38bdf8;
-    }
+    /* 頭像選擇卡片樣式 */
+    .avatar-selector-label { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+    .avatar-selector-group { display: flex; gap: 12px; margin-bottom: 16px; }
+    .avatar-card { flex: 1; background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .avatar-card:hover { border-color: #64748b; }
+    .avatar-card input { display: none; }
+    .avatar-card input:checked + img, .avatar-card input:checked ~ .avatar-fallback { border-color: #38bdf8; }
+    .avatar-card input:checked ~ .avatar-name { color: #38bdf8; font-weight: bold; }
+    .avatar-card img { width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated; border-radius: 6px; background: #1e293b; padding: 4px; border: 1px solid #334155; }
+    .avatar-fallback { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: #1e293b; border-radius: 6px; font-size: 14px; color: #38bdf8; border: 1px solid #334155; }
+    .avatar-name { font-size: 12px; color: #cbd5e1; }
 
-    .role-selector-group { display: flex; flex-wrap: gap; gap: 8px; margin-bottom: 18px; }
-    .role-chip { 
-      background: #0f172a; 
-      border: 1px solid #334155; 
-      padding: 6px 12px; 
-      border-radius: 20px; 
-      font-size: 12px; 
-      cursor: pointer; 
-      color: #cbd5e1; 
-      transition: all 0.2s;
-    }
-    .role-chip:hover { border-color: #38bdf8; color: #38bdf8; }
+    .rpg-window input[type="text"], .rpg-window input[type="number"] { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 10px 14px; font-family: inherit; font-size: 13px; box-sizing: border-box; margin-bottom: 14px; outline: none; border-radius: 8px; }
+    .rpg-window input[type="text"]:focus { border-color: #38bdf8; }
+    .role-selector-group { display: flex; gap: 8px; margin-bottom: 16px; }
+    .role-chip { background: #0f172a; border: 1px solid #334155; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; color: #cbd5e1; }
     .role-chip input { margin-right: 6px; accent-color: #38bdf8; }
-    
     .progress-input-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
-    
-    .rpg-btn { 
-      background: #0284c7; 
-      color: #f8fafc; 
-      border: none; 
-      padding: 10px 16px; 
-      font-family: inherit; 
-      font-size: 13px; 
-      cursor: pointer; 
-      width: 100%; 
-      font-weight: 500; 
-      border-radius: 8px; 
-      transition: background 0.2s;
-    }
+    .rpg-btn { background: #0284c7; color: #f8fafc; border: none; padding: 10px; font-family: inherit; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
     .rpg-btn:hover { background: #0ea5e9; }
-    
-    .rpg-btn-ghost { 
-      background: transparent; 
-      color: #94a3b8; 
-      border: 1px solid #334155; 
-      padding: 10px 16px; 
-      font-family: inherit; 
-      font-size: 13px; 
-      cursor: pointer; 
-      width: 100%; 
-      border-radius: 8px; 
-      transition: all 0.2s;
-    }
-    .rpg-btn-ghost:hover { border-color: #64748b; color: #f8fafc; }
-    
+    .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 10px; font-family: inherit; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 10px; }
-    
-    .guestbook-list { 
-      max-height: 160px; 
-      overflow-y: auto; 
-      background: #0f172a; 
-      border: 1px solid #334155; 
-      border-radius: 8px; 
-      padding: 12px; 
-      margin-bottom: 14px; 
-      font-size: 12px; 
-      line-height: 1.6;
-    }
+    .guestbook-list { max-height: 160px; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 12px; }
     .guestbook-item { margin-bottom: 8px; border-bottom: 1px dashed #1e293b; padding-bottom: 6px; }
     .guestbook-author { color: #38bdf8; font-weight: 500; }
-    
     .rpg-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-    
-    .rpg-hud { 
-      background: #1e293b; 
-      border-bottom: 1px solid #334155; 
-      padding: 10px 24px; 
-      display: flex; justify-content: space-between; align-items: center; 
-      font-size: 13px; 
-    }
+    .rpg-hud { background: #1e293b; border-bottom: 1px solid #334155; padding: 10px 24px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
     .hud-left { display: flex; align-items: center; gap: 14px; }
-    .hud-brand { font-weight: 600; color: #38bdf8; letter-spacing: 0.05em; }
+    .hud-brand { font-weight: 600; color: #38bdf8; }
     .hud-divider { color: #334155; }
-    
     .channel-tabs { display: flex; gap: 8px; }
-    .channel-tab { 
-      background: #0f172a; 
-      color: #94a3b8; 
-      border: 1px solid #334155; 
-      padding: 6px 14px; 
-      font-family: inherit; 
-      font-size: 12px; 
-      cursor: pointer; 
-      border-radius: 20px; 
-      transition: all 0.2s;
-    }
-    .channel-tab:hover { color: #f8fafc; border-color: #64748b; }
+    .channel-tab { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 14px; font-family: inherit; font-size: 12px; cursor: pointer; border-radius: 20px; }
     .channel-tab.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
-    
     .hud-right { display: flex; align-items: center; gap: 12px; }
-    .user-tag { 
-      background: #0f172a; 
-      border: 1px solid #334155; 
-      padding: 4px 10px; 
-      border-radius: 12px; 
-      font-size: 11px; 
-      color: #38bdf8; 
-    }
-    
-    .rpg-btn-sm { 
-      background: #0f172a; 
-      color: #cbd5e1; 
-      border: 1px solid #334155; 
-      padding: 6px 12px; 
-      font-family: inherit; 
-      font-size: 12px; 
-      cursor: pointer; 
-      border-radius: 8px; 
-      transition: all 0.2s;
-    }
-    .rpg-btn-sm:hover { border-color: #38bdf8; color: #38bdf8; }
-    
+    .user-tag { background: #0f172a; border: 1px solid #334155; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #38bdf8; }
+    .rpg-btn-sm { background: #0f172a; color: #cbd5e1; border: 1px solid #334155; padding: 6px 12px; font-family: inherit; font-size: 12px; cursor: pointer; border-radius: 8px; }
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #0b1329; padding: 12px; }
-    
-    #rpg-canvas { 
-      border: 1px solid #1e293b; 
-      background: #0f172a; 
-      cursor: pointer; 
-      image-rendering: pixelated; 
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4); 
-      border-radius: 12px; 
-    }
-    
-    .rpg-footer { 
-      background: #1e293b; 
-      border-top: 1px solid #334155; 
-      padding: 12px 24px; 
-      display: flex; justify-content: space-between; align-items: center; 
-    }
+    #rpg-canvas { border: 1px solid #1e293b; background: #0f172a; cursor: pointer; image-rendering: pixelated; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); border-radius: 12px; }
+    .rpg-footer { background: #1e293b; border-top: 1px solid #334155; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
     .build-palette { display: flex; align-items: center; gap: 10px; }
     .palette-title { font-size: 12px; color: #94a3b8; }
-    
-    .tool-btn { 
-      background: #0f172a; 
-      color: #94a3b8; 
-      border: 1px solid #334155; 
-      padding: 6px 14px; 
-      font-family: inherit; 
-      font-size: 12px; 
-      cursor: pointer; 
-      border-radius: 8px; 
-      transition: all 0.2s;
-    }
-    .tool-btn:hover { color: #f8fafc; border-color: #64748b; }
+    .tool-btn { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 14px; font-family: inherit; font-size: 12px; cursor: pointer; border-radius: 8px; }
     .tool-btn.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
-    
     .action-dock { display: flex; align-items: center; gap: 12px; }
     .moktak-counter { font-size: 12px; color: #94a3b8; }
   </style>
 
   <script>
-    const TILE_SIZE = 32;
+    const TILE_SIZE = 48; // 放大格子尺寸到 48x48 像素
 
     let playerName = '冒險者';
     let playerRole = '☁️ 讀者';
-    let playerGx = 3;
-    let playerGy = 8;
+    let playerAvatar = '/assets/player1.png'; // 預設頭像
+    let playerGx = 4;
+    let playerGy = 5;
     let currentTool = 'move';
     let currentRoom = 'study';
     let isDND = false;
@@ -346,38 +204,48 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
+    // 房間設定與模擬的其他線上玩家 (Other Online Players)
     const rooms: Record<string, { 
       name: string; 
       items: { type: string; gx: number; gy: number; label: string; imgSrc: string }[];
       npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string }[];
+      otherPlayers: { name: string; role: string; gx: number; gy: number; imgSrc: string; task?: string }[];
     }> = {
       study: {
         name: '晴空自修室',
         items: [
-          { type: 'seat', gx: 8, gy: 5, label: '晴空木椅 A', imgSrc: '/assets/chair.png' },
-          { type: 'seat', gx: 18, gy: 5, label: '晴空木椅 B', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 13, gy: 2, label: '藍調書櫃', imgSrc: '/assets/shelf.png' }
+          { type: 'seat', gx: 6, gy: 3, label: '晴空木椅 A', imgSrc: '/assets/chair.png' },
+          { type: 'seat', gx: 12, gy: 3, label: '晴空木椅 B', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 9, gy: 1, label: '藍調書櫃', imgSrc: '/assets/shelf.png' }
         ],
         npcs: [
-          { name: '店長', task: '整理晴空筆記', gx: 21, gy: 4, imgSrc: '/assets/intern.png' }
+          { name: '店長 Mi', task: '整理晴空筆記', gx: 16, gy: 2, imgSrc: '/assets/npc_mi.png' }
+        ],
+        otherPlayers: [
+          { name: '阿朗', role: '散文漫遊', gx: 6, gy: 3, imgSrc: '/assets/player2.png', task: '《少女核》第 3 章' },
+          { name: '阿詩', role: '晴空選書', gx: 14, gy: 7, imgSrc: '/assets/player1.png', task: '寫作筆記中...' }
         ]
       },
       chat: {
         name: '藍調書話間',
         items: [
-          { type: 'seat', gx: 6, gy: 6, label: '微風沙發 A', imgSrc: '/assets/chair.png' },
-          { type: 'seat', gx: 20, gy: 6, label: '靠窗交流位', imgSrc: '/assets/chair.png' }
+          { type: 'seat', gx: 4, gy: 4, label: '微風沙發 A', imgSrc: '/assets/chair.png' },
+          { type: 'seat', gx: 14, gy: 4, label: '靠窗交流位', imgSrc: '/assets/chair.png' }
         ],
         npcs: [
-          { name: '實習生', task: '澆灌窗台綠意', gx: 7, gy: 10, imgSrc: '/assets/intern.png' }
+          { name: '實習生', task: '澆灌窗台綠意', gx: 5, gy: 8, imgSrc: '/assets/intern.png' }
+        ],
+        otherPlayers: [
+          { name: 'Ben', role: '浪費時間', gx: 14, gy: 4, imgSrc: '/assets/player2.png', task: '喝咖啡閒聊' }
         ]
       },
       salon: {
         name: '微風沙龍',
         items: [
-          { type: 'seat', gx: 13, gy: 4, label: '講者席', imgSrc: '/assets/chair.png' }
+          { type: 'seat', gx: 9, gy: 3, label: '講者席', imgSrc: '/assets/chair.png' }
         ],
-        npcs: []
+        npcs: [],
+        otherPlayers: []
       }
     };
 
@@ -414,8 +282,13 @@ import Layout from '../layouts/Layout.astro';
     startBtn?.addEventListener('click', () => {
       const val = nameInput?.value.trim();
       if (val) playerName = val;
+
+      const selectedAvatar = document.querySelector('input[name="player-avatar"]:checked') as HTMLInputElement;
+      if (selectedAvatar) playerAvatar = selectedAvatar.value;
+
       const selectedRole = document.querySelector('input[name="user-role"]:checked') as HTMLInputElement;
       if (selectedRole) playerRole = selectedRole.value;
+
       if (hudName) hudName.textContent = playerName;
       if (hudRoleTag) hudRoleTag.textContent = playerRole;
       if (modal) modal.style.display = 'none';
@@ -434,7 +307,7 @@ import Layout from '../layouts/Layout.astro';
         currentRoom = target.dataset.room!;
         isDND = false;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-        playerGx = 3; playerGy = 8;
+        playerGx = 4; playerGy = 5;
         moveQueue = [];
       });
     });
@@ -456,7 +329,8 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
       const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
       const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      return hasItem || hasNpc;
+      const hasOther = roomData.otherPlayers.some(p => p.gx === gx && p.gy === gy);
+      return hasItem || hasNpc || hasOther;
     }
 
     canvas?.addEventListener('click', (e) => {
@@ -557,12 +431,12 @@ import Layout from '../layouts/Layout.astro';
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // 🎨 文青風天空藍深色背景色調
+      // 繪製背景色
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 極簡柔和網格線
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+      // 繪製放大的 48x48 網格線
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += TILE_SIZE) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
@@ -574,7 +448,7 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
 
       moveTimer++;
-      if (moveQueue.length > 0 && moveTimer % 8 === 0) {
+      if (moveQueue.length > 0 && moveTimer % 6 === 0) {
         const nextStep = moveQueue.shift()!;
         if (!isCellOccupied(nextStep.gx, nextStep.gy)) {
           playerGx = nextStep.gx;
@@ -584,64 +458,90 @@ import Layout from '../layouts/Layout.astro';
         }
       }
 
+      // 1. 繪製傢俱物件
       roomData.items.forEach(item => {
         const px = item.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = item.gy * TILE_SIZE + TILE_SIZE / 2;
         const img = getLoadedImage(item.imgSrc);
         
         if (img && img.complete && img.naturalWidth !== 0) {
-          ctx.drawImage(img, px - 16, py - 16, 32, 32);
+          ctx.drawImage(img, px - 24, py - 24, 48, 48);
         } else {
-          ctx.fillStyle = '#334155'; // 備用方塊改為柔和藍灰
-          ctx.fillRect(px - 14, py - 14, 28, 28);
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(px - 20, py - 20, 40, 40);
         }
         ctx.fillStyle = '#38bdf8';
-        ctx.font = '9px sans-serif';
-        ctx.fillText(`🪑 ${item.label}`, px - 24, py - 18);
+        ctx.font = '10px sans-serif';
+        ctx.fillText(`🪑 ${item.label}`, px - 32, py - 26);
       });
 
+      // 2. 繪製常駐 NPC
       roomData.npcs.forEach(npc => {
         const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
         const npcImg = getLoadedImage(npc.imgSrc);
         
         if (npcImg && npcImg.complete && npcImg.naturalWidth !== 0) {
-          ctx.drawImage(npcImg, px - 16, py - 16, 32, 32);
+          ctx.drawImage(npcImg, px - 24, py - 24, 48, 48);
         } else {
           ctx.fillStyle = '#0284c7';
-          ctx.fillRect(px - 12, px - 12, 24, 24);
+          ctx.fillRect(px - 20, py - 20, 40, 40);
         }
         ctx.fillStyle = '#f8fafc';
-        ctx.font = '10px sans-serif';
-        ctx.fillText(npc.name, px - 18, py - 18);
+        ctx.font = '11px sans-serif';
+        ctx.fillText(npc.name, px - 24, py - 28);
       });
 
+      // 3. 繪製其他線上玩家
+      roomData.otherPlayers.forEach(op => {
+        const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
+        const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
+        const opImg = getLoadedImage(op.imgSrc);
+
+        if (opImg && opImg.complete && opImg.naturalWidth !== 0) {
+          ctx.drawImage(opImg, px - 24, py - 24, 48, 48);
+        } else {
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(px - 20, py - 20, 40, 40);
+        }
+
+        ctx.fillStyle = '#34d399';
+        ctx.font = '10px sans-serif';
+        ctx.fillText(`[${op.role}] ${op.name}`, px - 35, py + 32);
+        if (op.task) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '9px sans-serif';
+          ctx.fillText(`📖 ${op.task}`, px - 35, py + 44);
+        }
+      });
+
+      // 4. 繪製你自己的玩家分身
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
-      const playerImg = getLoadedImage('/assets/player.png');
+      const playerImg = getLoadedImage(playerAvatar);
 
       if (playerImg && playerImg.complete && playerImg.naturalWidth !== 0) {
-        ctx.drawImage(playerImg, pScreenX - 16, pScreenY - 16, 32, 32);
+        ctx.drawImage(playerImg, pScreenX - 24, pScreenY - 24, 48, 48);
       } else {
         ctx.fillStyle = isDND ? '#10b981' : '#38bdf8';
-        ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
+        ctx.fillRect(pScreenX - 20, pScreenY - 20, 40, 40);
       }
 
       if (isDND) {
         ctx.fillStyle = '#047857';
-        ctx.fillRect(pScreenX - 55, pScreenY - 52, 110, 20);
+        ctx.fillRect(pScreenX - 60, pScreenY - 58, 120, 22);
         ctx.fillStyle = '#d1fae5';
         ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('☁️ 晴空專心 (DND)', pScreenX - 48, pScreenY - 38);
+        ctx.fillText('☁️ 晴空專心 (DND)', pScreenX - 52, pScreenY - 43);
       }
 
       ctx.fillStyle = '#f8fafc';
       ctx.font = '11px sans-serif';
-      ctx.fillText(`[${playerRole}] ${playerName}`, pScreenX - 35, pScreenY + 24);
+      ctx.fillText(`[${playerRole}] ${playerName}`, pScreenX - 35, pScreenY + 32);
       if (isDND) {
         ctx.fillStyle = '#38bdf8';
         ctx.font = '10px sans-serif';
-        ctx.fillText(`📖 讀: ${currentTask}`, pScreenX - 40, pScreenY + 36);
+        ctx.fillText(`📖 讀: ${currentTask}`, pScreenX - 45, pScreenY + 44);
       }
     }
 
