@@ -129,6 +129,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     currentSearchResults.push(bookObj);
                 });
 
+                // 👈 加上這幾行檢查
+                console.log("當前儲存的搜尋結果陣列：", currentSearchResults);
+
                 // 一次性渲染檢索卡片，避免 DOM 插入中斷
                 resultsDiv.innerHTML = currentSearchResults.map((book, index) => `
                     <div class="book-card">
@@ -146,6 +149,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     </div>
                 `).join('');
 
+                console.log("組合出來的 HTML 字串：", htmlContent);
+
+                resultsDiv.innerHTML = htmlContent;
             } catch (error) {
                 console.error(error);
                 statusDiv.innerText = '💥 連線異常，請檢查網路或 API 金鑰是否有效。';
