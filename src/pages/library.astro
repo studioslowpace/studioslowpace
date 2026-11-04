@@ -1,10 +1,16 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+// 完全不載入 BaseLayout，獨立渲染
 ---
 
-<BaseLayout title="檢索新圖書 — 空間客舍">
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢索新圖書 — 空間客舍</title>
+</head>
+<body>
+
     <div class="literary-container">
-        
         <!-- 頁面標題 -->
         <header class="literary-header">
             <span class="sub-tag">空間客舍 · 藏書研究室</span>
@@ -23,7 +29,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <!-- 檢索結果展示區 -->
         <div id="searchResults" class="results-grid"></div>
-
     </div>
 
     <!-- 核心互動指令碼 -->
@@ -143,17 +148,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         };
     </script>
 
-    <!-- 關鍵：使用 is:global 確保動態生成的卡片能正確套用樣式 -->
-    <style is:global>
+    <!-- 獨立樣式 -->
+    <style>
+        body {
+            background-color: #f4f1ea;
+            color: #2b2927;
+            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+        }
+
         .literary-container {
             max-width: 900px;
-            margin: 40px auto;
+            margin: 60px auto;
             padding: 0 24px;
         }
 
         .literary-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 50px;
         }
 
         .sub-tag {
@@ -171,7 +185,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             letter-spacing: 0.05em;
             color: #2b2927;
             margin: 0 0 12px 0;
-            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
         }
 
         .intro-text {
@@ -182,7 +195,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
 
         .search-section {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
 
         .search-bar-wrapper {
@@ -238,7 +251,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .results-grid {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
         }
 
         .literary-card {
@@ -304,7 +317,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             font-weight: 500;
         }
 
-        .page-container .book-metadata, .literary-container .book-metadata {
+        .book-metadata {
             font-size: 12px;
             color: #78746c;
             display: flex;
@@ -352,4 +365,5 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             opacity: 0.85;
         }
     </style>
-</BaseLayout>
+</body>
+</html>
