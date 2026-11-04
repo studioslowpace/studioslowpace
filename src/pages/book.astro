@@ -74,7 +74,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         document.addEventListener("DOMContentLoaded", loadLibrary);
         document.getElementById('query').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchBooks(); });
 
-        async function searchBooks() {
+async function searchBooks() {
             const query = document.getElementById('query').value.trim();
             const statusDiv = document.getElementById('status');
             const resultsDiv = document.getElementById('searchResults');
@@ -117,7 +117,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     let imgUrl = 'https://via.placeholder.com/90x130?text=No+Cover';
                     if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
                         imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
-                        // 強制替換 http 為 https 避免安全阻擋
                         imgUrl = imgUrl.replace(/^http:\/\//i, 'https://');
                     }
 
@@ -129,10 +128,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     currentSearchResults.push(bookObj);
                 });
 
-                // 👈 加上這幾行檢查
-                console.log("當前儲存的搜尋結果陣列：", currentSearchResults);
-
-                // 一次性渲染檢索卡片，避免 DOM 插入中斷
+                // 直接塞入 HTML，不再透過額外變數，徹底杜絕 ReferenceError
                 resultsDiv.innerHTML = currentSearchResults.map((book, index) => `
                     <div class="book-card">
                         <img class="book-cover" src="${book.img_url}" alt="${book.title}">
@@ -149,9 +145,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     </div>
                 `).join('');
 
-                console.log("組合出來的 HTML 字串：", htmlContent);
-
-                resultsDiv.innerHTML = htmlContent;
             } catch (error) {
                 console.error(error);
                 statusDiv.innerText = '💥 連線異常，請檢查網路或 API 金鑰是否有效。';
