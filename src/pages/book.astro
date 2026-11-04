@@ -75,82 +75,131 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         document.getElementById('query').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchBooks(); });
 
 async function searchBooks() {
-            const query = document.getElementById('query').value.trim();
-            const statusDiv = document.getElementById('status');
-            const resultsDiv = document.getElementById('searchResults');
-            
-            resultsDiv.innerHTML = '';
-            currentSearchResults = [];
-            if (!query) { statusDiv.innerText = '⚠️ 請輸入關鍵字！'; return; }
-
-            statusDiv.innerText = '⚡ 正在跨資料庫檢索圖書數據 (支援書名/作者/ISBN)...';
-            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${GOOGLE_API_KEY}`;
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                const items = data.items || [];
-
-                if (items.length === 0) {
-                    statusDiv.innerText = '❌ 找不到這本書，請確認關鍵字或換個作者名試試。';
-                    return;
-                }
-
-                statusDiv.innerText = `✅ 成功找到 ${items.length} 筆最符合的圖書結果：`;
-
-                items.forEach((item, index) => {
-                    const info = item.volumeInfo || {};
-                    const title = info.title || '未知書名';
-                    const authors = info.authors ? info.authors.join(', ') : '未知作者';
-                    const publisher = info.publisher || '未知出版社';
-                    const pubDate = info.publishedDate || '未知日期';
-                    const pageCount = info.pageCount ? `${info.pageCount} 頁` : '未知頁數';
-                    const description = info.description || '無詳細書籍簡介。';
-                    
-                    let isbn = '無 ISBN 資訊';
-                    if (info.industryIdentifiers) {
-                        const id13 = info.industryIdentifiers.find(id => id.type === 'ISBN_13');
-                        const id10 = info.industryIdentifiers.find(id => id.type === 'ISBN_10');
-                        isbn = id13 ? id13.identifier : (id10 ? id10.identifier : info.industryIdentifiers[0].identifier);
-                    }
-
-                    let imgUrl = 'https://via.placeholder.com/90x130?text=No+Cover';
-                    if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
-                        imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
-                        imgUrl = imgUrl.replace(/^http:\/\//i, 'https://');
-                    }
-
-                    const bookObj = { 
-                        title, authors, publisher, pub_date: pubDate, page_count: pageCount, 
-                        isbn, img_url: imgUrl, description, notes: '',
-                        raw_image_links: info.imageLinks ? JSON.stringify(info.imageLinks) : null 
-                    };
-                    currentSearchResults.push(bookObj);
-                });
-
-                // 直接塞入 HTML，不再透過額外變數，徹底杜絕 ReferenceError
-                resultsDiv.innerHTML = currentSearchResults.map((book, index) => `
-                    <div class="book-card">
-                        <img class="book-cover" src="${book.img_url}" alt="${book.title}">
-                        <div class="book-info">
-                            <div>
-                                <h3 class="book-title">${book.title}</h3>
-                                <div class="book-meta">
-                                    <span class="meta-label">🧑‍💻 作者:</span> ${book.authors}<br>
-                                    <span class="meta-label">🆔 ISBN:</span> ${book.isbn}
-                                </div>
-                            </div>
-                            <button class="add-btn" onclick="addToLibrary(${index})">＋ 加進我的藏書庫</button>
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error(error);
-                statusDiv.innerText = '💥 連線異常，請檢查網路或 API 金鑰是否有效。';
-            }
+        console.log("🔍 searchBooks 函式被觸發了！");
+        const queryInput = document.getElementById('query');
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('searchResults');
+        
+        if (!queryInput) {
+            console.error("找不到 #query 輸入框元素！");
+            return;
         }
 
+        const query = queryInput.value.trim();
+        resultsDiv.innerHTML = ''; // 清空舊結果
+        currentSearchResults = [];
+        
+        if (!query) { 
+            statusDiv.innerText = '⚠️ 請輸入關鍵字！'; 
+            return; 
+        }
+
+        statusDiv.innerText = '⚡ 正在跨資料庫檢索圖書數據 (支援書名/作者/ISBN)...';
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${GOOGLE_API_KEY}`;
+
+        try {
+            console.log("📡 正在向 Google Books API 發送請求:", url);
+            const response = await fetch(url);
+            const data = await response.json();
+            console.log("📦 Google API 回傳原始資料:", data);
+            
+            const items = data.items || [];
+
+            if (items.length === 0) {
+                statusDiv.innerText = '❌ 找不到這本書，請確認關鍵字或換個作者名試試。';
+                return;
+            }
+
+            statusDiv.innerText = `✅ 成功找到 ${items.length} 筆最符合的圖書結果：`;
+
+            // 用原生的 document.createElement 逐一建立卡片，確保 100% 渲染出來
+            items.forEach((item, index) => {
+                const info = item.volumeInfo || {};
+                const title = info.title || '未知書名';
+                const authors = info.authors ? info.authors.join(', ') : '未知作者';
+                const publisher = info.publisher || '未知出版社';
+                const pubDate = info.publishedDate || '未知日期';
+                const pageCount = info.pageCount ? `${info.pageCount} 頁` : '未知頁數';
+                const description = info.description || '無詳細書籍簡介。';
+                
+                let isbn = '無 ISBN 資訊';
+                if (info.industryIdentifiers) {
+                    const id13 = info.industryIdentifiers.find(id => id.type === 'ISBN_13');
+                    const id10 = info.industryIdentifiers.find(id => id.type === 'ISBN_10');
+                    isbn = id13 ? id13.identifier : (id10 ? id10.identifier : info.industryIdentifiers[0].identifier);
+                }
+
+                let imgUrl = 'https://via.placeholder.com/90x130?text=No+Cover';
+                if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
+                    imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
+                    imgUrl = imgUrl.replace(/^http:\/\//i, 'https://');
+                }
+
+                const bookObj = { 
+                    title, authors, publisher, pub_date: pubDate, page_count: pageCount, 
+                    isbn, img_url: imgUrl, description, notes: '',
+                    raw_image_links: info.imageLinks ? JSON.stringify(info.imageLinks) : null 
+                };
+                currentSearchResults.push(bookObj);
+
+                // 建立外層卡片容器
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.style.cssText = 'display: flex; gap: 16px; padding: 16px; border: 1px solid #e5e1d8; border-radius: 8px; background: #faf9f6; align-items: center; margin-bottom: 12px;';
+
+                // 建立封面圖片
+                const img = document.createElement('img');
+                img.className = 'book-cover';
+                img.src = imgUrl;
+                img.alt = title;
+                img.style.cssText = 'width: 80px; height: 115px; object-fit: cover; border-radius: 4px; background-color: #eee;';
+
+                // 建立資訊區塊
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'book-info';
+                infoDiv.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 8px;';
+
+                const textWrapper = document.createElement('div');
+                
+                const h3 = document.createElement('h3');
+                h3.className = 'book-title';
+                h3.innerText = title;
+                h3.style.cssText = 'font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #2c2c2a;';
+
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'book-meta';
+                metaDiv.style.cssText = 'font-size: 13px; color: #8c887e; line-height: 1.5;';
+                metaDiv.innerHTML = `<span style="font-weight: 500; color: #515154;">🧑‍💻 作者:</span> ${authors}<br><span style="font-weight: 500; color: #515154;">🆔 ISBN:</span> ${isbn}`;
+
+                textWrapper.appendChild(h3);
+                textWrapper.appendChild(metaDiv);
+
+                // 建立加入按鈕
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-btn';
+                addBtn.innerText = '＋ 加進我的藏書庫';
+                addBtn.style.cssText = 'background-color: #3b4d3c; color: white; padding: 6px 12px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; width: fit-content;';
+                
+                // 綁定點擊事件
+                addBtn.onclick = () => addToLibrary(index);
+
+                infoDiv.appendChild(textWrapper);
+                infoDiv.appendChild(addBtn);
+
+                card.appendChild(img);
+                card.appendChild(infoDiv);
+
+                // 將卡片塞入結果容器
+                resultsDiv.appendChild(card);
+            });
+
+            console.log("✨ 成功使用 DOM API 將 5 筆卡片掛載到 #searchResults");
+
+        } catch (error) {
+            console.error("💥 檢索過程發生錯誤:", error);
+            statusDiv.innerText = '💥 連線異常，請檢查網路或 API 金鑰是否有效。';
+        }
+    }
         async function addToLibrary(index) {
             const bookToAdd = currentSearchResults[index];
             try {
