@@ -5,7 +5,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout title="檢索新圖書 — 空間客舍">
     <div class="literary-container">
         
-        <!-- 頁面標題（文青風格留白與細緻排版） -->
+        <!-- 頁面標題 -->
         <header class="literary-header">
             <span class="sub-tag">空間客舍 · 藏書研究室</span>
             <h1>檢索新圖書</h1>
@@ -21,12 +21,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div id="status" class="status-msg">請在上方輸入關鍵字開始檢索。</div>
         </div>
 
-        <!-- 檢索結果展示區 -->
+        <!-- 檢索結果展示區 (完全由 style 樣式與 CSS 類別控制排版) -->
         <div id="searchResults" class="results-grid"></div>
 
     </div>
 
-    <!-- 核心互動指令碼 -->
+    <!-- 互動指令碼 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" is:inline></script>
     <script is:inline>
         const GOOGLE_API_KEY = "AIzaSyAALLccQZnHSWI0unwfM6zaS5M8ZzGi4i4";
@@ -36,10 +36,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             const searchBtn = document.getElementById('searchBtn');
             const queryInput = document.getElementById('query');
 
-            searchBtn.addEventListener('click', searchBooks);
-            queryInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchBooks();
-            });
+            if (searchBtn) searchBtn.addEventListener('click', searchBooks);
+            if (queryInput) {
+                queryInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') searchBooks();
+                });
+            }
         });
 
         async function searchBooks() {
@@ -47,6 +49,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             const statusDiv = document.getElementById('status');
             const resultsDiv = document.getElementById('searchResults');
             
+            if (!queryInput) return;
             const query = queryInput.value.trim();
             resultsDiv.innerHTML = '';
             currentSearchResults = [];
@@ -71,7 +74,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                 statusDiv.innerText = `✨ 找到 ${items.length} 冊契合的圖書：`;
 
-                items.forEach((item, index) => {
+                // 透過 map 將資料轉為純 HTML 字串，再由 CSS 類別統一渲染
+                const htmlContent = items.map((item, index) => {
                     const info = item.volumeInfo || {};
                     const title = info.title || '無題';
                     const authors = info.authors ? info.authors.join(' / ') : '佚名';
@@ -91,44 +95,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
                         imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
                         imgUrl = imgUrl.replace(/^http:\/\//i, 'https://');
-                        // 升級為高畫質縮圖
                         imgUrl = imgUrl.replace(/zoom=[0-9]/, 'zoom=2');
                     }
 
-                    const bookObj = { title, authors, publisher, pubDate, pageCount, isbn, imgUrl, description };
-                    currentSearchResults.push(bookObj);
+                    currentSearchResults.push({ title, authors, publisher, pubDate, pageCount, isbn, imgUrl, description });
 
-                    // 建立文青風格美學卡片
-                    const card = document.createElement('article');
-                    card.className = 'literary-card';
-
-                    card.innerHTML = `
-                        <div class="card-cover-wrapper">
-                            <img src="${bookObj.imgUrl}" alt="${bookObj.title}" loading="lazy">
-                        </div>
-                        <div class="card-content">
-                            <div class="card-header-row">
-                                <h2 class="book-title">${bookObj.title}</h2>
-                                <span class="book-isbn">ISBN: ${bookObj.isbn}</span>
+                    return `
+                        <article class="literary-card">
+                            <div class="card-cover-wrapper">
+                                <img src="${imgUrl}" alt="${title}" loading="lazy">
                             </div>
-                            <p class="book-authors">著：${bookObj.authors}</p>
-                            <div class="book-metadata">
-                                <span>${bookObj.publisher}</span>
-                                <span>·</span>
-                                <span>${bookObj.pubDate}</span>
-                                <span>·</span>
-                                <span>${bookObj.pageCount}</span>
+                            <div class="card-content">
+                                <div class="card-header-row">
+                                    <h2 class="book-title">${title}</h2>
+                                    <span class="book-isbn">ISBN: ${isbn}</span>
+                                </div>
+                                <p class="book-authors">著：${authors}</p>
+                                <div class="book-metadata">
+                                    <span>${publisher}</span>
+                                    <span>·</span>
+                                    <span>${pubDate}</span>
+                                    <span>·</span>
+                                    <span>${pageCount}</span>
+                                </div>
+                                <p class="book-desc">${description}</p>
+                                <div class="card-actions">
+                                    <button class="literary-btn-sm" onclick="copyBookDetails(${index})">📋 複製書本資料</button>
+                                    <button class="literary-btn-sm outline" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(title + ' ' + authors)}', '_blank')">🔍 探索更多</button>
+                                </div>
                             </div>
-                            <p class="book-desc">${bookObj.description}</p>
-                            <div class="card-actions">
-                                <button class="literary-btn-sm" onclick="copyBookDetails(${index})">📋 複製書本資料</button>
-                                <button class="literary-btn-sm outline" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(bookObj.title + ' ' + bookObj.authors)}', '_blank')">🔍 探索更多</button>
-                            </div>
-                        </div>
+                        </article>
                     `;
+                }).join('');
 
-                    resultsDiv.appendChild(card);
-                });
+                resultsDiv.innerHTML = htmlContent;
 
             } catch (error) {
                 console.error(error);
@@ -145,21 +145,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
     </script>
 
+    <!-- 使用全域樣式（is:global），讓排版與 .literary-card 樣式精準套用 -->
     <style is:global>
-        :root {
-            --bg-paper: #f4f1ea;        /* 溫潤宣紙米色 */
-            --card-surface: #faf8f5;    /* 卡片浮雕色 */
-            --text-ink: #2b2927;        /* 墨色深灰 */
-            --text-muted: #78746c;      /* 沉穩亞麻灰 */
-            --accent-green: #4a5c4e;    /* 沉靜松針綠 */
-            --accent-green-hover: #3b4c3f;
-            --border-line: #e2ddd5;     /* 柔和分隔線 */
-            --shadow-subtle: 0 10px 30px rgba(43, 41, 39, 0.04);
-        }
-
         body {
-            background-color: var(--bg-paper);
-            color: var(--text-ink);
+            background-color: #f4f1ea;
+            color: #2b2927;
             font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
             margin: 0;
             padding: 0;
@@ -172,7 +162,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             padding: 0 24px;
         }
 
-        /* 頂部文青標題 */
         .literary-header {
             text-align: center;
             margin-bottom: 50px;
@@ -181,7 +170,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .sub-tag {
             font-size: 13px;
             letter-spacing: 0.2em;
-            color: var(--text-muted);
+            color: #78746c;
             text-transform: uppercase;
             display: block;
             margin-bottom: 12px;
@@ -191,18 +180,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             font-size: 32px;
             font-weight: 400;
             letter-spacing: 0.05em;
-            color: var(--text-ink);
+            color: #2b2927;
             margin: 0 0 12px 0;
         }
 
         .intro-text {
             font-size: 15px;
-            color: var(--text-muted);
+            color: #78746c;
             font-style: italic;
             margin: 0;
         }
 
-        /* 搜尋列 */
         .search-section {
             margin-bottom: 40px;
         }
@@ -210,30 +198,30 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .search-bar-wrapper {
             display: flex;
             gap: 12px;
-            background: var(--card-surface);
+            background: #faf8f5;
             padding: 8px;
             border-radius: 50px;
-            border: 1px solid var(--border-line);
-            box-shadow: var(--shadow-subtle);
+            border: 1px solid #e2ddd5;
+            box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
         }
 
-        input[type="text"] {
+        #query {
             flex: 1;
             background: transparent;
             border: none;
             padding: 12px 24px;
             font-size: 15px;
-            color: var(--text-ink);
+            color: #2b2927;
             outline: none;
             font-family: inherit;
         }
 
-        input[type="text"]::placeholder {
+        #query::placeholder {
             color: #b3aea4;
         }
 
         .literary-btn {
-            background-color: var(--accent-green);
+            background-color: #4a5c4e;
             color: #fff;
             border: none;
             padding: 12px 28px;
@@ -246,37 +234,34 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
 
         .literary-btn:hover {
-            background-color: var(--accent-green-hover);
+            background-color: #3b4c3f;
         }
 
         .status-msg {
             text-align: center;
             font-size: 13px;
-            color: var(--text-muted);
+            color: #78746c;
             margin-top: 14px;
             letter-spacing: 0.05em;
         }
 
-        /* 檢索結果清單（單欄大卡片，極具散文集或書單質感） */
+        /* 檢索結果清單容器 */
         .results-grid {
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
         }
 
+        /* 統一由 CSS 類別控制的文青風卡片樣式 */
         .literary-card {
-            background: var(--card-surface);
-            border: 1px solid var(--border-line);
+            background: #faf8f5;
+            border: 1px solid #e2ddd5;
             border-radius: 16px;
             padding: 28px;
             display: flex;
             gap: 24px;
-            box-shadow: var(--shadow-subtle);
-            transition: transform 0.3s ease;
-        }
-
-        .literary-card:hover {
-            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
+            align-items: flex-start;
         }
 
         @media (max-width: 680px) {
@@ -314,26 +299,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .book-title {
             font-size: 18px;
             font-weight: 500;
-            color: var(--text-ink);
+            color: #2b2927;
             margin: 0;
+            font-family: inherit;
         }
 
         .book-isbn {
             font-size: 12px;
-            color: var(--text-muted);
+            color: #78746c;
             letter-spacing: 0.05em;
         }
 
         .book-authors {
             font-size: 14px;
-            color: var(--accent-green);
+            color: #4a5c4e;
             margin: 0;
             font-weight: 500;
         }
 
         .book-metadata {
             font-size: 12px;
-            color: var(--text-muted);
+            color: #78746c;
             display: flex;
             gap: 8px;
             align-items: center;
@@ -357,7 +343,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
 
         .literary-btn-sm {
-            background-color: var(--accent-green);
+            background-color: #4a5c4e;
             color: #fff;
             border: none;
             padding: 6px 14px;
@@ -370,8 +356,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         .literary-btn-sm.outline {
             background-color: transparent;
-            color: var(--text-ink);
-            border: 1px solid var(--border-line);
+            color: #2b2927;
+            border: 1px solid #e2ddd5;
         }
 
         .literary-btn-sm:hover {
