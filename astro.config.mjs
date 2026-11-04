@@ -14,6 +14,7 @@ export default defineConfig({
   
   // 3. 整合套件（包含 sitemap）
   integrations: [
-    sitemap()
+    sitemap(),
+    react()
   ],
 });
