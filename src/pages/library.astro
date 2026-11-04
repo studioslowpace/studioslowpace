@@ -2,365 +2,627 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="檢索新圖書 — 空間客舍">
-
-    <!-- 將文青風樣式放入 head 插槽中 -->
-    <Fragment slot="head">
-        <style is:global>
-            body {
-                background-color: #f4f1ea;
-                color: #2b2927;
-                font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
-                margin: 0;
-                padding: 0;
-                line-height: 1.8;
-            }
-
-            .literary-container {
-                max-width: 900px;
-                margin: 40px auto;
-                padding: 0 24px;
-            }
-
-            .literary-header {
-                text-align: center;
-                margin-bottom: 40px;
-            }
-
-            .sub-tag {
-                font-size: 13px;
-                letter-spacing: 0.2em;
-                color: #78746c;
-                text-transform: uppercase;
-                display: block;
-                margin-bottom: 12px;
-            }
-
-            .literary-header h1 {
-                font-size: 32px;
-                font-weight: 400;
-                letter-spacing: 0.05em;
-                color: #2b2927;
-                margin: 0 0 12px 0;
-            }
-
-            .intro-text {
-                font-size: 15px;
-                color: #78746c;
-                font-style: italic;
-                margin: 0;
-            }
-
-            .search-section {
-                margin-bottom: 30px;
-            }
-
-            .search-bar-wrapper {
-                display: flex;
-                gap: 12px;
-                background: #faf8f5;
-                padding: 8px;
-                border-radius: 50px;
-                border: 1px solid #e2ddd5;
-                box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
-            }
-
-            #query {
-                flex: 1;
-                background: transparent;
-                border: none;
-                padding: 12px 24px;
-                font-size: 15px;
-                color: #2b2927;
-                outline: none;
-                font-family: inherit;
-            }
-
-            #query::placeholder {
-                color: #b3aea4;
-            }
-
-            .literary-btn {
-                background-color: #4a5c4e;
-                color: #fff;
-                border: none;
-                padding: 12px 28px;
-                border-radius: 40px;
-                font-size: 14px;
-                letter-spacing: 0.1em;
-                cursor: pointer;
-                transition: background 0.3s ease;
-                font-family: inherit;
-            }
-
-            .literary-btn:hover {
-                background-color: #3b4c3f;
-            }
-
-            .status-msg {
-                text-align: center;
-                font-size: 13px;
-                color: #78746c;
-                margin-top: 14px;
-                letter-spacing: 0.05em;
-            }
-
-            .results-grid {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-
-            .literary-card {
-                background: #faf8f5;
-                border: 1px solid #e2ddd5;
-                border-radius: 16px;
-                padding: 28px;
-                display: flex;
-                gap: 24px;
-                box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
-                align-items: flex-start;
-            }
-
-            @media (max-width: 680px) {
-                .literary-card {
-                    flex-direction: column;
-                    align-items: center;
-                    text-align: center;
-                }
-            }
-
-            .card-cover-wrapper img {
-                width: 110px;
-                height: 160px;
-                object-fit: cover;
-                border-radius: 6px;
-                box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-                background-color: #eee;
-            }
-
-            .card-content {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .card-header-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: baseline;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .book-title {
-                font-size: 18px;
-                font-weight: 500;
-                color: #2b2927;
-                margin: 0;
-            }
-
-            .book-isbn {
-                font-size: 12px;
-                color: #78746c;
-                letter-spacing: 0.05em;
-            }
-
-            .book-authors {
-                font-size: 14px;
-                color: #4a5c4e;
-                margin: 0;
-                font-weight: 500;
-            }
-
-            .book-metadata {
-                font-size: 12px;
-                color: #78746c;
-                display: flex;
-                gap: 8px;
-                align-items: center;
-                flex-wrap: wrap;
-            }
-
-            .book-desc {
-                font-size: 13px;
-                color: #5c574f;
-                line-height: 1.7;
-                margin: 6px 0;
-                display: -webkit-box;
-                -webkit-line-clamp: 3;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-            }
-
-            .card-actions {
-                display: flex;
-                gap: 10px;
-                margin-top: 8px;
-            }
-
-            .literary-btn-sm {
-                background-color: #4a5c4e;
-                color: #fff;
-                border: none;
-                padding: 6px 14px;
-                border-radius: 6px;
-                font-size: 12px;
-                cursor: pointer;
-                transition: opacity 0.2s;
-                font-family: inherit;
-            }
-
-            .literary-btn-sm.outline {
-                background-color: transparent;
-                color: #2b2927;
-                border: 1px solid #e2ddd5;
-            }
-
-            .literary-btn-sm:hover {
-                opacity: 0.85;
-            }
-        </style>
-    </Fragment>
-
-    <!-- 頁面主要內容 -->
+<BaseLayout title="雲端藏書閣 — 空間客舍">
     <div class="literary-container">
+        
+        <!-- 頂部導覽列與標題 -->
         <header class="literary-header">
-            <span class="sub-tag">空間客舍 · 藏書研究室</span>
-            <h1>檢索新圖書</h1>
-            <p class="intro-text">尋找字裡行間的星光，探索每一冊值得駐足的靈魂。</p>
+            <nav class="nav-links">
+                <span class="active">📖 雲端藏書閣</span>
+                <span class="divider">/</span>
+                <a href="/search">🌐 檢索新圖書</a>
+            </nav>
+            <h1>空間客舍 · 藏書研究室</h1>
+            <p class="intro-text">在此駐足，翻閱已被收進雲端微光裡的每一冊靈魂。</p>
         </header>
 
-        <div class="search-section">
-            <div class="search-bar-wrapper">
-                <input type="text" id="query" placeholder="輸入書名、作者或 ISBN 條碼尋找圖書..." autocomplete="off">
-                <button id="searchBtn" class="literary-btn">尋覓書籍</button>
+        <!-- 藏書清單面板 -->
+        <section class="literary-panel">
+            <div class="panel-header">
+                <h2>藏書清單</h2>
+                <span class="badge" id="libraryCount">0</span>
             </div>
-            <div id="status" class="status-msg">請在上方輸入關鍵字開始檢索。</div>
-        </div>
+            <div id="myLibraryList" class="library-grid">
+                <p class="empty-msg">正在同步雲端藏書庫數據...</p>
+            </div>
+        </section>
 
-        <div id="searchResults" class="results-grid"></div>
     </div>
 
-    <!-- 核心互動指令碼 -->
-    <script>
-        const GOOGLE_API_KEY = "AIzaSyAALLccQZnHSWI0unwfM6zaS5M8ZzGi4i4";
-        let currentSearchResults = []; 
+    <!-- 彈出詳細視窗 (Modal) -->
+    <div id="bookModal" class="literary-modal" onclick="closeModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="toggleModal(false)">&times;</button>
+            <h2 class="modal-title">書籍詳細資料與修繕</h2>
+            
+            <div class="modal-grid">
+                <!-- 左側：封面與高畫質圖檔 -->
+                <div class="modal-col-left">
+                    <p class="section-label">🖼️ 當前封面預覽</p>
+                    <div class="cover-box">
+                        <img id="modalCover" src="" alt="書本封面">
+                    </div>
+                    
+                    <p class="section-label">📥 下載 Google 伺服器原廠相片</p>
+                    <div id="modalPhotoList" class="photo-list"></div>
+                </div>
+                
+                <!-- 右側：編輯欄位 -->
+                <div id="modalForm" class="modal-col-right"></div>
+            </div>
+
+            <!-- 底部動作列 -->
+            <div class="modal-footer">
+                <button onclick="copyAllDetails()" class="literary-btn-sub">📋 複製全部文字</button>
+                <button onclick="saveBookEdits()" class="literary-btn-primary">💾 儲存修改項目</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" is:inline></script>
+    <script is:inline>
+        window.supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+        window.supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+        window.TABLE_NAME = 'my_library'; 
+        window.client = supabase.createClient(window.supabaseUrl, window.supabaseKey);
+
+        let localLibraryData = [];
+        let activeModalBook = null; 
 
         document.addEventListener("DOMContentLoaded", () => {
-            // 🛡️ 強制清除頁面上所有來自共用元件的 .auth-modal，確保完全不受到影響
             document.querySelectorAll('.auth-modal').forEach(el => el.remove());
-
-            const searchBtn = document.getElementById('searchBtn');
-            const queryInput = document.getElementById('query');
-
-            if (searchBtn) searchBtn.addEventListener('click', searchBooks);
-            if (queryInput) {
-                queryInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') searchBooks();
-                });
-            }
+            loadLibrary();
         });
 
-        async function searchBooks() {
-            const queryInput = document.getElementById('query');
-            const statusDiv = document.getElementById('status');
-            const resultsDiv = document.getElementById('searchResults');
+        async function loadLibrary() {
+            const libraryListDiv = document.getElementById('myLibraryList');
+            const countSpan = document.getElementById('libraryCount');
             
-            if (!queryInput) return;
-            const query = queryInput.value.trim();
-            resultsDiv.innerHTML = '';
-            currentSearchResults = [];
-            
-            if (!query) { 
-                statusDiv.innerText = '⚠️ 請輸入關鍵字查詢。'; 
-                return; 
-            }
-
-            statusDiv.innerText = '🍃 正在翻閱無垠書海，尋找相符的足跡...';
-            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=6&key=${GOOGLE_API_KEY}`;
-
             try {
-                const response = await fetch(url);
-                const data = await response.json();
-                const items = data.items || [];
+                const { data: myLibrary, error } = await window.client
+                    .from(window.TABLE_NAME).select('*').order('created_at', { ascending: false }); 
 
-                if (items.length === 0) {
-                    statusDiv.innerText = '☕ 找不到相關的圖書記錄，試著換個作者或書名看看？';
+                if (error) throw error;
+
+                localLibraryData = myLibrary || [];
+                countSpan.innerText = localLibraryData.length;
+                libraryListDiv.innerHTML = '';
+
+                if (localLibraryData.length === 0) {
+                    libraryListDiv.innerHTML = '<p class="empty-msg">目前藏書閣空空如也，快去 <a href="/search" style="color:var(--accent-green)">檢索新圖書</a> 尋覓第一冊藏書吧！</p>';
                     return;
                 }
 
-                statusDiv.innerText = `✨ 找到 ${items.length} 冊契合的圖書：`;
+                localLibraryData.forEach((book, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'library-card';
+                    card.onclick = () => openDetailsView(idx);
 
-                const htmlContent = items.map((item, index) => {
-                    const info = item.volumeInfo || {};
-                    const title = info.title || '無題';
-                    const authors = info.authors ? info.authors.join(' / ') : '佚名';
-                    const publisher = info.publisher || '獨立出版';
-                    const pubDate = info.publishedDate || '年代不詳';
-                    const pageCount = info.pageCount ? `${info.pageCount} 頁` : '頁數未詳';
-                    const description = info.description || '這本書暫無詳細的內容簡介。';
-                    
-                    let isbn = '無 ISBN';
-                    if (info.industryIdentifiers) {
-                        const id13 = info.industryIdentifiers.find(id => id.type === 'ISBN_13');
-                        const id10 = info.industryIdentifiers.find(id => id.type === 'ISBN_10');
-                        isbn = id13 ? id13.identifier : (id10 ? id10.identifier : info.industryIdentifiers[0].identifier);
-                    }
-
-                    let imgUrl = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=300&q=80';
-                    if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
-                        imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
-                        imgUrl = imgUrl.replace(/^http:\/\//i, 'https://');
-                        imgUrl = imgUrl.replace(/zoom=[0-9]/, 'zoom=2');
-                    }
-
-                    currentSearchResults.push({ title, authors, publisher, pubDate, pageCount, isbn, imgUrl, description });
-
-                    return `
-                        <article class="literary-card">
-                            <div class="card-cover-wrapper">
-                                <img src="${imgUrl}" alt="${title}" loading="lazy">
-                            </div>
-                            <div class="card-content">
-                                <div class="card-header-row">
-                                    <h2 class="book-title">${title}</h2>
-                                    <span class="book-isbn">ISBN: ${isbn}</span>
-                                </div>
-                                <p class="book-authors">著：${authors}</p>
-                                <div class="book-metadata">
-                                    <span>${publisher}</span>
-                                    <span>·</span>
-                                    <span>${pubDate}</span>
-                                    <span>·</span>
-                                    <span>${pageCount}</span>
-                                </div>
-                                <p class="book-desc">${description}</p>
-                                <div class="card-actions">
-                                    <button class="literary-btn-sm" onclick="copyBookDetails(${index})">📋 複製書本資料</button>
-                                    <button class="literary-btn-sm outline" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(title + ' ' + authors)}', '_blank')">🔍 探索更多</button>
-                                </div>
-                            </div>
-                        </article>
+                    card.innerHTML = `
+                        <img src="${book.img_url}" alt="${book.title}" loading="lazy">
+                        <div class="library-card-info">
+                            <p class="library-card-title" title="${book.title}">${book.title}</p>
+                            <p class="library-card-author">${book.authors || '佚名'}</p>
+                        </div>
+                        <button class="del-btn" onclick="event.stopPropagation(); deleteFromLibrary(${idx})">移除</button>
                     `;
-                }).join('');
-
-                resultsDiv.innerHTML = htmlContent;
-
+                    libraryListDiv.appendChild(card);
+                });
             } catch (error) {
                 console.error(error);
-                statusDiv.innerText = '💥 網路連結微恙，請稍後再試。';
+                libraryListDiv.innerHTML = '<p class="empty-msg" style="color:#b25050;">無法與 Supabase 建立連結。</p>';
             }
         }
 
-        window.copyBookDetails = function(index) {
-            const b = currentSearchResults[index];
-            const text = `【書籍資訊】\n書名：${b.title}\n作者：${b.authors}\n出版社：${b.publisher} (${b.pubDate})\n頁數：${b.pageCount}\nISBN：${b.isbn}\n簡介：${b.description}`;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('✒️ 已經將這冊書的詳細文字收進剪貼簿中。');
+        async function deleteFromLibrary(index) {
+            const book = localLibraryData[index];
+            if (confirm(`確定要將「${book.title}」從藏書閣中請出嗎？`)) {
+                try {
+                    const { error } = await window.client.from(window.TABLE_NAME).delete().eq('id', book.id); 
+                    if (error) throw error;
+                    loadLibrary();
+                } catch (error) {
+                    alert('💥 移除失敗。');
+                }
+            }
+        }
+
+        function openDetailsView(index) {
+            const book = localLibraryData[index];
+            activeModalBook = book; 
+
+            document.getElementById('modalCover').src = book.img_url || 'https://via.placeholder.com/90x130?text=No+Cover';
+            
+            const photoContainer = document.getElementById('modalPhotoList');
+            photoContainer.innerHTML = ''; 
+
+            const photoList = [];
+            let parsedLinks = null;
+
+            try {
+                if (book.raw_image_links) parsedLinks = JSON.parse(book.raw_image_links);
+            } catch(e) {}
+
+            if (parsedLinks) {
+                if (parsedLinks.extraLarge) photoList.push({ name: '✨ 特大超高畫質', url: parsedLinks.extraLarge });
+                if (parsedLinks.large)      photoList.push({ name: '🖼️ 大型高畫質', url: parsedLinks.large });
+                if (parsedLinks.medium)     photoList.push({ name: '📷 中型清晰度', url: parsedLinks.medium });
+                if (parsedLinks.thumbnail)  photoList.push({ name: '📘 標準封面尺寸', url: parsedLinks.thumbnail });
+            }
+
+            if (book.img_url && !book.img_url.includes('placeholder.com')) {
+                let hdUrl = book.img_url.replace(/zoom=[0-9]/, 'zoom=3').replace('&edge=curl', '');
+                if (!photoList.some(p => p.url.includes('zoom=3'))) {
+                    photoList.unshift({ name: '🔥 3倍清晰大圖', url: hdUrl });
+                }
+            }
+
+            if (photoList.length === 0) {
+                photoContainer.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">暫無官方相片檔案。</p>';
+            } else {
+                photoList.forEach(photo => {
+                    const row = document.createElement('div');
+                    row.className = 'photo-row';
+                    row.innerHTML = `
+                        <span>${photo.name}</span>
+                        <button class="literary-btn-sm" onclick="downloadSpecificImage('${photo.url}', '${photo.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "")}')">下載</button>
+                    `;
+                    photoContainer.appendChild(row);
+                });
+            }
+
+            const fields = [
+                { key: 'title', label: '📖 書籍名稱' },
+                { key: 'authors', label: '🧑‍💻 主要作者' },
+                { key: 'publisher', label: '🏢 出版單位' },
+                { key: 'pub_date', label: '📅 出版日期' },
+                { key: 'page_count', label: '📄 書籍頁數' },
+                { key: 'isbn', label: '🆔 國際條碼 (ISBN)' },
+                { key: 'description', label: '📝 書籍簡介', isTextArea: true },
+                { key: 'notes', label: '💡 我的專屬自訂備註', isTextArea: true }
+            ];
+
+            const formContainer = document.getElementById('modalForm');
+            formContainer.innerHTML = ''; 
+
+            fields.forEach(field => {
+                const value = book[field.key] || '';
+                const inputId = `edit_${field.key}`;
+                
+                const inputHTML = field.isTextArea ? 
+                    `<textarea id="${inputId}" class="literary-input" style="min-height:75px; resize:vertical;">${value}</textarea>` :
+                    `<input type="text" id="${inputId}" class="literary-input" value="${value}">`;
+
+                const itemRow = document.createElement('div');
+                itemRow.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
+                itemRow.innerHTML = `
+                    <label style="font-size: 12px; color: var(--text-muted); font-weight: 500;">${field.label}</label>
+                    <div style="display: flex; gap: 8px;">
+                        ${inputHTML}
+                        <button type="button" onclick="copySingleField('${inputId}')" class="literary-btn-sm outline">複製</button>
+                    </div>
+                `;
+                formContainer.appendChild(itemRow);
             });
-        };
+
+            toggleModal(true);
+        }
+
+        function copySingleField(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            navigator.clipboard.writeText(el.value).then(() => alert('✨ 欄位內容已收進剪貼簿。'));
+        }
+
+        async function downloadSpecificImage(imgUrl, sizeName) {
+            let targetUrl = imgUrl.replace('http://', 'https://');
+            try {
+                const res = await fetch(targetUrl);
+                const blob = await res.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                const safeTitle = document.getElementById('edit_title').value.replace(/[\\/:*?"<>|]/g, "");
+                a.download = `${safeTitle}_${sizeName}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            } catch (e) {
+                window.open(targetUrl, '_blank');
+            }
+        }
+
+        async function saveBookEdits() {
+            if (!activeModalBook || !activeModalBook.id) return;
+            const updatedData = {
+                title: document.getElementById('edit_title').value.trim(),
+                authors: document.getElementById('edit_authors').value.trim(),
+                publisher: document.getElementById('edit_publisher').value.trim(),
+                pub_date: document.getElementById('edit_pub_date').value.trim(),
+                page_count: document.getElementById('edit_page_count').value.trim(),
+                isbn: document.getElementById('edit_isbn').value.trim(),
+                description: document.getElementById('edit_description').value.trim(),
+                notes: document.getElementById('edit_notes').value.trim()
+            };
+
+            if (!updatedData.title) { alert('⚠️ 書籍名稱不可為空。'); return; }
+
+            try {
+                const { error } = await window.client.from(window.TABLE_NAME).update(updatedData).eq('id', activeModalBook.id);
+                if (error) throw error;
+                alert('💾 修正已同步至雲端資料庫。');
+                toggleModal(false); 
+                loadLibrary();      
+            } catch (error) {
+                alert('💥 儲存失敗。');
+            }
+        }
+
+        function copyAllDetails() {
+            if (!activeModalBook) return;
+            const fields = ['title', 'authors', 'publisher', 'pub_date', 'page_count', 'isbn', 'description', 'notes'];
+            const labels = ['書名', '作者', '出版社', '出版日期', '頁數', 'ISBN', '簡介', '備註'];
+            let text = '【藏書閣資料卡】\n';
+            fields.forEach((k, i) => {
+                const el = document.getElementById(`edit_${k}`);
+                if (el) text += `${labels[i]}: ${el.value}\n`;
+            });
+            navigator.clipboard.writeText(text).then(() => alert('📋 完整資料卡已複製。'));
+        }
+
+        function toggleModal(show) {
+            document.getElementById('bookModal').style.display = show ? 'flex' : 'none';
+        }
+        function closeModal(e) {
+            if(e.target.id === 'bookModal') toggleModal(false);
+        }
     </script>
 
+    <!-- 文青風格全域樣式 -->
+    <style is:global>
+        :root {
+            --bg-paper: #f4f1ea;
+            --card-surface: #faf8f5;
+            --text-ink: #2b2927;
+            --text-muted: #78746c;
+            --accent-green: #4a5c4e;
+            --accent-green-hover: #3b4c3f;
+            --border-line: #e2ddd5;
+            --danger: #b25050;
+            --shadow-subtle: 0 10px 30px rgba(43, 41, 39, 0.04);
+        }
+
+        body {
+            background-color: var(--bg-paper);
+            color: var(--text-ink);
+            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+        }
+
+        .literary-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        .literary-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .nav-links {
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--accent-green); }
+        .nav-links .active { color: var(--accent-green); font-weight: 500; }
+        .nav-links .divider { color: var(--border-line); }
+
+        .literary-header h1 {
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            color: var(--text-ink);
+            margin: 0 0 8px 0;
+        }
+
+        .intro-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin: 0;
+        }
+
+        .literary-panel {
+            background: var(--card-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-subtle);
+            min-height: 60vh;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-line);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+
+        .panel-header h2 {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--accent-green);
+            margin: 0;
+            letter-spacing: 0.05em;
+        }
+
+        .badge {
+            background-color: #e8e4dc;
+            color: var(--accent-green);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        /* 藏書庫網格 (3欄) */
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .library-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .library-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .library-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(43,41,39,0.06);
+        }
+
+        .library-card img {
+            width: 75px;
+            height: 105px;
+            object-fit: cover;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom: 10px;
+            background: #eee;
+        }
+
+        .library-card-info { width: 100%; }
+
+        .library-card-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0 0 4px 0;
+        }
+
+        .library-card-author {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+
+        .del-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: #fff0f0;
+            color: var(--danger);
+            border: 1px solid #ffcccc;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+        .library-card:hover .del-btn { opacity: 1; }
+
+        .empty-msg {
+            color: var(--text-muted);
+            text-align: center;
+            grid-column: 1 / -1;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+
+        /* 彈出視窗 (Modal) */
+        .literary-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(43, 41, 39, 0.4);
+            justify-content: center; align-items: center;
+            z-index: 2000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-card {
+            background-color: #faf8f5;
+            border: 1px solid var(--border-line);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px; right: 24px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .close-btn:hover { color: var(--text-ink); }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--accent-green);
+            margin: 0;
+            border-bottom: 1px solid var(--border-line);
+            padding-bottom: 12px;
+        }
+
+        .modal-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .modal-col-left {
+            flex: 1;
+            min-width: 220px;
+            border-right: 1px solid var(--border-line);
+            padding-right: 20px;
+        }
+
+        .modal-col-right {
+            flex: 1.5;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin: 0 0 8px 0;
+            letter-spacing: 0.05em;
+        }
+
+        .cover-box { text-align: center; margin-bottom: 16px; }
+        .cover-box img {
+            max-width: 120px;
+            border-radius: 6px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+            background: #eee;
+        }
+
+        .photo-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .photo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-line);
+            font-size: 11px;
+        }
+
+        .literary-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-line);
+            border-radius: 6px;
+            background: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-ink);
+            outline: none;
+            box-sizing: border-box;
+        }
+        .literary-input:focus { border-color: var(--accent-green); }
+
+        .literary-btn-primary {
+            background-color: var(--accent-green);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+        .literary-btn-primary:hover { background-color: var(--accent-green-hover); }
+
+        .literary-btn-sub {
+            background-color: #fff;
+            color: var(--text-ink);
+            border: 1px solid var(--border-line);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .literary-btn-sub:hover { background: #f0ebe1; }
+
+        .literary-btn-sm {
+            background-color: var(--accent-green);
+            color: #fff;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .literary-btn-sm.outline {
+            background: #fff;
+            color: var(--accent-green);
+            border: 1px solid var(--border-line);
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-line);
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
 </BaseLayout>
