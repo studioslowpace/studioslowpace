@@ -2,71 +2,107 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="靜舍 · 書店共讀空間">
-  <!-- 1. 名字輸入遮罩 (Entry Modal) -->
+<Layout title="界限書店 · 共讀空間">
+  <!-- 1. 名字輸入 Modal -->
   <div id="name-modal" class="modal-overlay">
     <div class="modal-card">
-      <h2>「 靜舍 · 書店共讀 」</h2>
-      <p>請輸入您的名字或稱號，與書房中的同行者一同靜心閱讀。</p>
-      <input type="text" id="username-input" placeholder="例如：尋書人、溫熱茶水..." maxlength="12" autofocus />
-      <button id="enter-btn" class="solid-btn">推門入館</button>
+      <h2>「 歡迎來到界限書店 」</h2>
+      <p>請輸入你的稱號，走進書店挑個位置坐下讀本書吧。</p>
+      <input type="text" id="username-input" placeholder="例如：尋書人、讀者阿Mi..." maxlength="12" autofocus />
+      <button id="enter-btn" class="solid-btn">進入書店</button>
     </div>
   </div>
 
-  <!-- 2. 主畫面：書店佈局 -->
+  <!-- 2. 入座填書 Modal -->
+  <div id="read-modal" class="modal-overlay" style="display: none; opacity: 0;">
+    <div class="modal-card">
+      <h3 id="seat-title">🪑 準備入座</h3>
+      <p>請填寫你正在閱讀的書籍（狀態將設為：🛑 請勿打擾）：</p>
+      <input type="text" id="book-input" placeholder="例如：《香港歷史微型展》、《少女核》..." maxlength="20" />
+      <div class="modal-actions">
+        <button id="cancel-seat-btn" class="ghost-btn">取消</button>
+        <button id="confirm-seat-btn" class="solid-btn">開始專心閱讀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 主畫面：界限書店平面佈局 -->
   <main class="bookstore-container">
-    <!-- 頂部資訊列 -->
     <header class="store-header">
       <div class="header-content">
-        <a href="/" class="back-link" title="返回主站">← 返回主站</a>
+        <a href="/" class="back-link">← 返回主站</a>
         <span class="user-welcome">讀者：<strong id="display-name">訪客</strong></span>
         <button id="audio-toggle" class="audio-btn">🔊 聲音：關閉</button>
       </div>
     </header>
 
-    {/* 書店內部互動舞台 (Canvas / Floor Layout) */}
+    <!-- 書店內景（參考圖畫法） -->
     <div id="bookstore-floor" class="bookstore-floor">
-      {/* 背景裝飾：書架與櫃檯 */}
-      <div class="bookshelf shelf-left" aria-hidden="true"></div>
-      <div class="bookshelf shelf-right" aria-hidden="true"></div>
-      <div class="counter-desk" aria-hidden="true"></div>
+      <!-- 佈局標籤與圖示區 -->
+      
+      <!-- 1. 香港主題書牆 (上方大書牆) -->
+      <div class="zone-wall" style="top: 15px; left: 50%; transform: translateX(-50%); width: 85%; height: 50px;">
+        📚 香港主題書牆 & 出版社專櫃
+      </div>
 
-      {/* 閱讀座位區（點擊椅子可坐下） */}
-      <div class="reading-spot" data-x="25" data-y="65" title="點擊入座">🪑 窗邊木椅</div>
-      <div class="reading-spot" data-x="75" data-y="65" title="點擊入座">🪑 角落沙發</div>
-      <div class="reading-spot" data-x="50" data-y="40" title="點擊入座">🪑 中央長桌</div>
+      <!-- 2. 新書架 & 主題書台 (中央區域) -->
+      <div class="zone-table" style="top: 140px; left: 35%; width: 140px; height: 90px;">
+        📖 主題書台 / 新書架
+      </div>
 
-      {/* 玩家與其他人的代表人物會動態渲染在這裡 */}
+      <!-- 3. 收銀處 & 店長 Mi 工作區 (右上角) -->
+      <div class="zone-desk" style="top: 80px; right: 25px; width: 120px; height: 100px;">
+        ☕ 收銀處 / 店長位
+      </div>
+
+      <!-- 4. 入口區 (左下角) -->
+      <div class="zone-entrance" style="bottom: 20px; left: 20px;">
+        🚪 入口 Entrance
+      </div>
+
+      <!-- 🪑 可互動座位區 (點擊觸發填書) -->
+      <div class="seat-spot" data-id="seat-1" data-x="20" data-y="75" data-name="入口木椅區">
+        🪑 入口木椅
+      </div>
+      <div class="seat-spot" data-id="seat-2" data-x="75" data-y="75" data-name="閱讀角沙發">
+        🛋️ 專心閱讀角
+      </div>
+      <div class="seat-spot" data-id="seat-3" data-x="68" data-y="40" data-name="高腳閱讀檯">
+        🪑 靠牆高腳椅
+      </div>
+      <div class="seat-spot" data-id="seat-4" data-x="35" data-y="40" data-name="書台旁小凳">
+        🪑 書台旁小凳
+      </div>
+
+      <!-- 動態人物層 -->
       <div id="avatars-layer"></div>
     </div>
 
-    {/* 底部互動工具塢 */}
+    <!-- 底部導覽 -->
     <footer class="store-footer">
       <div class="dock-bar">
-        <button id="action-greet" class="dock-item"><span>🙏</span><span>合十致意</span></button>
-        <div class="dock-divider"></div>
+        <button id="leave-seat-btn" class="dock-item" style="display:none;"><span>🚶</span><span>站起來走走</span></button>
         <button id="action-moktak" class="dock-item"><span>🪵</span><span>敲敲木魚</span><span id="moktak-count" class="count-tag">0</span></button>
-        <div class="dock-divider"></div>
-        <button id="action-note" class="dock-item"><span>📖</span><span>共讀隨筆</span></button>
+        <button id="action-greet" class="dock-item"><span>🙏</span><span>合十致意</span></button>
       </div>
     </footer>
   </main>
 
   <style is:global>
     body {
-      background-color: #f4f1ea;
-      color: #4d5144;
+      background-color: #f2eee5;
+      color: #3d3b35;
       font-family: serif;
       margin: 0;
       padding: 0;
       overflow: hidden;
     }
 
-    /* 名字輸入遮罩 */
+    /* Modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(77, 81, 68, 0.4);
+      background: rgba(60, 58, 52, 0.5);
       backdrop-filter: blur(6px);
       display: flex;
       align-items: center;
@@ -75,56 +111,66 @@ import Layout from '../layouts/Layout.astro';
       transition: opacity 0.3s ease;
     }
     .modal-card {
-      background: #eeece3;
-      border: 1px solid #d6d2c4;
-      padding: 32px;
-      border-radius: 20px;
+      background: #fcfbfa;
+      border: 1px solid #dcd6c8;
+      padding: 28px;
+      border-radius: 18px;
       text-align: center;
       width: 90%;
       max-width: 380px;
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.12);
     }
-    .modal-card h2 {
-      font-size: 20px;
+    .modal-card h2, .modal-card h3 {
       margin-top: 0;
-      color: #3a3d32;
+      color: #2b2a26;
+      font-weight: 500;
     }
     .modal-card p {
       font-size: 13px;
-      color: #737666;
+      color: #706c62;
       line-height: 1.5;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .modal-card input {
       width: 100%;
-      padding: 12px 16px;
-      border: 1px solid #d6d2c4;
-      border-radius: 12px;
-      background: #fdfcf7;
+      padding: 10px 14px;
+      border: 1px solid #d0c8b6;
+      border-radius: 10px;
+      background: #fff;
       font-size: 14px;
       box-sizing: border-box;
       outline: none;
       margin-bottom: 16px;
       text-align: center;
-      color: #4d5144;
+      color: #3d3b35;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
     }
     .solid-btn {
-      width: 100%;
-      background: #5c4033;
-      color: #eeece3;
+      flex: 1;
+      background: #4a3b32;
+      color: #f4f1ea;
       border: none;
-      padding: 12px;
-      border-radius: 12px;
+      padding: 10px;
+      border-radius: 10px;
       font-size: 14px;
-      font-weight: 500;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .solid-btn:hover { background: #4a3328; }
+    .ghost-btn {
+      flex: 1;
+      background: transparent;
+      color: #706c62;
+      border: 1px solid #d0c8b6;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
 
-    /* 書店主佈局 */
+    /* Bookstore Floor Container */
     .bookstore-container {
-      position: relative;
       width: 100vw;
       height: 100vh;
       display: flex;
@@ -133,120 +179,156 @@ import Layout from '../layouts/Layout.astro';
       box-sizing: border-box;
     }
     .store-header {
-      padding: 16px 24px;
+      padding: 14px 20px;
       z-index: 20;
     }
     .header-content {
-      max-width: 800px;
+      max-width: 850px;
       margin: 0 auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(238, 236, 227, 0.85);
+      background: rgba(245, 241, 233, 0.9);
       backdrop-filter: blur(8px);
-      padding: 10px 20px;
+      padding: 8px 18px;
       border-radius: 9999px;
-      border: 1px solid #d6d2c4;
-      font-size: 14px;
+      border: 1px solid #dcd6c8;
+      font-size: 13px;
     }
-    .back-link {
-      color: #64664f;
-      text-decoration: none;
-    }
-    .back-link:hover { text-decoration: underline; }
+    .back-link { color: #605c52; text-decoration: none; }
     .audio-btn {
       background: none;
-      border: 1px solid #d6d2c4;
-      padding: 4px 12px;
+      border: 1px solid #d0c8b6;
+      padding: 4px 10px;
       border-radius: 9999px;
       cursor: pointer;
       font-size: 12px;
-      color: #4d5144;
     }
 
-    /* 書店地板（可點擊移動或走動） */
+    /* 書店底圖區域 */
     .bookstore-floor {
       position: relative;
       flex: 1;
-      max-width: 900px;
+      max-width: 880px;
       width: 92%;
       margin: 0 auto;
-      background: #e9e3d4;
-      border: 2px dashed #d6d2c4;
-      border-radius: 24px;
+      background: #e8e2d3;
+      border: 2px solid #c8beaa;
+      border-radius: 20px;
       overflow: hidden;
       cursor: pointer;
-      box-shadow: inset 0 4px 12px rgba(0,0,0,0.03);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.04);
     }
 
-    /* 書店裝飾配件 */
-    .bookshelf {
+    /* 各展區視覺樣式 (仿平面圖) */
+    .zone-wall {
       position: absolute;
-      top: 20px;
-      width: 120px;
-      height: 180px;
-      background: #7a5c4b;
+      background: #d8ceb9;
+      border: 1px dashed #b0a48e;
       border-radius: 8px;
-      box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #524d42;
     }
-    .shelf-left { left: 30px; }
-    .shelf-right { right: 30px; }
-    .counter-desk {
+    .zone-table {
       position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 200px;
-      height: 60px;
-      background: #6b4f3f;
-      border-radius: 8px;
-    }
-
-    /* 座位區 */
-    .reading-spot {
-      position: absolute;
-      padding: 6px 12px;
-      background: rgba(220, 212, 195, 0.8);
-      border: 1px solid #c2b8a3;
-      border-radius: 8px;
+      background: #c2b296;
+      border: 1px solid #a6967a;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 12px;
-      color: #5c5446;
-      pointer-events: none;
-      transform: translate(-50%, -50%);
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+    }
+    .zone-desk {
+      position: absolute;
+      background: #8c7362;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #f4f1ea;
+      text-align: center;
+    }
+    .zone-entrance {
+      position: absolute;
+      font-size: 12px;
+      color: #8c8577;
+      border-bottom: 2px solid #8c8577;
+      padding-bottom: 2px;
     }
 
-    /* 角色標籤與樣式 */
+    /* 可選座位 */
+    .seat-spot {
+      position: absolute;
+      padding: 8px 12px;
+      background: #ffffff;
+      border: 2px solid #4a3b32;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #4a3b32;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      transition: transform 0.2s, background 0.2s;
+      z-index: 10;
+    }
+    .seat-spot:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      background: #f4efe4;
+    }
+
+    /* 角色標籤 */
     .avatar-node {
       position: absolute;
       transform: translate(-50%, -50%);
-      transition: left 0.8s ease-out, top 0.8s ease-out;
+      transition: left 0.7s ease-out, top 0.7s ease-out;
       display: flex;
       flex-direction: column;
       align-items: center;
       pointer-events: none;
+      z-index: 20;
+    }
+    .avatar-status-tag {
+      background: #c0392b;
+      color: #fff;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      margin-bottom: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      white-space: nowrap;
     }
     .avatar-icon {
-      font-size: 24px;
-      animation: avatar-breathe 2s ease-in-out infinite;
+      font-size: 26px;
     }
-    .avatar-name {
-      background: #5c4033;
-      color: #eeece3;
+    .avatar-info {
+      background: #4a3b32;
+      color: #f4f1ea;
       font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 9999px;
+      padding: 3px 8px;
+      border-radius: 8px;
       white-space: nowrap;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-top: 4px;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      margin-top: 2px;
     }
-    @keyframes avatar-breathe {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
+    .avatar-book {
+      font-size: 10px;
+      color: #d0c8b6;
+      display: block;
     }
 
-    /* 底部導覽列 */
+    /* Footer Dock */
     .store-footer {
-      padding: 16px 24px;
+      padding: 14px 20px;
       display: flex;
       justify-content: center;
       z-index: 20;
@@ -254,38 +336,30 @@ import Layout from '../layouts/Layout.astro';
     .dock-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(238, 236, 227, 0.9);
+      gap: 10px;
+      background: rgba(245, 241, 233, 0.9);
       backdrop-filter: blur(8px);
-      padding: 8px 16px;
-      border-radius: 16px;
-      border: 1px solid #d6d2c4;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+      padding: 6px 16px;
+      border-radius: 14px;
+      border: 1px solid #dcd6c8;
     }
     .dock-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 12px;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
       border: none;
       background: transparent;
       cursor: pointer;
       font-size: 13px;
-      font-weight: 500;
-      color: #4d5144;
-      transition: background 0.2s;
+      color: #3d3b35;
     }
-    .dock-item:hover { background: #ded9c7; }
-    .dock-divider {
-      width: 1px;
-      height: 20px;
-      background-color: #d6d2c4;
-    }
+    .dock-item:hover { background: #e2dac8; }
     .count-tag {
-      font-size: 12px;
-      background: #dfd8c2;
-      padding: 2px 6px;
+      font-size: 11px;
+      background: #d0c8b6;
+      padding: 1px 5px;
       border-radius: 4px;
       font-family: monospace;
     }
@@ -295,87 +369,147 @@ import Layout from '../layouts/Layout.astro';
     import * as Tone from 'tone';
 
     let myName = '訪客';
-    let myX = 50; // 百分比座標 X
-    let myY = 80; // 百分比座標 Y
-    let isSitting = false;
+    let myX = 20; // 預設在入口
+    let myY = 85;
+    let currentSeatId: string | null = null;
+    let readingBook = '';
+    let isDND = false; // 不想被打擾狀態
     let moktakCount = 0;
     let audioEnabled = false;
 
-    const modal = document.getElementById('name-modal');
-    const input = document.getElementById('username-input') as HTMLInputElement;
+    // DOM 元素
+    const nameModal = document.getElementById('name-modal');
+    const readModal = document.getElementById('read-modal');
+    const usernameInput = document.getElementById('username-input') as HTMLInputElement;
+    const bookInput = document.getElementById('book-input') as HTMLInputElement;
     const enterBtn = document.getElementById('enter-btn');
+    const confirmSeatBtn = document.getElementById('confirm-seat-btn');
+    const cancelSeatBtn = document.getElementById('cancel-seat-btn');
     const displayName = document.getElementById('display-name');
     const floor = document.getElementById('bookstore-floor');
     const avatarsLayer = document.getElementById('avatars-layer');
+    const leaveSeatBtn = document.getElementById('leave-seat-btn');
     const audioToggle = document.getElementById('audio-toggle');
     const moktakBtn = document.getElementById('action-moktak');
     const moktakCountSpan = document.getElementById('moktak-count');
     const greetBtn = document.getElementById('action-greet');
 
-    // 模擬其他在書店裡的同行者
+    // 暫存準備入座的目標
+    let pendingSeat: { id: string; x: number; y: number; name: string } | null = null;
+
+    // 模擬店內其他讀者（已設為專心閱讀狀態）
     const peers = [
-      { id: 1, name: '尋書人·阿朗', x: 25, y: 65, icon: '🪑' },
-      { id: 2, name: '安靜的貓', x: 75, y: 65, icon: '🪑' },
-      { id: 3, name: '微風筆記', x: 50, y: 40, icon: '🪑' }
+      { id: 'p1', name: '店長 Mi', x: 80, y: 30, book: '店長工作日誌', isDND: true },
+      { id: 'p2', name: '讀者 阿貓', x: 75, y: 75, book: '《香港歷史微型展》', isDND: true }
     ];
 
-    // 進入書店
+    // 1. 進入書店
     enterBtn?.addEventListener('click', () => {
-      const val = input?.value.trim();
-      if (val) {
-        myName = val;
-      } else {
-        myName = '遊讀者';
-      }
+      const val = usernameInput?.value.trim();
+      myName = val ? val : '獨立讀者';
       if (displayName) displayName.textContent = myName;
-      if (modal) modal.style.opacity = '0';
-      setTimeout(() => { if (modal) modal.style.display = 'none'; }, 300);
+      if (nameModal) {
+        nameModal.style.opacity = '0';
+        setTimeout(() => { nameModal.style.display = 'none'; }, 300);
+      }
       renderAvatars();
     });
 
-    // 點擊地板讓人物走動或入座
+    // 2. 點擊座位：開彈窗填寫書名
+    document.querySelectorAll('.seat-spot').forEach(seat => {
+      seat.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止地圖點擊
+        const target = e.currentTarget as HTMLElement;
+        const id = target.dataset.id!;
+        const x = parseFloat(target.dataset.x!);
+        const y = parseFloat(target.dataset.y!);
+        const name = target.dataset.name!;
+
+        pendingSeat = { id, x, y, name };
+
+        // 開啟填書 Modal
+        const seatTitle = document.getElementById('seat-title');
+        if (seatTitle) seatTitle.textContent = `🪑 入座：${name}`;
+        if (bookInput) bookInput.value = readingBook;
+        if (readModal) {
+          readModal.style.display = 'flex';
+          setTimeout(() => { readModal.style.opacity = '1'; }, 10);
+        }
+      });
+    });
+
+    // 3. 確認入座（設為不想被打擾）
+    confirmSeatBtn?.addEventListener('click', () => {
+      if (pendingSeat) {
+        myX = pendingSeat.x;
+        myY = pendingSeat.y;
+        currentSeatId = pendingSeat.id;
+        readingBook = bookInput?.value.trim() || '自主靜心閱讀';
+        isDND = true; // 狀態變更為：請勿打擾
+
+        closeReadModal();
+        if (leaveSeatBtn) leaveSeatBtn.style.display = 'flex';
+        renderAvatars();
+      }
+    });
+
+    // 取消入座
+    cancelSeatBtn?.addEventListener('click', closeReadModal);
+
+    function closeReadModal() {
+      if (readModal) {
+        readModal.style.opacity = '0';
+        setTimeout(() => { readModal.style.display = 'none'; }, 300);
+      }
+    }
+
+    // 4. 點擊地板任意走動（若原本在座則離座，還原狀態）
     floor?.addEventListener('click', (e) => {
       const rect = floor.getBoundingClientRect();
-      const clickX = ((e.clientX - rect.left) / rect.width) * 100;
-      const clickY = ((e.clientY - rect.top) / rect.height) * 100;
-
-      // 檢查是否點擊了座位區附近 (容許 8% 誤差)
-      const spots = [
-        { x: 25, y: 65 },
-        { x: 75, y: 65 },
-        { x: 50, y: 40 }
-      ];
-
-      const targetSpot = spots.find(s => Math.abs(s.x - clickX) < 8 && Math.abs(s.y - clickY) < 8);
-
-      if (targetSpot) {
-        myX = targetSpot.x;
-        myY = targetSpot.y;
-        isSitting = true;
-      } else {
-        myX = clickX;
-        myY = clickY;
-        isSitting = false;
-      }
+      myX = ((e.clientX - rect.left) / rect.width) * 100;
+      myY = ((e.clientY - rect.top) / rect.height) * 100;
+      
+      // 地板走動會解除坐姿與請勿打擾
+      currentSeatId = null;
+      isDND = false;
+      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
       renderAvatars();
     });
 
-    // 渲染人物位置
+    // 5. 手動起立
+    leaveSeatBtn?.addEventListener('click', () => {
+      currentSeatId = null;
+      isDND = false;
+      myY += 8; // 稍微向下移出椅子
+      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      renderAvatars();
+    });
+
+    // 6. 畫出所有人與狀態標籤
     function renderAvatars() {
       if (!avatarsLayer) return;
+
       let html = `
         <div class="avatar-node" style="left: ${myX}%; top: ${myY}%;">
-          <div class="avatar-icon">${isSitting ? '🧘' : '🚶'}</div>
-          <div class="avatar-name">${myName} (我)</div>
+          ${isDND ? `<div class="avatar-status-tag">🛑 請勿打擾</div>` : ''}
+          <div class="avatar-icon">${isDND ? '📖' : '🚶'}</div>
+          <div class="avatar-info">
+            <div>${myName} (我)</div>
+            ${isDND ? `<span class="avatar-book">讀：《${readingBook}》</span>` : ''}
+          </div>
         </div>
       `;
 
-      // 渲染其他同行者
+      // 其他同行者
       peers.forEach(p => {
         html += `
           <div class="avatar-node" style="left: ${p.x}%; top: ${p.y}%;">
+            ${p.isDND ? `<div class="avatar-status-tag">🛑 請勿打擾</div>` : ''}
             <div class="avatar-icon">📖</div>
-            <div class="avatar-name">${p.name}</div>
+            <div class="avatar-info">
+              <div>${p.name}</div>
+              <span class="avatar-book">讀：${p.book}</span>
+            </div>
           </div>
         `;
       });
@@ -383,14 +517,13 @@ import Layout from '../layouts/Layout.astro';
       avatarsLayer.innerHTML = html;
     }
 
-    // 音效開關
+    // 音效控制
     audioToggle?.addEventListener('click', async () => {
       await Tone.start();
       audioEnabled = !audioEnabled;
       if (audioToggle) audioToggle.textContent = audioEnabled ? '🔊 聲音：開啟' : '🔊 聲音：關閉';
     });
 
-    // 敲木魚
     moktakBtn?.addEventListener('click', async () => {
       if (audioEnabled) {
         const synth = new Tone.Synth({
@@ -403,12 +536,14 @@ import Layout from '../layouts/Layout.astro';
       if (moktakCountSpan) moktakCountSpan.textContent = String(moktakCount);
     });
 
-    // 合十問候
     greetBtn?.addEventListener('click', () => {
-      alert(`🙏 ${myName} 向書店裡的所有同行者合十問候，祝大家閱讀愉快。`);
+      if (isDND) {
+        alert('💡 你目前處於「請勿打擾」狀態，正專心閱讀中。可以點擊地板站起來再與大家互動喔！');
+      } else {
+        alert(`🙏 ${myName} 向書店裡的讀者們合十致意。`);
+      }
     });
 
-    // 初始化渲染
     renderAvatars();
   </script>
 </Layout>
