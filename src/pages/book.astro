@@ -418,8 +418,16 @@ async function searchBooks() {
         }
 
         function toggleModal(show) {
-            document.getElementById('bookModal').style.display = show ? 'flex' : 'none';
-        }
+    const modal = document.getElementById('bookModal');
+    if (!modal) return;
+    
+    if (show) {
+        modal.style.setProperty('display', 'flex', 'important');
+    } else {
+        modal.style.setProperty('display', 'none', 'important');
+    }
+}
+
         function closeModal(e) {
             if(e.target.id === 'bookModal') toggleModal(false);
         }
