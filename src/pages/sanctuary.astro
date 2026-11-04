@@ -2,181 +2,254 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="靜舍 · 共讀空間">
-  <main class="zen-container">
-    <!-- 頂部導覽列 -->
-    <header class="zen-header">
-      <div class="zen-nav-box">
-        <a href="/" class="icon-btn" title="返回主站">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
-        </a>
-        <button id="room-btn" class="nav-text-btn">
-          <span>靜舍</span>
-          <span class="room-badge">伺服器 98</span>
-        </button>
-        <button id="people-btn" class="people-badge">
-          <span class="pulse-dot"></span>
-          <span>5/100 人共讀中</span>
-        </button>
+<Layout title="靜舍 · 書店共讀空間">
+  <!-- 1. 名字輸入遮罩 (Entry Modal) -->
+  <div id="name-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2>「 靜舍 · 書店共讀 」</h2>
+      <p>請輸入您的名字或稱號，與書房中的同行者一同靜心閱讀。</p>
+      <input type="text" id="username-input" placeholder="例如：尋書人、溫熱茶水..." maxlength="12" autofocus />
+      <button id="enter-btn" class="solid-btn">推門入館</button>
+    </div>
+  </div>
+
+  <!-- 2. 主畫面：書店佈局 -->
+  <main class="bookstore-container">
+    <!-- 頂部資訊列 -->
+    <header class="store-header">
+      <div class="header-content">
+        <a href="/" class="back-link" title="返回主站">← 返回主站</a>
+        <span class="user-welcome">讀者：<strong id="display-name">訪客</strong></span>
+        <button id="audio-toggle" class="audio-btn">🔊 聲音：關閉</button>
       </div>
     </header>
 
-    {/* 中央主視覺 */}
-    <div class="zen-center">
-      <button id="chant-btn" class="chant-main-btn">
-        🔔 敲響頌缽 靜心聆聽
-      </button>
+    {/* 書店內部互動舞台 (Canvas / Floor Layout) */}
+    <div id="bookstore-floor" class="bookstore-floor">
+      {/* 背景裝飾：書架與櫃檯 */}
+      <div class="bookshelf shelf-left" aria-hidden="true"></div>
+      <div class="bookshelf shelf-right" aria-hidden="true"></div>
+      <div class="counter-desk" aria-hidden="true"></div>
 
-      <div class="zen-intro">
-        <h1>「 靜舍 · 共讀空間 」</h1>
-        <p>在這裡，我們不急著翻頁。<br />與各地同行者靜靜坐著，點一盞心燈，讀一本書。</p>
-      </div>
+      {/* 閱讀座位區（點擊椅子可坐下） */}
+      <div class="reading-spot" data-x="25" data-y="65" title="點擊入座">🪑 窗邊木椅</div>
+      <div class="reading-spot" data-x="75" data-y="65" title="點擊入座">🪑 角落沙發</div>
+      <div class="reading-spot" data-x="50" data-y="40" title="點擊入座">🪑 中央長桌</div>
 
-      <div id="toast" class="toast-msg">靜心閱讀，細品慢活 🍵</div>
+      {/* 玩家與其他人的代表人物會動態渲染在這裡 */}
+      <div id="avatars-layer"></div>
     </div>
 
-    {/* 底部互動工具列 */}
-    <footer class="zen-footer">
-      <nav class="dock-bar">
-        <button class="dock-item"><span>🙏</span><span>合十問候</span></button>
+    {/* 底部互動工具塢 */}
+    <footer class="store-footer">
+      <div class="dock-bar">
+        <button id="action-greet" class="dock-item"><span>🙏</span><span>合十致意</span></button>
         <div class="dock-divider"></div>
-        <button id="moktak-btn" class="dock-item"><span>🪵</span><span>敲敲木魚</span><span id="moktak-count" class="count-tag">0</span></button>
+        <button id="action-moktak" class="dock-item"><span>🪵</span><span>敲敲木魚</span><span id="moktak-count" class="count-tag">0</span></button>
         <div class="dock-divider"></div>
-        <button class="dock-item"><span>📖</span><span>共讀隨筆</span></button>
-      </nav>
+        <button id="action-note" class="dock-item"><span>📖</span><span>共讀隨筆</span></button>
+      </div>
     </footer>
   </main>
 
   <style is:global>
     body {
-      background-color: #eeece3;
+      background-color: #f4f1ea;
       color: #4d5144;
       font-family: serif;
       margin: 0;
       padding: 0;
       overflow: hidden;
     }
-    .zen-container {
+
+    /* 名字輸入遮罩 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(77, 81, 68, 0.4);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.3s ease;
+    }
+    .modal-card {
+      background: #eeece3;
+      border: 1px solid #d6d2c4;
+      padding: 32px;
+      border-radius: 20px;
+      text-align: center;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    .modal-card h2 {
+      font-size: 20px;
+      margin-top: 0;
+      color: #3a3d32;
+    }
+    .modal-card p {
+      font-size: 13px;
+      color: #737666;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .modal-card input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #d6d2c4;
+      border-radius: 12px;
+      background: #fdfcf7;
+      font-size: 14px;
+      box-sizing: border-box;
+      outline: none;
+      margin-bottom: 16px;
+      text-align: center;
+      color: #4d5144;
+    }
+    .solid-btn {
+      width: 100%;
+      background: #5c4033;
+      color: #eeece3;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .solid-btn:hover { background: #4a3328; }
+
+    /* 書店主佈局 */
+    .bookstore-container {
       position: relative;
       width: 100vw;
       height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 24px;
       box-sizing: border-box;
     }
-    .zen-header {
-      display: flex;
-      justify-content: center;
-      width: 100%;
+    .store-header {
+      padding: 16px 24px;
       z-index: 20;
     }
-    .zen-nav-box {
+    .header-content {
+      max-width: 800px;
+      margin: 0 auto;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      background: rgba(238, 236, 227, 0.9);
+      background: rgba(238, 236, 227, 0.85);
       backdrop-filter: blur(8px);
       padding: 10px 20px;
       border-radius: 9999px;
       border: 1px solid #d6d2c4;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    .icon-btn {
-      padding: 6px;
-      border-radius: 50%;
-      color: #4d5144;
-      display: flex;
-      align-items: center;
-      justify-content: text-decoration: none;
-      transition: background 0.2s;
-    }
-    .icon-btn:hover { background: #ded9c7; }
-    .nav-text-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
       font-size: 14px;
-      font-weight: 500;
-      color: #4d5144;
     }
-    .room-badge {
-      background: #dfd8c2;
-      padding: 2px 10px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .people-badge {
-      background: #e3ded0;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
+    .back-link {
       color: #64664f;
+      text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .audio-btn {
+      background: none;
+      border: 1px solid #d6d2c4;
       padding: 4px 12px;
       border-radius: 9999px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #4d5144;
     }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: #059669;
+
+    /* 書店地板（可點擊移動或走動） */
+    .bookstore-floor {
+      position: relative;
+      flex: 1;
+      max-width: 900px;
+      width: 92%;
+      margin: 0 auto;
+      background: #e9e3d4;
+      border: 2px dashed #d6d2c4;
+      border-radius: 24px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.03);
     }
-    .zen-center {
+
+    /* 書店裝飾配件 */
+    .bookshelf {
+      position: absolute;
+      top: 20px;
+      width: 120px;
+      height: 180px;
+      background: #7a5c4b;
+      border-radius: 8px;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.2);
+    }
+    .shelf-left { left: 30px; }
+    .shelf-right { right: 30px; }
+    .counter-desk {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 60px;
+      background: #6b4f3f;
+      border-radius: 8px;
+    }
+
+    /* 座位區 */
+    .reading-spot {
+      position: absolute;
+      padding: 6px 12px;
+      background: rgba(220, 212, 195, 0.8);
+      border: 1px solid #c2b8a3;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #5c5446;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+
+    /* 角色標籤與樣式 */
+    .avatar-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      transition: left 0.8s ease-out, top 0.8s ease-out;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      text-align: center;
-      margin: auto 0;
+      pointer-events: none;
     }
-    .chant-main-btn {
-      background-color: #5c4033;
-      color: #eeece3;
-      padding: 10px 24px;
-      border-radius: 9999px;
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      margin-bottom: 32px;
-      transition: transform 0.1s;
-    }
-    .chant-main-btn:active { transform: scale(0.98); }
-    .zen-intro h1 {
+    .avatar-icon {
       font-size: 24px;
-      font-weight: normal;
-      letter-spacing: 1px;
-      color: #3a3d32;
-      margin-bottom: 12px;
+      animation: avatar-breathe 2s ease-in-out infinite;
     }
-    .zen-intro p {
-      font-size: 14px;
-      color: #737666;
-      line-height: 1.6;
-      margin: 0;
-    }
-    .toast-msg {
-      margin-top: 24px;
-      background-color: rgba(77, 81, 68, 0.9);
+    .avatar-name {
+      background: #5c4033;
       color: #eeece3;
-      font-size: 12px;
-      padding: 6px 16px;
+      font-size: 11px;
+      padding: 2px 8px;
       border-radius: 9999px;
+      white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-top: 4px;
     }
-    .zen-footer {
+    @keyframes avatar-breathe {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* 底部導覽列 */
+    .store-footer {
+      padding: 16px 24px;
       display: flex;
       justify-content: center;
-      width: 100%;
-      padding-bottom: 10px;
+      z-index: 20;
     }
     .dock-bar {
       display: flex;
@@ -184,7 +257,7 @@ import Layout from '../layouts/Layout.astro';
       gap: 8px;
       background: rgba(238, 236, 227, 0.9);
       backdrop-filter: blur(8px);
-      padding: 8px;
+      padding: 8px 16px;
       border-radius: 16px;
       border: 1px solid #d6d2c4;
       box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
@@ -193,12 +266,12 @@ import Layout from '../layouts/Layout.astro';
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 16px;
+      padding: 8px 14px;
       border-radius: 12px;
       border: none;
       background: transparent;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: #4d5144;
       transition: background 0.2s;
@@ -206,13 +279,13 @@ import Layout from '../layouts/Layout.astro';
     .dock-item:hover { background: #ded9c7; }
     .dock-divider {
       width: 1px;
-      height: 24px;
+      height: 20px;
       background-color: #d6d2c4;
     }
     .count-tag {
       font-size: 12px;
       background: #dfd8c2;
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
       font-family: monospace;
     }
@@ -221,44 +294,121 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import * as Tone from 'tone';
 
+    let myName = '訪客';
+    let myX = 50; // 百分比座標 X
+    let myY = 80; // 百分比座標 Y
+    let isSitting = false;
     let moktakCount = 0;
-    const moktakBtn = document.getElementById('moktak-btn');
-    const moktakCountSpan = document.getElementById('moktak-count');
-    const chantBtn = document.getElementById('chant-btn');
-    const toast = document.getElementById('toast');
+    let audioEnabled = false;
 
-    function showToast(msg) {
-      if(toast) {
-        toast.textContent = msg;
-        setTimeout(() => { toast.textContent = '靜心閱讀，細品慢活 🍵'; }, 3500);
+    const modal = document.getElementById('name-modal');
+    const input = document.getElementById('username-input') as HTMLInputElement;
+    const enterBtn = document.getElementById('enter-btn');
+    const displayName = document.getElementById('display-name');
+    const floor = document.getElementById('bookstore-floor');
+    const avatarsLayer = document.getElementById('avatars-layer');
+    const audioToggle = document.getElementById('audio-toggle');
+    const moktakBtn = document.getElementById('action-moktak');
+    const moktakCountSpan = document.getElementById('moktak-count');
+    const greetBtn = document.getElementById('action-greet');
+
+    // 模擬其他在書店裡的同行者
+    const peers = [
+      { id: 1, name: '尋書人·阿朗', x: 25, y: 65, icon: '🪑' },
+      { id: 2, name: '安靜的貓', x: 75, y: 65, icon: '🪑' },
+      { id: 3, name: '微風筆記', x: 50, y: 40, icon: '🪑' }
+    ];
+
+    // 進入書店
+    enterBtn?.addEventListener('click', () => {
+      const val = input?.value.trim();
+      if (val) {
+        myName = val;
+      } else {
+        myName = '遊讀者';
       }
+      if (displayName) displayName.textContent = myName;
+      if (modal) modal.style.opacity = '0';
+      setTimeout(() => { if (modal) modal.style.display = 'none'; }, 300);
+      renderAvatars();
+    });
+
+    // 點擊地板讓人物走動或入座
+    floor?.addEventListener('click', (e) => {
+      const rect = floor.getBoundingClientRect();
+      const clickX = ((e.clientX - rect.left) / rect.width) * 100;
+      const clickY = ((e.clientY - rect.top) / rect.height) * 100;
+
+      // 檢查是否點擊了座位區附近 (容許 8% 誤差)
+      const spots = [
+        { x: 25, y: 65 },
+        { x: 75, y: 65 },
+        { x: 50, y: 40 }
+      ];
+
+      const targetSpot = spots.find(s => Math.abs(s.x - clickX) < 8 && Math.abs(s.y - clickY) < 8);
+
+      if (targetSpot) {
+        myX = targetSpot.x;
+        myY = targetSpot.y;
+        isSitting = true;
+      } else {
+        myX = clickX;
+        myY = clickY;
+        isSitting = false;
+      }
+      renderAvatars();
+    });
+
+    // 渲染人物位置
+    function renderAvatars() {
+      if (!avatarsLayer) return;
+      let html = `
+        <div class="avatar-node" style="left: ${myX}%; top: ${myY}%;">
+          <div class="avatar-icon">${isSitting ? '🧘' : '🚶'}</div>
+          <div class="avatar-name">${myName} (我)</div>
+        </div>
+      `;
+
+      // 渲染其他同行者
+      peers.forEach(p => {
+        html += `
+          <div class="avatar-node" style="left: ${p.x}%; top: ${p.y}%;">
+            <div class="avatar-icon">📖</div>
+            <div class="avatar-name">${p.name}</div>
+          </div>
+        `;
+      });
+
+      avatarsLayer.innerHTML = html;
     }
 
-    moktakBtn?.addEventListener('click', async () => {
+    // 音效開關
+    audioToggle?.addEventListener('click', async () => {
       await Tone.start();
-      const synth = new Tone.Synth({
-        oscillator: { type: 'sine' },
-        envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }
-      }).toDestination();
-      synth.triggerAttackRelease('C5', '8n');
-      
-      moktakCount++;
-      if (moktakCountSpan) moktakCountSpan.textContent = String(moktakCount);
-      showToast(`敲擊木魚 🪵 (${moktakCount})`);
+      audioEnabled = !audioEnabled;
+      if (audioToggle) audioToggle.textContent = audioEnabled ? '🔊 聲音：開啟' : '🔊 聲音：關閉';
     });
 
-    chantBtn?.addEventListener('click', async () => {
-      await Tone.start();
-      const metalSynth = new Tone.MetalSynth({
-        frequency: 220,
-        envelope: { attack: 0.001, decay: 1.8, release: 1.5 },
-        harmonicity: 5.1,
-        modulationIndex: 32,
-        resonance: 4000,
-        octaves: 1.5
-      }).toDestination();
-      metalSynth.triggerAttackRelease('A2', '2n');
-      showToast('敲響清淨頌缽 🔔 靜心聆聽');
+    // 敲木魚
+    moktakBtn?.addEventListener('click', async () => {
+      if (audioEnabled) {
+        const synth = new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }
+        }).toDestination();
+        synth.triggerAttackRelease('C5', '8n');
+      }
+      moktakCount++;
+      if (moktakCountSpan) moktakCountSpan.textContent = String(moktakCount);
     });
+
+    // 合十問候
+    greetBtn?.addEventListener('click', () => {
+      alert(`🙏 ${myName} 向書店裡的所有同行者合十問候，祝大家閱讀愉快。`);
+    });
+
+    // 初始化渲染
+    renderAvatars();
   </script>
 </Layout>
