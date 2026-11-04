@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/BaseLayout.astro'; // 你現有的 Layout
+import Zen2DApp from '../components/Zen2DApp.jsx';
+---
+
+<Layout title="靜舍 · 共讀空間">
+  <Zen2DApp client:only="react" />
+</Layout>
