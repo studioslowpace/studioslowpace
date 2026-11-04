@@ -151,9 +151,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <script is:inline>
     const GOOGLE_API_KEY = "你的_GOOGLE_BOOKS_API_KEY";
 
-    window.supabaseUrl = "https://你的-project.supabase.co";
-    window.supabaseKey = "你的_SUPABASE_PUBLISHABLE_KEY";
-    window.TABLE_NAME = "mylibrary";
+        window.supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+        window.supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+        window.TABLE_NAME = 'my_library'; 
+        window.client = supabase.createClient(window.supabaseUrl, window.supabaseKey);
 
     let client = null;
     let currentSearchResults = [];
