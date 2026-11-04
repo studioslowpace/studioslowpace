@@ -1,16 +1,232 @@
 ---
-// 完全不載入 BaseLayout，獨立渲染
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<html lang="zh-HK">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>檢索新圖書 — 空間客舍</title>
-</head>
-<body>
+<BaseLayout title="檢索新圖書 — 空間客舍">
 
+    <!-- 將文青風樣式放入 head 插槽中，確保全域與排版正常載入 -->
+    <Fragment slot="head">
+        <style is:global>
+            body {
+                background-color: #f4f1ea;
+                color: #2b2927;
+                font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
+                margin: 0;
+                padding: 0;
+                line-height: 1.8;
+            }
+
+            .literary-container {
+                max-width: 900px;
+                margin: 40px auto;
+                padding: 0 24px;
+            }
+
+            .literary-header {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+
+            .sub-tag {
+                font-size: 13px;
+                letter-spacing: 0.2em;
+                color: #78746c;
+                text-transform: uppercase;
+                display: block;
+                margin-bottom: 12px;
+            }
+
+            .literary-header h1 {
+                font-size: 32px;
+                font-weight: 400;
+                letter-spacing: 0.05em;
+                color: #2b2927;
+                margin: 0 0 12px 0;
+            }
+
+            .intro-text {
+                font-size: 15px;
+                color: #78746c;
+                font-style: italic;
+                margin: 0;
+            }
+
+            .search-section {
+                margin-bottom: 30px;
+            }
+
+            .search-bar-wrapper {
+                display: flex;
+                gap: 12px;
+                background: #faf8f5;
+                padding: 8px;
+                border-radius: 50px;
+                border: 1px solid #e2ddd5;
+                box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
+            }
+
+            #query {
+                flex: 1;
+                background: transparent;
+                border: none;
+                padding: 12px 24px;
+                font-size: 15px;
+                color: #2b2927;
+                outline: none;
+                font-family: inherit;
+            }
+
+            #query::placeholder {
+                color: #b3aea4;
+            }
+
+            .literary-btn {
+                background-color: #4a5c4e;
+                color: #fff;
+                border: none;
+                padding: 12px 28px;
+                border-radius: 40px;
+                font-size: 14px;
+                letter-spacing: 0.1em;
+                cursor: pointer;
+                transition: background 0.3s ease;
+                font-family: inherit;
+            }
+
+            .literary-btn:hover {
+                background-color: #3b4c3f;
+            }
+
+            .status-msg {
+                text-align: center;
+                font-size: 13px;
+                color: #78746c;
+                margin-top: 14px;
+                letter-spacing: 0.05em;
+            }
+
+            .results-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .literary-card {
+                background: #faf8f5;
+                border: 1px solid #e2ddd5;
+                border-radius: 16px;
+                padding: 28px;
+                display: flex;
+                gap: 24px;
+                box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
+                align-items: flex-start;
+            }
+
+            @media (max-width: 680px) {
+                .literary-card {
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                }
+            }
+
+            .card-cover-wrapper img {
+                width: 110px;
+                height: 160px;
+                object-fit: cover;
+                border-radius: 6px;
+                box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+                background-color: #eee;
+            }
+
+            .card-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .card-header-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .book-title {
+                font-size: 18px;
+                font-weight: 500;
+                color: #2b2927;
+                margin: 0;
+            }
+
+            .book-isbn {
+                font-size: 12px;
+                color: #78746c;
+                letter-spacing: 0.05em;
+            }
+
+            .book-authors {
+                font-size: 14px;
+                color: #4a5c4e;
+                margin: 0;
+                font-weight: 500;
+            }
+
+            .book-metadata {
+                font-size: 12px;
+                color: #78746c;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .book-desc {
+                font-size: 13px;
+                color: #5c574f;
+                line-height: 1.7;
+                margin: 6px 0;
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            .card-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 8px;
+            }
+
+            .literary-btn-sm {
+                background-color: #4a5c4e;
+                color: #fff;
+                border: none;
+                padding: 6px 14px;
+                border-radius: 6px;
+                font-size: 12px;
+                cursor: pointer;
+                transition: opacity 0.2s;
+                font-family: inherit;
+            }
+
+            .literary-btn-sm.outline {
+                background-color: transparent;
+                color: #2b2927;
+                border: 1px solid #e2ddd5;
+            }
+
+            .literary-btn-sm:hover {
+                opacity: 0.85;
+            }
+        </style>
+    </Fragment>
+
+    <!-- 頁面主要內容（會自動填入 BaseLayout 的 <main> 裡面） -->
     <div class="literary-container">
+        
         <!-- 頁面標題 -->
         <header class="literary-header">
             <span class="sub-tag">空間客舍 · 藏書研究室</span>
@@ -29,9 +245,10 @@
 
         <!-- 檢索結果展示區 -->
         <div id="searchResults" class="results-grid"></div>
+
     </div>
 
-    <!-- 核心互動指令碼 -->
+    <!-- 互動指令碼 -->
     <script>
         const GOOGLE_API_KEY = "AIzaSyAALLccQZnHSWI0unwfM6zaS5M8ZzGi4i4";
         let currentSearchResults = []; 
@@ -148,222 +365,4 @@
         };
     </script>
 
-    <!-- 獨立樣式 -->
-    <style>
-        body {
-            background-color: #f4f1ea;
-            color: #2b2927;
-            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.8;
-        }
-
-        .literary-container {
-            max-width: 900px;
-            margin: 60px auto;
-            padding: 0 24px;
-        }
-
-        .literary-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .sub-tag {
-            font-size: 13px;
-            letter-spacing: 0.2em;
-            color: #78746c;
-            text-transform: uppercase;
-            display: block;
-            margin-bottom: 12px;
-        }
-
-        .literary-header h1 {
-            font-size: 32px;
-            font-weight: 400;
-            letter-spacing: 0.05em;
-            color: #2b2927;
-            margin: 0 0 12px 0;
-        }
-
-        .intro-text {
-            font-size: 15px;
-            color: #78746c;
-            font-style: italic;
-            margin: 0;
-        }
-
-        .search-section {
-            margin-bottom: 40px;
-        }
-
-        .search-bar-wrapper {
-            display: flex;
-            gap: 12px;
-            background: #faf8f5;
-            padding: 8px;
-            border-radius: 50px;
-            border: 1px solid #e2ddd5;
-            box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
-        }
-
-        #query {
-            flex: 1;
-            background: transparent;
-            border: none;
-            padding: 12px 24px;
-            font-size: 15px;
-            color: #2b2927;
-            outline: none;
-            font-family: inherit;
-        }
-
-        #query::placeholder {
-            color: #b3aea4;
-        }
-
-        .literary-btn {
-            background-color: #4a5c4e;
-            color: #fff;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 40px;
-            font-size: 14px;
-            letter-spacing: 0.1em;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            font-family: inherit;
-        }
-
-        .literary-btn:hover {
-            background-color: #3b4c3f;
-        }
-
-        .status-msg {
-            text-align: center;
-            font-size: 13px;
-            color: #78746c;
-            margin-top: 14px;
-            letter-spacing: 0.05em;
-        }
-
-        .results-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .literary-card {
-            background: #faf8f5;
-            border: 1px solid #e2ddd5;
-            border-radius: 16px;
-            padding: 28px;
-            display: flex;
-            gap: 24px;
-            box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
-            align-items: flex-start;
-        }
-
-        @media (max-width: 680px) {
-            .literary-card {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-        }
-
-        .card-cover-wrapper img {
-            width: 110px;
-            height: 160px;
-            object-fit: cover;
-            border-radius: 6px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-            background-color: #eee;
-        }
-
-        .card-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .card-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .book-title {
-            font-size: 18px;
-            font-weight: 500;
-            color: #2b2927;
-            margin: 0;
-        }
-
-        .book-isbn {
-            font-size: 12px;
-            color: #78746c;
-            letter-spacing: 0.05em;
-        }
-
-        .book-authors {
-            font-size: 14px;
-            color: #4a5c4e;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .book-metadata {
-            font-size: 12px;
-            color: #78746c;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .book-desc {
-            font-size: 13px;
-            color: #5c574f;
-            line-height: 1.7;
-            margin: 6px 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-        }
-
-        .literary-btn-sm {
-            background-color: #4a5c4e;
-            color: #fff;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            font-family: inherit;
-        }
-
-        .literary-btn-sm.outline {
-            background-color: transparent;
-            color: #2b2927;
-            border: 1px solid #e2ddd5;
-        }
-
-        .literary-btn-sm:hover {
-            opacity: 0.85;
-        }
-    </style>
-</body>
-</html>
+</BaseLayout>
