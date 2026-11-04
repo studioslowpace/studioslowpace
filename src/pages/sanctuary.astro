@@ -2,118 +2,81 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · RPG 沉浸式共讀空間">
-  <!-- 1. RPG 角色建立 / 登入畫面 -->
+<Layout title="空間客舍 · 像素 RPG 共讀空間">
+  <!-- 1. 創角 / 進入 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 角色創角與登入 ◆</span></div>
+      <div class="rpg-title-bar"><span>◆ 空間客舍 · 創角登入 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">歡迎來到長沙灣藝術空間 —— <strong>空間客舍</strong>。</p>
-        <p class="rpg-text">請輸入你的冒險者稱號，並選擇你的身分：</p>
-        
-        <input type="text" id="rpg-name-input" placeholder="輸入名字（例：阿朗、空間訪客...）" maxlength="12" autofocus />
-        
-        <div class="class-selector">
-          <label><input type="radio" name="rpg-class" value="社區讀者" checked /> 📖 社區讀者</label>
-          <label><input type="radio" name="rpg-class" value="獨立創作者" /> 🎨 獨立創作者</label>
-          <label><input type="radio" name="rpg-class" value="空間實習生" /> 🌿 空間實習生</label>
-        </div>
-
-        <button id="rpg-start-btn" class="rpg-btn">▶ 踏入客舍</button>
+        <p class="rpg-text">歡迎來到長沙灣「空間客舍」像素小鎮。</p>
+        <input type="text" id="rpg-name-input" placeholder="輸入你的暱稱..." maxlength="10" autofocus />
+        <button id="rpg-start-btn" class="rpg-btn">▶ 推門進入小鎮</button>
       </div>
     </div>
   </div>
 
-  <!-- 2. 入座填寫書名 Modal -->
+  <!-- 2. 入座 / 專心閱讀 Modal -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none; opacity: 0;">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span id="seat-window-title">◆ 互動選單 ◆</span></div>
+      <div class="rpg-title-bar"><span id="seat-window-title">◆ 選擇閱讀座位 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text" id="seat-desc">你準備在此處駐足。請問你目前正在閱讀或進行什麼任務？</p>
-        <input type="text" id="rpg-book-input" placeholder="例如：《少女核》、編寫 Astro 專案..." maxlength="25" />
+        <p class="rpg-text">你準備在此處入座。請輸入你正在閱讀或處理的任務：</p>
+        <input type="text" id="rpg-book-input" placeholder="例如：《少女核》、寫程式..." maxlength="20" />
         <div class="rpg-btn-group">
-          <button id="seat-cancel-btn" class="rpg-btn-ghost">離開</button>
-          <button id="seat-confirm-btn" class="rpg-btn">🛡️ 進入專心模式 (DND)</button>
+          <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
+          <button id="seat-confirm-btn" class="rpg-btn">🛑 設為專心模式 (DND)</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 3. 主遊戲介面 (RPG HUD + Map) -->
+  <!-- 3. 主遊戲畫面 -->
   <main class="rpg-container">
-    <!-- 頂部 RPG 狀態欄 (HUD) -->
+    <!-- 頂部 HUD -->
     <header class="rpg-hud">
       <div class="hud-box">
-        <span class="hud-label">玩家:</span> <strong id="hud-name">旅人</strong> 
-        <span class="hud-tag" id="hud-class">📖 社區讀者</span>
+        <span class="hud-label">玩家：</span><strong id="hud-name">旅人</strong>
       </div>
       <div class="hud-box">
-        <span class="hud-label">據點:</span> <span>長沙灣 · 空間客舍</span>
+        <span class="hud-label">地點：</span><span>長沙灣 · 空間客舍</span>
       </div>
       <div class="hud-box">
-        <button id="audio-toggle" class="rpg-btn-sm">🔊 音效: 關</button>
-        <a href="/" class="rpg-btn-sm" style="text-decoration:none;">🏠 離開</a>
+        <button id="audio-toggle" class="rpg-btn-sm">🔊 音效：關</button>
+        <a href="/" class="rpg-btn-sm" style="text-decoration:none;">🏠 返回</a>
       </div>
     </header>
 
-    <!-- 空間客舍地圖區 (Grid / Room Layout) -->
-    <div id="rpg-map" class="rpg-map">
-      <!-- 客舍區域標記 -->
-      <div class="map-zone" style="top: 15px; left: 50%; transform: translateX(-50%); width: 80%;">
-        🏛️ 空間客舍 · 核心展覽與圖書牆
-      </div>
-      <div class="map-zone" style="top: 120px; left: 25px; width: 140px; height: 110px;">
-        ☕ 交流吧台區
-      </div>
-      <div class="map-zone" style="top: 120px; right: 25px; width: 140px; height: 110px;">
-        💻 創作工作坊
-      </div>
-
-      <!-- 可互動座位 / 點擊入座 -->
-      <div class="rpg-seat" data-id="seat-window" data-x="18" data-y="75" data-name="窗邊閱讀角">
-        🪑 窗邊木椅
-      </div>
-      <div class="rpg-seat" data-id="seat-sofa" data-x="82" data-y="75" data-name="沙發討論區">
-        🛋️ 交流沙發
-      </div>
-      <div class="rpg-seat" data-id="seat-desk" data-x="50" data-y="55" data-name="中央木大桌">
-        🪑 創作大桌
-      </div>
-
-      <!-- 玩家與NPC實體渲染層 -->
-      <div id="rpg-entities"></div>
+    <!-- 4. 2D 像素遊戲 Canvas 畫布 -->
+    <div class="canvas-wrapper">
+      <canvas id="rpg-canvas" width="800" height="480"></canvas>
     </div>
 
-    <!-- 底部 RPG 對話/訊息記錄框 (Log Box) -->
+    <!-- 底部事件與控制列 -->
     <footer class="rpg-footer">
-      <div class="rpg-log-window">
-        <div class="log-title">📜 系統訊息 / 事件記錄</div>
-        <div id="rpg-log-text" class="log-content">歡迎來到空間客舍。點擊地圖任意處移動，或點擊座椅入座並設定專心任務。</div>
-      </div>
-      <div class="rpg-dock">
-        <button id="btn-leave-seat" class="rpg-btn" style="display:none;">🚶 起立走動</button>
-        <button id="btn-moktak" class="rpg-btn">🪵 敲響木魚 (+1)</button>
-        <span class="moktak-counter">功德: <strong id="moktak-count">0</strong></span>
+      <div id="log-text" class="log-box">📜 點擊地圖任意處移動像素小人，點擊座椅區域即可入座專心閱讀。</div>
+      <div class="action-dock">
+        <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:#8b0000; color:#fff;">🛑 解除專心模式</button>
+        <button id="btn-moktak" class="rpg-btn-sm">🪵 敲木魚 (+1)</button>
+        <span style="font-size:12px; color:#d4af37;">功德: <strong id="moktak-count">0</strong></span>
       </div>
     </footer>
   </main>
 
   <style is:global>
-    /* 復古 RPG 介面色調與字體 */
     body {
-      background-color: #1a1917;
+      background-color: #121110;
       color: #e6e2d3;
-      font-family: monospace, serif;
+      font-family: monospace, sans-serif;
       margin: 0;
       padding: 0;
       overflow: hidden;
     }
 
-    /* 視窗與對話框 (RPG Window Style) */
+    /* Modals */
     .rpg-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.8);
       backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
@@ -122,87 +85,76 @@ import Layout from '../layouts/Layout.astro';
       transition: opacity 0.3s;
     }
     .rpg-window {
-      background: #2b2925;
+      background: #2b2823;
       border: 3px solid #b5a48b;
-      border-radius: 4px;
       width: 90%;
-      max-width: 420px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-width: 380px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.8);
     }
     .rpg-title-bar {
-      background: #4a3f35;
+      background: #4a4135;
       color: #f4f0ea;
       padding: 8px 12px;
       font-size: 13px;
       font-weight: bold;
       border-bottom: 2px solid #b5a48b;
-      letter-spacing: 1px;
     }
-    .rpg-content {
-      padding: 20px;
-    }
-    .rpg-text {
-      font-size: 13px;
-      line-height: 1.6;
-      color: #d1cbb8;
-      margin-top: 0;
-      margin-bottom: 14px;
-    }
+    .rpg-content { padding: 18px; }
+    .rpg-text { font-size: 13px; color: #d1cbb8; margin-bottom: 12px; }
     .rpg-window input[type="text"] {
       width: 100%;
-      background: #1a1917;
+      background: #121110;
       border: 2px solid #7a6d5c;
       color: #fff;
-      padding: 10px;
+      padding: 8px 12px;
       font-family: monospace;
       font-size: 14px;
       box-sizing: border-box;
       margin-bottom: 14px;
       outline: none;
     }
-    .rpg-window input[type="text"]:focus {
-      border-color: #d4af37;
-    }
-    .class-selector {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 18px;
-      font-size: 12px;
-    }
-    .class-selector label {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* 按鈕樣式 */
     .rpg-btn {
       background: #5c4a38;
       color: #f4f0ea;
       border: 2px solid #b5a48b;
-      padding: 8px 16px;
+      padding: 8px;
       font-family: monospace;
       font-size: 13px;
       cursor: pointer;
       width: 100%;
       font-weight: bold;
-      transition: background 0.2s;
-    }
-    .rpg-btn:hover {
-      background: #7a634b;
-      border-color: #d4af37;
     }
     .rpg-btn-ghost {
       background: transparent;
       color: #b5a48b;
       border: 2px solid #7a6d5c;
-      padding: 8px 16px;
+      padding: 8px;
       font-family: monospace;
       font-size: 13px;
       cursor: pointer;
       width: 100%;
     }
+    .rpg-btn-group { display: flex; gap: 8px; }
+
+    /* 主遊戲區域 */
+    .rpg-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .rpg-hud {
+      background: #23201c;
+      border-bottom: 2px solid #4a4135;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .hud-box { display: flex; align-items: center; gap: 8px; }
+    .hud-label { color: #8a7e6c; }
     .rpg-btn-sm {
       background: #38332d;
       color: #d1cbb8;
@@ -211,196 +163,65 @@ import Layout from '../layouts/Layout.astro';
       font-family: monospace;
       font-size: 11px;
       cursor: pointer;
-      border-radius: 2px;
-    }
-    .rpg-btn-group {
-      display: flex;
-      gap: 10px;
     }
 
-    /* 主框架佈局 */
-    .rpg-container {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-sizing: border-box;
-    }
-    .rpg-hud {
-      background: #252320;
-      border-bottom: 2px solid #b5a48b;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-    }
-    .hud-box {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .hud-label { color: #8a7e6c; }
-    .hud-tag {
-      background: #3d352b;
-      border: 1px solid #7a6d5c;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-    }
-
-    /* 2D 像素/地圖風格舞台 */
-    .rpg-map {
-      position: relative;
+    /* Canvas 容器 (自動縮放與像素防鋸齒) */
+    .canvas-wrapper {
       flex: 1;
-      max-width: 900px;
-      width: 92%;
-      margin: 10px auto;
-      background: #22201d;
-      border: 3px solid #b5a48b;
-      border-radius: 6px;
-      overflow: hidden;
-      cursor: pointer;
-      box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
-    }
-    .map-zone {
-      position: absolute;
-      background: rgba(58, 50, 42, 0.4);
-      border: 1px dashed #6b5c4a;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
-      color: #8a7e6c;
-      border-radius: 4px;
-      pointer-events: none;
+      padding: 10px;
+      background: #0d0c0b;
     }
-
-    /* 座位物件 */
-    .rpg-seat {
-      position: absolute;
-      padding: 6px 10px;
-      background: #38332d;
-      border: 2px solid #8c7d6b;
-      border-radius: 6px;
-      font-size: 11px;
-      color: #e6e2d3;
-      transform: translate(-50%, -50%);
+    #rpg-canvas {
+      border: 3px solid #b5a48b;
+      background: #000;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-      transition: transform 0.2s, background 0.2s;
-      z-index: 10;
-    }
-    .rpg-seat:hover {
-      transform: translate(-50%, -50%) scale(1.08);
-      background: #5c4a38;
-      border-color: #d4af37;
+      /* 關鍵：保持像素畫質清晰不模糊 */
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      max-width: 100%;
+      max-height: 100%;
     }
 
-    /* 角色實體 (Entity) */
-    .rpg-entity {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      transition: left 0.6s ease-out, top 0.6s ease-out;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      pointer-events: none;
-      z-index: 20;
-    }
-    .entity-dnd-badge {
-      background: #8b0000;
-      color: #ffcccc;
-      font-size: 9px;
-      padding: 1px 5px;
-      border: 1px solid #ff4d4d;
-      border-radius: 3px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      font-weight: bold;
-      animation: pulse-dnd 1.5s infinite;
-    }
-    @keyframes pulse-dnd {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
-    .entity-avatar { font-size: 24px; }
-    .entity-nametag {
-      background: rgba(30, 28, 25, 0.9);
-      border: 1px solid #7a6d5c;
-      color: #f4f0ea;
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 3px;
-      white-space: nowrap;
-      text-align: center;
-      margin-top: 2px;
-    }
-    .entity-subtext {
-      font-size: 9px;
-      color: #b5a48b;
-      display: block;
-    }
-
-    /* 底部對話記錄與動作面板 */
+    /* 底部訊息面板 */
     .rpg-footer {
-      background: #252320;
-      border-top: 2px solid #b5a48b;
-      padding: 10px 20px;
+      background: #23201c;
+      border-top: 2px solid #4a4135;
+      padding: 8px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 15px;
+      gap: 12px;
     }
-    .rpg-log-window {
+    .log-box {
       flex: 1;
-      background: #1a1917;
-      border: 2px solid #4a3f35;
-      padding: 8px 12px;
-      border-radius: 4px;
-      height: 48px;
-      overflow: hidden;
-    }
-    .log-title {
-      font-size: 10px;
-      color: #8a7e6c;
-      margin-bottom: 2px;
-    }
-    .log-content {
       font-size: 12px;
       color: #d1cbb8;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      background: #121110;
+      padding: 6px 12px;
+      border: 1px solid #4a4135;
+      border-radius: 4px;
     }
-    .rpg-dock {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .moktak-counter {
-      font-size: 12px;
-      color: #d4af37;
-      white-space: nowrap;
-    }
+    .action-dock { display: flex; align-items: center; gap: 10px; }
   </style>
 
   <script>
     import * as Tone from 'tone';
 
+    // 遊戲狀態 Variables
     let playerName = '冒險者';
-    let playerClass = '📖 社區讀者';
-    let playerX = 25;
-    let playerY = 82;
+    let playerX = 160;
+    let playerY = 320;
+    let targetX = 160;
+    let targetY = 320;
     let isDND = false;
-    let currentTask = '';
-    let currentSeatId: string | null = null;
-    let moktakClicks = 0;
-    let soundOn = false;
+    let currentBook = '';
+    let moktakCount = 0;
+    let audioOn = false;
 
-    // DOM 元素
-    const rpgModal = document.getElementById('rpg-modal');
+    const modal = document.getElementById('rpg-modal');
     const seatModal = document.getElementById('seat-modal');
     const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
     const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
@@ -408,84 +229,84 @@ import Layout from '../layouts/Layout.astro';
     const confirmSeatBtn = document.getElementById('seat-confirm-btn');
     const cancelSeatBtn = document.getElementById('seat-cancel-btn');
     const hudName = document.getElementById('hud-name');
-    const hudClass = document.getElementById('hud-class');
-    const mapContainer = document.getElementById('rpg-map');
-    const entitiesLayer = document.getElementById('rpg-entities');
+    const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    const logBox = document.getElementById('log-text');
     const leaveSeatBtn = document.getElementById('btn-leave-seat');
     const moktakBtn = document.getElementById('btn-moktak');
     const moktakCountSpan = document.getElementById('moktak-count');
     const audioToggle = document.getElementById('audio-toggle');
-    const logText = document.getElementById('rpg-log-text');
 
-    let pendingSeat: { id: string; x: number; y: number; name: string } | null = null;
+    let pendingSeat: { x: number; y: number; name: string } | null = null;
 
-    // 空間客舍的其他 NPC / 駐點冒險者
-    const npcs = [
-      { id: 'npc1', name: '空間主理人', class: '🏛️ 主理人', x: 82, y: 75, task: '整理長沙灣社群檔案', isDND: true },
-      { id: 'npc2', name: '實習生阿修', class: '🌿 實習生', x: 30, y: 40, task: '佈置藝術工作坊', isDND: false }
+    // 可入座的區域 (x, y, 範圍, 名稱)
+    const seats = [
+      { x: 340, y: 220, label: '客舍露天咖啡座' },
+      { x: 580, y: 220, label: '長沙灣工坊木椅' }
     ];
 
-    function logMessage(msg: string) {
-      if (logText) logText.textContent = msg;
-    }
+    // NPC 列表
+    const npcs = [
+      { name: '空間主理人', x: 280, y: 160, book: '客舍日誌', color: '#ffcc00' },
+      { name: '實習生阿修', x: 620, y: 160, book: '藝術展籌備', color: '#66ccff' }
+    ];
 
-    // 1. 開始冒險
+    // 1. 進入遊戲
     startBtn?.addEventListener('click', () => {
       const val = nameInput?.value.trim();
       if (val) playerName = val;
-      
-      const selectedRadio = document.querySelector('input[name="rpg-class"]:checked') as HTMLInputElement;
-      if (selectedRadio) playerClass = selectedRadio.value === '社區讀者' ? '📖 社區讀者' : selectedRadio.value === '獨立創作者' ? '🎨 獨立創作者' : '🌿 空間實習生';
-
       if (hudName) hudName.textContent = playerName;
-      if (hudClass) hudClass.textContent = playerClass;
 
-      if (rpgModal) {
-        rpgModal.style.opacity = '0';
-        setTimeout(() => { rpgModal.style.display = 'none'; }, 300);
+      if (modal) {
+        modal.style.opacity = '0';
+        setTimeout(() => modal.style.display = 'none', 300);
       }
-      logMessage(`[系統] 玩家 ${playerName} (${playerClass}) 已成功進入空間客舍。`);
-      renderEntities();
+      gameLoop();
     });
 
-    // 2. 點擊座位：開啓 RPG 任務/閱讀輸入框
-    document.querySelectorAll('.rpg-seat').forEach(seat => {
-      seat.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const el = e.currentTarget as HTMLElement;
-        pendingSeat = {
-          id: el.dataset.id!,
-          x: parseFloat(el.dataset.x!),
-          y: parseFloat(el.dataset.y!),
-          name: el.dataset.name!
-        };
+    // 2. 點擊 Canvas 移動或入座
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
 
-        const seatWinTitle = document.getElementById('seat-window-title');
-        const seatDesc = document.getElementById('seat-desc');
-        if (seatWinTitle) seatWinTitle.textContent = `◆ 駐足：${pendingSeat.name} ◆`;
-        if (seatDesc) seatDesc.textContent = `你在 ${pendingSeat.name} 坐下了。請設定你目前的專心任務或閱讀書目：`;
-        if (bookInput) bookInput.value = currentTask;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
 
+      // 檢查是否點擊入座區
+      const hitSeat = seats.find(s => Math.hypot(s.x - clickX, s.y - clickY) < 30);
+
+      if (hitSeat) {
+        pendingSeat = { x: hitSeat.x, y: hitSeat.y, name: hitSeat.label };
         if (seatModal) {
           seatModal.style.display = 'flex';
-          setTimeout(() => { seatModal.style.opacity = '1'; }, 10);
+          setTimeout(() => seatModal.style.opacity = '1', 10);
         }
-      });
+      } else {
+        targetX = clickX;
+        targetY = clickY;
+        if (isDND) {
+          isDND = false;
+          if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+          if (logBox) logBox.textContent = `[移動] 站起身來，在客舍小鎮漫步。`;
+        }
+      }
     });
 
-    // 3. 確認入座並進入 DND (不想被打擾) 模式
+    // 3. 確認入座 (DND 模式)
     confirmSeatBtn?.addEventListener('click', () => {
       if (pendingSeat) {
         playerX = pendingSeat.x;
         playerY = pendingSeat.y;
-        currentSeatId = pendingSeat.id;
-        currentTask = bookInput?.value.trim() || '靜心閱讀中';
+        targetX = pendingSeat.x;
+        targetY = pendingSeat.y;
+        currentBook = bookInput?.value.trim() || '自主專心閱讀';
         isDND = true;
 
+        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
+        if (logBox) logBox.textContent = `🛑 [專心模式] 你已在「${pendingSeat.name}」入座。正在讀：《${currentBook}》`;
+
         closeSeatModal();
-        if (leaveSeatBtn) leaveSeatBtn.style.display = 'block';
-        logMessage(`[狀態] 🛡️ 已進入「不想被打擾」專心模式。任務：${currentTask}`);
-        renderEntities();
       }
     });
 
@@ -494,90 +315,153 @@ import Layout from '../layouts/Layout.astro';
     function closeSeatModal() {
       if (seatModal) {
         seatModal.style.opacity = '0';
-        setTimeout(() => { seatModal.style.display = 'none'; }, 300);
+        setTimeout(() => seatModal.style.display = 'none', 300);
       }
     }
 
-    // 4. 地圖移動 (點擊地板走動)
-    mapContainer?.addEventListener('click', (e) => {
-      const rect = mapContainer.getBoundingClientRect();
-      playerX = ((e.clientX - rect.left) / rect.width) * 100;
-      playerY = ((e.clientY - rect.top) / rect.height) * 100;
-
-      // 移動會自動解除坐姿與 DND
-      if (isDND) {
-        isDND = false;
-        currentSeatId = null;
-        if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-        logMessage(`[移動] 你站起身來，在空間客舍中自由漫步。`);
-      } else {
-        logMessage(`[移動] 你移動到了座標 (${Math.round(playerX)}, ${Math.round(playerY)})。`);
-      }
-      renderEntities();
-    });
-
-    // 手動起立
     leaveSeatBtn?.addEventListener('click', () => {
       isDND = false;
-      currentSeatId = null;
-      playerY += 6; // 稍微移開座位
+      playerY += 20;
+      targetY = playerY;
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-      logMessage(`[狀態] 解除專心模式，可以開始交流了。`);
-      renderEntities();
+      if (logBox) logBox.textContent = `[狀態] 已離座，解除請勿打擾狀態。`;
     });
 
-    // 5. 渲染玩家與 NPC
-    function renderEntities() {
-      if (!entitiesLayer) return;
+    // 4. Canvas 繪製核心 (像素繪圖 Engine)
+    function draw() {
+      // (1) 清空畫布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      let html = `
-        <div class="rpg-entity" style="left: ${playerX}%; top: ${playerY}%;">
-          ${isDND ? `<div class="entity-dnd-badge">🛑 專心勿擾</div>` : ''}
-          <div class="entity-avatar">${isDND ? '🧘' : '🚶'}</div>
-          <div class="entity-nametag">
-            <div>${playerName}</div>
-            <span class="entity-subtext">${isDND ? currentTask : playerClass}</span>
-          </div>
-        </div>
-      `;
+      // (2) 畫草地背景
+      ctx.fillStyle = '#5c8a38';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 渲染 NPC
-      npcs.forEach(n => {
-        html += `
-          <div class="rpg-entity" style="left: ${n.x}%; top: ${n.y}%;">
-            ${n.isDND ? `<div class="entity-dnd-badge">🛑 專心勿擾</div>` : ''}
-            <div class="entity-avatar">📖</div>
-            <div class="entity-nametag">
-              <div>${n.name}</div>
-              <span class="entity-subtext">${n.task}</span>
-            </div>
-          </div>
-        `;
+      // (3) 畫石板路
+      ctx.fillStyle = '#a39e93';
+      ctx.fillRect(0, 360, canvas.width, 120); // 下方大路
+      ctx.fillRect(100, 0, 80, 360); // 縱向小路
+
+      // 石板路紋路
+      ctx.strokeStyle = '#827d73';
+      ctx.lineWidth = 2;
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 360);
+        ctx.lineTo(x, 480);
+        ctx.stroke();
+      }
+
+      // (4) 畫建築物：左側咖啡館，右側工坊 (RPG Maker 風格)
+      // 左房屋 (空間客舍咖啡館)
+      ctx.fillStyle = '#7a5230';
+      ctx.fillRect(220, 80, 160, 120);
+      ctx.fillStyle = '#3a2514'; // 屋頂
+      ctx.beginPath();
+      ctx.moveTo(200, 80);
+      ctx.lineTo(300, 20);
+      ctx.lineTo(400, 80);
+      ctx.fill();
+
+      // 右房屋 (創作工坊)
+      ctx.fillStyle = '#54606e';
+      ctx.fillRect(520, 80, 160, 120);
+      ctx.fillStyle = '#2d353d'; // 屋頂
+      ctx.beginPath();
+      ctx.moveTo(500, 80);
+      ctx.lineTo(600, 20);
+      ctx.lineTo(700, 80);
+      ctx.fill();
+
+      // (5) 畫水池 (右邊)
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillRect(720, 0, 80, 360);
+
+      // (6) 畫座位區 (露天座與木椅)
+      seats.forEach(s => {
+        ctx.fillStyle = '#8c6b4d';
+        ctx.fillRect(s.x - 15, s.y - 15, 30, 30);
+        ctx.fillStyle = '#d4af37';
+        ctx.font = '10px monospace';
+        ctx.fillText('🪑入座', s.x - 16, s.y - 20);
       });
 
-      entitiesLayer.innerHTML = html;
+      // (7) 畫小動物 (裝飾)
+      // 小貓
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(140, 180, 12, 8);
+      ctx.fillText('🐱', 138, 180);
+      // 小雞
+      ctx.fillText('🐔', 450, 220);
+
+      // (8) 畫 NPC 們
+      npcs.forEach(n => {
+        ctx.fillStyle = '#8b0000';
+        ctx.fillRect(n.x - 25, n.y - 35, 50, 14);
+        ctx.fillStyle = '#fff';
+        ctx.font = '9px monospace';
+        ctx.fillText('🛑 專心', n.x - 20, n.y - 24);
+
+        ctx.fillStyle = n.color;
+        ctx.fillRect(n.x - 10, n.y - 10, 20, 20); // NPC 像素方塊
+
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px monospace';
+        ctx.fillText(`${n.name}`, n.x - 20, n.y + 22);
+        ctx.fillStyle = '#d1cbb8';
+        ctx.fillText(`《${n.book}》`, n.x - 22, n.y + 34);
+      });
+
+      // (9) 移動邏輯與畫玩家自己
+      playerX += (targetX - playerX) * 0.1;
+      playerY += (targetY - playerY) * 0.1;
+
+      // 玩家 DND 標示
+      if (isDND) {
+        ctx.fillStyle = '#c0392b';
+        ctx.fillRect(playerX - 35, playerY - 40, 70, 15);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px monospace';
+        ctx.fillText('🛑 請勿打擾', playerX - 30, playerY - 29);
+      }
+
+      // 玩家角色本體
+      ctx.fillStyle = isDND ? '#27ae60' : '#e67e22';
+      ctx.fillRect(playerX - 10, playerY - 10, 20, 20);
+
+      // 玩家名字與任務
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '11px monospace';
+      ctx.fillText(`${playerName} (我)`, playerX - 20, playerY + 22);
+      if (isDND) {
+        ctx.fillStyle = '#f39c12';
+        ctx.font = '10px monospace';
+        ctx.fillText(`讀：《${currentBook}》`, playerX - 30, playerY + 34);
+      }
     }
 
-    // 音效與木魚互動
+    // 遊戲主循環 Frame
+    function gameLoop() {
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 音效與木魚
     audioToggle?.addEventListener('click', async () => {
       await Tone.start();
-      soundOn = !soundOn;
-      if (audioToggle) audioToggle.textContent = soundOn ? '🔊 音效: 開' : '🔊 音效: 關';
+      audioOn = !audioOn;
+      if (audioToggle) audioToggle.textContent = audioOn ? '🔊 音效：開' : '🔊 音效：關';
     });
 
     moktakBtn?.addEventListener('click', async () => {
-      if (soundOn) {
+      if (audioOn) {
         const synth = new Tone.Synth({
           oscillator: { type: 'sine' },
           envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }
         }).toDestination();
         synth.triggerAttackRelease('C5', '8n');
       }
-      moktakClicks++;
-      if (moktakCountSpan) moktakCountSpan.textContent = String(moktakClicks);
-      logMessage(`[功德] 敲擊木魚一次。累積功德值：${moktakClicks}`);
+      moktakCount++;
+      if (moktakCountSpan) moktakCountSpan.textContent = String(moktakCount);
     });
-
-    renderEntities();
   </script>
 </Layout>
