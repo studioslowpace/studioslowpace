@@ -455,6 +455,18 @@ async function searchBooks() {
             .container { grid-template-columns: 1fr; }
         }
 
+        /* 強制修正右側檢索結果容器的顯示與佈局 */
+#searchResults {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-height: 200px !important;
+    background-color: transparent !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
         .panel {
             background: var(--card-bg);
             border-radius: 12px;
@@ -462,6 +474,7 @@ async function searchBooks() {
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
             min-height: 80vh;
+            overflow-y: auto !important;
         }
 
         h2 {
