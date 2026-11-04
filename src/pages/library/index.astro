@@ -1,0 +1,282 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="雲端藏書閣 — 空間客舍">
+    <div class="literary-container">
+        
+        <header class="literary-header">
+            <nav class="nav-links">
+                <span class="active">📖 雲端藏書閣</span>
+                <span class="divider">/</span>
+                <a href="/search">🌐 檢索新圖書</a>
+            </nav>
+            <h1>空間客舍 · 藏書研究室</h1>
+            <p class="intro-text">在此駐足，翻閱已被收進客舍藍微光裡的每一冊靈魂。</p>
+        </header>
+
+        <section class="literary-panel">
+            <div class="panel-header">
+                <h2>藏書清單</h2>
+                <span class="badge" id="libraryCount">0</span>
+            </div>
+            <div id="myLibraryList" class="library-grid">
+                <p class="empty-msg">正在同步雲端藏書庫數據...</p>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" is:inline></script>
+    <script is:inline>
+        window.supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+        window.supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+        window.TABLE_NAME = 'my_library'; 
+        window.client = supabase.createClient(window.supabaseUrl, window.supabaseKey);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll('.auth-modal').forEach(el => el.remove());
+            loadLibrary();
+        });
+
+        async function loadLibrary() {
+            const libraryListDiv = document.getElementById('myLibraryList');
+            const countSpan = document.getElementById('libraryCount');
+            
+            try {
+                const { data: myLibrary, error } = await window.client
+                    .from(window.TABLE_NAME).select('*').order('created_at', { ascending: false }); 
+
+                if (error) throw error;
+
+                const libraryData = myLibrary || [];
+                countSpan.innerText = libraryData.length;
+                libraryListDiv.innerHTML = '';
+
+                if (libraryData.length === 0) {
+                    libraryListDiv.innerHTML = '<p class="empty-msg">目前藏書閣空空如也，快去 <a href="/search" style="color:var(--accent-blue)">檢索新圖書</a> 尋覓第一冊藏書吧！</p>';
+                    return;
+                }
+
+                libraryData.forEach((book) => {
+                    const card = document.createElement('div');
+                    card.className = 'library-card';
+                    
+                    // 💡 將書名與作者轉為乾淨的網址 slug（例如：書名_作者）
+                    const safeTitle = encodeURIComponent(book.title || '未知書名');
+                    const safeAuthor = encodeURIComponent(book.authors || '佚名');
+                    card.onclick = () => window.location.href = `/library/${safeTitle}_${safeAuthor}`;
+
+                    card.innerHTML = `
+                        <img src="${book.img_url}" alt="${book.title}" loading="lazy">
+                        <div class="library-card-info">
+                            <p class="library-card-title" title="${book.title}">${book.title}</p>
+                            <p class="library-card-author">${book.authors || '佚名'}</p>
+                        </div>
+                        <button class="del-btn" onclick="event.stopPropagation(); deleteFromLibrary('${book.id}', '${book.title}')">移除</button>
+                    `;
+                    libraryListDiv.appendChild(card);
+                });
+            } catch (error) {
+                console.error(error);
+                libraryListDiv.innerHTML = '<p class="empty-msg" style="color:#b25050;">無法與 Supabase 建立連結。</p>';
+            }
+        }
+
+        async function deleteFromLibrary(id, title) {
+            if (confirm(`確定要將「${title}」從藏書閣中請出嗎？`)) {
+                try {
+                    const { error } = await window.client.from(window.TABLE_NAME).delete().eq('id', id); 
+                    if (error) throw error;
+                    loadLibrary();
+                } catch (error) {
+                    alert('💥 移除失敗。');
+                }
+            }
+        }
+    </script>
+
+    <style is:global>
+        :root {
+            --bg-paper: #f4f6f9;
+            --card-surface: #fafbfd;
+            --text-ink: #222b38;
+            --text-muted: #6b778d;
+            --accent-blue: #2c4a6f;
+            --accent-blue-hover: #1f354f;
+            --border-line: #d8e0ec;
+            --danger: #b25050;
+            --shadow-subtle: 0 10px 30px rgba(44, 74, 111, 0.04);
+        }
+
+        body {
+            background-color: var(--bg-paper);
+            color: var(--text-ink);
+            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+        }
+
+        .literary-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        .literary-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .nav-links {
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--accent-blue); }
+        .nav-links .active { color: var(--accent-blue); font-weight: 500; }
+        .nav-links .divider { color: var(--border-line); }
+
+        .literary-header h1 {
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            color: var(--text-ink);
+            margin: 0 0 8px 0;
+        }
+
+        .intro-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin: 0;
+        }
+
+        .literary-panel {
+            background: var(--card-surface);
+            border: 1px solid var(--border-line);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-subtle);
+            min-height: 60vh;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-line);
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+
+        .panel-header h2 {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--accent-blue);
+            margin: 0;
+            letter-spacing: 0.05em;
+        }
+
+        .badge {
+            background-color: #e2eaf4;
+            color: var(--accent-blue);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .library-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .library-card {
+            background: #fff;
+            border: 1px solid var(--border-line);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .library-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(44,74,111,0.08);
+        }
+
+        .library-card img {
+            width: 75px;
+            height: 105px;
+            object-fit: cover;
+            border-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom: 10px;
+            background: #eee;
+        }
+
+        .library-card-info { width: 100%; }
+
+        .library-card-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0 0 4px 0;
+        }
+
+        .library-card-author {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin: 0;
+        }
+
+        .del-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: #fff0f0;
+            color: var(--danger);
+            border: 1px solid #ffcccc;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+        .library-card:hover .del-btn { opacity: 1; }
+
+        .empty-msg {
+            color: var(--text-muted);
+            text-align: center;
+            grid-column: 1 / -1;
+            font-size: 14px;
+            margin-top: 40px;
+        }
+    </style>
+</BaseLayout>

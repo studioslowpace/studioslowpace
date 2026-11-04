@@ -5,7 +5,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout title="檢索新圖書 — 空間客舍">
     <div class="literary-container">
         
-        <!-- 頂部導覽列與標題 -->
         <header class="literary-header">
             <nav class="nav-links">
                 <a href="/library">📖 雲端藏書閣</a>
@@ -13,10 +12,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <span class="active">🌐 檢索新圖書</span>
             </nav>
             <h1>檢索新圖書</h1>
-            <p class="intro-text">跨越無垠書海，尋覓值得收進藏書閣的點滴星光。</p>
+            <p class="intro-text">跨越無垠書海，尋覓值得收進客舍藍微光裡的點滴星光。</p>
         </header>
 
-        <!-- 搜尋面板 -->
         <section class="literary-panel">
             <div class="search-bar-wrapper">
                 <input type="text" id="query" placeholder="請輸入書名、作者或 ISBN 條碼..." autocomplete="off">
@@ -28,7 +26,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     </div>
 
-    <!-- Supabase SDK 與檢索互動邏輯 -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" is:inline></script>
     <script is:inline>
         const GOOGLE_API_KEY = "AIzaSyAALLccQZnHSWI0unwfM6zaS5M8ZzGi4i4";
@@ -164,17 +161,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
     </script>
 
-    <!-- 與 library 共用的文青風樣式 -->
     <style is:global>
         :root {
-            --bg-paper: #f4f1ea;
-            --card-surface: #faf8f5;
-            --text-ink: #2b2927;
-            --text-muted: #78746c;
-            --accent-green: #4a5c4e;
-            --accent-green-hover: #3b4c3f;
-            --border-line: #e2ddd5;
-            --shadow-subtle: 0 10px 30px rgba(43, 41, 39, 0.04);
+            --bg-paper: #f4f6f9;
+            --card-surface: #fafbfd;
+            --text-ink: #222b38;
+            --text-muted: #6b778d;
+            --accent-blue: #2c4a6f;
+            --accent-blue-hover: #1f354f;
+            --border-line: #d8e0ec;
+            --shadow-subtle: 0 10px 30px rgba(44, 74, 111, 0.04);
         }
 
         body {
@@ -211,8 +207,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             text-decoration: none;
             transition: color 0.2s;
         }
-        .nav-links a:hover { color: var(--accent-green); }
-        .nav-links .active { color: var(--accent-green); font-weight: 500; }
+        .nav-links a:hover { color: var(--accent-blue); }
+        .nav-links .active { color: var(--accent-blue); font-weight: 500; }
         .nav-links .divider { color: var(--border-line); }
 
         .literary-header h1 {
@@ -261,10 +257,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             font-family: inherit;
         }
 
-        #query::placeholder { color: #b3aea4; }
+        #query::placeholder { color: #a1b0c5; }
 
         .literary-btn-primary {
-            background-color: var(--accent-green);
+            background-color: var(--accent-blue);
             color: #fff;
             border: none;
             padding: 10px 24px;
@@ -275,7 +271,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             transition: background 0.2s;
             letter-spacing: 0.05em;
         }
-        .literary-btn-primary:hover { background-color: var(--accent-green-hover); }
+        .literary-btn-primary:hover { background-color: var(--accent-blue-hover); }
 
         .status-msg {
             text-align: center;
@@ -299,7 +295,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             display: flex;
             gap: 20px;
             align-items: flex-start;
-            box-shadow: 0 4px 12px rgba(43,41,39,0.02);
+            box-shadow: 0 4px 12px rgba(44,74,111,0.02);
         }
 
         @media (max-width: 680px) {
@@ -346,7 +342,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         .row-author {
             font-size: 13px;
-            color: var(--accent-green);
+            color: var(--accent-blue);
             margin: 0;
             font-weight: 500;
         }
@@ -362,7 +358,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         .row-desc {
             font-size: 12px;
-            color: #5c574f;
+            color: #4f5a6b;
             line-height: 1.6;
             margin: 4px 0;
             display: -webkit-box;
