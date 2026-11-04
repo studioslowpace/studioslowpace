@@ -1,8 +1,264 @@
 ---
-import Layout from '../layouts/BaseLayout.astro'; // 你現有的 Layout
-import Zen2DApp from '../components/Zen2DApp.jsx';
+import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="靜舍 · 共讀空間">
-  <Zen2DApp client:only="react" />
+  <main class="zen-container">
+    <!-- 頂部導覽列 -->
+    <header class="zen-header">
+      <div class="zen-nav-box">
+        <a href="/" class="icon-btn" title="返回主站">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+        </a>
+        <button id="room-btn" class="nav-text-btn">
+          <span>靜舍</span>
+          <span class="room-badge">伺服器 98</span>
+        </button>
+        <button id="people-btn" class="people-badge">
+          <span class="pulse-dot"></span>
+          <span>5/100 人共讀中</span>
+        </button>
+      </div>
+    </header>
+
+    {/* 中央主視覺 */}
+    <div class="zen-center">
+      <button id="chant-btn" class="chant-main-btn">
+        🔔 敲響頌缽 靜心聆聽
+      </button>
+
+      <div class="zen-intro">
+        <h1>「 靜舍 · 共讀空間 」</h1>
+        <p>在這裡，我們不急著翻頁。<br />與各地同行者靜靜坐著，點一盞心燈，讀一本書。</p>
+      </div>
+
+      <div id="toast" class="toast-msg">靜心閱讀，細品慢活 🍵</div>
+    </div>
+
+    {/* 底部互動工具列 */}
+    <footer class="zen-footer">
+      <nav class="dock-bar">
+        <button class="dock-item"><span>🙏</span><span>合十問候</span></button>
+        <div class="dock-divider"></div>
+        <button id="moktak-btn" class="dock-item"><span>🪵</span><span>敲敲木魚</span><span id="moktak-count" class="count-tag">0</span></button>
+        <div class="dock-divider"></div>
+        <button class="dock-item"><span>📖</span><span>共讀隨筆</span></button>
+      </nav>
+    </footer>
+  </main>
+
+  <style is:global>
+    body {
+      background-color: #eeece3;
+      color: #4d5144;
+      font-family: serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .zen-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    .zen-header {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      z-index: 20;
+    }
+    .zen-nav-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(238, 236, 227, 0.9);
+      backdrop-filter: blur(8px);
+      padding: 10px 20px;
+      border-radius: 9999px;
+      border: 1px solid #d6d2c4;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .icon-btn {
+      padding: 6px;
+      border-radius: 50%;
+      color: #4d5144;
+      display: flex;
+      align-items: center;
+      justify-content: text-decoration: none;
+      transition: background 0.2s;
+    }
+    .icon-btn:hover { background: #ded9c7; }
+    .nav-text-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4d5144;
+    }
+    .room-badge {
+      background: #dfd8c2;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .people-badge {
+      background: #e3ded0;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #64664f;
+      padding: 4px 12px;
+      border-radius: 9999px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #059669;
+    }
+    .zen-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: auto 0;
+    }
+    .chant-main-btn {
+      background-color: #5c4033;
+      color: #eeece3;
+      padding: 10px 24px;
+      border-radius: 9999px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 32px;
+      transition: transform 0.1s;
+    }
+    .chant-main-btn:active { transform: scale(0.98); }
+    .zen-intro h1 {
+      font-size: 24px;
+      font-weight: normal;
+      letter-spacing: 1px;
+      color: #3a3d32;
+      margin-bottom: 12px;
+    }
+    .zen-intro p {
+      font-size: 14px;
+      color: #737666;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .toast-msg {
+      margin-top: 24px;
+      background-color: rgba(77, 81, 68, 0.9);
+      color: #eeece3;
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 9999px;
+    }
+    .zen-footer {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      padding-bottom: 10px;
+    }
+    .dock-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(238, 236, 227, 0.9);
+      backdrop-filter: blur(8px);
+      padding: 8px;
+      border-radius: 16px;
+      border: 1px solid #d6d2c4;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    }
+    .dock-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4d5144;
+      transition: background 0.2s;
+    }
+    .dock-item:hover { background: #ded9c7; }
+    .dock-divider {
+      width: 1px;
+      height: 24px;
+      background-color: #d6d2c4;
+    }
+    .count-tag {
+      font-size: 12px;
+      background: #dfd8c2;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+
+  <script>
+    import * as Tone from 'tone';
+
+    let moktakCount = 0;
+    const moktakBtn = document.getElementById('moktak-btn');
+    const moktakCountSpan = document.getElementById('moktak-count');
+    const chantBtn = document.getElementById('chant-btn');
+    const toast = document.getElementById('toast');
+
+    function showToast(msg) {
+      if(toast) {
+        toast.textContent = msg;
+        setTimeout(() => { toast.textContent = '靜心閱讀，細品慢活 🍵'; }, 3500);
+      }
+    }
+
+    moktakBtn?.addEventListener('click', async () => {
+      await Tone.start();
+      const synth = new Tone.Synth({
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }
+      }).toDestination();
+      synth.triggerAttackRelease('C5', '8n');
+      
+      moktakCount++;
+      if (moktakCountSpan) moktakCountSpan.textContent = String(moktakCount);
+      showToast(`敲擊木魚 🪵 (${moktakCount})`);
+    });
+
+    chantBtn?.addEventListener('click', async () => {
+      await Tone.start();
+      const metalSynth = new Tone.MetalSynth({
+        frequency: 220,
+        envelope: { attack: 0.001, decay: 1.8, release: 1.5 },
+        harmonicity: 5.1,
+        modulationIndex: 32,
+        resonance: 4000,
+        octaves: 1.5
+      }).toDestination();
+      metalSynth.triggerAttackRelease('A2', '2n');
+      showToast('敲響清淨頌缽 🔔 靜心聆聽');
+    });
+  </script>
 </Layout>
