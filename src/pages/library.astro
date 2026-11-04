@@ -21,14 +21,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div id="status" class="status-msg">請在上方輸入關鍵字開始檢索。</div>
         </div>
 
-        <!-- 檢索結果展示區 (完全由 style 樣式與 CSS 類別控制排版) -->
+        <!-- 檢索結果展示區 -->
         <div id="searchResults" class="results-grid"></div>
 
     </div>
 
-    <!-- 互動指令碼 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" is:inline></script>
-    <script is:inline>
+    <!-- 核心互動指令碼 -->
+    <script>
         const GOOGLE_API_KEY = "AIzaSyAALLccQZnHSWI0unwfM6zaS5M8ZzGi4i4";
         let currentSearchResults = []; 
 
@@ -74,7 +73,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                 statusDiv.innerText = `✨ 找到 ${items.length} 冊契合的圖書：`;
 
-                // 透過 map 將資料轉為純 HTML 字串，再由 CSS 類別統一渲染
                 const htmlContent = items.map((item, index) => {
                     const info = item.volumeInfo || {};
                     const title = info.title || '無題';
@@ -136,35 +134,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             }
         }
 
-        function copyBookDetails(index) {
+        window.copyBookDetails = function(index) {
             const b = currentSearchResults[index];
             const text = `【書籍資訊】\n書名：${b.title}\n作者：${b.authors}\n出版社：${b.publisher} (${b.pubDate})\n頁數：${b.pageCount}\nISBN：${b.isbn}\n簡介：${b.description}`;
             navigator.clipboard.writeText(text).then(() => {
                 alert('✒️ 已經將這冊書的詳細文字收進剪貼簿中。');
             });
-        }
+        };
     </script>
 
-    <!-- 使用全域樣式（is:global），讓排版與 .literary-card 樣式精準套用 -->
+    <!-- 關鍵：使用 is:global 確保動態生成的卡片能正確套用樣式 -->
     <style is:global>
-        body {
-            background-color: #f4f1ea;
-            color: #2b2927;
-            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.8;
-        }
-
         .literary-container {
             max-width: 900px;
-            margin: 60px auto;
+            margin: 40px auto;
             padding: 0 24px;
         }
 
         .literary-header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 40px;
         }
 
         .sub-tag {
@@ -182,6 +171,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             letter-spacing: 0.05em;
             color: #2b2927;
             margin: 0 0 12px 0;
+            font-family: "Noto Serif TC", "Songti TC", Georgia, serif;
         }
 
         .intro-text {
@@ -192,7 +182,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
 
         .search-section {
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         .search-bar-wrapper {
@@ -245,14 +235,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             letter-spacing: 0.05em;
         }
 
-        /* 檢索結果清單容器 */
         .results-grid {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
         }
 
-        /* 統一由 CSS 類別控制的文青風卡片樣式 */
         .literary-card {
             background: #faf8f5;
             border: 1px solid #e2ddd5;
@@ -301,7 +289,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             font-weight: 500;
             color: #2b2927;
             margin: 0;
-            font-family: inherit;
         }
 
         .book-isbn {
@@ -317,12 +304,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             font-weight: 500;
         }
 
-        .book-metadata {
+        .page-container .book-metadata, .literary-container .book-metadata {
             font-size: 12px;
             color: #78746c;
             display: flex;
             gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .book-desc {
