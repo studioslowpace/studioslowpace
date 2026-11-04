@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 獨立人物 PNG 共讀空間">
+<Layout title="空間客舍 · 共讀空間">
   <!-- 1. 創角 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
@@ -23,8 +23,8 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 2. 入座與閱讀進度 Modal -->
-  <div id="seat-modal" class="rpg-modal-overlay" style="display: none; opacity: 0;">
+  <!-- 2. 入座 Modal -->
+  <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>◆ 閱讀與專心設定 ◆</span></div>
       <div class="rpg-content">
@@ -43,8 +43,8 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 3. 離線留言簿 Modal -->
-  <div id="guestbook-modal" class="rpg-modal-overlay" style="display: none; opacity: 0;">
+  <!-- 3. 留言簿 Modal -->
+  <div id="guestbook-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 460px;">
       <div class="rpg-title-bar"><span>📜 客舍靈魂留言簿</span></div>
       <div class="rpg-content">
@@ -101,7 +101,7 @@ import Layout from '../layouts/Layout.astro';
 
   <style is:global>
     body { background-color: #141210; color: #e6e2d3; font-family: serif, monospace; margin: 0; padding: 0; overflow: hidden; }
-    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 14, 12, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.3s ease; }
+    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 14, 12, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
     .rpg-window { background: #25221d; border: 2px solid #8c7d6b; border-radius: 8px; width: 90%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
     .rpg-title-bar { background: #3d3730; color: #f4f0ea; padding: 10px 16px; font-size: 13px; font-weight: bold; border-bottom: 2px solid #8c7d6b; }
     .rpg-content { padding: 20px; }
@@ -141,8 +141,6 @@ import Layout from '../layouts/Layout.astro';
   </style>
 
   <script>
-    import * as Tone from 'tone';
-
     let playerName = '冒險者';
     let playerRole = '📖 讀者';
     let playerX = 120;
@@ -156,7 +154,6 @@ import Layout from '../layouts/Layout.astro';
     let currentChapter = 1;
     let moktakCount = 0;
 
-    // 快取圖片物件的字典
     const imageCache: Record<string, HTMLImageElement> = {};
     function getLoadedImage(src: string): HTMLImageElement {
       if (!imageCache[src]) {
@@ -167,7 +164,6 @@ import Layout from '../layouts/Layout.astro';
       return imageCache[src];
     }
 
-    // 房間傢俱與常駐 NPC（每個 NPC 都可以指定獨立的 imgSrc）
     const rooms: Record<string, { 
       name: string; 
       items: { type: string; x: number; y: number; label: string; imgSrc: string }[];
@@ -220,7 +216,7 @@ import Layout from '../layouts/Layout.astro';
     const hudName = document.getElementById('hud-name');
     const hudRoleTag = document.getElementById('hud-role-tag');
     const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas?.getContext('2d');
     const leaveSeatBtn = document.getElementById('btn-leave-seat');
     const moktakBtn = document.getElementById('btn-moktak');
     const moktakCountSpan = document.getElementById('moktak-count');
@@ -231,6 +227,7 @@ import Layout from '../layouts/Layout.astro';
     const guestbookList = document.getElementById('guestbook-list');
 
     let pendingSeat: { x: number; y: number; label: string } | null = null;
+    let isGameStarted = false;
 
     startBtn?.addEventListener('click', () => {
       const val = nameInput?.value.trim();
@@ -239,8 +236,12 @@ import Layout from '../layouts/Layout.astro';
       if (selectedRole) playerRole = selectedRole.value;
       if (hudName) hudName.textContent = playerName;
       if (hudRoleTag) hudRoleTag.textContent = playerRole;
-      if (modal) { modal.style.opacity = '0'; setTimeout(() => modal.style.display = 'none', 300); }
-      gameLoop();
+      if (modal) modal.style.display = 'none';
+
+      if (!isGameStarted) {
+        isGameStarted = true;
+        gameLoop();
+      }
     });
 
     document.querySelectorAll('.channel-tab').forEach(tab => {
@@ -264,7 +265,7 @@ import Layout from '../layouts/Layout.astro';
       });
     });
 
-    canvas.addEventListener('click', (e) => {
+    canvas?.addEventListener('click', (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
@@ -276,7 +277,7 @@ import Layout from '../layouts/Layout.astro';
         const hitSeat = currentItems.find(item => item.type === 'seat' && Math.hypot(item.x - clickX, item.y - clickY) < 35);
         if (hitSeat) {
           pendingSeat = { x: hitSeat.x, y: hitSeat.y, label: hitSeat.label };
-          if (seatModal) { seatModal.style.display = 'flex'; setTimeout(() => seatModal.style.opacity = '1', 10); }
+          if (seatModal) seatModal.style.display = 'flex';
         } else {
           targetX = clickX; targetY = clickY;
           if (isDND) { isDND = false; if (leaveSeatBtn) leaveSeatBtn.style.display = 'none'; }
@@ -296,14 +297,13 @@ import Layout from '../layouts/Layout.astro';
         currentTask = `${bookName} (第 ${currentChapter} 章)`;
         isDND = true;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
-        closeSeatModal();
+        if (seatModal) seatModal.style.display = 'none';
       }
     });
 
-    cancelSeatBtn?.addEventListener('click', closeSeatModal);
-    function closeSeatModal() {
-      if (seatModal) { seatModal.style.opacity = '0'; setTimeout(() => seatModal.style.display = 'none', 300); }
-    }
+    cancelSeatBtn?.addEventListener('click', () => {
+      if (seatModal) seatModal.style.display = 'none';
+    });
 
     leaveSeatBtn?.addEventListener('click', () => {
       isDND = false; targetY += 35;
@@ -312,10 +312,10 @@ import Layout from '../layouts/Layout.astro';
 
     openGuestbookBtn?.addEventListener('click', () => {
       renderGuestbook();
-      if (guestbookModal) { guestbookModal.style.display = 'flex'; setTimeout(() => guestbookModal.style.opacity = '1', 10); }
+      if (guestbookModal) guestbookModal.style.display = 'flex';
     });
     closeGuestbookBtn?.addEventListener('click', () => {
-      if (guestbookModal) { guestbookModal.style.opacity = '0'; setTimeout(() => guestbookModal.style.display = 'none', 300); }
+      if (guestbookModal) guestbookModal.style.display = 'none';
     });
     submitGuestbookBtn?.addEventListener('click', () => {
       const text = guestbookInput?.value.trim();
@@ -335,15 +335,14 @@ import Layout from '../layouts/Layout.astro';
       guestbookList.innerHTML = html;
     }
 
-    // 核心繪製引擎：同時渲染傢俱、NPC 與玩家的獨立 PNG 圖片
     function draw() {
+      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#181512';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const roomData = rooms[currentRoom];
 
-      // 1. 繪製傢俱物件
       roomData.items.forEach(item => {
         const img = getLoadedImage(item.imgSrc);
         if (img.complete && img.naturalWidth !== 0) {
@@ -357,13 +356,12 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(`🪑 ${item.label}`, item.x - 28, item.y - 22);
       });
 
-      // 2. 繪製常駐 NPC
       roomData.npcs.forEach(npc => {
         const npcImg = getLoadedImage(npc.imgSrc);
         if (npcImg.complete && npcImg.naturalWidth !== 0) {
           ctx.drawImage(npcImg, npc.x - 16, npc.y - 16, 32, 32);
         } else {
-          ctx.fillStyle = '#2980b9'; // 備用方塊
+          ctx.fillStyle = '#2980b9';
           ctx.fillRect(npc.x - 12, npc.y - 12, 24, 24);
         }
         ctx.fillStyle = '#ffffff';
@@ -373,11 +371,9 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(`(${npc.task})`, npc.x - 25, npc.y + 24);
       });
 
-      // 3. 玩家平滑移動
       playerX += (targetX - playerX) * 0.12;
       playerY += (targetY - playerY) * 0.12;
 
-      // 4. 繪製玩家自己（使用專屬的 player.png）
       const playerImg = getLoadedImage('/assets/player.png');
       if (playerImg.complete && playerImg.naturalWidth !== 0) {
         ctx.drawImage(playerImg, playerX - 16, playerY - 16, 32, 32);
@@ -386,7 +382,6 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillRect(playerX - 12, playerY - 12, 24, 24);
       }
 
-      // 玩家頭頂狀態卡片
       if (isDND) {
         ctx.fillStyle = '#8b3a3a';
         ctx.fillRect(playerX - 55, playerY - 52, 110, 20);
@@ -410,13 +405,25 @@ import Layout from '../layouts/Layout.astro';
       requestAnimationFrame(gameLoop);
     }
 
-    moktakBtn?.addEventListener('click', async () => {
-      await Tone.start();
-      const synth = new Tone.Synth({
-        oscillator: { type: 'sine' },
-        envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.1 }
-      }).toDestination();
-      synth.triggerAttackRelease('C5', '8n');
+    // 原生 Web Audio 敲木魚聲 (免安裝套件，杜絕 404)
+    moktakBtn?.addEventListener('click', () => {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.15);
+      
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+
       moktakCount++;
       if (moktakCountSpan) moktakCountSpan.textContent = String(moktakCount);
     });
