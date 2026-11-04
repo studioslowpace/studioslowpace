@@ -28,10 +28,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
 
     <!-- 彈出詳細視窗 (Modal) -->
-    <div id="bookModal" class="modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="toggleModal(false)">&times;</span>
-            <h2 style="margin-top:0; color:var(--text-dark); margin-bottom: 20px;">書籍詳細資料與修改</h2>
+   <div id="bookModal" class="modal" style="display: none;" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-btn" onclick="toggleModal(false)">&times;</span>
+        <h2 style="margin-top:0; color:var(--text-dark); margin-bottom: 20px;">書籍詳細資料與修改</h2>
             
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
                 <!-- 左側：封面預覽與多圖高清下載清單 -->
@@ -249,15 +249,15 @@ async function searchBooks() {
                 }
 
                 libraryListDiv.innerHTML = localLibraryData.map((book, idx) => `
-                    <div class="library-card" onclick="openDetailsView(${idx})">
-                        <img src="${book.img_url}" alt="${book.title}">
-                        <div class="library-card-info">
-                            <p class="library-card-title" title="${book.title}">${book.title}</p>
-                            <p class="library-card-author">${book.authors || '未知作者'}</p>
-                        </div>
-                        <button class="del-btn" onclick="event.stopPropagation(); deleteFromLibrary(${idx})">刪除</button>
-                    </div>
-                `).join('');
+    <div class="library-card" onclick="openDetailsView(${idx})">
+        <img src="${book.img_url}" alt="${book.title}">
+        <div class="library-card-info">
+            <p class="library-card-title" title="${book.title}">${book.title}</p>
+            <p class="library-card-author">${book.authors || '未知作者'}</p>
+        </div>
+        <button class="del-btn" onclick="event.stopPropagation(); deleteFromLibrary(${idx})">刪除</button>
+    </div>
+`).join('');
 
             } catch (error) {
                 console.error(error);
@@ -417,20 +417,27 @@ async function searchBooks() {
             navigator.clipboard.writeText(textToCopy).then(() => alert('📋 完整圖書卡文字已複製！'));
         }
 
-        function toggleModal(show) {
+    function toggleModal(show) {
     const modal = document.getElementById('bookModal');
-    if (!modal) return;
+    if (!modal) {
+        console.error("找不到 #bookModal 元素！");
+        return;
+    }
     
     if (show) {
         modal.style.setProperty('display', 'flex', 'important');
+        console.log("🔓 強制展開 Modal 視窗");
     } else {
         modal.style.setProperty('display', 'none', 'important');
+        console.log("🔒 強制關閉 Modal 視窗");
     }
 }
 
-        function closeModal(e) {
-            if(e.target.id === 'bookModal') toggleModal(false);
-        }
+function closeModal(e) {
+    if (e.target.id === 'bookModal') {
+        toggleModal(false);
+    }
+}
     </script>
 
     <style>
