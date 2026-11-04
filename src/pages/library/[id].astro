@@ -2,7 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 const { id } = Astro.params;
 
-// 將網址傳進來的 `id`（格式為 書名_作者）進行解碼拆解
 const rawParam = decodeURIComponent(id || '');
 const [urlTitle, urlAuthor] = rawParam.split('_');
 ---
@@ -44,8 +43,8 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
 
                 <!-- 底部動作列 -->
                 <div class="detail-footer">
-                    <button onclick="copyAllDetails()" class="literary-btn-sub">📋 複製全部文字</button>
-                    <button onclick="saveBookEdits()" class="literary-btn-primary">💾 儲存修改項目</button>
+                    <button type="button" onclick="window.copyAllDetails()" class="literary-btn-sub">📋 複製全部文字</button>
+                    <button type="button" onclick="window.saveBookEdits()" class="literary-btn-primary">💾 儲存修改項目</button>
                 </div>
             </div>
         </section>
@@ -68,7 +67,6 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
 
         async function fetchBookDetails() {
             try {
-                // 透過網址解析出來的書名與作者向 Supabase 進行精確查詢
                 let query = window.client.from(window.TABLE_NAME).select('*').eq('title', searchTitle);
                 if (searchAuthor && searchAuthor !== '佚名') {
                     query = query.ilike('authors', `%${searchAuthor}%`);
@@ -128,9 +126,10 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
                 photoList.forEach(photo => {
                     const row = document.createElement('div');
                     row.className = 'photo-row';
+                    // 確保呼叫 window 函式
                     row.innerHTML = `
                         <span>${photo.name}</span>
-                        <button class="literary-btn-sm" onclick="downloadSpecificImage('${photo.url}', '${photo.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "")}')">下載</button>
+                        <button type="button" class="literary-btn-sm" onclick="window.downloadSpecificImage('${photo.url}', '${photo.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "")}')">下載</button>
                     `;
                     photoContainer.appendChild(row);
                 });
@@ -162,24 +161,26 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
 
                 const itemRow = document.createElement('div');
                 itemRow.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
+                // 確保複製單欄按鈕呼叫 window 函式
                 itemRow.innerHTML = `
                     <label style="font-size: 12px; color: var(--text-muted); font-weight: 500;">${field.label}</label>
                     <div style="display: flex; gap: 8px;">
                         ${inputHTML}
-                        <button type="button" onclick="copySingleField('${inputId}')" class="literary-btn-sm outline">複製</button>
+                        <button type="button" onclick="window.copySingleField('${inputId}')" class="literary-btn-sm outline">複製</button>
                     </div>
                 `;
                 formContainer.appendChild(itemRow);
             });
         }
 
-        function copySingleField(inputId) {
+        // 💡 關鍵修復：將所有互動函式強制掛載至 window 命名空間下
+        window.copySingleField = function(inputId) {
             const el = document.getElementById(inputId);
             if (!el) return;
             navigator.clipboard.writeText(el.value).then(() => alert('✨ 欄位內容已收進剪貼簿。'));
-        }
+        };
 
-        async function downloadSpecificImage(imgUrl, sizeName) {
+        window.downloadSpecificImage = async function(imgUrl, sizeName) {
             let targetUrl = imgUrl.replace('http://', 'https://');
             try {
                 const res = await fetch(targetUrl);
@@ -196,9 +197,9 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
             } catch (e) {
                 window.open(targetUrl, '_blank');
             }
-        }
+        };
 
-        async function saveBookEdits() {
+        window.saveBookEdits = async function() {
             if (!currentBook) return;
             const updatedData = {
                 title: document.getElementById('edit_title').value.trim(),
@@ -218,16 +219,15 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
                 if (error) throw error;
                 alert('💾 修正已同步至雲端資料庫。');
                 
-                // 如果書名或作者被修改了，順便更新當前網址導向新的命名路徑
                 const newTitle = encodeURIComponent(updatedData.title);
                 const newAuthor = encodeURIComponent(updatedData.authors.split(',')[0] || '佚名');
                 window.location.href = `/library/${newTitle}_${newAuthor}`;
             } catch (error) {
                 alert('💥 儲存失敗。');
             }
-        }
+        };
 
-        function copyAllDetails() {
+        window.copyAllDetails = function() {
             if (!currentBook) return;
             const fields = ['title', 'authors', 'publisher', 'pub_date', 'page_count', 'isbn', 'description', 'notes'];
             const labels = ['書名', '作者', '出版社', '出版日期', '頁數', 'ISBN', '簡介', '備註'];
@@ -237,7 +237,7 @@ const [urlTitle, urlAuthor] = rawParam.split('_');
                 if (el) text += `${labels[i]}: ${el.value}\n`;
             });
             navigator.clipboard.writeText(text).then(() => alert('📋 完整資料卡已複製。'));
-        }
+        };
     </script>
 
     <style is:global>
