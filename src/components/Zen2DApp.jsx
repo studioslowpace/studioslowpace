@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import * as Tone from 'tone';
 
 export default function Zen2DApp() {
@@ -15,7 +15,6 @@ export default function Zen2DApp() {
     setTimeout(() => setToastMessage(''), 3500);
   };
 
-  // 輕量音訊控制 (Tone.js)
   const toggleAudio = async () => {
     await Tone.start();
     const newState = !isAudioActive;
@@ -47,68 +46,63 @@ export default function Zen2DApp() {
   };
 
   return (
-    <main className="relative w-full h-screen overflow-hidden select-none font-serif bg-[#eeece3] text-[#4d5144] flex flex-col justify-between p-6 md:p-10">
+    <div style={{ backgroundColor: '#eeece3', color: '#4d5144', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', fontFamily: 'serif', position: 'relative', overflow: 'hidden' }}>
       
-      {/* 背景裝飾與微風浮動光影 */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center opacity-40">
-        <div className="w-[600px] h-[600px] bg-[#dfd8c2] rounded-full blur-3xl animate-pulse" />
-      </div>
-
       {/* 頂部導覽列 */}
-      <header className="relative z-20 flex items-center justify-between w-full max-w-5xl mx-auto">
-        <div className="flex items-center gap-3 bg-[#eeece3]/90 backdrop-blur-md px-5 py-2.5 rounded-full border border-[#d6d2c4] shadow-sm">
-          <a href="/" className="p-1.5 hover:bg-[#ded9c7] rounded-full transition" title="返回主站">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'between', width: '100%', maxWidth: '960px', margin: '0 auto', zIndex: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(238, 236, 227, 0.9)', backdropFilter: 'blur(8px)', padding: '10px 20px', borderRadius: '9999px', border: '1px solid #d6d2c4', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+          <a href="/" style={{ padding: '6px', borderRadius: '50%', textDecoration: 'none', color: inherit }} title="返回主站">
+            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>
           </a>
-          <button onClick={() => setIsRoomModalOpen(true)} className="flex items-center gap-1.5 font-medium text-sm hover:opacity-80 transition">
+          <button onClick={() => setIsRoomModalOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#4d5144' }}>
             <span>靜舍</span>
-            <span className="bg-[#dfd8c2] px-2.5 py-0.5 rounded-full text-xs font-semibold">伺服器 {roomNumber}</span>
+            <span style={{ background: '#dfd8c2', padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: '600' }}>伺服器 {roomNumber}</span>
           </button>
-          <button onClick={() => setIsPeopleModalOpen(true)} className="flex items-center gap-1.5 text-xs text-[#64664f] bg-[#e3ded0] px-3 py-1 rounded-full hover:bg-[#d8d2c2] transition">
-            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+          <button onClick={() => setIsPeopleModalOpen(true)} style={{ background: '#e3ded0', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64664f', padding: '4px 12px', borderRadius: '9999px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#059669' }}></span>
             <span>{onlineCount}/100 人共讀中</span>
           </button>
         </div>
 
-        <div className="bg-[#eeece3]/90 backdrop-blur-md p-2 rounded-full border border-[#d6d2c4] shadow-sm">
-          <button onClick={toggleAudio} className={`p-2.5 rounded-full transition ${isAudioActive ? 'bg-[#4d5144] text-[#eeece3]' : 'hover:bg-[#ded9c7]'}`} title="聲音開關">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" /></svg>
+        <div style={{ background: 'rgba(238, 236, 227, 0.9)', backdropFilter: 'blur(8px)', padding: '8px', borderRadius: '50%', border: '1px solid #d6d2c4' }}>
+          <button onClick={toggleAudio} style={{ background: isAudioActive ? '#4d5144' : 'transparent', color: isAudioActive ? '#eeece3' : '#4d5144', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} title="聲音開關">
+            <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" /></svg>
           </button>
         </div>
       </header>
 
       {/* 中央主視覺與心境區塊 */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center my-auto px-4">
-        <button onClick={handleChantInvite} className="group bg-[#5c4033] text-[#eeece3] px-6 py-2.5 rounded-full text-sm font-medium shadow-md hover:bg-[#4a3328] transition flex items-center gap-2 mb-8 transform hover:-translate-y-0.5 duration-200">
-          <span>🔔 敲響頌缽 靜心聆聽</span>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', margin: 'auto 0', padding: '20px' }}>
+        <button onClick={handleChantInvite} style={{ backgroundColor: '#5c4033', color: '#eeece3', padding: '10px 24px', borderRadius: '9999px', fontSize: '14px', fontWeight: '500', border: 'none', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '32px' }}>
+          🔔 敲響頌缽 靜心聆聽
         </button>
 
-        <div className="max-w-md mx-auto space-y-3">
-          <h1 className="text-2xl md:text-3xl font-normal tracking-wide text-[#3a3d32]">「 靜舍 · 共讀空間 」</h1>
-          <p className="text-sm text-[#737666] leading-relaxed">
+        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 'normal', letterSpacing: '1px', color: '#3a3d32', marginBottom: '12px' }}>「 靜舍 · 共讀空間 」</h1>
+          <p style={{ fontSize: '14px', color: '#737666', lineHeight: '1.6', margin: 0 }}>
             在這裡，我們不急著翻頁。<br />與各地同行者靜靜坐著，點一盞心燈，讀一本書。
           </p>
         </div>
 
         {toastMessage && (
-          <div className="mt-6 bg-[#4d5144]/90 text-[#eeece3] text-xs px-4 py-1.5 rounded-full shadow-sm animate-fade-in">
+          <div style={{ marginTop: '24px', backgroundColor: 'rgba(77, 81, 68, 0.9)', color: '#eeece3', fontSize: '12px', padding: '6px 16px', borderRadius: '9999px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
             {toastMessage}
           </div>
         )}
       </div>
 
       {/* 底部互動工具塢 */}
-      <footer className="relative z-20 flex flex-col items-center gap-3 w-full">
-        <nav className="flex items-center gap-2 bg-[#eeece3]/90 backdrop-blur-md p-2 rounded-2xl border border-[#d6d2c4] shadow-lg">
-          <button onClick={() => showToast('雙手合十，向線上夥伴致意 🙏')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-[#ded9c7] transition text-sm font-medium">
+      <footer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', paddingBottom: '20px', zIndex: 20 }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(238, 236, 227, 0.9)', backdropFilter: 'blur(8px)', padding: '8px', borderRadius: '16px', border: '1px solid #d6d2c4', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+          <button onClick={() => showToast('雙手合十，向線上夥伴致意 🙏')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#4d5144' }}>
             <span>🙏</span><span>合十問候</span>
           </button>
-          <div className="w-[1px] h-6 bg-[#d6d2c4]" />
-          <button onClick={handleMoktakClick} className="flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-[#ded9c7] transition text-sm font-medium">
-            <span>🪵</span><span>敲敲木魚</span><span className="text-xs bg-[#dfd8c2] px-2 py-0.5 rounded font-mono">{moktakCount}</span>
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#d6d2c4' }} />
+          <button onClick={handleMoktakClick} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#4d5144' }}>
+            <span>🪵</span><span>敲敲木魚</span><span style={{ fontSize: '12px', backgroundColor: '#dfd8c2', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>{moktakCount}</span>
           </button>
-          <div className="w-[1px] h-6 bg-[#d6d2c4]" />
-          <button onClick={() => showToast('開啟今日共讀筆記卡片 📖')} className="flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-[#ded9c7] transition text-sm font-medium">
+          <div style={{ width: '1px', height: '24px', backgroundColor: '#d6d2c4' }} />
+          <button onClick={() => showToast('開啟今日共讀筆記卡片 📖')} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '14px', fontWeight: '500', color: '#4d5144' }}>
             <span>📖</span><span>共讀隨筆</span>
           </button>
         </nav>
@@ -116,15 +110,15 @@ export default function Zen2DApp() {
 
       {/* 伺服器選擇 Modal */}
       {isRoomModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-          <div className="bg-[#eeece3] border border-[#d6d2c4] rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">選擇共讀伺服器</h3>
-              <button onClick={() => setIsRoomModalOpen(false)} className="p-1 hover:bg-[#ded9c7] rounded-full">✕</button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', padding: '16px' }}>
+          <div style={{ backgroundColor: '#eeece3', border: '1px solid #d6d2c4', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '500', margin: 0 }}>選擇共讀伺服器</h3>
+              <button onClick={() => setIsRoomModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px' }}>✕</button>
             </div>
-            <div className="grid grid-cols-5 gap-2">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 98].map((num) => (
-                <button key={num} onClick={() => { setRoomNumber(num); setIsRoomModalOpen(false); showToast(`已切換至 靜舍伺服器 ${num}`); }} className={`py-2.5 rounded-xl text-sm font-medium transition border ${roomNumber === num ? 'bg-[#4d5144] text-[#eeece3] border-[#4d5144]' : 'bg-[#e3ded0] hover:bg-[#d8d2c2] border-transparent'}`}>
+                <button key={num} onClick={() => { setRoomNumber(num); setIsRoomModalOpen(false); showToast(`已切換至 靜舍伺服器 ${num}`); }} style={{ padding: '10px 0', borderRadius: '12px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', border: '1px solid transparent', backgroundColor: roomNumber === num ? '#4d5144' : '#e3ded0', color: roomNumber === num ? '#eeece3' : '#4d5144' }}>
                   {num}號房
                 </button>
               ))}
@@ -135,22 +129,22 @@ export default function Zen2DApp() {
 
       {/* 訪客列表 Modal */}
       {isPeopleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
-          <div className="bg-[#eeece3] border border-[#d6d2c4] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">當前共讀夥伴 ({onlineCount})</h3>
-              <button onClick={() => setIsPeopleModalOpen(false)} className="p-1 hover:bg-[#ded9c7] rounded-full">✕</button>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(4px)', padding: '16px' }}>
+          <div style={{ backgroundColor: '#eeece3', border: '1px solid #d6d2c4', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '360px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '500', margin: 0 }}>當前共讀夥伴 ({onlineCount})</h3>
+              <button onClick={() => setIsPeopleModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px' }}>✕</button>
             </div>
-            <ul className="space-y-2 text-sm">
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px' }}>
               {['✨ 靜謐微風', '🍵 溫熱茶水', '🌿 青翠松葉', '☁️ 緩慢雲朵', '📖 閱讀中的旅人'].map((name, i) => (
-                <li key={i} className="flex items-center justify-between p-2.5 rounded-xl bg-[#e3ded0]/60">
-                  <span>{name}</span><span className="text-xs text-[#838677]">正在靜心閱讀</span>
+                <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '12px', backgroundColor: 'rgba(227, 222, 208, 0.6)' }}>
+                  <span>{name}</span><span style={{ fontSize: '12px', color: '#838677' }}>正在靜心閱讀</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
