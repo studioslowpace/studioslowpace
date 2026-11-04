@@ -204,6 +204,8 @@ import Layout from '../layouts/BaseLayout.astro';
   </style>
 
   <script>
+    import * as Tone from 'tone';
+
     let playerName = '建築師';
     let playerX = 100;
     let playerY = 320;
@@ -269,7 +271,7 @@ import Layout from '../layouts/BaseLayout.astro';
       });
     });
 
-    // 點擊畫布：根據目前工具決定是「移動/入座」還是「動手建造」
+    // 點擊畫布
     canvas.addEventListener('click', (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -278,7 +280,6 @@ import Layout from '../layouts/BaseLayout.astro';
       const clickY = (e.clientY - rect.top) * scaleY;
 
       if (currentTool === 'move') {
-        // 檢查是否點擊到座椅
         const hitSeat = customItems.find(item => item.type === 'seat' && Math.hypot(item.x - clickX, item.y - clickY) < 30);
         if (hitSeat) {
           pendingSeat = { x: hitSeat.x, y: hitSeat.y, label: hitSeat.label };
@@ -295,7 +296,6 @@ import Layout from '../layouts/BaseLayout.astro';
           }
         }
       } else {
-        // 建造模式：手動新增物品
         let type = currentTool;
         let label = type === 'seat' ? '自建木椅' : type === 'shelf' ? '典籍書架' : '綠意盆栽';
         customItems.push({ type, x: clickX, y: clickY, label });
@@ -324,9 +324,6 @@ import Layout from '../layouts/BaseLayout.astro';
       }
     }
 
-    let targetX = 100;
-    let targetY = 320;
-
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -334,7 +331,7 @@ import Layout from '../layouts/BaseLayout.astro';
       ctx.fillStyle = '#221f1b';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 繪製玩家自建的所有物件 (座位、書架、盆栽)
+      // 繪製自建物件
       customItems.forEach(item => {
         if (item.type === 'seat') {
           ctx.fillStyle = '#7a5230';
@@ -359,11 +356,11 @@ import Layout from '../layouts/BaseLayout.astro';
         }
       });
 
-      // 玩家移動
+      // 玩家移動平滑插值
       playerX += (targetX - playerX) * 0.12;
       playerY += (targetY - playerY) * 0.12;
 
-      // DND 狀態標籤
+      // DND 標籤
       if (isDND) {
         ctx.fillStyle = '#c0392b';
         ctx.fillRect(playerX - 35, playerY - 40, 70, 16);
