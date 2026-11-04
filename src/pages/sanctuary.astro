@@ -2,23 +2,23 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 網格 RPG 共讀空間">
+<Layout title="空間客舍 · 晴空文青共讀空間">
   <!-- 1. 創角 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 空間客舍 · 身份登入 ◆</span></div>
+      <div class="rpg-title-bar"><span>◆ 空間客舍 · 晴空書友登入 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">歡迎來到長沙灣空間客舍。請輸入稱號，並選擇你的書友身份組：</p>
+        <p class="rpg-text">午後的長沙灣天空湛藍。請留下你的稱號，並選擇今日的讀者身份：</p>
         <input type="text" id="rpg-name-input" placeholder="例如：尋書人、阿朗..." maxlength="12" autofocus />
         
         <div class="role-selector-group">
-          <label class="role-chip"><input type="radio" name="user-role" value="科幻迷" checked /> 🌌 科幻迷</label>
-          <label class="role-chip"><input type="radio" name="user-role" value="歷史愛好者" /> 📜 歷史愛好者</label>
-          <label class="role-chip"><input type="radio" name="user-role" value="寫作中" /> ✍️ 寫作中</label>
-          <label class="role-chip"><input type="radio" name="user-role" value="閒逛者" /> ☕ 閒逛者</label>
+          <label class="role-chip"><input type="radio" name="user-role" value="晴空選書" checked /> ☁️ 晴空選書</label>
+          <label class="role-chip"><input type="radio" name="user-role" value="散文漫遊" /> 🍃 散文漫遊</label>
+          <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
+          <label class="role-chip"><input type="radio" name="user-role" value="浪費時間" /> ☕ 浪費時間</label>
         </div>
 
-        <button id="rpg-start-btn" class="rpg-btn">▶ 推門入館</button>
+        <button id="rpg-start-btn" class="rpg-btn">▶ 推開晴空之門</button>
       </div>
     </div>
   </div>
@@ -37,7 +37,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
         <div class="rpg-btn-group" style="margin-top: 14px;">
           <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
-          <button id="seat-confirm-btn" class="rpg-btn">🛑 開啟專心勿擾 (DND)</button>
+          <button id="seat-confirm-btn" class="rpg-btn">☁️ 開啟晴空專心 (DND)</button>
         </div>
       </div>
     </div>
@@ -46,11 +46,11 @@ import Layout from '../layouts/Layout.astro';
   <!-- 3. 留言簿 Modal -->
   <div id="guestbook-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 460px;">
-      <div class="rpg-title-bar"><span>📜 客舍靈魂留言簿</span></div>
+      <div class="rpg-title-bar"><span>📜 晴空靈魂留言簿</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">即使不同時間到來，靈魂也能在此交會。留下一句金句或書評吧：</p>
+        <p class="rpg-text">在不同的藍天底下，靈魂在此交會。留下一句金句或午後書評吧：</p>
         <div id="guestbook-list" class="guestbook-list"></div>
-        <input type="text" id="guestbook-input" placeholder="寫下你的金句或心得..." maxlength="40" />
+        <input type="text" id="guestbook-input" placeholder="寫下你的午後金句..." maxlength="40" />
         <div class="rpg-btn-group">
           <button id="guestbook-close-btn" class="rpg-btn-ghost">關閉</button>
           <button id="guestbook-submit-btn" class="rpg-btn">✍️ 留下足跡</button>
@@ -63,17 +63,17 @@ import Layout from '../layouts/Layout.astro';
   <main class="rpg-container">
     <header class="rpg-hud">
       <div class="hud-left">
-        <span class="hud-brand">🏠 空間客舍</span>
+        <span class="hud-brand">☁️ 空間客舍</span>
         <span class="hud-divider">/</span>
         <div class="channel-tabs">
-          <button class="channel-tab active" data-room="study">📖 靜心自修室</button>
-          <button class="channel-tab" data-room="chat">☕ 自由書話間</button>
-          <button class="channel-tab" data-room="salon">🏛️ 文學沙龍</button>
+          <button class="channel-tab active" data-room="study">📖 晴空自修室</button>
+          <button class="channel-tab" data-room="chat">☕ 藍調書話間</button>
+          <button class="channel-tab" data-room="salon">🏛️ 微風沙龍</button>
         </div>
       </div>
       <div class="hud-right">
-        <span class="user-tag" id="hud-role-tag">📖 讀者</span>
-        <strong id="hud-name">旅人</strong>
+        <span class="user-tag" id="hud-role-tag">☁️ 讀者</span>
+        <strong id="hud-name" style="color: #e0f2fe;">旅人</strong>
         <button id="btn-open-guestbook" class="rpg-btn-sm">📜 留言簿</button>
         <a href="/" class="rpg-btn-sm" style="text-decoration:none;">🏠 離開</a>
       </div>
@@ -85,71 +85,243 @@ import Layout from '../layouts/Layout.astro';
 
     <footer class="rpg-footer">
       <div class="build-palette">
-        <span class="palette-title">網格工具：</span>
+        <span class="palette-title">配置工具：</span>
         <button class="tool-btn active" data-tool="move">🚶 移動/入座</button>
         <button class="tool-btn" data-tool="seat">🪑 建造座位</button>
         <button class="tool-btn" data-tool="shelf">📚 建造書架</button>
       </div>
 
       <div class="action-dock">
-        <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:#8b3a3a; color:#fff;">🚶 起立走動</button>
+        <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:#38bdf8; color:#0f172a; font-weight:bold;">🚶 起立走動</button>
         <button id="btn-moktak" class="rpg-btn-sm">🪵 敲木魚</button>
-        <span class="moktak-counter">功德榜: <strong id="moktak-count">0</strong> 功德</span>
+        <span class="moktak-counter">功德榜: <strong id="moktak-count" style="color: #38bdf8;">0</strong> 功德</span>
       </div>
     </footer>
   </main>
 
   <style is:global>
-    body { background-color: #141210; color: #e6e2d3; font-family: serif, monospace; margin: 0; padding: 0; overflow: hidden; }
-    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 14, 12, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .rpg-window { background: #25221d; border: 2px solid #8c7d6b; border-radius: 8px; width: 90%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-    .rpg-title-bar { background: #3d3730; color: #f4f0ea; padding: 10px 16px; font-size: 13px; font-weight: bold; border-bottom: 2px solid #8c7d6b; }
-    .rpg-content { padding: 20px; }
-    .rpg-text { font-size: 13px; color: #b5a48b; margin-bottom: 14px; line-height: 1.6; }
-    .rpg-window input[type="text"], .rpg-window input[type="number"] { width: 100%; background: #181614; border: 1px solid #6b5c4a; color: #f4f0ea; padding: 10px; font-family: serif; font-size: 14px; box-sizing: border-box; margin-bottom: 14px; outline: none; border-radius: 6px; }
-    .role-selector-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .role-chip { background: #1e1b17; border: 1px solid #554d42; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; color: #d1cbb8; }
-    .role-chip input { margin-right: 4px; }
-    .progress-input-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #b5a48b; }
-    .rpg-btn { background: #5c4a38; color: #f4f0ea; border: 1px solid #8c7d6b; padding: 10px; font-family: serif; font-size: 13px; cursor: pointer; width: 100%; font-weight: bold; border-radius: 6px; }
-    .rpg-btn:hover { background: #7a634b; }
-    .rpg-btn-ghost { background: transparent; color: #b5a48b; border: 1px solid #6b5c4a; padding: 10px; font-family: serif; font-size: 13px; cursor: pointer; width: 100%; border-radius: 6px; }
+    /* 🎨 文青天空藍色系設計 */
+    body { 
+      background-color: #0f172a; 
+      color: #cbd5e1; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, serif; 
+      margin: 0; 
+      padding: 0; 
+      overflow: hidden; 
+    }
+    
+    .rpg-modal-overlay { 
+      position: fixed; inset: 0; 
+      background: rgba(15, 23, 42, 0.75); 
+      backdrop-filter: blur(6px); 
+      display: flex; align-items: center; justify-content: center; 
+      z-index: 100; 
+    }
+    
+    .rpg-window { 
+      background: #1e293b; 
+      border: 1px solid #334155; 
+      border-radius: 12px; 
+      width: 90%; max-width: 420px; 
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); 
+    }
+    
+    .rpg-title-bar { 
+      background: #0f172a; 
+      color: #38bdf8; 
+      padding: 12px 18px; 
+      font-size: 13px; 
+      font-weight: 500; 
+      letter-spacing: 0.05em;
+      border-top-left-radius: 11px;
+      border-top-right-radius: 11px;
+      border-bottom: 1px solid #334155; 
+    }
+    
+    .rpg-content { padding: 22px; }
+    
+    .rpg-text { 
+      font-size: 13px; 
+      color: #94a3b8; 
+      margin-bottom: 16px; 
+      line-height: 1.7; 
+    }
+    
+    .rpg-window input[type="text"], .rpg-window input[type="number"] { 
+      width: 100%; 
+      background: #0f172a; 
+      border: 1px solid #334155; 
+      color: #f8fafc; 
+      padding: 10px 14px; 
+      font-family: inherit; 
+      font-size: 13px; 
+      box-sizing: border-box; 
+      margin-bottom: 16px; 
+      outline: none; 
+      border-radius: 8px; 
+      transition: border-color 0.2s;
+    }
+    .rpg-window input[type="text"]:focus, .rpg-window input[type="number"]:focus {
+      border-color: #38bdf8;
+    }
+
+    .role-selector-group { display: flex; flex-wrap: gap; gap: 8px; margin-bottom: 18px; }
+    .role-chip { 
+      background: #0f172a; 
+      border: 1px solid #334155; 
+      padding: 6px 12px; 
+      border-radius: 20px; 
+      font-size: 12px; 
+      cursor: pointer; 
+      color: #cbd5e1; 
+      transition: all 0.2s;
+    }
+    .role-chip:hover { border-color: #38bdf8; color: #38bdf8; }
+    .role-chip input { margin-right: 6px; accent-color: #38bdf8; }
+    
+    .progress-input-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
+    
+    .rpg-btn { 
+      background: #0284c7; 
+      color: #f8fafc; 
+      border: none; 
+      padding: 10px 16px; 
+      font-family: inherit; 
+      font-size: 13px; 
+      cursor: pointer; 
+      width: 100%; 
+      font-weight: 500; 
+      border-radius: 8px; 
+      transition: background 0.2s;
+    }
+    .rpg-btn:hover { background: #0ea5e9; }
+    
+    .rpg-btn-ghost { 
+      background: transparent; 
+      color: #94a3b8; 
+      border: 1px solid #334155; 
+      padding: 10px 16px; 
+      font-family: inherit; 
+      font-size: 13px; 
+      cursor: pointer; 
+      width: 100%; 
+      border-radius: 8px; 
+      transition: all 0.2s;
+    }
+    .rpg-btn-ghost:hover { border-color: #64748b; color: #f8fafc; }
+    
     .rpg-btn-group { display: flex; gap: 10px; }
-    .guestbook-list { max-height: 160px; overflow-y: auto; background: #181614; border: 1px solid #554d42; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-size: 12px; }
-    .guestbook-item { margin-bottom: 8px; border-bottom: 1px dashed #332d26; padding-bottom: 6px; }
-    .guestbook-author { color: #d4af37; font-weight: bold; }
+    
+    .guestbook-list { 
+      max-height: 160px; 
+      overflow-y: auto; 
+      background: #0f172a; 
+      border: 1px solid #334155; 
+      border-radius: 8px; 
+      padding: 12px; 
+      margin-bottom: 14px; 
+      font-size: 12px; 
+      line-height: 1.6;
+    }
+    .guestbook-item { margin-bottom: 8px; border-bottom: 1px dashed #1e293b; padding-bottom: 6px; }
+    .guestbook-author { color: #38bdf8; font-weight: 500; }
+    
     .rpg-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-    .rpg-hud { background: #1c1a17; border-bottom: 1px solid #3d3730; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-    .hud-left { display: flex; align-items: center; gap: 12px; }
-    .hud-brand { font-weight: bold; color: #d4af37; }
-    .hud-divider { color: #554d42; }
-    .channel-tabs { display: flex; gap: 6px; }
-    .channel-tab { background: #25221d; color: #9c8e7b; border: 1px solid #4a3f35; padding: 4px 10px; font-family: serif; font-size: 12px; cursor: pointer; border-radius: 6px; }
-    .channel-tab.active { background: #5c4a38; color: #f4f0ea; border-color: #d4af37; }
-    .hud-right { display: flex; align-items: center; gap: 10px; }
-    .user-tag { background: #2b2520; border: 1px solid #6b5c4a; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #d4af37; }
-    .rpg-btn-sm { background: #2b2520; color: #d1cbb8; border: 1px solid #6b5c4a; padding: 6px 12px; font-family: serif; font-size: 12px; cursor: pointer; border-radius: 6px; }
-    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #141210; padding: 12px; }
-    #rpg-canvas { border: 2px solid #3d3730; background: #181614; cursor: pointer; image-rendering: pixelated; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 8px; }
-    .rpg-footer { background: #1c1a17; border-top: 1px solid #3d3730; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-    .build-palette { display: flex; align-items: center; gap: 8px; }
-    .palette-title { font-size: 12px; color: #8a7e6c; }
-    .tool-btn { background: #25221d; color: #b5a48b; border: 1px solid #554d42; padding: 6px 12px; font-family: serif; font-size: 12px; cursor: pointer; border-radius: 6px; }
-    .tool-btn.active { background: #5c4a38; color: #f4f0ea; border-color: #d4af37; }
+    
+    .rpg-hud { 
+      background: #1e293b; 
+      border-bottom: 1px solid #334155; 
+      padding: 10px 24px; 
+      display: flex; justify-content: space-between; align-items: center; 
+      font-size: 13px; 
+    }
+    .hud-left { display: flex; align-items: center; gap: 14px; }
+    .hud-brand { font-weight: 600; color: #38bdf8; letter-spacing: 0.05em; }
+    .hud-divider { color: #334155; }
+    
+    .channel-tabs { display: flex; gap: 8px; }
+    .channel-tab { 
+      background: #0f172a; 
+      color: #94a3b8; 
+      border: 1px solid #334155; 
+      padding: 6px 14px; 
+      font-family: inherit; 
+      font-size: 12px; 
+      cursor: pointer; 
+      border-radius: 20px; 
+      transition: all 0.2s;
+    }
+    .channel-tab:hover { color: #f8fafc; border-color: #64748b; }
+    .channel-tab.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
+    
+    .hud-right { display: flex; align-items: center; gap: 12px; }
+    .user-tag { 
+      background: #0f172a; 
+      border: 1px solid #334155; 
+      padding: 4px 10px; 
+      border-radius: 12px; 
+      font-size: 11px; 
+      color: #38bdf8; 
+    }
+    
+    .rpg-btn-sm { 
+      background: #0f172a; 
+      color: #cbd5e1; 
+      border: 1px solid #334155; 
+      padding: 6px 12px; 
+      font-family: inherit; 
+      font-size: 12px; 
+      cursor: pointer; 
+      border-radius: 8px; 
+      transition: all 0.2s;
+    }
+    .rpg-btn-sm:hover { border-color: #38bdf8; color: #38bdf8; }
+    
+    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #0b1329; padding: 12px; }
+    
+    #rpg-canvas { 
+      border: 1px solid #1e293b; 
+      background: #0f172a; 
+      cursor: pointer; 
+      image-rendering: pixelated; 
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4); 
+      border-radius: 12px; 
+    }
+    
+    .rpg-footer { 
+      background: #1e293b; 
+      border-top: 1px solid #334155; 
+      padding: 12px 24px; 
+      display: flex; justify-content: space-between; align-items: center; 
+    }
+    .build-palette { display: flex; align-items: center; gap: 10px; }
+    .palette-title { font-size: 12px; color: #94a3b8; }
+    
+    .tool-btn { 
+      background: #0f172a; 
+      color: #94a3b8; 
+      border: 1px solid #334155; 
+      padding: 6px 14px; 
+      font-family: inherit; 
+      font-size: 12px; 
+      cursor: pointer; 
+      border-radius: 8px; 
+      transition: all 0.2s;
+    }
+    .tool-btn:hover { color: #f8fafc; border-color: #64748b; }
+    .tool-btn.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
+    
     .action-dock { display: flex; align-items: center; gap: 12px; }
-    .moktak-counter { font-size: 12px; color: #d4af37; }
+    .moktak-counter { font-size: 12px; color: #94a3b8; }
   </style>
 
   <script>
-    const TILE_SIZE = 32; // 每個格子 32x32 像素
+    const TILE_SIZE = 32;
 
     let playerName = '冒險者';
-    let playerRole = '📖 讀者';
-    
-    // 玩家網格座標 (Grid X, Grid Y)
+    let playerRole = '☁️ 讀者';
     let playerGx = 3;
     let playerGy = 8;
-
     let currentTool = 'move';
     let currentRoom = 'study';
     let isDND = false;
@@ -157,7 +329,6 @@ import Layout from '../layouts/Layout.astro';
     let currentChapter = 1;
     let moktakCount = 0;
 
-    // 移動路徑佇列（確保上下左右走，不斜走）
     let moveQueue: { gx: number; gy: number }[] = [];
     let moveTimer = 0;
 
@@ -175,35 +346,34 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
-    // 房間設定（以網格座標 gx, gy 定位）
     const rooms: Record<string, { 
       name: string; 
       items: { type: string; gx: number; gy: number; label: string; imgSrc: string }[];
       npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string }[];
     }> = {
       study: {
-        name: '靜心自修室',
+        name: '晴空自修室',
         items: [
-          { type: 'seat', gx: 8, gy: 5, label: '極靜自修木椅 A', imgSrc: '/assets/chair.png' },
-          { type: 'seat', gx: 18, gy: 5, label: '極靜自修木椅 B', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 13, gy: 2, label: '文獻參考書櫃', imgSrc: '/assets/shelf.png' }
+          { type: 'seat', gx: 8, gy: 5, label: '晴空木椅 A', imgSrc: '/assets/chair.png' },
+          { type: 'seat', gx: 18, gy: 5, label: '晴空木椅 B', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 13, gy: 2, label: '藍調書櫃', imgSrc: '/assets/shelf.png' }
         ],
         npcs: [
-          { name: '店長 Mi', task: '整理圖書帳目', gx: 21, gy: 4, imgSrc: '/assets/npc_mi.png' }
+          { name: '店長', task: '整理晴空筆記', gx: 21, gy: 4, imgSrc: '/assets/intern.png' }
         ]
       },
       chat: {
-        name: '自由書話間',
+        name: '藍調書話間',
         items: [
-          { type: 'seat', gx: 6, gy: 6, label: '茶水沙發 A', imgSrc: '/assets/chair.png' },
+          { type: 'seat', gx: 6, gy: 6, label: '微風沙發 A', imgSrc: '/assets/chair.png' },
           { type: 'seat', gx: 20, gy: 6, label: '靠窗交流位', imgSrc: '/assets/chair.png' }
         ],
         npcs: [
-          { name: '實習生', task: '維護空間綠意', gx: 7, gy: 10, imgSrc: '/assets/intern.png' }
+          { name: '實習生', task: '澆灌窗台綠意', gx: 7, gy: 10, imgSrc: '/assets/intern.png' }
         ]
       },
       salon: {
-        name: '文學沙龍',
+        name: '微風沙龍',
         items: [
           { type: 'seat', gx: 13, gy: 4, label: '講者席', imgSrc: '/assets/chair.png' }
         ],
@@ -212,8 +382,8 @@ import Layout from '../layouts/Layout.astro';
     };
 
     let guestbookMessages = [
-      { author: '阿朗', text: '「在長沙灣的午後，讀著少女核，靈魂感到無比安定。」' },
-      { author: 'Mi', text: '「歡迎來到空間客舍，祝大家閱讀愉快！」' }
+      { author: '阿朗', text: '「在長沙灣的藍天午後，讀著少女核，靈魂感到無比清澈。」' },
+      { author: 'Mi', text: '「歡迎來到晴空客舍，祝大家閱讀愉快！」' }
     ];
 
     const modal = document.getElementById('rpg-modal');
@@ -278,7 +448,6 @@ import Layout from '../layouts/Layout.astro';
       });
     });
 
-    // 檢查該網格是否已被佔用（物件、NPC 或邊界）
     function isCellOccupied(gx: number, gy: number): boolean {
       const maxCols = Math.floor(canvas.width / TILE_SIZE);
       const maxRows = Math.floor(canvas.height / TILE_SIZE);
@@ -286,12 +455,10 @@ import Layout from '../layouts/Layout.astro';
 
       const roomData = rooms[currentRoom];
       const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
-      const hasNpc = roomData.npcs.some(npc => npc.gx === npc.gy && npc.gx === gx); // wait, npc.gx and npc.gy
-      const hasNpcReal = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      return hasItem || hasNpcReal;
+      const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
+      return hasItem || hasNpc;
     }
 
-    // 畫布點擊事件（網格對齊）
     canvas?.addEventListener('click', (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -309,7 +476,6 @@ import Layout from '../layouts/Layout.astro';
           pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
           if (seatModal) seatModal.style.display = 'flex';
         } else if (!isCellOccupied(targetGx, targetGy)) {
-          // 生成純粹「只能上下左右走」的曼哈頓路徑佇列（不斜走）
           moveQueue = [];
           let currX = playerGx;
           let currY = playerGy;
@@ -329,10 +495,9 @@ import Layout from '../layouts/Layout.astro';
           }
         }
       } else {
-        // 建造工具：確保 1 格只能放 1 個物件
         if (!isCellOccupied(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
           const imgSrc = currentTool === 'shelf' ? '/assets/shelf.png' : '/assets/chair.png';
-          roomData.items.push({ type: currentTool, gx: targetGx, gy: targetGy, label: '自建傢俱', imgSrc });
+          roomData.items.push({ type: currentTool, gx: targetGx, gy: targetGy, label: '晴空傢俱', imgSrc });
         }
       }
     });
@@ -342,7 +507,7 @@ import Layout from '../layouts/Layout.astro';
         playerGx = pendingSeat.gx;
         playerGy = pendingSeat.gy;
         moveQueue = [];
-        const bookName = bookInput?.value.trim() || '靜心閱讀中';
+        const bookName = bookInput?.value.trim() || '晴空閱讀中';
         currentChapter = parseInt(chapterInput?.value) || 1;
         currentTask = `${bookName} (第 ${currentChapter} 章)`;
         isDND = true;
@@ -388,15 +553,16 @@ import Layout from '../layouts/Layout.astro';
       guestbookList.innerHTML = html;
     }
 
-    // 繪製與網格步進邏輯
     function draw() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#181512';
+      
+      // 🎨 文青風天空藍深色背景色調
+      ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 1. 顯示網格線 (Show Grid)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      // 極簡柔和網格線
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += TILE_SIZE) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
@@ -407,7 +573,6 @@ import Layout from '../layouts/Layout.astro';
 
       const roomData = rooms[currentRoom];
 
-      // 2. 處理上下左右依序步進移動（不斜走）
       moveTimer++;
       if (moveQueue.length > 0 && moveTimer % 8 === 0) {
         const nextStep = moveQueue.shift()!;
@@ -415,11 +580,10 @@ import Layout from '../layouts/Layout.astro';
           playerGx = nextStep.gx;
           playerGy = nextStep.gy;
         } else {
-          moveQueue = []; // 遇到障礙物停止
+          moveQueue = [];
         }
       }
 
-      // 3. 繪製傢俱物件 (1格1個)
       roomData.items.forEach(item => {
         const px = item.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = item.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -428,15 +592,14 @@ import Layout from '../layouts/Layout.astro';
         if (img && img.complete && img.naturalWidth !== 0) {
           ctx.drawImage(img, px - 16, py - 16, 32, 32);
         } else {
-          ctx.fillStyle = '#6b4f3b';
+          ctx.fillStyle = '#334155'; // 備用方塊改為柔和藍灰
           ctx.fillRect(px - 14, py - 14, 28, 28);
         }
-        ctx.fillStyle = '#d4af37';
-        ctx.font = '9px serif';
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '9px sans-serif';
         ctx.fillText(`🪑 ${item.label}`, px - 24, py - 18);
       });
 
-      // 4. 繪製 NPC
       roomData.npcs.forEach(npc => {
         const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -445,15 +608,14 @@ import Layout from '../layouts/Layout.astro';
         if (npcImg && npcImg.complete && npcImg.naturalWidth !== 0) {
           ctx.drawImage(npcImg, px - 16, py - 16, 32, 32);
         } else {
-          ctx.fillStyle = '#2980b9';
-          ctx.fillRect(px - 12, py - 12, 24, 24);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(px - 12, px - 12, 24, 24);
         }
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px serif';
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '10px sans-serif';
         ctx.fillText(npc.name, px - 18, py - 18);
       });
 
-      // 5. 繪製玩家位置
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
       const playerImg = getLoadedImage('/assets/player.png');
@@ -461,24 +623,24 @@ import Layout from '../layouts/Layout.astro';
       if (playerImg && playerImg.complete && playerImg.naturalWidth !== 0) {
         ctx.drawImage(playerImg, pScreenX - 16, pScreenY - 16, 32, 32);
       } else {
-        ctx.fillStyle = isDND ? '#388e3c' : '#d97706';
+        ctx.fillStyle = isDND ? '#10b981' : '#38bdf8';
         ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
       }
 
       if (isDND) {
-        ctx.fillStyle = '#8b3a3a';
+        ctx.fillStyle = '#047857';
         ctx.fillRect(pScreenX - 55, pScreenY - 52, 110, 20);
-        ctx.fillStyle = '#ffcccc';
-        ctx.font = 'bold 10px serif';
-        ctx.fillText('🛑 專心勿擾 (DND)', pScreenX - 48, pScreenY - 38);
+        ctx.fillStyle = '#d1fae5';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('☁️ 晴空專心 (DND)', pScreenX - 48, pScreenY - 38);
       }
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '11px serif';
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '11px sans-serif';
       ctx.fillText(`[${playerRole}] ${playerName}`, pScreenX - 35, pScreenY + 24);
       if (isDND) {
-        ctx.fillStyle = '#facc15';
-        ctx.font = '10px serif';
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = '10px sans-serif';
         ctx.fillText(`📖 讀: ${currentTask}`, pScreenX - 40, pScreenY + 36);
       }
     }
@@ -488,7 +650,6 @@ import Layout from '../layouts/Layout.astro';
       requestAnimationFrame(gameLoop);
     }
 
-    // 敲木魚
     moktakBtn?.addEventListener('click', () => {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = audioCtx.createOscillator();
