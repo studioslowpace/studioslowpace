@@ -2,15 +2,14 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 大視野晴空共讀空間">
+<Layout title="空間客舍 · 多人線上共讀空間">
   <!-- 1. 創角與頭像選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 空間客舍 · 選擇你的分身 ◆</span></div>
+      <div class="rpg-title-bar"><span>◆ 空間客舍 · 多人連線登入 ◆</span></div>
       <div class="rpg-content">
         <p class="rpg-text">午後的長沙灣天空湛藍。請選擇你的分身造型與書友身份：</p>
         
-        <!-- 頭像選擇區 -->
         <div class="avatar-selector-label">選擇分身造型：</div>
         <div class="avatar-selector-group">
           <label class="avatar-card">
@@ -35,7 +34,7 @@ import Layout from '../layouts/Layout.astro';
           <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
         </div>
 
-        <button id="rpg-start-btn" class="rpg-btn">▶ 進入晴空客舍</button>
+        <button id="rpg-start-btn" class="rpg-btn">▶ 進入線上客舍</button>
       </div>
     </div>
   </div>
@@ -89,6 +88,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>
       <div class="hud-right">
+        <span class="online-indicator">🟢 線上: <strong id="online-count">1</strong> 人</span>
         <span class="user-tag" id="hud-role-tag">☁️ 讀者</span>
         <strong id="hud-name" style="color: #e0f2fe;">旅人</strong>
         <button id="btn-open-guestbook" class="rpg-btn-sm">📜 留言簿</button>
@@ -96,7 +96,6 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </header>
 
-    <!-- 放大寬敞的畫布容器 -->
     <div class="canvas-wrapper">
       <canvas id="rpg-canvas" width="960" height="540"></canvas>
     </div>
@@ -125,7 +124,6 @@ import Layout from '../layouts/Layout.astro';
     .rpg-content { padding: 22px; }
     .rpg-text { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.6; }
     
-    /* 頭像選擇卡片樣式 */
     .avatar-selector-label { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
     .avatar-selector-group { display: flex; gap: 12px; margin-bottom: 16px; }
     .avatar-card { flex: 1; background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -158,7 +156,8 @@ import Layout from '../layouts/Layout.astro';
     .channel-tabs { display: flex; gap: 8px; }
     .channel-tab { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 14px; font-family: inherit; font-size: 12px; cursor: pointer; border-radius: 20px; }
     .channel-tab.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
-    .hud-right { display: flex; align-items: center; gap: 12px; }
+    .hud-right { display: flex; align-items: center; gap: 14px; }
+    .online-indicator { font-size: 12px; color: #34d399; }
     .user-tag { background: #0f172a; border: 1px solid #334155; padding: 4px 10px; border-radius: 12px; font-size: 11px; color: #38bdf8; }
     .rpg-btn-sm { background: #0f172a; color: #cbd5e1; border: 1px solid #334155; padding: 6px 12px; font-family: inherit; font-size: 12px; cursor: pointer; border-radius: 8px; }
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #0b1329; padding: 12px; }
@@ -173,22 +172,33 @@ import Layout from '../layouts/Layout.astro';
   </style>
 
   <script>
-    const TILE_SIZE = 48; // 放大格子尺寸到 48x48 像素
+    import { createClient } from '@supabase/supabase-js';
+
+    // 建立 Supabase 客戶端（請確保專案中有設定 PUBLIC_SUPABASE_URL 與 PUBLIC_SUPABASE_ANON_KEY）
+    // 如果你在專案中已有共用的 supabase.ts，也可以直接 import 引入
+    const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://blqlrxqckiuvgevmakbu.supabase.co';
+    const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const TILE_SIZE = 48;
+    const userId = 'user_' + Math.random().toString(36).substring(2, 9); // 產生隨機訪客 ID
 
     let playerName = '冒險者';
     let playerRole = '☁️ 讀者';
-    let playerAvatar = '/assets/player1.png'; // 預設頭像
+    let playerAvatar = '/assets/player1.png';
     let playerGx = 4;
     let playerGy = 5;
     let currentTool = 'move';
     let currentRoom = 'study';
     let isDND = false;
     let currentTask = '';
-    let currentChapter = 1;
     let moktakCount = 0;
 
     let moveQueue: { gx: number; gy: number }[] = [];
     let moveTimer = 0;
+
+    // 儲存其他線上玩家的字典 { [userId]: playerState }
+    let onlinePlayers: Record<string, any> = {};
 
     const imageCache: Record<string, HTMLImageElement> = {};
     const imageFailed: Record<string, boolean> = {};
@@ -204,12 +214,10 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
-    // 房間設定與模擬的其他線上玩家 (Other Online Players)
     const rooms: Record<string, { 
       name: string; 
       items: { type: string; gx: number; gy: number; label: string; imgSrc: string }[];
       npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string }[];
-      otherPlayers: { name: string; role: string; gx: number; gy: number; imgSrc: string; task?: string }[];
     }> = {
       study: {
         name: '晴空自修室',
@@ -220,10 +228,6 @@ import Layout from '../layouts/Layout.astro';
         ],
         npcs: [
           { name: '店長 Mi', task: '整理晴空筆記', gx: 16, gy: 2, imgSrc: '/assets/npc_mi.png' }
-        ],
-        otherPlayers: [
-          { name: '阿朗', role: '散文漫遊', gx: 6, gy: 3, imgSrc: '/assets/player2.png', task: '《少女核》第 3 章' },
-          { name: '阿詩', role: '晴空選書', gx: 14, gy: 7, imgSrc: '/assets/player1.png', task: '寫作筆記中...' }
         ]
       },
       chat: {
@@ -234,9 +238,6 @@ import Layout from '../layouts/Layout.astro';
         ],
         npcs: [
           { name: '實習生', task: '澆灌窗台綠意', gx: 5, gy: 8, imgSrc: '/assets/intern.png' }
-        ],
-        otherPlayers: [
-          { name: 'Ben', role: '浪費時間', gx: 14, gy: 4, imgSrc: '/assets/player2.png', task: '喝咖啡閒聊' }
         ]
       },
       salon: {
@@ -244,8 +245,7 @@ import Layout from '../layouts/Layout.astro';
         items: [
           { type: 'seat', gx: 9, gy: 3, label: '講者席', imgSrc: '/assets/chair.png' }
         ],
-        npcs: [],
-        otherPlayers: []
+        npcs: []
       }
     };
 
@@ -275,11 +275,61 @@ import Layout from '../layouts/Layout.astro';
     const submitGuestbookBtn = document.getElementById('guestbook-submit-btn');
     const guestbookInput = document.getElementById('guestbook-input') as HTMLInputElement;
     const guestbookList = document.getElementById('guestbook-list');
+    const onlineCountSpan = document.getElementById('online-count');
 
     let pendingSeat: { gx: number; gy: number; label: string } | null = null;
     let isGameStarted = false;
+    let presenceChannel: any = null;
 
-    startBtn?.addEventListener('click', () => {
+    // 啟動 Supabase Realtime Presence 頻道
+    function initRealtimeSync() {
+      presenceChannel = supabase.channel('sanctuary_room_multiplayer', {
+        config: { presence: { key: userId } }
+      });
+
+      presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+          const state = presenceChannel.presenceState();
+          onlinePlayers = {};
+          let totalCount = 0;
+
+          Object.keys(state).forEach(key => {
+            const userPresences = state[key] as any[];
+            if (userPresences && userPresences.length > 0) {
+              const info = userPresences[0];
+              // 只同步同一個房間的玩家
+              if (info.room === currentRoom && key !== userId) {
+                onlinePlayers[key] = info;
+              }
+              totalCount++;
+            }
+          });
+
+          if (onlineCountSpan) onlineCountSpan.textContent = String(totalCount);
+        })
+        .subscribe(async (status: string) => {
+          if (status === 'SUBSCRIBED') {
+            await updateMyPresence();
+          }
+        });
+    }
+
+    // 發送我自己的即時狀態給所有線上訪客
+    async function updateMyPresence() {
+      if (!presenceChannel) return;
+      await presenceChannel.track({
+        name: playerName,
+        role: playerRole,
+        avatar: playerAvatar,
+        room: currentRoom,
+        gx: playerGx,
+        gy: playerGy,
+        isDND: isDND,
+        task: currentTask
+      });
+    }
+
+    startBtn?.addEventListener('click', async () => {
       const val = nameInput?.value.trim();
       if (val) playerName = val;
 
@@ -295,12 +345,13 @@ import Layout from '../layouts/Layout.astro';
 
       if (!isGameStarted) {
         isGameStarted = true;
+        initRealtimeSync();
         gameLoop();
       }
     });
 
     document.querySelectorAll('.channel-tab').forEach(tab => {
-      tab.addEventListener('click', (e) => {
+      tab.addEventListener('click', async (e) => {
         document.querySelectorAll('.channel-tab').forEach(t => t.classList.remove('active'));
         const target = e.currentTarget as HTMLElement;
         target.classList.add('active');
@@ -309,6 +360,7 @@ import Layout from '../layouts/Layout.astro';
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
         playerGx = 4; playerGy = 5;
         moveQueue = [];
+        await updateMyPresence();
       });
     });
 
@@ -329,11 +381,11 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
       const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
       const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      const hasOther = roomData.otherPlayers.some(p => p.gx === gx && p.gy === gy);
+      const hasOther = Object.values(onlinePlayers).some((p: any) => p.gx === gx && p.gy === gy);
       return hasItem || hasNpc || hasOther;
     }
 
-    canvas?.addEventListener('click', (e) => {
+    canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
@@ -376,17 +428,18 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    confirmSeatBtn?.addEventListener('click', () => {
+    confirmSeatBtn?.addEventListener('click', async () => {
       if (pendingSeat) {
         playerGx = pendingSeat.gx;
         playerGy = pendingSeat.gy;
         moveQueue = [];
         const bookName = bookInput?.value.trim() || '晴空閱讀中';
-        currentChapter = parseInt(chapterInput?.value) || 1;
-        currentTask = `${bookName} (第 ${currentChapter} 章)`;
+        const chapter = parseInt(chapterInput?.value) || 1;
+        currentTask = `${bookName} (第 ${chapter} 章)`;
         isDND = true;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         if (seatModal) seatModal.style.display = 'none';
+        await updateMyPresence();
       }
     });
 
@@ -394,12 +447,13 @@ import Layout from '../layouts/Layout.astro';
       if (seatModal) seatModal.style.display = 'none';
     });
 
-    leaveSeatBtn?.addEventListener('click', () => {
+    leaveSeatBtn?.addEventListener('click', async () => {
       isDND = false;
       if (playerGy + 1 < Math.floor(canvas.height / TILE_SIZE) && !isCellOccupied(playerGx, playerGy + 1)) {
         playerGy += 1;
       }
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      await updateMyPresence();
     });
 
     openGuestbookBtn?.addEventListener('click', () => {
@@ -431,11 +485,9 @@ import Layout from '../layouts/Layout.astro';
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // 繪製背景色
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 繪製放大的 48x48 網格線
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.06)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += TILE_SIZE) {
@@ -453,6 +505,7 @@ import Layout from '../layouts/Layout.astro';
         if (!isCellOccupied(nextStep.gx, nextStep.gy)) {
           playerGx = nextStep.gx;
           playerGy = nextStep.gy;
+          updateMyPresence(); // 移動時實時同步座標
         } else {
           moveQueue = [];
         }
@@ -492,11 +545,11 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(npc.name, px - 24, py - 28);
       });
 
-      // 3. 繪製其他線上玩家
-      roomData.otherPlayers.forEach(op => {
+      // 3. 繪製真正的線上其他玩家 (Realtime Peers)
+      Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
-        const opImg = getLoadedImage(op.imgSrc);
+        const opImg = getLoadedImage(op.avatar || '/assets/player2.png');
 
         if (opImg && opImg.complete && opImg.naturalWidth !== 0) {
           ctx.drawImage(opImg, px - 24, py - 24, 48, 48);
@@ -508,8 +561,8 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillStyle = '#34d399';
         ctx.font = '10px sans-serif';
         ctx.fillText(`[${op.role}] ${op.name}`, px - 35, py + 32);
-        if (op.task) {
-          ctx.fillStyle = '#94a3b8';
+        if (op.isDND && op.task) {
+          ctx.fillStyle = '#facc15';
           ctx.font = '9px sans-serif';
           ctx.fillText(`📖 ${op.task}`, px - 35, py + 44);
         }
