@@ -28,10 +28,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
 
     <!-- 彈出詳細視窗 (Modal) -->
-   <div id="bookModal" class="modal" style="display: none;" onclick="closeModal(event)">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <span class="close-btn" onclick="toggleModal(false)">&times;</span>
-        <h2 style="margin-top:0; color:var(--text-dark); margin-bottom: 20px;">書籍詳細資料與修改</h2>
+    <div id="bookModal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="toggleModal(false)">&times;</span>
+            <h2 style="margin-top:0; color:var(--text-dark); margin-bottom: 20px;">書籍詳細資料與修改</h2>
             
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
                 <!-- 左側：封面預覽與多圖高清下載清單 -->
@@ -71,135 +71,90 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         let localLibraryData = [];
         let activeModalBook = null; 
 
-        document.addEventListener("DOMContentLoaded", loadLibrary);
+        document.addEventListener("DOMContentLoaded", () => {
+            // 🛡️ 確保頁面上任何不小心殘留的 auth-modal 都被移除
+            document.querySelectorAll('.auth-modal').forEach(el => el.remove());
+            loadLibrary();
+        });
+
         document.getElementById('query').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchBooks(); });
 
-async function searchBooks() {
-        console.log("🔍 searchBooks 函式被觸發了！");
-        const queryInput = document.getElementById('query');
-        const statusDiv = document.getElementById('status');
-        const resultsDiv = document.getElementById('searchResults');
-        
-        if (!queryInput) {
-            console.error("找不到 #query 輸入框元素！");
-            return;
-        }
-
-        const query = queryInput.value.trim();
-        resultsDiv.innerHTML = ''; // 清空舊結果
-        currentSearchResults = [];
-        
-        if (!query) { 
-            statusDiv.innerText = '⚠️ 請輸入關鍵字！'; 
-            return; 
-        }
-
-        statusDiv.innerText = '⚡ 正在跨資料庫檢索圖書數據 (支援書名/作者/ISBN)...';
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${GOOGLE_API_KEY}`;
-
-        try {
-            console.log("📡 正在向 Google Books API 發送請求:", url);
-            const response = await fetch(url);
-            const data = await response.json();
-            console.log("📦 Google API 回傳原始資料:", data);
+        async function searchBooks() {
+            const query = document.getElementById('query').value.trim();
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('searchResults');
             
-            const items = data.items || [];
+            resultsDiv.innerHTML = '';
+            currentSearchResults = [];
+            if (!query) { statusDiv.innerText = '⚠️ 請輸入關鍵字！'; return; }
 
-            if (items.length === 0) {
-                statusDiv.innerText = '❌ 找不到這本書，請確認關鍵字或換個作者名試試。';
-                return;
+            statusDiv.innerText = '⚡ 正在跨資料庫檢索圖書數據 (支援書名/作者/ISBN)...';
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5&key=${GOOGLE_API_KEY}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    statusDiv.innerText = '❌ 找不到這本書，請確認關鍵字或換個作者名試試。';
+                    return;
+                }
+
+                statusDiv.innerText = `✅ 成功找到 ${items.length} 筆最符合的圖書結果：`;
+
+                items.forEach((item, index) => {
+                    const info = item.volumeInfo || {};
+                    const title = info.title || '未知書名';
+                    const authors = info.authors ? info.authors.join(', ') : '未知作者';
+                    const publisher = info.publisher || '未知出版社';
+                    const pubDate = info.publishedDate || '未知日期';
+                    const pageCount = info.pageCount ? `${info.pageCount} 頁` : '未知頁數';
+                    const description = info.description || '無詳細書籍簡介。';
+                    
+                    let isbn = '無 ISBN 資訊';
+                    if (info.industryIdentifiers) {
+                        const id13 = info.industryIdentifiers.find(id => id.type === 'ISBN_13');
+                        const id10 = info.industryIdentifiers.find(id => id.type === 'ISBN_10');
+                        isbn = id13 ? id13.identifier : (id10 ? id10.identifier : info.industryIdentifiers[0].identifier);
+                    }
+
+                    let imgUrl = 'https://via.placeholder.com/90x130?text=No+Cover';
+                    if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
+                        imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
+                        imgUrl = imgUrl.replace('http://', 'https://');
+                    }
+
+                    const bookObj = { 
+                        title, authors, publisher, pub_date: pubDate, page_count: pageCount, 
+                        isbn, img_url: imgUrl, description, notes: '',
+                        raw_image_links: info.imageLinks ? JSON.stringify(info.imageLinks) : null 
+                    };
+                    currentSearchResults.push(bookObj);
+
+                    const cardHTML = `
+                        <div class="book-card">
+                            <img class="book-cover" src="${imgUrl}" alt="${title}">
+                            <div class="book-info">
+                                <div>
+                                    <h3 class="book-title">${title}</h3>
+                                    <div class="book-meta">
+                                        <span class="meta-label">🧑‍💻 作者:</span> ${authors}<br>
+                                        <span class="meta-label">🆔 ISBN:</span> ${isbn}
+                                    </div>
+                                </div>
+                                <button class="add-btn" onclick="addToLibrary(${index})">＋ 加進我的藏書庫</button>
+                            </div>
+                        </div>
+                    `;
+                    resultsDiv.innerHTML += cardHTML;
+                });
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = '💥 連線異常，請檢查網路或 API 金鑰是否有效。';
             }
-
-            statusDiv.innerText = `✅ 成功找到 ${items.length} 筆最符合的圖書結果：`;
-
-            // 用原生的 document.createElement 逐一建立卡片，確保 100% 渲染出來
-            items.forEach((item, index) => {
-                const info = item.volumeInfo || {};
-                const title = info.title || '未知書名';
-                const authors = info.authors ? info.authors.join(', ') : '未知作者';
-                const publisher = info.publisher || '未知出版社';
-                const pubDate = info.publishedDate || '未知日期';
-                const pageCount = info.pageCount ? `${info.pageCount} 頁` : '未知頁數';
-                const description = info.description || '無詳細書籍簡介。';
-                
-                let isbn = '無 ISBN 資訊';
-                if (info.industryIdentifiers) {
-                    const id13 = info.industryIdentifiers.find(id => id.type === 'ISBN_13');
-                    const id10 = info.industryIdentifiers.find(id => id.type === 'ISBN_10');
-                    isbn = id13 ? id13.identifier : (id10 ? id10.identifier : info.industryIdentifiers[0].identifier);
-                }
-
-                let imgUrl = 'https://via.placeholder.com/90x130?text=No+Cover';
-                if (info.imageLinks && (info.imageLinks.thumbnail || info.imageLinks.smallThumbnail)) {
-                    imgUrl = info.imageLinks.thumbnail || info.imageLinks.smallThumbnail;
-                    imgUrl = imgUrl.replace(/^http:\/\//i, 'https://');
-                }
-
-                const bookObj = { 
-                    title, authors, publisher, pub_date: pubDate, page_count: pageCount, 
-                    isbn, img_url: imgUrl, description, notes: '',
-                    raw_image_links: info.imageLinks ? JSON.stringify(info.imageLinks) : null 
-                };
-                currentSearchResults.push(bookObj);
-
-                // 建立外層卡片容器
-                const card = document.createElement('div');
-                card.className = 'book-card';
-                card.style.cssText = 'display: flex; gap: 16px; padding: 16px; border: 1px solid #e5e1d8; border-radius: 8px; background: #faf9f6; align-items: center; margin-bottom: 12px;';
-
-                // 建立封面圖片
-                const img = document.createElement('img');
-                img.className = 'book-cover';
-                img.src = imgUrl;
-                img.alt = title;
-                img.style.cssText = 'width: 80px; height: 115px; object-fit: cover; border-radius: 4px; background-color: #eee;';
-
-                // 建立資訊區塊
-                const infoDiv = document.createElement('div');
-                infoDiv.className = 'book-info';
-                infoDiv.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 8px;';
-
-                const textWrapper = document.createElement('div');
-                
-                const h3 = document.createElement('h3');
-                h3.className = 'book-title';
-                h3.innerText = title;
-                h3.style.cssText = 'font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #2c2c2a;';
-
-                const metaDiv = document.createElement('div');
-                metaDiv.className = 'book-meta';
-                metaDiv.style.cssText = 'font-size: 13px; color: #8c887e; line-height: 1.5;';
-                metaDiv.innerHTML = `<span style="font-weight: 500; color: #515154;">🧑‍💻 作者:</span> ${authors}<br><span style="font-weight: 500; color: #515154;">🆔 ISBN:</span> ${isbn}`;
-
-                textWrapper.appendChild(h3);
-                textWrapper.appendChild(metaDiv);
-
-                // 建立加入按鈕
-                const addBtn = document.createElement('button');
-                addBtn.className = 'add-btn';
-                addBtn.innerText = '＋ 加進我的藏書庫';
-                addBtn.style.cssText = 'background-color: #3b4d3c; color: white; padding: 6px 12px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; width: fit-content;';
-                
-                // 綁定點擊事件
-                addBtn.onclick = () => addToLibrary(index);
-
-                infoDiv.appendChild(textWrapper);
-                infoDiv.appendChild(addBtn);
-
-                card.appendChild(img);
-                card.appendChild(infoDiv);
-
-                // 將卡片塞入結果容器
-                resultsDiv.appendChild(card);
-            });
-
-            console.log("✨ 成功使用 DOM API 將 5 筆卡片掛載到 #searchResults");
-
-        } catch (error) {
-            console.error("💥 檢索過程發生錯誤:", error);
-            statusDiv.innerText = '💥 連線異常，請檢查網路或 API 金鑰是否有效。';
         }
-    }
+
         async function addToLibrary(index) {
             const bookToAdd = currentSearchResults[index];
             try {
@@ -248,17 +203,19 @@ async function searchBooks() {
                     return;
                 }
 
-                libraryListDiv.innerHTML = localLibraryData.map((book, idx) => `
-    <div class="library-card" onclick="openDetailsView(${idx})">
-        <img src="${book.img_url}" alt="${book.title}">
-        <div class="library-card-info">
-            <p class="library-card-title" title="${book.title}">${book.title}</p>
-            <p class="library-card-author">${book.authors || '未知作者'}</p>
-        </div>
-        <button class="del-btn" onclick="event.stopPropagation(); deleteFromLibrary(${idx})">刪除</button>
-    </div>
-`).join('');
-
+                localLibraryData.forEach((book, idx) => {
+                    const itemHTML = `
+                        <div class="library-card" onclick="openDetailsView(${idx})">
+                            <img src="${book.img_url}" alt="${book.title}">
+                            <div class="library-card-info">
+                                <p class="library-card-title" title="${book.title}">${book.title}</p>
+                                <p class="library-card-author">${book.authors || '未知作者'}</p>
+                            </div>
+                            <button class="del-btn" onclick="event.stopPropagation(); deleteFromLibrary(${idx})">刪除</button>
+                        </div>
+                    `;
+                    libraryListDiv.innerHTML += itemHTML;
+                });
             } catch (error) {
                 console.error(error);
                 libraryListDiv.innerHTML = '<p style="color:red; text-align:center; grid-column: 1/-1;">無法從 Supabase 載入藏書庫。</p>';
@@ -312,12 +269,15 @@ async function searchBooks() {
             if (photoList.length === 0) {
                 photoContainer.innerHTML = '<p style="color:#86868b; font-size:12px;">該書籍暫無官方相片檔案可下載。</p>';
             } else {
-                photoContainer.innerHTML = photoList.map(photo => `
-                    <div class="photo-download-item">
+                photoList.forEach(photo => {
+                    const row = document.createElement('div');
+                    row.className = 'photo-download-item';
+                    row.innerHTML = `
                         <span style="font-weight:500; color:#1d1d1f;" title="${photo.url}">${photo.name}</span>
                         <button class="photo-dl-btn" onclick="downloadSpecificImage('${photo.url}', '${photo.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "")}')">下載</button>
-                    </div>
-                `).join('');
+                    `;
+                    photoContainer.appendChild(row);
+                });
             }
 
             const fields = [
@@ -332,23 +292,29 @@ async function searchBooks() {
             ];
 
             const formContainer = document.getElementById('modalForm');
-            formContainer.innerHTML = fields.map(field => {
+            formContainer.innerHTML = ''; 
+
+            fields.forEach(field => {
                 const value = book[field.key] || '';
                 const inputId = `edit_${field.key}`;
-                const inputHTML = field.isTextArea ? 
+                
+                let inputHTML = field.isTextArea ? 
                     `<textarea id="${inputId}" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 70px; outline:none; line-height:1.4;">${value}</textarea>` :
                     `<input type="text" id="${inputId}" value="${value}" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; outline:none;">`;
 
-                return `
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="font-size: 13px; color: var(--text-light); font-weight: 500;">${field.label}</label>
-                        <div style="display: flex; gap: 8px; align-items: stretch;">
-                            ${inputHTML}
-                            <button type="button" onclick="copySingleField('${inputId}')" style="background: #f5f5f7; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 12px; cursor: pointer; font-size: 13px; color: var(--primary); font-weight:500;">📋 複製</button>
-                        </div>
+                const itemRow = document.createElement('div');
+                itemRow.style.display = 'flex';
+                itemRow.style.flexDirection = 'column';
+                itemRow.style.gap = '4px';
+                itemRow.innerHTML = `
+                    <label style="font-size: 13px; color: var(--text-light); font-weight: 500;">${field.label}</label>
+                    <div style="display: flex; gap: 8px; align-items: stretch;">
+                        ${inputHTML}
+                        <button type="button" onclick="copySingleField('${inputId}')" style="background: #f5f5f7; border: 1px solid var(--border-color); border-radius: 6px; padding: 0 12px; cursor: pointer; font-size: 13px; color: var(--primary); font-weight:500;">📋 複製</button>
                     </div>
                 `;
-            }).join('');
+                formContainer.appendChild(itemRow);
+            });
 
             toggleModal(true);
         }
@@ -360,7 +326,7 @@ async function searchBooks() {
         }
 
         async function downloadSpecificImage(imgUrl, sizeName) {
-            let TargetUrl = imgUrl.replace(/^http:\/\//i, 'https://');
+            let TargetUrl = imgUrl.replace('http://', 'https://');
             try {
                 const response = await fetch(TargetUrl);
                 if (!response.ok) throw new Error();
@@ -417,27 +383,12 @@ async function searchBooks() {
             navigator.clipboard.writeText(textToCopy).then(() => alert('📋 完整圖書卡文字已複製！'));
         }
 
-    function toggleModal(show) {
-    const modal = document.getElementById('bookModal');
-    if (!modal) {
-        console.error("找不到 #bookModal 元素！");
-        return;
-    }
-    
-    if (show) {
-        modal.style.setProperty('display', 'flex', 'important');
-        console.log("🔓 強制展開 Modal 視窗");
-    } else {
-        modal.style.setProperty('display', 'none', 'important');
-        console.log("🔒 強制關閉 Modal 視窗");
-    }
-}
-
-function closeModal(e) {
-    if (e.target.id === 'bookModal') {
-        toggleModal(false);
-    }
-}
+        function toggleModal(show) {
+            document.getElementById('bookModal').style.display = show ? 'flex' : 'none';
+        }
+        function closeModal(e) {
+            if(e.target.id === 'bookModal') toggleModal(false);
+        }
     </script>
 
     <style is:global>
@@ -470,18 +421,6 @@ function closeModal(e) {
             .container { grid-template-columns: 1fr; }
         }
 
-        /* 強制修正右側檢索結果容器的顯示與佈局 */
-#searchResults {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-height: 200px !important;
-    background-color: transparent !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
         .panel {
             background: var(--card-bg);
             border-radius: 12px;
@@ -489,7 +428,6 @@ function closeModal(e) {
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
             min-height: 80vh;
-            overflow-y: auto !important;
         }
 
         h2 {
