@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 手機沉浸共讀空間">
+<Layout title="空間客舍 · 晴空共讀空間">
   <!-- 1. 創角與頭像選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
@@ -59,45 +59,98 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 3. 主介面 (手機直式完美排版) -->
-  <main class="rpg-container">
-    <header class="rpg-hud">
-      <div class="hud-top-row">
-        <span class="hud-brand">☁️ 空間客舍</span>
-        <div class="hud-right">
-          <span class="online-indicator">🟢 在線: <strong id="online-count">1</strong></span>
-          <span class="user-tag" id="hud-role-tag">☁️ 讀者</span>
-          <strong id="hud-name" style="color: #e0f2fe;">旅人</strong>
-          <a href="/" class="rpg-btn-sm" style="text-decoration:none;">🏠 離開</a>
-        </div>
+  <!-- 3. 圖書館藏 Modal (點擊書櫃彈出 /library) -->
+  <div id="library-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window library-window">
+      <div class="rpg-title-bar" style="display:flex; justify-between; align-items:center;">
+        <span>📚 客舍館藏書單 (Library)</span>
+        <button id="library-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
       </div>
-      <div class="channel-tabs">
-        <button class="channel-tab active" data-room="study">📖 自修室</button>
-        <button class="channel-tab" data-room="chat">☕ 書話間</button>
-        <button class="channel-tab" data-room="salon">🏛️ 沙龍</button>
+      <div class="library-frame-wrapper">
+        <iframe src="/library" class="library-iframe"></iframe>
       </div>
-    </header>
-
-    <div class="canvas-wrapper">
-      <canvas id="rpg-canvas" width="384" height="480"></canvas>
     </div>
+  </div>
 
-    <footer class="rpg-footer">
-      <div class="build-palette">
-        <button class="tool-btn active" data-tool="move">🚶 移動</button>
-        <button class="tool-btn" data-tool="seat">🪑 椅子</button>
-        <button class="tool-btn" data-tool="shelf">📚 書架</button>
+  <!-- 4. 主介面 (電腦版兼具手機直式框外包覆) -->
+  <div class="app-viewport">
+    <main class="rpg-container">
+      <header class="rpg-hud">
+        <div class="hud-top-row">
+          <span class="hud-brand">☁️ 空間客舍</span>
+          <div class="hud-right">
+            <span class="online-indicator">🟢 在線: <strong id="online-count">1</strong></span>
+            <span class="user-tag" id="hud-role-tag">☁️ 讀者</span>
+            <strong id="hud-name" style="color: var(--accent-light, #e0f2fe);">旅人</strong>
+            <a href="/" class="rpg-btn-sm" style="text-decoration:none;">🏠 離開</a>
+          </div>
+        </div>
+
+        <div class="hud-mid-row">
+          <div class="channel-tabs">
+            <button class="channel-tab active" data-room="study">📖 自修室</button>
+            <button class="channel-tab" data-room="chat">☕ 書話間</button>
+            <button class="channel-tab" data-room="salon">🏛️ 沙龍</button>
+          </div>
+          <!-- 自選色調下拉選單 -->
+          <div class="theme-picker">
+            <select id="theme-select" class="theme-select-dropdown">
+              <option value="blue">☁️ 晴空藍</option>
+              <option value="green">🍃 森林綠</option>
+              <option value="purple">🔮 暮光紫</option>
+            </select>
+          </div>
+        </div>
+      </header>
+
+      <div class="canvas-wrapper">
+        <canvas id="rpg-canvas" width="384" height="480"></canvas>
       </div>
 
-      <div class="action-dock">
-        <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:#38bdf8; color:#0f172a; font-weight:bold;">🚶 起立</button>
-        <button id="btn-moktak" class="rpg-btn-sm">🪵 木魚 (<span id="moktak-count">0</span>)</button>
-      </div>
-    </footer>
-  </main>
+      <footer class="rpg-footer">
+        <div class="build-palette">
+          <button class="tool-btn active" data-tool="move">🚶 移動</button>
+          <button class="tool-btn" data-tool="seat">🪑 椅子</button>
+          <button class="tool-btn" data-tool="shelf">📚 書架</button>
+        </div>
+
+        <div class="action-dock">
+          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background: var(--accent-color, #38bdf8); color:#0f172a; font-weight:bold;">🚶 起立</button>
+          <button id="btn-moktak" class="rpg-btn-sm">🪵 木魚 (<span id="moktak-count">0</span>)</button>
+        </div>
+      </footer>
+    </main>
+  </div>
 
   <style is:global>
-    /* 消除手機點擊時的藍色陰影與高亮閃爍 */
+    /* CSS 動態主題變數 */
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+      --accent-light: #e0f2fe;
+    }
+
+    [data-theme="green"] {
+      --bg-main: #064e3b;
+      --bg-card: #065f46;
+      --border-color: #047857;
+      --accent-color: #34d399;
+      --accent-hover: #059669;
+      --accent-light: #d1fae5;
+    }
+
+    [data-theme="purple"] {
+      --bg-main: #3b0764;
+      --bg-card: #581c87;
+      --border-color: #7e22ce;
+      --accent-color: #c084fc;
+      --accent-hover: #9333ea;
+      --accent-light: #f3e8ff;
+    }
+
     * {
       -webkit-tap-highlight-color: transparent;
       -webkit-touch-callout: none;
@@ -105,7 +158,7 @@ import Layout from '../layouts/Layout.astro';
     }
 
     html, body {
-      background-color: #0f172a;
+      background-color: #020617;
       color: #cbd5e1;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       margin: 0;
@@ -116,54 +169,88 @@ import Layout from '../layouts/Layout.astro';
       touch-action: manipulation;
     }
 
+    /* 電腦版手機外框容器 */
+    .app-viewport {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #020617;
+    }
+
+    .rpg-container {
+      width: 100vw;
+      max-width: 414px;
+      height: 100vh;
+      height: 100dvh;
+      max-height: 896px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: var(--bg-main);
+      border-left: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+      transition: background-color 0.3s ease;
+    }
+
     .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .rpg-window { background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-    .rpg-title-bar { background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #334155; }
+    .rpg-window { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    
+    .library-window { max-width: 390px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+    .library-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
+    .library-iframe { width: 100%; height: 100%; border: none; }
+
+    .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid var(--border-color); }
     .rpg-content { padding: 18px; }
     .rpg-text { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.5; }
     
     .avatar-selector-label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
     .avatar-selector-group { display: flex; gap: 10px; margin-bottom: 14px; }
-    .avatar-card { flex: 1; background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .avatar-card { flex: 1; background: var(--bg-main); border: 2px solid var(--border-color); border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .avatar-card input { display: none; }
-    .avatar-card input:checked + img, .avatar-card input:checked ~ .avatar-fallback { border-color: #38bdf8; }
-    .avatar-card input:checked ~ .avatar-name { color: #38bdf8; font-weight: bold; }
-    .avatar-card img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; border-radius: 4px; background: #1e293b; padding: 2px; }
-    .avatar-fallback { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #1e293b; border-radius: 4px; font-size: 12px; color: #38bdf8; }
+    .avatar-card input:checked + img, .avatar-card input:checked ~ .avatar-fallback { border-color: var(--accent-color); }
+    .avatar-card input:checked ~ .avatar-name { color: var(--accent-color); font-weight: bold; }
+    .avatar-card img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; border-radius: 4px; background: var(--bg-card); padding: 2px; }
+    .avatar-fallback { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 4px; font-size: 12px; color: var(--accent-color); }
     .avatar-name { font-size: 11px; color: #cbd5e1; }
 
-    .rpg-window input[type="text"], .rpg-window input[type="number"] { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
+    .rpg-window input[type="text"], .rpg-window input[type="number"] { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
     .role-selector-group { display: flex; gap: 6px; margin-bottom: 14px; }
-    .role-chip { background: #0f172a; border: 1px solid #334155; padding: 6px 10px; border-radius: 16px; font-size: 11px; cursor: pointer; color: #cbd5e1; }
-    .role-chip input { margin-right: 4px; accent-color: #38bdf8; }
+    .role-chip { background: var(--bg-main); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 16px; font-size: 11px; cursor: pointer; color: #cbd5e1; }
+    .role-chip input { margin-right: 4px; accent-color: var(--accent-color); }
     .progress-input-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
-    .rpg-btn { background: #0284c7; color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
-    .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
+    .rpg-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
+    .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 8px; }
 
-    /* 手機完美版型：固定全螢幕，上下區塊緊湊不滾動 */
-    .rpg-container { width: 100vw; height: 100vh; height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box; }
-    .rpg-hud { background: #1e293b; border-bottom: 1px solid #334155; padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
+    .rpg-hud { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
     .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .hud-brand { font-weight: 600; color: #38bdf8; }
+    .hud-brand { font-weight: 600; color: var(--accent-color); }
     .hud-right { display: flex; align-items: center; gap: 8px; }
     .online-indicator { color: #34d399; }
-    .user-tag { background: #0f172a; border: 1px solid #334155; padding: 2px 6px; border-radius: 8px; font-size: 10px; color: #38bdf8; }
+    .user-tag { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 8px; font-size: 10px; color: var(--accent-color); }
     
+    .hud-mid-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .channel-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-    .channel-tab { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; font-size: 11px; cursor: pointer; border-radius: 14px; white-space: nowrap; }
-    .channel-tab.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
+    .channel-tab { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 4px 10px; font-size: 11px; cursor: pointer; border-radius: 14px; white-space: nowrap; }
+    .channel-tab.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
     
-    .rpg-btn-sm { background: #0f172a; color: #cbd5e1; border: 1px solid #334155; padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
+    .theme-select-dropdown { background: var(--bg-main); color: var(--accent-color); border: 1px solid var(--border-color); padding: 3px 6px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; }
+
+    .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     
-    /* 畫布自動縮放填滿剩餘空間，確保頁尾不消失 */
-    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #0b1329; padding: 4px; overflow: hidden; min-height: 0; }
-    #rpg-canvas { border: 1px solid #1e293b; background: #0f172a; cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 480px; object-fit: contain; }
+    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 4px; overflow: hidden; min-height: 0; }
+    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 480px; object-fit: contain; }
     
-    .rpg-footer { background: #1e293b; border-top: 1px solid #334155; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .build-palette { display: flex; gap: 6px; }
-    .tool-btn { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
-    .tool-btn.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
+    .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
+    .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
     .action-dock { display: flex; align-items: center; gap: 6px; }
   </style>
 
@@ -232,7 +319,8 @@ import Layout from '../layouts/Layout.astro';
       chat: {
         name: '書話間',
         items: [
-          { type: 'seat', gx: 3, gy: 6, label: '沙發', imgSrc: '/assets/chair.png' }
+          { type: 'seat', gx: 3, gy: 6, label: '沙發', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 10, gy: 2, label: '熱門書架', imgSrc: '/assets/shelf.png' }
         ],
         npcs: [
           { name: '實習生', task: '澆花', gx: 8, gy: 10, imgSrc: '/assets/intern.png' }
@@ -241,7 +329,8 @@ import Layout from '../layouts/Layout.astro';
       salon: {
         name: '沙龍',
         items: [
-          { type: 'seat', gx: 6, gy: 4, label: '講者席', imgSrc: '/assets/chair.png' }
+          { type: 'seat', gx: 6, gy: 4, label: '講者席', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 2, gy: 2, label: '沙龍選書', imgSrc: '/assets/shelf.png' }
         ],
         npcs: []
       }
@@ -249,6 +338,8 @@ import Layout from '../layouts/Layout.astro';
 
     const modal = document.getElementById('rpg-modal');
     const seatModal = document.getElementById('seat-modal');
+    const libraryModal = document.getElementById('library-modal');
+    const libraryCloseBtn = document.getElementById('library-close-btn');
     const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
     const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
     const chapterInput = document.getElementById('rpg-chapter-input') as HTMLInputElement;
@@ -263,9 +354,26 @@ import Layout from '../layouts/Layout.astro';
     const moktakBtn = document.getElementById('btn-moktak');
     const moktakCountSpan = document.getElementById('moktak-count');
     const onlineCountSpan = document.getElementById('online-count');
+    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
 
     let pendingSeat: { gx: number; gy: number; label: string } | null = null;
     let isGameStarted = false;
+
+    // 自選主題配色切換邏輯
+    const savedTheme = localStorage.getItem('rpg_theme') || 'blue';
+    if (themeSelect) {
+      themeSelect.value = savedTheme;
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    themeSelect?.addEventListener('change', (e) => {
+      const selected = (e.target as HTMLSelectElement).value;
+      document.documentElement.setAttribute('data-theme', selected);
+      localStorage.setItem('rpg_theme', selected);
+    });
+
+    libraryCloseBtn?.addEventListener('click', () => {
+      if (libraryModal) libraryModal.style.display = 'none';
+    });
 
     async function syncMyStateToDB() {
       await supabase.from(TABLE_NAME).upsert({
@@ -315,13 +423,12 @@ import Layout from '../layouts/Layout.astro';
       }, 5000);
     }
 
-    // 檢查該座標是否已有其他人佔用（椅子只允許一人入座、不可重疊站立）
     function isCellOccupiedByOther(gx: number, gy: number): boolean {
       return Object.values(onlinePlayers).some((p: any) => p.gx === gx && p.gy === gy);
     }
 
-    // 檢查格子是否完全不能站立（牆壁、NPC、傢俱、或其他玩家）
-    function isCellBlocked(gx: number, gy: number): boolean {
+    // 移動碰撞判定：牆壁、NPC、傢俱會阻擋行走
+    function isCellSolidBlocked(gx: number, gy: number): boolean {
       const maxCols = Math.floor(canvas.width / TILE_SIZE);
       const maxRows = Math.floor(canvas.height / TILE_SIZE);
       if (gx < 0 || gx >= maxCols || gy < 0 || gy >= maxRows) return true;
@@ -329,8 +436,7 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
       const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
       const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      const hasOther = isCellOccupiedByOther(gx, gy);
-      return hasItem || hasNpc || hasOther;
+      return hasItem || hasNpc;
     }
 
     if (savedName) {
@@ -424,8 +530,15 @@ import Layout from '../layouts/Layout.astro';
 
       if (currentTool === 'move') {
         const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
+        const hitShelf = roomData.items.find(item => item.type === 'shelf' && item.gx === targetGx && item.gy === targetGy);
+
+        if (hitShelf) {
+          // 📚 點擊書櫃：跳出 Library 視窗
+          if (libraryModal) libraryModal.style.display = 'flex';
+          return;
+        }
+
         if (hitSeat) {
-          // 🛑 檢查該椅子是否已經被自己或「其他線上玩家」佔用（只允許一人入座）
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
           if (isSeatTakenByOther) {
             alert('這張椅子已經有其他書友入座囉！');
@@ -434,27 +547,35 @@ import Layout from '../layouts/Layout.astro';
 
           pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
           if (seatModal) seatModal.style.display = 'flex';
-        } else if (!isCellBlocked(targetGx, targetGy)) {
-          moveQueue = [];
-          let currX = playerGx;
-          let currY = playerGy;
-
-          while (currX !== targetGx) {
-            currX += currX < targetGx ? 1 : -1;
-            moveQueue.push({ gx: currX, gy: currY });
-          }
-          while (currY !== targetGy) {
-            currY += currY < targetGy ? 1 : -1;
-            moveQueue.push({ gx: currX, gy: currY });
+        } else {
+          // 🛑 終點檢查：如果終點目標格已經有其他玩家停留，則不允許停在該處（不可重疊）
+          if (isCellOccupiedByOther(targetGx, targetGy)) {
+            alert('該位置已有其他書友停留囉！');
+            return;
           }
 
-          if (isDND) {
-            isDND = false;
-            if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+          if (!isCellSolidBlocked(targetGx, targetGy)) {
+            moveQueue = [];
+            let currX = playerGx;
+            let currY = playerGy;
+
+            while (currX !== targetGx) {
+              currX += currX < targetGx ? 1 : -1;
+              moveQueue.push({ gx: currX, gy: currY });
+            }
+            while (currY !== targetGy) {
+              currY += currY < targetGy ? 1 : -1;
+              moveQueue.push({ gx: currX, gy: currY });
+            }
+
+            if (isDND) {
+              isDND = false;
+              if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+            }
           }
         }
       } else {
-        if (!isCellBlocked(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
+        if (!isCellSolidBlocked(targetGx, targetGy) && !isCellOccupiedByOther(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
           const imgSrc = currentTool === 'shelf' ? '/assets/shelf.png' : '/assets/chair.png';
           roomData.items.push({ type: currentTool, gx: targetGx, gy: targetGy, label: '傢俱', imgSrc });
         }
@@ -482,7 +603,7 @@ import Layout from '../layouts/Layout.astro';
 
     leaveSeatBtn?.addEventListener('click', async () => {
       isDND = false;
-      if (playerGy + 1 < Math.floor(canvas.height / TILE_SIZE) && !isCellBlocked(playerGx, playerGy + 1)) {
+      if (playerGy + 1 < Math.floor(canvas.height / TILE_SIZE) && !isCellSolidBlocked(playerGx, playerGy + 1)) {
         playerGy += 1;
       }
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
@@ -493,10 +614,17 @@ import Layout from '../layouts/Layout.astro';
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      ctx.fillStyle = '#0f172a';
+      const theme = document.documentElement.getAttribute('data-theme') || 'blue';
+      const bgMap: Record<string, string> = {
+        blue: '#0f172a',
+        green: '#064e3b',
+        purple: '#3b0764'
+      };
+      
+      ctx.fillStyle = bgMap[theme] || '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += TILE_SIZE) {
         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
@@ -510,7 +638,8 @@ import Layout from '../layouts/Layout.astro';
       moveTimer++;
       if (moveQueue.length > 0 && moveTimer % 8 === 0) {
         const nextStep = moveQueue.shift()!;
-        if (!isCellBlocked(nextStep.gx, nextStep.gy)) {
+        // 🚶 移動過程中允許穿透行經其他玩家，只需確保沒有牆壁/傢俱阻擋
+        if (!isCellSolidBlocked(nextStep.gx, nextStep.gy)) {
           playerGx = nextStep.gx;
           playerGy = nextStep.gy;
           syncMyStateToDB();
@@ -528,12 +657,12 @@ import Layout from '../layouts/Layout.astro';
         if (img && img.complete && img.naturalWidth !== 0) {
           ctx.drawImage(img, px - 16, py - 16, 32, 32);
         } else {
-          ctx.fillStyle = '#334155';
+          ctx.fillStyle = item.type === 'shelf' ? '#854d0e' : '#334155';
           ctx.fillRect(px - 14, py - 14, 28, 28);
         }
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = '#f8fafc';
         ctx.font = '8px sans-serif';
-        ctx.fillText(`🪑 ${item.label}`, px - 20, py - 18);
+        ctx.fillText(`${item.type === 'shelf' ? '📚' : '🪑'} ${item.label}`, px - 20, py - 18);
       });
 
       // 2. 繪製 NPC
