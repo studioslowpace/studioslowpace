@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
           <option value="鄰里人">🌱 鄰里人 (一般書友)</option>
           <option value="客舍人">☕ 客舍人 (常駐會員)</option>
           <option value="空間友">🤝 空間友 (共創夥伴)</option>
-          <option value="店主">👑 店主 (擁有完全自由佈置與新增傢俱權限)</option>
+          <option value="店主">👑 店主 (擁有完全空間佈置權限)</option>
         </select>
 
         <div class="role-selector-group">
@@ -114,19 +114,21 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 5. 🆕 新增自訂傢俱 Modal (店主專用) -->
+  <!-- 5. 新增自訂物件 Modal (店主專用) -->
   <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>🛠️ 新增自訂空間傢俱</span></div>
+      <div class="rpg-title-bar"><span>🛠️ 新增空間物件/NPC/傳送門</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">店主可在這裡新增全新的傢俱種類（例如盆栽、燈飾等）：</p>
-        <input type="text" id="cf-name" placeholder="傢俱名稱（例：綠意盆栽）" maxlength="12" style="margin-bottom:8px;" />
-        <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/plant.png）" style="margin-bottom:8px;" />
+        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後要跳轉的頁面：</p>
+        <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
+        <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/npc_mi.png）" style="margin-bottom:6px;" />
+        <input type="text" id="cf-link" placeholder="傳送目標頁面（例：/ 或 /skillsupermarker，無則留空）" style="margin-bottom:6px;" />
+        <textarea id="cf-desc" placeholder="物件圖示說明文字..." style="width:100%; height:50px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
         <div style="display:flex; gap:6px; margin-bottom:8px;">
           <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
           <input type="number" id="cf-h" placeholder="高度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
         </div>
-        <div class="rpg-btn-group" style="margin-top:12px;">
+        <div class="rpg-btn-group" style="margin-top:10px;">
           <button id="cf-cancel-btn" class="rpg-btn-ghost">取消</button>
           <button id="cf-confirm-btn" class="rpg-btn">✨ 新增至工具列</button>
         </div>
@@ -134,7 +136,18 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 6. 閱讀記錄詳情 Modal -->
+  <!-- 6. 📖 圖示說明書/指南 Modal -->
+  <div id="guide-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window" style="max-width: 380px; max-height: 80vh; display: flex; flex-direction: column;">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📖 空間物件與圖示指南</span>
+        <button id="guide-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+      </div>
+      <div class="rpg-content" id="guide-content-box" style="overflow-y: auto; flex: 1; font-size: 12px;"></div>
+    </div>
+  </div>
+
+  <!-- 7. 閱讀記錄詳情 Modal -->
   <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -147,7 +160,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 7. 查看其他玩家閱讀記錄 Modal -->
+  <!-- 8. 查看其他玩家閱讀記錄 Modal -->
   <div id="peer-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px; max-height: 80vh; display: flex; flex-direction: column;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -178,20 +191,38 @@ import Layout from '../layouts/Layout.astro';
             <button class="channel-tab" data-room="chat">☕ 書話間</button>
             <button class="channel-tab" data-room="salon">🏛️ 沙龍</button>
           </div>
-          <div class="theme-picker">
-            <select id="theme-select" class="theme-select-dropdown">
-              <option value="blue">☁️ 晴空藍</option>
-              <option value="green">🍃 森林綠</option>
-              <option value="purple">🔮 暮光紫</option>
-            </select>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <!-- 📖 圖示說明按鈕 (所有人皆可見) -->
+            <button id="open-guide-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:11px;">📖 圖示說明</button>
+            <div class="theme-picker">
+              <select id="theme-select" class="theme-select-dropdown">
+                <option value="blue">☁️ 晴空藍</option>
+                <option value="green">🍃 森林綠</option>
+                <option value="purple">🔮 暮光紫</option>
+              </select>
+            </div>
           </div>
         </div>
       </header>
+
+      <!-- 👑 店主專屬編輯工具列 (移至聊天面板上方) -->
+      <div id="shopkeeper-toolbar" class="shopkeeper-toolbar-bar" style="display:none;">
+        <div style="font-size:11px; color:var(--accent-color); font-weight:bold; margin-bottom:4px;">◆ 店主佈置工具列</div>
+        <div class="build-palette" style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">
+          <button class="tool-btn active" data-tool="move">🚶 移動</button>
+          <button class="tool-btn" data-tool="seat">🪑 木椅</button>
+          <button class="tool-btn" data-tool="shelf">📚 書架</button>
+          <button class="tool-btn" data-tool="table">🪵 共讀桌</button>
+          <div id="custom-tools-container" style="display:inline-flex; gap:4px;"></div>
+          <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新增物件/NPC</button>
+        </div>
+      </div>
 
       <div class="canvas-wrapper">
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
+      <!-- 下方聊天與閱讀記錄面板 -->
       <section class="split-panel">
         <div class="panel-tabs-bar">
           <button class="panel-tab-btn active" data-tab="chat">💬 聊天交誼廳</button>
@@ -221,21 +252,8 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </section>
 
-      <!-- 底部操作列與按鈕 (含新增傢俱按鈕) -->
       <footer class="rpg-footer">
-        <div id="build-palette" class="build-palette" style="display:none; flex-wrap: wrap; gap: 4px;">
-          <button class="tool-btn active" data-tool="move">🚶 移動</button>
-          <button class="tool-btn" data-tool="seat">🪑 木椅</button>
-          <button class="tool-btn" data-tool="shelf">📚 書架</button>
-          <button class="tool-btn" data-tool="table">🪵 共讀桌</button>
-          <!-- 動態自訂傢俱會顯示在這裡 -->
-          <div id="custom-tools-container" style="display:inline-flex; gap:4px;"></div>
-          <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新傢俱</button>
-        </div>
-        <div id="default-palette" class="build-palette">
-          <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
-        </div>
-
+        <div style="font-size:11px; color:#94a3b8;">空間客舍 SLOW PACE STUDIO</div>
         <div class="action-dock">
           <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background: var(--accent-color, #38bdf8); color:#0f172a; font-weight:bold;">🚶 起立</button>
         </div>
@@ -288,6 +306,8 @@ import Layout from '../layouts/Layout.astro';
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.3s ease;
     }
 
+    .shopkeeper-toolbar-bar { background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 6px 10px; flex-shrink: 0; }
+
     .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
     .rpg-window { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     
@@ -295,7 +315,7 @@ import Layout from '../layouts/Layout.astro';
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
-    .split-panel { flex: 0 0 28vh; display: flex; flex-direction: column; background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 0; }
+    .split-panel { flex: 0 0 26vh; display: flex; flex-direction: column; background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 0; }
     .panel-tabs-bar { display: flex; background: var(--bg-main); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
     .panel-tab-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 6px; font-size: 11px; cursor: pointer; font-weight: 500; text-align: center; }
     .panel-tab-btn.active { color: var(--accent-color); background: var(--bg-card); border-bottom: 2px solid var(--accent-color); }
@@ -359,7 +379,6 @@ import Layout from '../layouts/Layout.astro';
     #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
 
     .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .build-palette { display: flex; gap: 6px; align-items: center; }
     .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 5px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
     .action-dock { display: flex; align-items: center; gap: 6px; }
@@ -408,35 +427,8 @@ import Layout from '../layouts/Layout.astro';
     let roomTables: any[] = [];
     let roomItems: any[] = [];
 
-    // 🚀 自訂動態傢俱種類清單（儲存於 localStorage 讓店主隨時擴充）
-    let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
-
-    const rooms: Record<string, { 
-      name: string; 
-      npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string; action: string }[];
-    }> = {
-      study: {
-        name: '自修室',
-        npcs: [
-          { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
-          { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 2, imgSrc: '/assets/intern.png', action: 'skill' }
-        ]
-      },
-      chat: {
-        name: '書話間',
-        npcs: [
-          { name: '屋主 (Mi)', task: '歡迎光臨', gx: 2, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
-          { name: '客舍萬事屋', task: '能力共享', gx: 9, gy: 9, imgSrc: '/assets/intern.png', action: 'skill' }
-        ]
-      },
-      salon: {
-        name: '沙龍',
-        npcs: [
-          { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
-          { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 10, imgSrc: '/assets/intern.png', action: 'skill' }
-        ]
-      }
-    };
+    // 預設內建工具與自訂傢俱
+    let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; desc: string; link: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
     const modal = document.getElementById('rpg-modal');
     const seatModal = document.getElementById('seat-modal');
@@ -467,6 +459,12 @@ import Layout from '../layouts/Layout.astro';
     const peerModalTitle = document.getElementById('peer-modal-title');
     const peerContentBox = document.getElementById('peer-content-box');
 
+    // 📖 圖示指南 Modal 元素
+    const guideModal = document.getElementById('guide-modal');
+    const openGuideBtn = document.getElementById('open-guide-btn');
+    const guideCloseBtn = document.getElementById('guide-close-btn');
+    const guideContentBox = document.getElementById('guide-content-box');
+
     const tableModal = document.getElementById('table-modal');
     const tableModalTitle = document.getElementById('table-modal-title');
     const tableFormView = document.getElementById('table-form-view');
@@ -482,16 +480,18 @@ import Layout from '../layouts/Layout.astro';
     const tableInfoClose = document.getElementById('table-info-close');
     const tableDetails = document.getElementById('table-details');
 
-    // 🆕 自訂傢俱 Modal 元素
     const cfModal = document.getElementById('custom-furniture-modal');
     const openCfModalBtn = document.getElementById('open-cf-modal-btn');
     const cfCancelBtn = document.getElementById('cf-cancel-btn');
     const cfConfirmBtn = document.getElementById('cf-confirm-btn');
     const cfNameInput = document.getElementById('cf-name') as HTMLInputElement;
     const cfImgInput = document.getElementById('cf-img') as HTMLInputElement;
+    const cfLinkInput = document.getElementById('cf-link') as HTMLInputElement;
+    const cfDescInput = document.getElementById('cf-desc') as HTMLTextAreaElement;
     const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
     const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
     const customToolsContainer = document.getElementById('custom-tools-container');
+    const shopkeeperToolbar = document.getElementById('shopkeeper-toolbar');
 
     const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
     const tierSelect = document.getElementById('rpg-tier-select') as HTMLSelectElement;
@@ -504,8 +504,6 @@ import Layout from '../layouts/Layout.astro';
     const leaveSeatBtn = document.getElementById('btn-leave-seat');
     const onlineCountSpan = document.getElementById('online-count');
     const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-    const buildPalette = document.getElementById('build-palette');
-    const defaultPalette = document.getElementById('default-palette');
 
     const chatMessagesBox = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
@@ -532,7 +530,6 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
-    // 渲染動態自訂傢俱工具按鈕
     function renderCustomToolsUI() {
       if (!customToolsContainer) return;
       let html = '';
@@ -545,7 +542,7 @@ import Layout from '../layouts/Layout.astro';
 
     function bindToolButtons() {
       document.querySelectorAll('.tool-btn').forEach(btn => {
-        btn.replaceWith(btn.cloneNode(true)); // 避免重複綁定
+        btn.replaceWith(btn.cloneNode(true));
       });
       document.querySelectorAll('.tool-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -563,21 +560,51 @@ import Layout from '../layouts/Layout.astro';
     cfConfirmBtn?.addEventListener('click', () => {
       const name = cfNameInput?.value.trim();
       const img = cfImgInput?.value.trim();
+      const link = cfLinkInput?.value.trim() || '';
+      const desc = cfDescInput?.value.trim() || '無詳細說明';
       const w = parseInt(cfWInput?.value) || 1;
       const h = parseInt(cfHInput?.value) || 1;
 
-      if (!name || !img) { alert('請填寫傢俱名稱與圖片路徑'); return; }
+      if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
 
       const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
-      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img });
+      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img, desc, link });
       localStorage.setItem('rpg_custom_furnitures', JSON.stringify(customFurnitureTypes));
 
       renderCustomToolsUI();
       if (cfModal) cfModal.style.display = 'none';
       cfNameInput.value = '';
       cfImgInput.value = '';
-      alert(`成功新增「${name}」！現在可以在工具列點擊並放置它了。`);
+      cfLinkInput.value = '';
+      cfDescInput.value = '';
+      alert(`成功新增「${name}」！`);
     });
+
+    // 📖 開啟圖示指南說明 Modal
+    openGuideBtn?.addEventListener('click', () => {
+      if (!guideContentBox) return;
+      let html = '';
+      if (roomItems.length === 0) {
+        html = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件或 NPC。</div>';
+      } else {
+        roomItems.forEach(item => {
+          html += `
+            <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
+              <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
+              <div style="flex:1;">
+                <div style="font-weight:bold; color:var(--accent-color);">${item.label}</div>
+                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.desc || '無'}</div>
+                ${item.link ? `<div style="font-size:10px; color:#34d399; margin-top:2px;">🔗 連結頁面：${item.link}</div>` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+      guideContentBox.innerHTML = html;
+      if (guideModal) guideModal.style.display = 'flex';
+    });
+
+    guideCloseBtn?.addEventListener('click', () => { if (guideModal) guideModal.style.display = 'none'; });
 
     panelTabBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -835,10 +862,6 @@ import Layout from '../layouts/Layout.astro';
         if (gx >= item.gx && gx < item.gx + iw && gy >= item.gy && gy < item.gy + ih) return true;
       }
 
-      const roomData = rooms[currentRoom];
-      const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      if (hasNpc) return true;
-
       for (const t of roomTables) {
         if (gx >= t.table_gx && gx < t.table_gx + 2 && gy >= t.table_gy && gy < t.table_gy + 2) return true;
       }
@@ -854,8 +877,7 @@ import Layout from '../layouts/Layout.astro';
       if (modal) modal.style.display = 'none';
 
       if (playerTier === '店主') {
-        if (buildPalette) buildPalette.style.display = 'flex';
-        if (defaultPalette) defaultPalette.style.display = 'none';
+        if (shopkeeperToolbar) shopkeeperToolbar.style.display = 'block';
         renderCustomToolsUI();
       }
 
@@ -893,8 +915,7 @@ import Layout from '../layouts/Layout.astro';
       if (modal) modal.style.display = 'none';
 
       if (playerTier === '店主') {
-        if (buildPalette) buildPalette.style.display = 'flex';
-        if (defaultPalette) defaultPalette.style.display = 'none';
+        if (shopkeeperToolbar) shopkeeperToolbar.style.display = 'block';
         renderCustomToolsUI();
       }
 
@@ -946,16 +967,12 @@ import Layout from '../layouts/Layout.astro';
 
       const targetGx = Math.floor(clickX / TILE_SIZE);
       const targetGy = Math.floor(clickY / TILE_SIZE);
-      const roomData = rooms[currentRoom];
 
       if (currentTool === 'move') {
-        const hitNpc = roomData.npcs.find(n => n.gx === targetGx && n.gy === targetGy);
-        if (hitNpc) {
-          if (hitNpc.action === 'home') {
-            window.location.href = '/';
-          } else if (hitNpc.action === 'skill') {
-            window.location.href = '/skillsupermarker';
-          }
+        // 檢查是否點擊到具有連結/傳送功能的物件
+        const hitLinkedItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.link && item.link.trim() !== '');
+        if (hitLinkedItem) {
+          window.location.href = hitLinkedItem.link;
           return;
         }
 
@@ -1031,7 +1048,7 @@ import Layout from '../layouts/Layout.astro';
         }
       } else {
         if (playerTier !== '店主') {
-          alert('權限不足：只有「店主」階層才可編輯館內傢俱與共讀桌！');
+          alert('權限不足：只有「店主」階層才可編輯館內物件！');
           return;
         }
 
@@ -1075,11 +1092,11 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        let w = 1, h = 1, label = '物件', imgSrc = '/assets/chair.png';
+        let w = 1, h = 1, label = '物件', imgSrc = '/assets/chair.png', desc = '無說明', link = '';
         if (currentTool === 'shelf') {
-          w = 3; h = 1; label = '書櫃'; imgSrc = '/assets/shelf.png';
+          w = 3; h = 1; label = '書櫃'; imgSrc = '/assets/shelf.png'; desc = '客舍館藏書櫃';
         } else if (currentTool === 'seat') {
-          w = 1; h = 1; label = '木椅'; imgSrc = '/assets/chair.png';
+          w = 1; h = 1; label = '木椅'; imgSrc = '/assets/chair.png'; desc = '供書友安坐閱讀的椅子';
         } else {
           const custom = customFurnitureTypes.find(c => c.type === currentTool);
           if (custom) {
@@ -1087,6 +1104,8 @@ import Layout from '../layouts/Layout.astro';
             h = custom.h;
             label = custom.label;
             imgSrc = custom.imgSrc;
+            desc = custom.desc;
+            link = custom.link;
           }
         }
 
@@ -1115,10 +1134,12 @@ import Layout from '../layouts/Layout.astro';
           w,
           h,
           label,
-          img_src: imgSrc
+          img_src: imgSrc,
+          desc,
+          link
         });
         fetchRoomItems();
-        alert('傢俱已放置並同步至雲端！');
+        alert('物件已放置並同步至雲端！');
       }
     });
 
@@ -1255,8 +1276,6 @@ import Layout from '../layouts/Layout.astro';
       for (let x = 0; x < canvas.width; x += TILE_SIZE) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
       for (let y = 0; y < canvas.height; y += TILE_SIZE) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
 
-      const roomData = rooms[currentRoom];
-
       moveTimer++;
       if (moveQueue.length > 0 && moveTimer % 8 === 0) {
         const nextStep = moveQueue.shift()!;
@@ -1267,7 +1286,7 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
-      // 1. 繪製雲端同步的傢俱
+      // 1. 繪製雲端同步的物件 (包括傢俱與 NPC)
       roomItems.forEach(item => {
         const px = item.gx * TILE_SIZE;
         const py = item.gy * TILE_SIZE;
@@ -1298,23 +1317,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(label, px + 4, py + 20);
       });
 
-      // 3. 繪製 NPC
-      roomData.npcs.forEach(npc => {
-        const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
-        const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
-        const npcImg = getLoadedImage(npc.imgSrc);
-        if (npcImg && npcImg.complete && npcImg.naturalWidth !== 0) {
-          ctx.drawImage(npcImg, px - 16, py - 16, 32, 32);
-        } else {
-          ctx.fillStyle = '#0284c7';
-          ctx.fillRect(px - 12, py - 12, 24, 24);
-        }
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = '9px sans-serif';
-        ctx.fillText(npc.name, px - 18, py - 18);
-      });
-
-      // 4. 線上玩家
+      // 3. 線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1330,7 +1333,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(op.name, px - 20, py + 24);
       });
 
-      // 5. 自己
+      // 4. 自己
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
       const playerImg = getLoadedImage(playerAvatar);
