@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
           <option value="鄰里人">🌱 鄰里人 (一般書友)</option>
           <option value="客舍人">☕ 客舍人 (常駐會員)</option>
           <option value="空間友">🤝 空間友 (共創夥伴)</option>
-          <option value="店主">👑 店主 (擁有完全自由佈置與共讀桌建造權限)</option>
+          <option value="店主">👑 店主 (擁有完全自由佈置與新增傢俱權限)</option>
         </select>
 
         <div class="role-selector-group">
@@ -70,7 +70,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 3. 圖書館藏 Modal (點擊書櫃彈出) -->
+  <!-- 3. 圖書館藏 Modal -->
   <div id="library-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -83,7 +83,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 4. 共讀桌 (Table) 發起與加入 Modal -->
+  <!-- 4. 共讀桌 Modal -->
   <div id="table-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span id="table-modal-title">📖 共讀桌活動</span></div>
@@ -114,7 +114,27 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 5. 閱讀記錄詳情 Modal -->
+  <!-- 5. 🆕 新增自訂傢俱 Modal (店主專用) -->
+  <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window">
+      <div class="rpg-title-bar"><span>🛠️ 新增自訂空間傢俱</span></div>
+      <div class="rpg-content">
+        <p class="rpg-text">店主可在這裡新增全新的傢俱種類（例如盆栽、燈飾等）：</p>
+        <input type="text" id="cf-name" placeholder="傢俱名稱（例：綠意盆栽）" maxlength="12" style="margin-bottom:8px;" />
+        <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/plant.png）" style="margin-bottom:8px;" />
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
+          <input type="number" id="cf-h" placeholder="高度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
+        </div>
+        <div class="rpg-btn-group" style="margin-top:12px;">
+          <button id="cf-cancel-btn" class="rpg-btn-ghost">取消</button>
+          <button id="cf-confirm-btn" class="rpg-btn">✨ 新增至工具列</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 閱讀記錄詳情 Modal -->
   <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -127,7 +147,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 6. 查看其他玩家閱讀記錄 Modal -->
+  <!-- 7. 查看其他玩家閱讀記錄 Modal -->
   <div id="peer-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px; max-height: 80vh; display: flex; flex-direction: column;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -138,7 +158,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 7. 主介面 (12x12 格空白畫布) -->
+  <!-- 主介面 -->
   <div class="app-viewport">
     <main class="rpg-container">
       <header class="rpg-hud">
@@ -168,12 +188,10 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </header>
 
-      <!-- 畫布區塊 (12x12 網格 = 384x384px) -->
       <div class="canvas-wrapper">
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
-      <!-- 8. 下方 1/3 畫面面板 (切換「聊天」與「閱讀記錄」) -->
       <section class="split-panel">
         <div class="panel-tabs-bar">
           <button class="panel-tab-btn active" data-tab="chat">💬 聊天交誼廳</button>
@@ -203,14 +221,16 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </section>
 
-      <!-- 底部操作列與按鈕 (店主模式動態顯示工具) -->
+      <!-- 底部操作列與按鈕 (含新增傢俱按鈕) -->
       <footer class="rpg-footer">
-        <div id="build-palette" class="build-palette" style="display:none;">
+        <div id="build-palette" class="build-palette" style="display:none; flex-wrap: wrap; gap: 4px;">
           <button class="tool-btn active" data-tool="move">🚶 移動</button>
-          <button class="tool-btn" data-tool="seat">🪑 椅子</button>
+          <button class="tool-btn" data-tool="seat">🪑 木椅</button>
           <button class="tool-btn" data-tool="shelf">📚 書架</button>
           <button class="tool-btn" data-tool="table">🪵 共讀桌</button>
-          <button class="tool-btn" data-tool="plant">盆栽</button>
+          <!-- 動態自訂傢俱會顯示在這裡 -->
+          <div id="custom-tools-container" style="display:inline-flex; gap:4px;"></div>
+          <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新傢俱</button>
         </div>
         <div id="default-palette" class="build-palette">
           <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
@@ -316,7 +336,6 @@ import Layout from '../layouts/Layout.astro';
     .role-selector-group { display: flex; gap: 6px; margin-bottom: 14px; }
     .role-chip { background: var(--bg-main); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 16px; font-size: 11px; cursor: pointer; color: #cbd5e1; }
     .role-chip input { margin-right: 4px; accent-color: var(--accent-color); }
-    .progress-input-group { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
     .rpg-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
     .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 8px; }
@@ -340,8 +359,8 @@ import Layout from '../layouts/Layout.astro';
     #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
 
     .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .build-palette { display: flex; gap: 6px; }
-    .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
+    .build-palette { display: flex; gap: 6px; align-items: center; }
+    .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 5px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
     .action-dock { display: flex; align-items: center; gap: 6px; }
   </style>
@@ -356,6 +375,7 @@ import Layout from '../layouts/Layout.astro';
     const TABLE_NAME = 'slowsplace_member';
     const MSG_TABLE_NAME = 'slowsplace_messages';
     const COREADING_TABLE = 'slowsplace_tables';
+    const ITEMS_TABLE = 'slowsplace_items';
     const TILE_SIZE = 32;
 
     const userId = localStorage.getItem('rpg_user_id') || ('user_' + Math.random().toString(36).substring(2, 9));
@@ -386,30 +406,17 @@ import Layout from '../layouts/Layout.astro';
     let moveTimer = 0;
     let onlinePlayers: Record<string, any> = {};
     let roomTables: any[] = [];
+    let roomItems: any[] = [];
 
-    const imageCache: Record<string, HTMLImageElement> = {};
-    const imageFailed: Record<string, boolean> = {};
+    // 🚀 自訂動態傢俱種類清單（儲存於 localStorage 讓店主隨時擴充）
+    let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
-    function getLoadedImage(src: string): HTMLImageElement | null {
-      if (imageFailed[src]) return null;
-      if (!imageCache[src]) {
-        const img = new Image();
-        img.onerror = () => { imageFailed[src] = true; };
-        img.src = src;
-        imageCache[src] = img;
-      }
-      return imageFailed[src] ? null : imageCache[src];
-    }
-
-    // 🚀 一開始所有房間的 items 清單全部為空 ([])，完全由店主自由加進畫面！
     const rooms: Record<string, { 
       name: string; 
-      items: { type: string; gx: number; gy: number; w: number; h: number; label: string; imgSrc: string }[];
       npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string; action: string }[];
     }> = {
       study: {
         name: '自修室',
-        items: [], 
         npcs: [
           { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
           { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 2, imgSrc: '/assets/intern.png', action: 'skill' }
@@ -417,7 +424,6 @@ import Layout from '../layouts/Layout.astro';
       },
       chat: {
         name: '書話間',
-        items: [],
         npcs: [
           { name: '屋主 (Mi)', task: '歡迎光臨', gx: 2, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
           { name: '客舍萬事屋', task: '能力共享', gx: 9, gy: 9, imgSrc: '/assets/intern.png', action: 'skill' }
@@ -425,7 +431,6 @@ import Layout from '../layouts/Layout.astro';
       },
       salon: {
         name: '沙龍',
-        items: [],
         npcs: [
           { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
           { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 10, imgSrc: '/assets/intern.png', action: 'skill' }
@@ -477,6 +482,17 @@ import Layout from '../layouts/Layout.astro';
     const tableInfoClose = document.getElementById('table-info-close');
     const tableDetails = document.getElementById('table-details');
 
+    // 🆕 自訂傢俱 Modal 元素
+    const cfModal = document.getElementById('custom-furniture-modal');
+    const openCfModalBtn = document.getElementById('open-cf-modal-btn');
+    const cfCancelBtn = document.getElementById('cf-cancel-btn');
+    const cfConfirmBtn = document.getElementById('cf-confirm-btn');
+    const cfNameInput = document.getElementById('cf-name') as HTMLInputElement;
+    const cfImgInput = document.getElementById('cf-img') as HTMLInputElement;
+    const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
+    const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
+    const customToolsContainer = document.getElementById('custom-tools-container');
+
     const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
     const tierSelect = document.getElementById('rpg-tier-select') as HTMLSelectElement;
     const startBtn = document.getElementById('rpg-start-btn');
@@ -501,6 +517,67 @@ import Layout from '../layouts/Layout.astro';
     let pendingTablePos: { gx: number; gy: number } | null = null;
     let activeTableData: any = null;
     let isGameStarted = false;
+
+    const imageCache: Record<string, HTMLImageElement> = {};
+    const imageFailed: Record<string, boolean> = {};
+
+    function getLoadedImage(src: string): HTMLImageElement | null {
+      if (imageFailed[src]) return null;
+      if (!imageCache[src]) {
+        const img = new Image();
+        img.onerror = () => { imageFailed[src] = true; };
+        img.src = src;
+        imageCache[src] = img;
+      }
+      return imageFailed[src] ? null : imageCache[src];
+    }
+
+    // 渲染動態自訂傢俱工具按鈕
+    function renderCustomToolsUI() {
+      if (!customToolsContainer) return;
+      let html = '';
+      customFurnitureTypes.forEach(cf => {
+        html += `<button class="tool-btn" data-tool="${cf.type}">${cf.label}</button>`;
+      });
+      customToolsContainer.innerHTML = html;
+      bindToolButtons();
+    }
+
+    function bindToolButtons() {
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true)); // 避免重複綁定
+      });
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+          const target = e.currentTarget as HTMLElement;
+          target.classList.add('active');
+          currentTool = target.dataset.tool!;
+        });
+      });
+    }
+
+    openCfModalBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'flex'; });
+    cfCancelBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'none'; });
+
+    cfConfirmBtn?.addEventListener('click', () => {
+      const name = cfNameInput?.value.trim();
+      const img = cfImgInput?.value.trim();
+      const w = parseInt(cfWInput?.value) || 1;
+      const h = parseInt(cfHInput?.value) || 1;
+
+      if (!name || !img) { alert('請填寫傢俱名稱與圖片路徑'); return; }
+
+      const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
+      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img });
+      localStorage.setItem('rpg_custom_furnitures', JSON.stringify(customFurnitureTypes));
+
+      renderCustomToolsUI();
+      if (cfModal) cfModal.style.display = 'none';
+      cfNameInput.value = '';
+      cfImgInput.value = '';
+      alert(`成功新增「${name}」！現在可以在工具列點擊並放置它了。`);
+    });
 
     panelTabBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -631,6 +708,11 @@ import Layout from '../layouts/Layout.astro';
       roomTables = data || [];
     }
 
+    async function fetchRoomItems() {
+      const { data } = await supabase.from(ITEMS_TABLE).select('*').eq('room', currentRoom);
+      roomItems = data || [];
+    }
+
     async function fetchMessages() {
       const { data } = await supabase
         .from(MSG_TABLE_NAME)
@@ -692,6 +774,10 @@ import Layout from '../layouts/Layout.astro';
         fetchRoomTables();
       }).subscribe();
 
+      supabase.channel('item-changes').on('postgres_changes', { event: '*', schema: 'public', table: ITEMS_TABLE }, () => {
+        fetchRoomItems();
+      }).subscribe();
+
       supabase.channel('chat-changes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: MSG_TABLE_NAME }, (payload) => {
         if (payload.new && payload.new.room === currentRoom && chatMessagesBox) {
           const m = payload.new;
@@ -709,7 +795,7 @@ import Layout from '../layouts/Layout.astro';
         }
       }).subscribe();
 
-      setInterval(() => { syncMyStateToDB(); fetchOnlinePlayers(); fetchRoomTables(); }, 5000);
+      setInterval(() => { syncMyStateToDB(); fetchOnlinePlayers(); fetchRoomTables(); fetchRoomItems(); }, 5000);
     }
 
     chatForm?.addEventListener('submit', async (e) => {
@@ -743,14 +829,13 @@ import Layout from '../layouts/Layout.astro';
     function isCellSolidBlocked(gx: number, gy: number): boolean {
       if (gx < 0 || gx >= 12 || gy < 0 || gy >= 12) return true;
 
-      const roomData = rooms[currentRoom];
-      
-      for (const item of roomData.items) {
+      for (const item of roomItems) {
         const iw = item.w || 1;
         const ih = item.h || 1;
         if (gx >= item.gx && gx < item.gx + iw && gy >= item.gy && gy < item.gy + ih) return true;
       }
 
+      const roomData = rooms[currentRoom];
       const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
       if (hasNpc) return true;
 
@@ -771,10 +856,11 @@ import Layout from '../layouts/Layout.astro';
       if (playerTier === '店主') {
         if (buildPalette) buildPalette.style.display = 'flex';
         if (defaultPalette) defaultPalette.style.display = 'none';
+        renderCustomToolsUI();
       }
 
       isGameStarted = true;
-      syncMyStateToDB().then(() => { fetchOnlinePlayers(); fetchRoomTables(); fetchMessages(); renderMyLogs(); });
+      syncMyStateToDB().then(() => { fetchOnlinePlayers(); fetchRoomTables(); fetchRoomItems(); fetchMessages(); renderMyLogs(); });
       initDatabaseRealtime();
       gameLoop();
     }
@@ -809,6 +895,7 @@ import Layout from '../layouts/Layout.astro';
       if (playerTier === '店主') {
         if (buildPalette) buildPalette.style.display = 'flex';
         if (defaultPalette) defaultPalette.style.display = 'none';
+        renderCustomToolsUI();
       }
 
       if (!isGameStarted) {
@@ -816,6 +903,7 @@ import Layout from '../layouts/Layout.astro';
         await syncMyStateToDB();
         await fetchOnlinePlayers();
         await fetchRoomTables();
+        await fetchRoomItems();
         await fetchMessages();
         renderMyLogs();
         initDatabaseRealtime();
@@ -842,18 +930,12 @@ import Layout from '../layouts/Layout.astro';
         await syncMyStateToDB();
         await fetchOnlinePlayers();
         await fetchRoomTables();
+        await fetchRoomItems();
         await fetchMessages();
       });
     });
 
-    document.querySelectorAll('.tool-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        const target = e.currentTarget as HTMLElement;
-        target.classList.add('active');
-        currentTool = target.dataset.tool!;
-      });
-    });
+    bindToolButtons();
 
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -872,7 +954,7 @@ import Layout from '../layouts/Layout.astro';
           if (hitNpc.action === 'home') {
             window.location.href = '/';
           } else if (hitNpc.action === 'skill') {
-            window.location.href = '/skillsupermarket';
+            window.location.href = '/skillsupermarker';
           }
           return;
         }
@@ -927,10 +1009,10 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const hitShelf = roomData.items.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
+        const hitShelf = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
         if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
 
-        const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
+        const hitSeat = roomItems.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
           if (isSeatTakenByOther) { alert('這張椅子已經有其他書友入座囉！'); return; }
@@ -953,10 +1035,11 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const existingItemIndex = roomData.items.findIndex(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
-        if (existingItemIndex !== -1) {
+        const existingItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
+        if (existingItem) {
           if (confirm('確定要刪除此處的物件嗎？')) {
-            roomData.items.splice(existingItemIndex, 1);
+            await supabase.from(ITEMS_TABLE).delete().eq('id', existingItem.id);
+            fetchRoomItems();
           }
           return;
         }
@@ -988,21 +1071,24 @@ import Layout from '../layouts/Layout.astro';
             members: []
           });
           fetchRoomTables();
-          alert('空共讀桌已放置！任何玩家點擊即可發起共讀。');
+          alert('空共讀桌已放置！');
           return;
         }
 
-        // 🚀【新增物件設定對應區】新增其他種類物件在此處擴充尺寸與圖片路徑
-        let w = 1, h = 1, label = '新物件', imgSrc = '/assets/chair.png';
+        let w = 1, h = 1, label = '物件', imgSrc = '/assets/chair.png';
         if (currentTool === 'shelf') {
           w = 3; h = 1; label = '書櫃'; imgSrc = '/assets/shelf.png';
         } else if (currentTool === 'seat') {
           w = 1; h = 1; label = '木椅'; imgSrc = '/assets/chair.png';
+        } else {
+          const custom = customFurnitureTypes.find(c => c.type === currentTool);
+          if (custom) {
+            w = custom.w;
+            h = custom.h;
+            label = custom.label;
+            imgSrc = custom.imgSrc;
+          }
         }
-        else if (currentTool === 'plant') { // 👈 這裡新增你的新物件規則
-  w = 1; h = 1; label = '盆栽'; imgSrc = '/assets/plant.png'; // 確保你的 public/assets/ 資料夾內有這張圖
-        }
-        // 若新增植物、燈飾等，可在此處用 if/else 擴充！
 
         if (targetGx + w > 12 || targetGy + h > 12) {
           alert('物件超出 12x12 範圍！');
@@ -1012,9 +1098,7 @@ import Layout from '../layouts/Layout.astro';
         let hasOverlap = false;
         for (let x = targetGx; x < targetGx + w; x++) {
           for (let y = targetGy; y < targetGy + h; y++) {
-            if (isCellSolidBlocked(x, y)) {
-              hasOverlap = true;
-            }
+            if (isCellSolidBlocked(x, y)) hasOverlap = true;
           }
         }
 
@@ -1023,16 +1107,18 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        roomData.items.push({
+        await supabase.from(ITEMS_TABLE).insert({
+          room: currentRoom,
           type: currentTool,
           gx: targetGx,
           gy: targetGy,
           w,
           h,
           label,
-          imgSrc
+          img_src: imgSrc
         });
-        alert('傢俱放置成功！');
+        fetchRoomItems();
+        alert('傢俱已放置並同步至雲端！');
       }
     });
 
@@ -1105,7 +1191,7 @@ import Layout from '../layouts/Layout.astro';
 
       if (tableModal) tableModal.style.display = 'none';
       fetchRoomTables();
-      alert('共讀已結束並清空，現在可以發起新的共讀了！');
+      alert('共讀已結束並清空！');
     });
 
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
@@ -1159,21 +1245,12 @@ import Layout from '../layouts/Layout.astro';
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // 1. 載入並繪製背景圖 (假設圖片為 /assets/background.jpg)
-      const bgImg = getLoadedImage('/assets/background.png');
-      if (bgImg && bgImg.complete && bgImg.naturalWidth !== 0) {
-        // 將圖片延展填滿整個 384x384 畫布
-        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-      } else {
-        // 若圖片還沒載入或找不到，維持原本的主題色作為備用底色
-        const theme = document.documentElement.getAttribute('data-theme') || 'blue';
-        const bgMap: Record<string, string> = { blue: '#0f172a', green: '#064e3b', purple: '#3b0764' };
-        ctx.fillStyle = bgMap[theme] || '#0f172a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
+      const theme = document.documentElement.getAttribute('data-theme') || 'blue';
+      const bgMap: Record<string, string> = { blue: '#0f172a', green: '#064e3b', purple: '#3b0764' };
+      ctx.fillStyle = bgMap[theme] || '#0f172a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // 2. 12x12 網格線 (可選：若背景圖本身有地板紋理，可把網格線透明度調低或註解掉)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += TILE_SIZE) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
       for (let y = 0; y < canvas.height; y += TILE_SIZE) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
@@ -1190,18 +1267,18 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
-      // 3. 繪製傢俱
-      roomData.items.forEach(item => {
+      // 1. 繪製雲端同步的傢俱
+      roomItems.forEach(item => {
         const px = item.gx * TILE_SIZE;
         const py = item.gy * TILE_SIZE;
         const iw = (item.w || 1) * TILE_SIZE;
         const ih = (item.h || 1) * TILE_SIZE;
 
-        const img = getLoadedImage(item.imgSrc);
+        const img = getLoadedImage(item.img_src);
         if (img && img.complete && img.naturalWidth !== 0) {
           ctx.drawImage(img, px, py, iw, ih);
         } else {
-          ctx.fillStyle = item.type === 'shelf' ? '#854d0e' : '#334155';
+          ctx.fillStyle = '#334155';
           ctx.fillRect(px + 2, py + 2, iw - 4, ih - 4);
         }
         ctx.fillStyle = '#f8fafc';
@@ -1209,32 +1286,19 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(`${item.label}`, px + 4, py + 14);
       });
 
-      // 2. 繪製共讀桌 (佔 2x2 四格)
+      // 2. 繪製共讀桌
       roomTables.forEach(t => {
         const px = t.table_gx * TILE_SIZE;
         const py = t.table_gy * TILE_SIZE;
-        const tw = TILE_SIZE * 2; // 2格寬 (64px)
-        const th = TILE_SIZE * 2; // 2格高 (64px)
-
-        // 呼叫圖片載入函式 (假設你的圖片路徑為 /assets/table.png)
-        const tableImg = getLoadedImage('/assets/table.png');
-
-        if (tableImg && tableImg.complete && tableImg.naturalWidth !== 0) {
-          ctx.drawImage(tableImg, px, py, tw, th);
-        } else {
-          // 若圖片尚未載入或找不到，顯示備用木色方塊
-          ctx.fillStyle = '#b45309';
-          ctx.fillRect(px + 2, py + 2, tw - 4, th - 4);
-        }
-
-        // 文字標籤
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(px + 2, py + 2, TILE_SIZE * 2 - 4, TILE_SIZE * 2 - 4);
         ctx.fillStyle = '#fde68a';
         ctx.font = '9px sans-serif';
         const label = (t.book_title && t.book_title !== '') ? `🪵 共讀: ${t.book_title}` : `🪵 空共讀桌(點擊發起)`;
-        ctx.fillText(label, px + 4, py + 16);
+        ctx.fillText(label, px + 4, py + 20);
       });
 
-      // 5. 繪製 NPC
+      // 3. 繪製 NPC
       roomData.npcs.forEach(npc => {
         const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1250,7 +1314,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(npc.name, px - 18, py - 18);
       });
 
-      // 6. 繪製線上玩家
+      // 4. 線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1266,7 +1330,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(op.name, px - 20, py + 24);
       });
 
-      // 7. 繪製自己
+      // 5. 自己
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
       const playerImg = getLoadedImage(playerAvatar);
