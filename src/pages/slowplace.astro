@@ -230,7 +230,7 @@ import Layout from '../layouts/Layout.astro';
 
           <div style="display:flex; gap:4px; align-items:center;">
             <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新房間</button>
-            <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-size:10px;">🗑️ 刪除此房間</button>
+            <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-size:10px;">🗑️ 刪除</button>
             <select id="theme-select" class="theme-select-dropdown">
               <option value="blue">☁️ 晴空藍</option>
               <option value="green">🍃 森林綠</option>
@@ -253,16 +253,31 @@ import Layout from '../layouts/Layout.astro';
           <button class="panel-tab-btn shopkeeper-only-tab" data-tab="build" style="display:none; color:#fde68a;">🛠️ 佈置</button>
         </div>
 
-        <!-- 1. 聊天面板 -->
+        <!-- 1. 聊天面板 (含公頻與獨立私訊列表切換) -->
         <div id="pane-chat" class="pane-content active">
-          <div class="chat-header-sub">
-            <span id="chat-mode-indicator" class="chat-mode-tag">📢 公開發言中</span>
-            <button id="switch-public-btn" class="rpg-btn-sm" style="display:none; font-size:9px;">切換公開</button>
+          <!-- 聊天頂端切換分頁 -->
+          <div class="chat-mode-tabs" style="display:flex; gap:4px; margin-bottom:4px; flex-shrink:0;">
+            <button id="chat-tab-public" class="rpg-btn-sm active" style="flex:1; background:var(--accent-hover); color:#fff; font-size:10px;">📢 公開大廳</button>
+            <button id="chat-tab-dm-list" class="rpg-btn-sm" style="flex:1; background:var(--bg-main); color:#94a3b8; font-size:10px;">🔒 私訊列表</button>
           </div>
+
+          <!-- 私訊對象標頭 -->
+          <div id="dm-active-header" class="chat-header-sub" style="display:none;">
+            <span id="chat-mode-indicator" class="chat-mode-tag">🔒 專屬私訊</span>
+            <button id="back-to-dm-list-btn" class="rpg-btn-sm" style="font-size:9px;">返回私訊列表</button>
+          </div>
+
+          <!-- 訊息顯示框 -->
           <div id="chat-messages" class="chat-messages-box">
-            <div class="chat-welcome">✨ 點擊線上玩家頭像可發起聊天或檢視閱讀記錄！</div>
+            <div class="chat-welcome">✨ 點擊線上玩家頭像可發起私人對話或查看記錄！</div>
           </div>
-          <form id="chat-form" class="chat-input-row">
+
+          <!-- 私訊列表清單容器 -->
+          <div id="dm-list-container" class="chat-messages-box" style="display:none;">
+            <div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！</div>
+          </div>
+
+          <form id="chat-form" class="chat-input-row" style="margin-top:4px;">
             <input type="text" id="chat-input" placeholder="說點什麼..." maxlength="80" autocomplete="off" />
             <button type="submit" class="chat-send-btn">發送</button>
           </form>
@@ -372,7 +387,7 @@ import Layout from '../layouts/Layout.astro';
     .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 2px; }
     .chat-msg { background: var(--bg-card); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); word-break: break-all; line-height: 1.4; }
     .chat-msg.pm { background: rgba(192, 132, 252, 0.15); border-color: #c084fc; }
-    .chat-msg-author { color: var(--accent-color); font-weight: bold; margin-right: 4px; cursor: pointer; }
+    .chat-msg-author { color: var(--accent-color); font-weight: bold; margin-right: 4px; }
     .chat-msg-text { color: #f8fafc; }
     .chat-input-row { display: flex; gap: 6px; flex-shrink: 0; }
     .chat-input-row input { flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 6px 8px; font-size: 11px; border-radius: 4px; outline: none; }
@@ -457,8 +472,9 @@ import Layout from '../layouts/Layout.astro';
 
     let myReadingLogs: { book: string; author: string; quote: string; review: string; current: number; total: number; date: string }[] = JSON.parse(localStorage.getItem('rpg_my_logs') || '[]');
 
-    let privateTargetId: string | null = null;
-    let privateTargetName: string | null = null;
+    let currentChatMode = 'public'; // 'public' | 'dmlist' | 'dm'
+    let activeDmUserId: string | null = null;
+    let activeDmUserName: string | null = null;
 
     let moveQueue: { gx: number; gy: number }[] = [];
     let moveTimer = 0;
@@ -505,6 +521,13 @@ import Layout from '../layouts/Layout.astro';
     const rsBgImg = document.getElementById('rs-bg-img') as HTMLInputElement;
     const rsGridSize = document.getElementById('rs-grid-size') as HTMLInputElement;
     const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
+
+    // 聊天分頁 DOM
+    const chatTabPublic = document.getElementById('chat-tab-public');
+    const chatTabDmList = document.getElementById('chat-tab-dm-list');
+    const dmActiveHeader = document.getElementById('dm-active-header');
+    const dmListContainer = document.getElementById('dm-list-container') as HTMLElement;
+    const backToDmListBtn = document.getElementById('back-to-dm-list-btn');
 
     // 玩家互動選單 Modal
     const playerActionModal = document.getElementById('player-action-modal');
@@ -592,7 +615,6 @@ import Layout from '../layouts/Layout.astro';
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input') as HTMLInputElement;
     const chatModeIndicator = document.getElementById('chat-mode-indicator');
-    const switchPublicBtn = document.getElementById('switch-public-btn');
 
     let pendingSeat: { gx: number; gy: number; label: string } | null = null;
     let pendingTableItem: any = null;
@@ -613,41 +635,138 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
-    // 🔄 從 Supabase 同步房間列表
-    async function fetchRooms() {
-      // 從 slowsplace_items 撈取所有 type 為 room_config 的房間設定
-      const { data } = await supabase
-        .from(ITEMS_TABLE)
-        .select('*')
-        .eq('type', 'room_config');
+    // 聊天分頁切換邏輯
+    chatTabPublic?.addEventListener('click', () => {
+      currentChatMode = 'public';
+      activeDmUserId = null;
+      activeDmUserName = null;
+      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
+      if (dmListContainer) dmListContainer.style.display = 'none';
+      if (chatTabPublic) { chatTabPublic.style.background = 'var(--accent-hover)'; chatTabPublic.style.color = '#fff'; }
+      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
+      fetchMessages();
+    });
 
+    chatTabDmList?.addEventListener('click', () => {
+      currentChatMode = 'dmlist';
+      activeDmUserId = null;
+      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
+      if (dmListContainer) dmListContainer.style.display = 'flex';
+      if (chatTabDmList) { chatTabDmList.style.background = 'var(--accent-hover)'; chatTabDmList.style.color = '#fff'; }
+      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
+      renderDmList();
+    });
+
+    backToDmListBtn?.addEventListener('click', () => {
+      activeDmUserId = null;
+      activeDmUserName = null;
+      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
+      if (dmListContainer) dmListContainer.style.display = 'flex';
+      renderDmList();
+    });
+
+    function openDmWithUser(uId: string, uName: string) {
+      currentChatMode = 'dm';
+      activeDmUserId = uId;
+      activeDmUserName = uName;
+
+      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
+      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
+      if (dmListContainer) dmListContainer.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
+      if (dmActiveHeader) dmActiveHeader.style.display = 'flex';
+      if (chatModeIndicator) chatModeIndicator.textContent = `🔒 與 ${uName} 的專屬私訊`;
+
+      panelTabBtns.forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-tab="chat"]')?.classList.add('active');
+      if (paneChat) paneChat.style.display = 'flex';
+      if (paneLogs) paneLogs.style.display = 'none';
+      if (paneGuide) paneGuide.style.display = 'none';
+      if (paneBuild) paneBuild.style.display = 'none';
+
+      fetchMessages();
+    }
+
+    async function renderDmList() {
+      const { data } = await supabase
+        .from(MSG_TABLE_NAME)
+        .select('*')
+        .eq('room', currentRoom)
+        .or(`sender_id.eq.${userId},target_id.eq.${userId}`);
+
+      if (!data || data.length === 0) {
+        dmListContainer.innerHTML = '<div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！</div>';
+        return;
+      }
+
+      const dmUsersMap: Record<string, string> = {};
+      data.forEach((m: any) => {
+        if (m.target_id !== null) {
+          if (m.sender_id === userId) {
+            dmUsersMap[m.target_id] = m.target_name || '未知書友';
+          } else if (m.target_id === userId) {
+            dmUsersMap[m.sender_id] = m.sender_name || '未知書友';
+          }
+        }
+      });
+
+      let html = '';
+      const uIds = Object.keys(dmUsersMap);
+      if (uIds.length === 0) {
+        html = '<div class="chat-welcome">尚無私訊記錄。</div>';
+      } else {
+        uIds.forEach(uId => {
+          const uName = dmUsersMap[uId];
+          html += `
+            <div class="dm-user-card" data-uid="${uId}" data-uname="${uName}" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:bold; color:var(--accent-color);">🔒 ${uName}</span>
+              <span style="font-size:10px; color:#94a3b8;">進入對話 ➔</span>
+            </div>
+          `;
+        });
+      }
+      dmListContainer.innerHTML = html;
+
+      document.querySelectorAll('.dm-user-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLElement;
+          openDmWithUser(target.dataset.uid!, target.dataset.uname!);
+        });
+      });
+    }
+
+    pamChatBtn?.addEventListener('click', () => {
+      if (selectedPeer) {
+        openDmWithUser(selectedPeer.user_id, selectedPeer.name);
+        if (playerActionModal) playerActionModal.style.display = 'none';
+      }
+    });
+
+    async function fetchRooms() {
+      const { data } = await supabase.from(ROOMS_TABLE).select('*');
       if (data && data.length > 0) {
         customRooms = data.map((r: any) => ({
-          key: r.room_key || r.room,
-          name: r.room_name || r.label,
-          bgImg: r.img_src || '',
-          gridSize: r.w || 12
+          key: r.room_key,
+          name: r.room_name,
+          bgImg: r.bg_img || '',
+          gridSize: r.grid_size || 12
         }));
       } else {
-        // 如果還沒有任何自訂房間設定，初始化預設的 3 個房間進 slowsplace_items
         const defaults = [
           { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
           { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
           { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
         ];
         for (const dr of defaults) {
-          await supabase.from(ITEMS_TABLE).upsert({
-            room: dr.key,
+          await supabase.from(ROOMS_TABLE).upsert({
             room_key: dr.key,
             room_name: dr.name,
-            label: dr.name,
-            type: 'room_config',
-            img_src: dr.bgImg,
-            w: dr.gridSize,
-            h: 1,
-            gx: 0,
-            gy: 0
-          }, { onConflict: 'room,type' }); // 確保不重複
+            bg_img: dr.bgImg,
+            grid_size: dr.gridSize
+          }, { onConflict: 'room_key' });
         }
         customRooms = defaults;
       }
@@ -664,7 +783,6 @@ import Layout from '../layouts/Layout.astro';
       });
       roomSelectDropdown.innerHTML = html;
 
-      // 如果是店主且在自訂房間，顯示刪除按鈕
       if (playerTier === '店主' && currentRoom !== 'study' && currentRoom !== 'chat' && currentRoom !== 'salon') {
         if (deleteRoomBtn) deleteRoomBtn.style.display = 'inline-block';
       } else {
@@ -698,19 +816,12 @@ import Layout from '../layouts/Layout.astro';
 
       if (!key || !name) { alert('請填寫房間代碼與顯示名稱'); return; }
 
-      // 直接將房間設定當作一筆特殊 item 寫入 slowsplace_items
-      const { error } = await supabase.from(ITEMS_TABLE).insert({
-        room: key,
+      const { error } = await supabase.from(ROOMS_TABLE).upsert({
         room_key: key,
         room_name: name,
-        label: name,
-        type: 'room_config',
-        img_src: bgImg,
-        w: gridSize, // 用 w 欄位記錄格子數
-        h: 1,
-        gx: 0,
-        gy: 0
-      });
+        bg_img: bgImg,
+        grid_size: gridSize
+      }, { onConflict: 'room_key' });
 
       if (error) {
         alert('建立房間失敗：' + error.message);
@@ -741,7 +852,7 @@ import Layout from '../layouts/Layout.astro';
       }
 
       if (confirm(`確定要刪除當前房間嗎？房內的物件與設定將一併清除。`)) {
-        // 刪除該房間的 room_config 設定與所有房內物件
+        await supabase.from(ROOMS_TABLE).delete().eq('room_key', currentRoom);
         await supabase.from(ITEMS_TABLE).delete().eq('room', currentRoom);
 
         currentRoom = 'study';
@@ -900,23 +1011,6 @@ import Layout from '../layouts/Layout.astro';
 
     pamCancelBtn?.addEventListener('click', () => { if (playerActionModal) playerActionModal.style.display = 'none'; });
 
-    pamChatBtn?.addEventListener('click', () => {
-      if (selectedPeer) {
-        privateTargetId = selectedPeer.user_id;
-        privateTargetName = selectedPeer.name;
-        if (chatModeIndicator) chatModeIndicator.textContent = `🔒 私訊對象: ${selectedPeer.name}`;
-        if (switchPublicBtn) switchPublicBtn.style.display = 'inline-block';
-        if (playerActionModal) playerActionModal.style.display = 'none';
-        
-        panelTabBtns.forEach(b => b.classList.remove('active'));
-        document.querySelector('[data-tab="chat"]')?.classList.add('active');
-        if (paneChat) paneChat.style.display = 'flex';
-        if (paneLogs) paneLogs.style.display = 'none';
-        if (paneGuide) paneGuide.style.display = 'none';
-        if (paneBuild) paneBuild.style.display = 'none';
-      }
-    });
-
     pamLogsBtn?.addEventListener('click', () => {
       if (selectedPeer) {
         if (playerActionModal) playerActionModal.style.display = 'none';
@@ -1001,32 +1095,30 @@ import Layout from '../layouts/Layout.astro';
         .select('*')
         .eq('room', currentRoom)
         .order('created_at', { ascending: true })
-        .limit(50);
+        .limit(60);
 
-      if (data && chatMessagesBox) {
+      if (data && chatMessagesBox && currentChatMode !== 'dmlist') {
         let html = '';
         data.forEach(m => {
           const isPM = m.target_id !== null;
-          
-          if (!isPM) {
-            // 公開訊息：只有在沒有選擇私人對話對象時才顯示
-            if (!privateTargetId) {
-              html += `<div class="chat-msg"><span class="chat-msg-author" data-sender-id="${m.sender_id}" data-sender-name="${m.sender_name}">${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
-            }
-          } else {
-            // 私訊訊息：必須是「我發給當前私訊對象」或「當前私訊對象發給我」的才顯示
-            const isRelevantPM = 
-              (m.sender_id === userId && m.target_id === privateTargetId) ||
-              (m.sender_id === privateTargetId && m.target_id === userId);
 
-            if (isRelevantPM) {
-              html += `<div class="chat-msg pm"><span class="chat-msg-author" data-sender-id="${m.sender_id}" data-sender-name="${m.sender_name}">[🔒 私訊] ${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+          if (currentChatMode === 'public') {
+            if (!isPM) {
+              html += `<div class="chat-msg"><span class="chat-msg-author">${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+            }
+          } else if (currentChatMode === 'dm' && activeDmUserId) {
+            const isRelevant = 
+              (m.sender_id === userId && m.target_id === activeDmUserId) ||
+              (m.sender_id === activeDmUserId && m.target_id === userId);
+
+            if (isRelevant) {
+              html += `<div class="chat-msg pm"><span class="chat-msg-author">${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
             }
           }
         });
 
         if (html === '') {
-          html = `<div class="chat-welcome">${privateTargetId ? `✨ 正在與 ${privateTargetName} 進行專屬私訊對話` : '✨ 點擊線上玩家頭像可發起私人對話或查看記錄！'}</div>`;
+          html = `<div class="chat-welcome">${currentChatMode === 'dm' ? `與 ${activeDmUserName} 的對話尚為空白` : '目前沒有公開訊息'}</div>`;
         }
 
         chatMessagesBox.innerHTML = html;
@@ -1048,18 +1140,9 @@ import Layout from '../layouts/Layout.astro';
       }).subscribe();
 
       supabase.channel('chat-changes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: MSG_TABLE_NAME }, (payload) => {
-        if (payload.new && payload.new.room === currentRoom && chatMessagesBox) {
-          const m = payload.new;
-          const isPM = m.target_id !== null;
-          const isMyPM = m.sender_id === userId || m.target_id === userId;
-          if (!isPM || isMyPM) {
-            const pmTag = isPM ? `[🔒 私訊]` : '';
-            const div = document.createElement('div');
-            div.className = `chat-msg ${isPM ? 'pm' : ''}`;
-            div.innerHTML = `<span class="chat-msg-author" data-sender-id="${m.sender_id}" data-sender-name="${m.sender_name}">${m.sender_name} ${pmTag}:</span><span class="chat-msg-text">${m.message}</span>`;
-            chatMessagesBox.appendChild(div);
-            chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
-          }
+        if (payload.new && payload.new.room === currentRoom) {
+          fetchMessages();
+          if (currentChatMode === 'dmlist') renderDmList();
         }
       }).subscribe();
 
@@ -1071,23 +1154,19 @@ import Layout from '../layouts/Layout.astro';
       const text = chatInput?.value.trim();
       if (!text) return;
 
+      const targetId = (currentChatMode === 'dm') ? activeDmUserId : null;
+      const targetName = (currentChatMode === 'dm') ? activeDmUserName : null;
+
       await supabase.from(MSG_TABLE_NAME).insert({
         room: currentRoom,
         sender_id: userId,
         sender_name: playerName,
-        target_id: privateTargetId,
-        target_name: privateTargetName,
+        target_id: targetId,
+        target_name: targetName,
         message: text
       });
 
       if (chatInput) chatInput.value = '';
-    });
-
-    switchPublicBtn?.addEventListener('click', () => {
-      privateTargetId = null;
-      privateTargetName = null;
-      if (chatModeIndicator) chatModeIndicator.textContent = '📢 公開發言中';
-      if (switchPublicBtn) switchPublicBtn.style.display = 'none';
       fetchMessages();
     });
 
