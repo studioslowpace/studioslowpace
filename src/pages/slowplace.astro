@@ -1160,7 +1160,7 @@ import Layout from '../layouts/Layout.astro';
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // 1. 載入並繪製背景圖 (假設圖片為 /assets/background.jpg)
-      const bgImg = getLoadedImage('/assets/background.jpg');
+      const bgImg = getLoadedImage('/assets/background.png');
       if (bgImg && bgImg.complete && bgImg.naturalWidth !== 0) {
         // 將圖片延展填滿整個 384x384 畫布
         ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
@@ -1209,16 +1209,29 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(`${item.label}`, px + 4, py + 14);
       });
 
-      // 4. 繪製共讀桌
+      // 2. 繪製共讀桌 (佔 2x2 四格)
       roomTables.forEach(t => {
         const px = t.table_gx * TILE_SIZE;
         const py = t.table_gy * TILE_SIZE;
-        ctx.fillStyle = '#b45309';
-        ctx.fillRect(px + 2, py + 2, TILE_SIZE * 2 - 4, TILE_SIZE * 2 - 4);
+        const tw = TILE_SIZE * 2; // 2格寬 (64px)
+        const th = TILE_SIZE * 2; // 2格高 (64px)
+
+        // 呼叫圖片載入函式 (假設你的圖片路徑為 /assets/table.png)
+        const tableImg = getLoadedImage('/assets/table.png');
+
+        if (tableImg && tableImg.complete && tableImg.naturalWidth !== 0) {
+          ctx.drawImage(tableImg, px, py, tw, th);
+        } else {
+          // 若圖片尚未載入或找不到，顯示備用木色方塊
+          ctx.fillStyle = '#b45309';
+          ctx.fillRect(px + 2, py + 2, tw - 4, th - 4);
+        }
+
+        // 文字標籤
         ctx.fillStyle = '#fde68a';
         ctx.font = '9px sans-serif';
         const label = (t.book_title && t.book_title !== '') ? `🪵 共讀: ${t.book_title}` : `🪵 空共讀桌(點擊發起)`;
-        ctx.fillText(label, px + 4, py + 20);
+        ctx.fillText(label, px + 4, py + 16);
       });
 
       // 5. 繪製 NPC
