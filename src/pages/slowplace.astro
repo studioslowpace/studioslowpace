@@ -623,32 +623,33 @@ import Layout from '../layouts/Layout.astro';
     function renderMyLogs() {
       if (!logListContainer) return;
       if (myReadingLogs.length === 0) {
-        logListContainer.innerHTML = '<div style="color:#64748b; font-size:10px; text-align:center; padding:10px;">目前尚無記錄</div>';
+        logListContainer.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:15px;">目前尚無閱讀記錄</div>';
         return;
       }
       let html = '';
       myReadingLogs.forEach((item, index) => {
         html += `
-          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:6px 8px; border-radius:6px; cursor:pointer;">
-            <div style="font-weight:bold; color:var(--accent-color); font-size:11px;">《${item.book}》 <span style="font-size:9px; color:#94a3b8;">/ ${item.author}</span></div>
-            <div style="font-size:10px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current}/${item.total} 頁</div>
+          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
+            <div style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book}》</div>
+            <div style="font-size:12px; color:#cbd5e1; margin-top:3px;">作者：${item.author}</div>
           </div>
         `;
       });
       logListContainer.innerHTML = html;
 
+      // 點擊卡片時一樣可以彈出詳細閱讀心得與書摘
       document.querySelectorAll('.log-item-card').forEach(card => {
         card.addEventListener('click', (e) => {
           const idx = Number((e.currentTarget as HTMLElement).dataset.index);
           const log = myReadingLogs[idx];
           if (detailContent) {
             detailContent.innerHTML = `
-              <p><strong>書名：</strong>《${log.book}》</p>
-              <p><strong>作者：</strong>${log.author}</p>
-              <p><strong>閱讀進度：</strong>第 ${log.current} / ${log.total} 頁</p>
-              <p><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
-              <p><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
-              <p style="font-size:10px; color:#64748b; text-align:right;">記錄日期：${log.date}</p>
+              <p style="font-size:14px;"><strong>書名：</strong>《${log.book}》</p>
+              <p style="font-size:13px;"><strong>作者：</strong>${log.author}</p>
+              <p style="font-size:13px;"><strong>閱讀進度：</strong>第 ${log.current} / ${log.total} 頁</p>
+              <p style="font-size:13px;"><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
+              <p style="font-size:13px;"><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
+              <p style="font-size:11px; color:#64748b; text-align:right;">記錄日期：${log.date}</p>
             `;
           }
           if (detailModal) detailModal.style.display = 'flex';
@@ -1291,5 +1292,22 @@ import Layout from '../layouts/Layout.astro';
       draw();
       requestAnimationFrame(gameLoop);
     }
+
+    // 假設你點擊某個物件時抓取到的資料為 item
+const itemLink = item.link;         // 例如傳送的網址或頁面路徑
+const openType = item.open_type;     // 'modal' 或 'blank'
+
+if (itemLink && itemLink.trim() !== '') {
+  if (openType === 'blank') {
+    // 🌐 1. 開啟新分頁
+    window.open(itemLink, '_blank');
+  } else {
+    // 🪟 2. 以彈出視窗 (Modal) 顯示
+    // 這裡可以透過 iframe 載入該網址，或者顯示對應的 Modal
+    const modalIframe = document.getElementById('my-custom-modal-iframe');
+    if (modalIframe) modalIframe.src = itemLink;
+    document.getElementById('my-custom-modal').style.display = 'flex';
+  }
+}
   </script>
 </Layout>
