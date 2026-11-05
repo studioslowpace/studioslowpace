@@ -61,18 +61,31 @@ import Layout from '../layouts/Layout.astro';
 
   <!-- 3. 圖書館藏 Modal (點擊書櫃彈出 /library) -->
   <div id="library-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window library-window">
-      <div class="rpg-title-bar" style="display:flex; justify-between; align-items:center;">
+    <div class="rpg-window embed-window">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
         <span>📚 客舍館藏書單 (Library)</span>
         <button id="library-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
       </div>
-      <div class="library-frame-wrapper">
-        <iframe src="/library" class="library-iframe"></iframe>
+      <div class="embed-frame-wrapper">
+        <iframe src="/library" class="embed-iframe"></iframe>
       </div>
     </div>
   </div>
 
-  <!-- 4. 主介面 (電腦版兼具手機直式框外包覆) -->
+  <!-- 4. 玩家私訊對話 Modal (點擊玩家彈出 /chatroom) -->
+  <div id="chat-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window embed-window">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="chat-modal-title">💬 與書友對話</span>
+        <button id="chat-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+      </div>
+      <div class="embed-frame-wrapper">
+        <iframe id="chat-iframe" src="/chatroom" class="embed-iframe"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 主介面 (電腦版兼具手機直式框外包覆) -->
   <div class="app-viewport">
     <main class="rpg-container">
       <header class="rpg-hud">
@@ -201,9 +214,9 @@ import Layout from '../layouts/Layout.astro';
     .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
     .rpg-window { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     
-    .library-window { max-width: 390px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
-    .library-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
-    .library-iframe { width: 100%; height: 100%; border: none; }
+    .embed-window { max-width: 390px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+    .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
+    .embed-iframe { width: 100%; height: 100%; border: none; }
 
     .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid var(--border-color); }
     .rpg-content { padding: 18px; }
@@ -340,6 +353,13 @@ import Layout from '../layouts/Layout.astro';
     const seatModal = document.getElementById('seat-modal');
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
+    
+    // 💬 對話彈窗 DOM 元素
+    const chatModal = document.getElementById('chat-modal');
+    const chatCloseBtn = document.getElementById('chat-close-btn');
+    const chatIframe = document.getElementById('chat-iframe') as HTMLIFrameElement;
+    const chatModalTitle = document.getElementById('chat-modal-title');
+
     const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
     const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
     const chapterInput = document.getElementById('rpg-chapter-input') as HTMLInputElement;
@@ -359,7 +379,6 @@ import Layout from '../layouts/Layout.astro';
     let pendingSeat: { gx: number; gy: number; label: string } | null = null;
     let isGameStarted = false;
 
-    // 自選主題配色切換邏輯
     const savedTheme = localStorage.getItem('rpg_theme') || 'blue';
     if (themeSelect) {
       themeSelect.value = savedTheme;
@@ -373,6 +392,10 @@ import Layout from '../layouts/Layout.astro';
 
     libraryCloseBtn?.addEventListener('click', () => {
       if (libraryModal) libraryModal.style.display = 'none';
+    });
+
+    chatCloseBtn?.addEventListener('click', () => {
+      if (chatModal) chatModal.style.display = 'none';
     });
 
     async function syncMyStateToDB() {
@@ -423,11 +446,15 @@ import Layout from '../layouts/Layout.astro';
       }, 5000);
     }
 
-    function isCellOccupiedByOther(gx: number, gy: number): boolean {
-      return Object.values(onlinePlayers).some((p: any) => p.gx === gx && p.gy === gy);
+    // 取得在該座標上的其他玩家物件
+    function getPlayerAtCell(gx: number, gy: number) {
+      return Object.values(onlinePlayers).find((p: any) => p.gx === gx && p.gy === gy);
     }
 
-    // 移動碰撞判定：牆壁、NPC、傢俱會阻擋行走
+    function isCellOccupiedByOther(gx: number, gy: number): boolean {
+      return !!getPlayerAtCell(gx, gy);
+    }
+
     function isCellSolidBlocked(gx: number, gy: number): boolean {
       const maxCols = Math.floor(canvas.width / TILE_SIZE);
       const maxRows = Math.floor(canvas.height / TILE_SIZE);
@@ -529,15 +556,26 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
 
       if (currentTool === 'move') {
-        const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
-        const hitShelf = roomData.items.find(item => item.type === 'shelf' && item.gx === targetGx && item.gy === targetGy);
+        // 💬 1. 檢查是否點擊了「其他線上玩家」：開啟聊天室 modal
+        const hitPlayer = getPlayerAtCell(targetGx, targetGy);
+        if (hitPlayer) {
+          if (chatModalTitle) chatModalTitle.textContent = `💬 與書友「${hitPlayer.name}」對話`;
+          if (chatIframe) {
+            chatIframe.src = `/chatroom?targetUser=${encodeURIComponent(hitPlayer.user_id)}&targetName=${encodeURIComponent(hitPlayer.name)}`;
+          }
+          if (chatModal) chatModal.style.display = 'flex';
+          return;
+        }
 
+        // 📚 2. 檢查點擊書櫃
+        const hitShelf = roomData.items.find(item => item.type === 'shelf' && item.gx === targetGx && item.gy === targetGy);
         if (hitShelf) {
-          // 📚 點擊書櫃：跳出 Library 視窗
           if (libraryModal) libraryModal.style.display = 'flex';
           return;
         }
 
+        // 🪑 3. 檢查點擊椅子
+        const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
           if (isSeatTakenByOther) {
@@ -548,12 +586,7 @@ import Layout from '../layouts/Layout.astro';
           pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
           if (seatModal) seatModal.style.display = 'flex';
         } else {
-          // 🛑 終點檢查：如果終點目標格已經有其他玩家停留，則不允許停在該處（不可重疊）
-          if (isCellOccupiedByOther(targetGx, targetGy)) {
-            alert('該位置已有其他書友停留囉！');
-            return;
-          }
-
+          // 🚶 4. 普通格子移動
           if (!isCellSolidBlocked(targetGx, targetGy)) {
             moveQueue = [];
             let currX = playerGx;
@@ -638,7 +671,6 @@ import Layout from '../layouts/Layout.astro';
       moveTimer++;
       if (moveQueue.length > 0 && moveTimer % 8 === 0) {
         const nextStep = moveQueue.shift()!;
-        // 🚶 移動過程中允許穿透行經其他玩家，只需確保沒有牆壁/傢俱阻擋
         if (!isCellSolidBlocked(nextStep.gx, nextStep.gy)) {
           playerGx = nextStep.gx;
           playerGy = nextStep.gy;
