@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 手機沉浸共讀空間">
+<Layout title="空間客舍 · 1/3面板共讀空間">
   <!-- 1. 登入與身份選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
           <option value="鄰里人">🌱 鄰里人 (一般書友)</option>
           <option value="客舍人">☕ 客舍人 (常駐會員)</option>
           <option value="空間友">🤝 空間友 (共創夥伴)</option>
-          <option value="店主">👑 店主 (擁有傢俱建造權限)</option>
+          <option value="店主">👑 店主 (擁有傢俱與桌子建造權限)</option>
         </select>
 
         <div class="role-selector-group">
@@ -47,19 +47,22 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 2. 入座 Modal -->
+  <!-- 2. 入座與詳細閱讀設定 Modal -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>◆ 閱讀與專心設定 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">你在此處安坐。請輸入書名與目前的閱讀章節：</p>
-        <input type="text" id="rpg-book-input" placeholder="書名（例：《希臘語課》）" maxlength="20" />
-        <div class="progress-input-group">
-          <span>進度：第</span>
-          <input type="number" id="rpg-chapter-input" value="1" min="1" max="99" style="width: 60px; text-align:center;" />
-          <span>章</span>
+        <p class="rpg-text">你在此處安坐。請輸入詳細的閱讀進度與筆記：</p>
+        <input type="text" id="rpg-book-input" placeholder="書名（例：《希臘語課》）" maxlength="25" style="margin-bottom:6px;" />
+        <input type="text" id="rpg-author-input" placeholder="作者名" maxlength="20" style="margin-bottom:6px;" />
+        <div style="display:flex; gap:6px; margin-bottom:6px;">
+          <input type="number" id="rpg-current-page" placeholder="目前頁數" min="0" max="9999" style="flex:1; margin-bottom:0;" />
+          <input type="number" id="rpg-total-page" placeholder="總頁數" min="1" max="9999" style="flex:1; margin-bottom:0;" />
         </div>
-        <div class="rpg-btn-group" style="margin-top: 14px;">
+        <textarea id="rpg-quote-input" placeholder="書摘句子..." style="width:100%; height:45px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
+        <textarea id="rpg-review-input" placeholder="讀後感與心得..." style="width:100%; height:55px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:10px;"></textarea>
+        
+        <div class="rpg-btn-group">
           <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
           <button id="seat-confirm-btn" class="rpg-btn">☁️ 開啟專心 (DND)</button>
         </div>
@@ -80,25 +83,30 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 4. 閱讀記錄與書摘收藏 Modal -->
-  <div id="reading-log-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 380px; max-height: 85vh; display: flex; flex-direction: column;">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>📖 個人閱讀記錄與書摘</span>
-        <button id="log-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
-      </div>
-      <div class="rpg-content" style="overflow-y: auto; flex: 1;">
-        <div style="background:var(--bg-main); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--border-color);">
-          <div style="font-size:11px; color:var(--accent-color); margin-bottom:6px; font-weight:bold;">✍️ 新增一筆記錄</div>
-          <input type="text" id="log-book-name" placeholder="書名" style="margin-bottom:6px;" />
-          <input type="text" id="log-author-name" placeholder="作者名" style="margin-bottom:6px;" />
-          <textarea id="log-quote" placeholder="書摘句子..." style="width:100%; height:50px; background:var(--bg-card); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
-          <textarea id="log-review" placeholder="讀後感與心得..." style="width:100%; height:60px; background:var(--bg-card); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:8px;"></textarea>
-          <button id="log-add-btn" class="rpg-btn" style="padding:8px;">➕ 新增至我的書單</button>
+  <!-- 4. 共讀桌 (Table) 發起與加入 Modal -->
+  <div id="table-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window">
+      <div class="rpg-title-bar"><span id="table-modal-title">📖 共讀桌活動</span></div>
+      <div class="rpg-content">
+        <div id="table-form-view" style="display:none;">
+          <p class="rpg-text">發起一場共讀活動（最多 3 人參加）：</p>
+          <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:6px;" />
+          <input type="text" id="table-author" placeholder="作者" style="margin-bottom:6px;" />
+          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">預定完讀日期：</div>
+          <input type="date" id="table-date" style="width:100%; background:var(--bg-main); border:1px solid var(--border-color); color:#fff; padding:8px; border-radius:8px; margin-bottom:12px;" />
+          <div class="rpg-btn-group">
+            <button id="table-cancel-btn" class="rpg-btn-ghost">取消</button>
+            <button id="table-create-btn" class="rpg-btn">✨ 發起共讀</button>
+          </div>
         </div>
 
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:6px;">📚 記錄列表（點擊可看詳情）：</div>
-        <div id="log-list-container" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <div id="table-info-view">
+          <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:12px;"></div>
+          <div class="rpg-btn-group">
+            <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
+            <button id="table-join-btn" class="rpg-btn" style="background:#10b981;">🤝 加入共讀</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -127,28 +135,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 7. 💬 彈出式聊天視窗 (Floating Chat Modal) -->
-  <div id="chat-popup-modal" class="rpg-modal-overlay" style="display: none; align-items:flex-end; justify-content:flex-end; padding:16px;">
-    <div class="rpg-window chat-popup-box">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="chat-popup-title">💬 客舍即時交誼廳</span>
-        <button id="chat-popup-close" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
-      </div>
-      <div class="chat-popup-body">
-        <div id="chat-mode-indicator" class="chat-mode-tag">📢 公開發言中</div>
-        <button id="switch-public-btn" class="rpg-btn-sm" style="display:none; font-size:9px; margin-bottom:4px;">切換回公開頻道</button>
-        <div id="chat-messages" class="chat-messages-box">
-          <div class="chat-welcome">✨ 點擊線上玩家頭像可檢視其閱讀記錄或發起私訊！</div>
-        </div>
-        <form id="chat-form" class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="說點什麼..." maxlength="80" autocomplete="off" />
-          <button type="submit" class="chat-send-btn">發送</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- 8. 主介面 (完整手機/桌面直式設計) -->
+  <!-- 7. 主介面 (完整手機/桌面直式設計) -->
   <div class="app-viewport">
     <main class="rpg-container">
       <header class="rpg-hud">
@@ -180,8 +167,40 @@ import Layout from '../layouts/Layout.astro';
 
       <!-- 畫布區塊 -->
       <div class="canvas-wrapper">
-        <canvas id="rpg-canvas" width="384" height="340"></canvas>
+        <canvas id="rpg-canvas" width="384" height="280"></canvas>
       </div>
+
+      <!-- 8. 下方 1/3 畫面面板 (切換「聊天」與「閱讀記錄」) -->
+      <section class="split-panel">
+        <div class="panel-tabs-bar">
+          <button class="panel-tab-btn active" data-tab="chat">💬 聊天交誼廳</button>
+          <button class="panel-tab-btn" data-tab="logs">📚 我的閱讀記錄</button>
+        </div>
+
+        <!-- 聊天頁籤內容 -->
+        <div id="pane-chat" class="pane-content active">
+          <div class="chat-header-sub">
+            <span id="chat-mode-indicator" class="chat-mode-tag">📢 公開發言中</span>
+            <button id="switch-public-btn" class="rpg-btn-sm" style="display:none; font-size:9px;">切換公開</button>
+          </div>
+          <div id="chat-messages" class="chat-messages-box">
+            <div class="chat-welcome">✨ 點擊線上玩家頭像可檢視閱讀記錄或私訊！</div>
+          </div>
+          <form id="chat-form" class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="說點什麼..." maxlength="80" autocomplete="off" />
+            <button type="submit" class="chat-send-btn">發送</button>
+          </form>
+        </div>
+
+        <!-- 閱讀記錄頁籤內容 -->
+        <div id="pane-logs" class="pane-content" style="display:none;">
+          <div class="logs-header-sub">
+            <span>📖 個人閱讀清單與書摘</span>
+            <button id="log-quick-add-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff;">➕ 新增記錄</button>
+          </div>
+          <div id="log-list-container" class="logs-list-box"></div>
+        </div>
+      </section>
 
       <!-- 底部操作列與按鈕 -->
       <footer class="rpg-footer">
@@ -189,6 +208,7 @@ import Layout from '../layouts/Layout.astro';
           <button class="tool-btn active" data-tool="move">🚶 移動</button>
           <button class="tool-btn" data-tool="seat">🪑 椅子</button>
           <button class="tool-btn" data-tool="shelf">📚 書架</button>
+          <button class="tool-btn" data-tool="table">🪵 共讀桌</button>
         </div>
         <div id="default-palette" class="build-palette">
           <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
@@ -196,8 +216,6 @@ import Layout from '../layouts/Layout.astro';
 
         <div class="action-dock">
           <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background: var(--accent-color, #38bdf8); color:#0f172a; font-weight:bold;">🚶 起立</button>
-          <button id="btn-reading-log" class="rpg-btn-sm">📖 閱讀記錄</button>
-          <button id="btn-open-chat" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff;">💬 聊天</button>
         </div>
       </footer>
     </main>
@@ -255,19 +273,29 @@ import Layout from '../layouts/Layout.astro';
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
-    /* 💬 彈出式聊天視窗樣式 */
-    .chat-popup-box { width: 90vw; max-width: 360px; height: 420px; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; }
-    .chat-popup-body { flex: 1; display: flex; flex-direction: column; padding: 10px; background: var(--bg-card); min-height: 0; }
-    .chat-mode-tag { color: var(--accent-color); font-size: 10px; font-weight: bold; margin-bottom: 4px; }
-    .chat-messages-box { flex: 1; padding: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 11px; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 6px; }
-    .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 4px; }
+    /* 下方 1/3 分頁面板樣式 */
+    .split-panel { flex: 0 0 32vh; display: flex; flex-direction: column; background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 0; }
+    .panel-tabs-bar { display: flex; background: var(--bg-main); border-bottom: 1px solid var(--border-color); }
+    .panel-tab-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 6px; font-size: 11px; cursor: pointer; font-weight: 500; text-align: center; }
+    .panel-tab-btn.active { color: var(--accent-color); background: var(--bg-card); border-bottom: 2px solid var(--accent-color); }
+
+    .pane-content { flex: 1; display: flex; flex-direction: column; padding: 6px 10px; min-height: 0; overflow: hidden; }
+    .pane-content.active { display: flex; }
+
+    .chat-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10px; }
+    .chat-mode-tag { color: var(--accent-color); font-weight: bold; }
+    .chat-messages-box { flex: 1; padding: 4px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 11px; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 4px; }
+    .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 2px; }
     .chat-msg { background: var(--bg-card); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); word-break: break-all; line-height: 1.4; }
     .chat-msg.pm { background: rgba(192, 132, 252, 0.15); border-color: #c084fc; }
     .chat-msg-author { color: var(--accent-color); font-weight: bold; margin-right: 4px; cursor: pointer; }
     .chat-msg-text { color: #f8fafc; }
     .chat-input-row { display: flex; gap: 6px; flex-shrink: 0; }
     .chat-input-row input { flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 6px 8px; font-size: 11px; border-radius: 4px; outline: none; }
-    .chat-send-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 0 12px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: 500; }
+    .chat-send-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 0 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: 500; }
+
+    .logs-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #94a3b8; font-weight: bold; }
+    .logs-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
 
     .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid var(--border-color); }
     .rpg-content { padding: 18px; }
@@ -308,7 +336,7 @@ import Layout from '../layouts/Layout.astro';
     .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 4px; overflow: hidden; min-height: 0; }
-    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 340px; object-fit: contain; }
+    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 280px; object-fit: contain; }
 
     .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .build-palette { display: flex; gap: 6px; }
@@ -326,6 +354,7 @@ import Layout from '../layouts/Layout.astro';
 
     const TABLE_NAME = 'slowsplace_member';
     const MSG_TABLE_NAME = 'slowsplace_messages';
+    const COREADING_TABLE = 'slowsplace_tables';
     const TILE_SIZE = 32;
 
     const userId = localStorage.getItem('rpg_user_id') || ('user_' + Math.random().toString(36).substring(2, 9));
@@ -341,14 +370,13 @@ import Layout from '../layouts/Layout.astro';
     let playerAvatar = savedAvatar || '/assets/player1.png';
     let playerTier = savedTier;
     let playerGx = 4;
-    let playerGy = 7;
+    let playerGy = 6;
     let currentTool = 'move';
     let currentRoom = 'study';
     let isDND = false;
     let currentTask = '';
 
-    // 個人閱讀記錄陣列
-    let myReadingLogs: { book: string; author: string; quote: string; review: string; date: string }[] = JSON.parse(localStorage.getItem('rpg_my_logs') || '[]');
+    let myReadingLogs: { book: string; author: string; quote: string; review: string; current: number; total: number; date: string }[] = JSON.parse(localStorage.getItem('rpg_my_logs') || '[]');
 
     let privateTargetId: string | null = null;
     let privateTargetName: string | null = null;
@@ -356,6 +384,7 @@ import Layout from '../layouts/Layout.astro';
     let moveQueue: { gx: number; gy: number }[] = [];
     let moveTimer = 0;
     let onlinePlayers: Record<string, any> = {};
+    let roomTables: any[] = [];
 
     const imageCache: Record<string, HTMLImageElement> = {};
     const imageFailed: Record<string, boolean> = {};
@@ -394,7 +423,7 @@ import Layout from '../layouts/Layout.astro';
           { type: 'shelf', gx: 10, gy: 1, label: '熱門書架', imgSrc: '/assets/shelf.png' }
         ],
         npcs: [
-          { name: '實習生', task: '澆花', gx: 8, gy: 6, imgSrc: '/assets/intern.png' }
+          { name: '實習生', task: '澆花', gx: 8, gy: 5, imgSrc: '/assets/intern.png' }
         ]
       },
       salon: {
@@ -412,70 +441,106 @@ import Layout from '../layouts/Layout.astro';
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
-    // 閱讀記錄 MODAL DOM
-    const readingLogModal = document.getElementById('reading-log-modal');
-    const logCloseBtn = document.getElementById('log-close-btn');
-    const logAddBtn = document.getElementById('log-add-btn');
-    const logBookInput = document.getElementById('log-book-name') as HTMLInputElement;
-    const logAuthorInput = document.getElementById('log-author-name') as HTMLInputElement;
-    const logQuoteInput = document.getElementById('log-quote') as HTMLTextAreaElement;
-    const logReviewInput = document.getElementById('log-review') as HTMLTextAreaElement;
+    // 閱讀設定 DOM
+    const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
+    const authorInput = document.getElementById('rpg-author-input') as HTMLInputElement;
+    const currentPageInput = document.getElementById('rpg-current-page') as HTMLInputElement;
+    const totalPageInput = document.getElementById('rpg-total-page') as HTMLInputElement;
+    const quoteInput = document.getElementById('rpg-quote-input') as HTMLTextAreaElement;
+    const reviewInput = document.getElementById('rpg-review-input') as HTMLTextAreaElement;
+    const confirmSeatBtn = document.getElementById('seat-confirm-btn');
+    const cancelSeatBtn = document.getElementById('seat-cancel-btn');
+
+    // 下方 1/3 面板分頁 DOM
+    const panelTabBtns = document.querySelectorAll('.panel-tab-btn');
+    const paneChat = document.getElementById('pane-chat');
+    const paneLogs = document.getElementById('pane-logs');
     const logListContainer = document.getElementById('log-list-container');
+    const logQuickAddBtn = document.getElementById('log-quick-add-btn');
+
+    // 詳情與共讀桌 MODAL DOM
     const detailModal = document.getElementById('log-detail-modal');
     const detailCloseBtn = document.getElementById('detail-close-btn');
     const detailContent = document.getElementById('detail-content');
 
-    // 他人閱讀記錄查看 MODAL
     const peerModal = document.getElementById('peer-modal');
     const peerCloseBtn = document.getElementById('peer-close-btn');
     const peerModalTitle = document.getElementById('peer-modal-title');
     const peerContentBox = document.getElementById('peer-content-box');
 
-    // 💬 彈出聊天 MODAL DOM
-    const chatPopupModal = document.getElementById('chat-popup-modal');
-    const chatPopupClose = document.getElementById('chat-popup-close');
-    const openChatBtn = document.getElementById('btn-open-chat');
+    const tableModal = document.getElementById('table-modal');
+    const tableModalTitle = document.getElementById('table-modal-title');
+    const tableFormView = document.getElementById('table-form-view');
+    const tableInfoView = document.getElementById('table-info-view');
+    const tableBook = document.getElementById('table-book') as HTMLInputElement;
+    const tableAuthor = document.getElementById('table-author') as HTMLInputElement;
+    const tableDate = document.getElementById('table-date') as HTMLInputElement;
+    const tableCreateBtn = document.getElementById('table-create-btn');
+    const tableJoinBtn = document.getElementById('table-join-btn');
+    const tableCancelBtn = document.getElementById('table-cancel-btn');
+    const tableInfoClose = document.getElementById('table-info-close');
+    const tableDetails = document.getElementById('table-details');
+
+    const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
+    const tierSelect = document.getElementById('rpg-tier-select') as HTMLSelectElement;
+    const startBtn = document.getElementById('rpg-start-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const hudName = document.getElementById('hud-name');
+    const hudTierTag = document.getElementById('hud-tier-tag');
+    const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
+    const ctx = canvas?.getContext('2d');
+    const leaveSeatBtn = document.getElementById('btn-leave-seat');
+    const onlineCountSpan = document.getElementById('online-count');
+    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+    const buildPalette = document.getElementById('build-palette');
+    const defaultPalette = document.getElementById('default-palette');
+
     const chatMessagesBox = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input') as HTMLInputElement;
     const chatModeIndicator = document.getElementById('chat-mode-indicator');
     const switchPublicBtn = document.getElementById('switch-public-btn');
 
-    const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
-    const tierSelect = document.getElementById('rpg-tier-select') as HTMLSelectElement;
-    const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
-    const chapterInput = document.getElementById('rpg-chapter-input') as HTMLInputElement;
-    const startBtn = document.getElementById('rpg-start-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const confirmSeatBtn = document.getElementById('seat-confirm-btn');
-    const cancelSeatBtn = document.getElementById('seat-cancel-btn');
-    const hudName = document.getElementById('hud-name');
-    const hudTierTag = document.getElementById('hud-tier-tag');
-    const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
-    const ctx = canvas?.getContext('2d');
-    const leaveSeatBtn = document.getElementById('btn-leave-seat');
-    const readingLogBtn = document.getElementById('btn-reading-log');
-    const onlineCountSpan = document.getElementById('online-count');
-    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-    const buildPalette = document.getElementById('build-palette');
-    const defaultPalette = document.getElementById('default-palette');
-
     let pendingSeat: { gx: number; gy: number; label: string } | null = null;
+    let pendingTablePos: { gx: number; gy: number } | null = null;
+    let activeTableData: any = null;
     let isGameStarted = false;
 
-    // 渲染閱讀記錄清單
+    // 1/3 面板頁籤切換
+    panelTabBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        panelTabBtns.forEach(b => b.classList.remove('active'));
+        const target = e.currentTarget as HTMLElement;
+        target.classList.add('active');
+        const tab = target.dataset.tab;
+        if (tab === 'chat') {
+          if (paneChat) paneChat.style.display = 'flex';
+          if (paneLogs) paneLogs.style.display = 'none';
+        } else {
+          if (paneChat) paneChat.style.display = 'none';
+          if (paneLogs) paneLogs.style.display = 'flex';
+          renderMyLogs();
+        }
+      });
+    });
+
+    logQuickAddBtn?.addEventListener('click', () => {
+      if (seatModal) seatModal.style.display = 'flex';
+    });
+
+    // 渲染個人閱讀記錄清單
     function renderMyLogs() {
       if (!logListContainer) return;
       if (myReadingLogs.length === 0) {
-        logListContainer.innerHTML = '<div style="color:#64748b; font-size:10px; text-align:center; padding:10px;">目前尚無閱讀記錄</div>';
+        logListContainer.innerHTML = '<div style="color:#64748b; font-size:10px; text-align:center; padding:10px;">目前尚無記錄，點擊右上方新增或透過入座記錄</div>';
         return;
       }
       let html = '';
       myReadingLogs.forEach((item, index) => {
         html += `
-          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; cursor:pointer;">
-            <div style="font-weight:bold; color:var(--accent-color); font-size:12px;">《${item.book}》 <span style="font-size:10px; color:#94a3b8;">/ ${item.author}</span></div>
-            <div style="font-size:10px; color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">摘：${item.quote}</div>
+          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:6px 8px; border-radius:6px; cursor:pointer;">
+            <div style="font-weight:bold; color:var(--accent-color); font-size:11px;">《${item.book}》 <span style="font-size:9px; color:#94a3b8;">/ ${item.author}</span></div>
+            <div style="font-size:10px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current}/${item.total} 頁</div>
           </div>
         `;
       });
@@ -489,9 +554,10 @@ import Layout from '../layouts/Layout.astro';
             detailContent.innerHTML = `
               <p><strong>書名：</strong>《${log.book}》</p>
               <p><strong>作者：</strong>${log.author}</p>
-              <p><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote} ”</span></p>
+              <p><strong>閱讀進度：</strong>第 ${log.current} / ${log.total} 頁</p>
+              <p><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
               <p><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
-              <p style="font-size:10px; color:#64748b; text-align:right;">記錄時間：${log.date}</p>
+              <p style="font-size:10px; color:#64748b; text-align:right;">記錄日期：${log.date}</p>
             `;
           }
           if (detailModal) detailModal.style.display = 'flex';
@@ -499,46 +565,9 @@ import Layout from '../layouts/Layout.astro';
       });
     }
 
-    readingLogBtn?.addEventListener('click', () => {
-      renderMyLogs();
-      if (readingLogModal) readingLogModal.style.display = 'flex';
-    });
-    logCloseBtn?.addEventListener('click', () => { if (readingLogModal) readingLogModal.style.display = 'none'; });
     detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
-
-    logAddBtn?.addEventListener('click', async () => {
-      const book = logBookInput?.value.trim();
-      const author = logAuthorInput?.value.trim();
-      const quote = logQuoteInput?.value.trim();
-      const review = logReviewInput?.value.trim();
-
-      if (!book) { alert('請填寫書名'); return; }
-
-      myReadingLogs.unshift({
-        book,
-        author: author || '佚名',
-        quote: quote || '暫無書摘',
-        review: review || '',
-        date: new Date().toLocaleDateString()
-      });
-
-      localStorage.setItem('rpg_my_logs', JSON.stringify(myReadingLogs));
-      logBookInput.value = '';
-      logAuthorInput.value = '';
-      logQuoteInput.value = '';
-      logReviewInput.value = '';
-      renderMyLogs();
-      await syncMyStateToDB();
-      alert('閱讀記錄已成功新增！');
-    });
-
-    // 💬 彈出聊天視窗控制
-    openChatBtn?.addEventListener('click', () => { if (chatPopupModal) chatPopupModal.style.display = 'flex'; });
-    chatPopupClose?.addEventListener('click', () => { if (chatPopupModal) chatPopupModal.style.display = 'none'; });
-
     peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
 
-    // 檢視特定玩家的閱讀記錄
     function openPeerLogs(peerName: string, peerRole: string, peerLogs: any[]) {
       if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
       if (peerContentBox) {
@@ -550,6 +579,7 @@ import Layout from '../layouts/Layout.astro';
             html += `
               <div style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
                 <div style="font-weight:bold; color:var(--accent-color);">《${item.book}》 / ${item.author}</div>
+                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current}/${item.total} 頁</div>
                 <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">摘：${item.quote}</div>
                 <div style="font-size:11px; color:#94a3b8; margin-top:2px;">感：${item.review}</div>
               </div>
@@ -604,6 +634,11 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
+    async function fetchRoomTables() {
+      const { data } = await supabase.from(COREADING_TABLE).select('*').eq('room', currentRoom);
+      roomTables = data || [];
+    }
+
     async function fetchMessages() {
       const { data } = await supabase
         .from(MSG_TABLE_NAME)
@@ -636,7 +671,6 @@ import Layout from '../layouts/Layout.astro';
           const sName = target.dataset.senderName;
           if (sId === userId) return;
 
-          // 點擊聊天訊息中的名字：彈出選單（私訊 或 看記錄）
           if (sId && sName) {
             const action = confirm(`你想對書友「${sName}」做什麼？\n\n【確定】發起私人對話 (PM)\n【取消】查看其閱讀記錄`);
             if (action) {
@@ -644,9 +678,7 @@ import Layout from '../layouts/Layout.astro';
               privateTargetName = sName;
               if (chatModeIndicator) chatModeIndicator.textContent = `🔒 私訊對象: ${sName}`;
               if (switchPublicBtn) switchPublicBtn.style.display = 'inline-block';
-              if (chatPopupModal) chatPopupModal.style.display = 'flex';
             } else {
-              // 找尋該玩家的閱讀記錄
               const peer = Object.values(onlinePlayers).find((p: any) => p.user_id === sId);
               if (peer) {
                 openPeerLogs(peer.name, peer.role, peer.reading_log || []);
@@ -662,6 +694,10 @@ import Layout from '../layouts/Layout.astro';
     function initDatabaseRealtime() {
       supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
         fetchOnlinePlayers();
+      }).subscribe();
+
+      supabase.channel('table-changes').on('postgres_changes', { event: '*', schema: 'public', table: COREADING_TABLE }, () => {
+        fetchRoomTables();
       }).subscribe();
 
       supabase.channel('chat-changes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: MSG_TABLE_NAME }, (payload) => {
@@ -681,7 +717,7 @@ import Layout from '../layouts/Layout.astro';
         }
       }).subscribe();
 
-      setInterval(() => { syncMyStateToDB(); fetchOnlinePlayers(); }, 5000);
+      setInterval(() => { syncMyStateToDB(); fetchOnlinePlayers(); fetchRoomTables(); }, 5000);
     }
 
     chatForm?.addEventListener('submit', async (e) => {
@@ -720,7 +756,8 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
       const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
       const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      return hasItem || hasNpc;
+      const hasTable = roomData.items.some(i => i.type === 'table' && i.gx === gx && i.gy === gy) || roomTables.some(t => t.table_gx === gx && t.table_gy === gy);
+      return hasItem || hasNpc || hasTable;
     }
 
     if (savedName) {
@@ -730,14 +767,13 @@ import Layout from '../layouts/Layout.astro';
       if (hudTierTag) hudTierTag.textContent = `👑 ${playerTier}`;
       if (modal) modal.style.display = 'none';
 
-      // 👑 如果是店主，顯示椅子與書架按鈕
       if (playerTier === '店主') {
         if (buildPalette) buildPalette.style.display = 'flex';
         if (defaultPalette) defaultPalette.style.display = 'none';
       }
 
       isGameStarted = true;
-      syncMyStateToDB().then(() => { fetchOnlinePlayers(); fetchMessages(); });
+      syncMyStateToDB().then(() => { fetchOnlinePlayers(); fetchRoomTables(); fetchMessages(); renderMyLogs(); });
       initDatabaseRealtime();
       gameLoop();
     }
@@ -778,7 +814,9 @@ import Layout from '../layouts/Layout.astro';
         isGameStarted = true;
         await syncMyStateToDB();
         await fetchOnlinePlayers();
+        await fetchRoomTables();
         await fetchMessages();
+        renderMyLogs();
         initDatabaseRealtime();
         gameLoop();
       }
@@ -798,10 +836,11 @@ import Layout from '../layouts/Layout.astro';
         currentRoom = target.dataset.room!;
         isDND = false;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-        playerGx = 4; playerGy = 7;
+        playerGx = 4; playerGy = 6;
         moveQueue = [];
         await syncMyStateToDB();
         await fetchOnlinePlayers();
+        await fetchRoomTables();
         await fetchMessages();
       });
     });
@@ -827,18 +866,40 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
 
       if (currentTool === 'move') {
-        // 👤 點擊其他線上玩家：查看其閱讀記錄
+        // 1. 點擊線上玩家
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
         if (hitPlayer) {
           openPeerLogs(hitPlayer.name, hitPlayer.role, hitPlayer.reading_log || []);
           return;
         }
 
-        // 📚 點擊書櫃
+        // 2. 點擊共讀桌 (Table)
+        const hitTable = roomTables.find(t => t.table_gx === targetGx && t.table_gy === targetGy);
+        if (hitTable) {
+          activeTableData = hitTable;
+          if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
+          if (tableFormView) tableFormView.style.display = 'none';
+          if (tableInfoView) tableInfoView.style.display = 'block';
+          
+          let membersList = hitTable.members.map((m: any) => m.name).join(', ') || '尚無';
+          if (tableDetails) {
+            tableDetails.innerHTML = `
+              <p><strong>書名：</strong>《${hitTable.book_title}》</p>
+              <p><strong>作者：</strong>${hitTable.author}</p>
+              <p><strong>發起人：</strong>${hitTable.host_name}</p>
+              <p><strong>預定完讀日期：</strong>${hitTable.finish_date}</p>
+              <p><strong>參與成員 (${hitTable.members.length}/3)：</strong>${membersList}</p>
+            `;
+          }
+          if (tableModal) tableModal.style.display = 'flex';
+          return;
+        }
+
+        // 3. 點擊書櫃
         const hitShelf = roomData.items.find(item => item.type === 'shelf' && item.gx === targetGx && item.gy === targetGy);
         if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
 
-        // 🪑 點擊椅子入座
+        // 4. 點擊椅子
         const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
@@ -857,17 +918,23 @@ import Layout from '../layouts/Layout.astro';
           }
         }
       } else {
-        // 👑 限制：只有店主才能建造與修改
         if (playerTier !== '店主') {
-          alert('權限不足：只有「店主」階層才可編輯館內傢俱！');
+          alert('權限不足：只有「店主」階層才可編輯館內傢俱與共讀桌！');
+          return;
+        }
+
+        if (currentTool === 'table') {
+          pendingTablePos = { gx: targetGx, gy: targetGy };
+          if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀桌活動';
+          if (tableFormView) tableFormView.style.display = 'block';
+          if (tableInfoView) tableInfoView.style.display = 'none';
+          if (tableModal) tableModal.style.display = 'flex';
           return;
         }
 
         const existingItemIndex = roomData.items.findIndex(item => item.gx === targetGx && item.gy === targetGy);
         if (existingItemIndex !== -1) {
-          if (confirm('確定要移除此處的傢俱嗎？')) {
-            roomData.items.splice(existingItemIndex, 1);
-          }
+          if (confirm('確定要移除此處的傢俱嗎？')) { roomData.items.splice(existingItemIndex, 1); }
         } else if (!isCellSolidBlocked(targetGx, targetGy) && !getPlayerAtCell(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
           const imgSrc = currentTool === 'shelf' ? '/assets/shelf.png' : '/assets/chair.png';
           roomData.items.push({ type: currentTool, gx: targetGx, gy: targetGy, label: currentTool === 'shelf' ? '新書架' : '新木椅', imgSrc });
@@ -875,15 +942,78 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
+    // 建立共讀桌
+    tableCreateBtn?.addEventListener('click', async () => {
+      const book = tableBook?.value.trim();
+      const author = tableAuthor?.value.trim();
+      const date = tableDate?.value;
+
+      if (!book || !date || !pendingTablePos) { alert('請完整填寫書名與完讀日期'); return; }
+
+      await supabase.from(COREADING_TABLE).insert({
+        room: currentRoom,
+        table_gx: pendingTablePos.gx,
+        table_gy: pendingTablePos.gy,
+        book_title: book,
+        author: author || '佚名',
+        finish_date: date,
+        host_name: playerName,
+        members: [{ id: userId, name: playerName }]
+      });
+
+      if (tableModal) tableModal.style.display = 'none';
+      if (tableBook) tableBook.value = '';
+      if (tableAuthor) tableAuthor.value = '';
+      fetchRoomTables();
+      alert('共讀桌已成功建立！');
+    });
+
+    // 加入共讀
+    tableJoinBtn?.addEventListener('click', async () => {
+      if (!activeTableData) return;
+      const members = activeTableData.members || [];
+      if (members.length >= 3) { alert('此共讀桌人數已滿（最多 3 人）！'); return; }
+      if (members.some((m: any) => m.id === userId)) { alert('你已經加入過這個共讀桌了！'); return; }
+
+      members.push({ id: userId, name: playerName });
+      await supabase.from(COREADING_TABLE).update({ members }).eq('id', activeTableData.id);
+
+      if (tableModal) tableModal.style.display = 'none';
+      fetchRoomTables();
+      alert('成功加入共讀行列！');
+    });
+
+    tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+    tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+
     confirmSeatBtn?.addEventListener('click', async () => {
       if (pendingSeat) {
         playerGx = pendingSeat.gx;
         playerGy = pendingSeat.gy;
         moveQueue = [];
         const bookName = bookInput?.value.trim() || '閱讀中';
-        const chapter = parseInt(chapterInput?.value) || 1;
-        currentTask = `${bookName} (第 ${chapter} 章)`;
+        const authorName = authorInput?.value.trim() || '佚名';
+        const currentP = parseInt(currentPageInput?.value) || 1;
+        const totalP = parseInt(totalPageInput?.value) || 100;
+        const quote = quoteInput?.value.trim() || '';
+        const review = reviewInput?.value.trim() || '';
+
+        currentTask = `《${bookName}》 p.${currentP}/${totalP}`;
         isDND = true;
+
+        // 同時加入個人閱讀記錄
+        myReadingLogs.unshift({
+          book: bookName,
+          author: authorName,
+          quote,
+          review,
+          current: currentP,
+          total: totalP,
+          date: new Date().toLocaleDateString()
+        });
+        localStorage.setItem('rpg_my_logs', JSON.stringify(myReadingLogs));
+        renderMyLogs();
+
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         if (seatModal) seatModal.style.display = 'none';
         await syncMyStateToDB();
@@ -927,6 +1057,7 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
+      // 1. 繪製傢俱
       roomData.items.forEach(item => {
         const px = item.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = item.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -942,6 +1073,18 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(`${item.type === 'shelf' ? '📚' : '🪑'} ${item.label}`, px - 20, py - 18);
       });
 
+      // 2. 繪製共讀桌 (Table)
+      roomTables.forEach(t => {
+        const px = t.table_gx * TILE_SIZE + TILE_SIZE / 2;
+        const py = t.table_gy * TILE_SIZE + TILE_SIZE / 2;
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(px - 14, py - 14, 28, 28);
+        ctx.fillStyle = '#fde68a';
+        ctx.font = '8px sans-serif';
+        ctx.fillText(`🪵 共讀桌`, px - 22, py - 18);
+      });
+
+      // 3. NPC
       roomData.npcs.forEach(npc => {
         const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -957,6 +1100,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(npc.name, px - 14, py - 18);
       });
 
+      // 4. 其他線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -972,6 +1116,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(op.name, px - 20, py + 24);
       });
 
+      // 5. 自己
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
       const playerImg = getLoadedImage(playerAvatar);
