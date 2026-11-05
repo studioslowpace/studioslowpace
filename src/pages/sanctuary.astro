@@ -176,8 +176,8 @@ import Layout from '../layouts/Layout.astro';
 
     // 建立 Supabase 客戶端（請確保專案中有設定 PUBLIC_SUPABASE_URL 與 PUBLIC_SUPABASE_ANON_KEY）
     // 如果你在專案中已有共用的 supabase.ts，也可以直接 import 引入
-    const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://blqlrxqckiuvgevmakbu.supabase.co';
-    const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+    const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG'; // 請確保這串是正確的 anon/public key
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const TILE_SIZE = 48;
