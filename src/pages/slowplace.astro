@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 12x12 共讀空間">
+<Layout title="空間客舍 · 自由佈置空間">
   <!-- 1. 登入與身份選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
           <option value="鄰里人">🌱 鄰里人 (一般書友)</option>
           <option value="客舍人">☕ 客舍人 (常駐會員)</option>
           <option value="空間友">🤝 空間友 (共創夥伴)</option>
-          <option value="店主">👑 店主 (擁有12x12傢俱與共讀桌建造權限)</option>
+          <option value="店主">👑 店主 (擁有完全自由佈置與共讀桌建造權限)</option>
         </select>
 
         <div class="role-selector-group">
@@ -138,12 +138,12 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 7. 主介面 (12x12 格完美比例) -->
+  <!-- 7. 主介面 (12x12 格空白畫布) -->
   <div class="app-viewport">
     <main class="rpg-container">
       <header class="rpg-hud">
         <div class="hud-top-row">
-          <span class="hud-brand">☁️ 空間客舍 (12x12)</span>
+          <span class="hud-brand">☁️ 空間客舍 (自由佈置)</span>
           <div class="hud-right">
             <span class="online-indicator">🟢 在線: <strong id="online-count">1</strong></span>
             <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
@@ -203,13 +203,14 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </section>
 
-      <!-- 底部操作列與按鈕 -->
+      <!-- 底部操作列與按鈕 (店主模式動態顯示工具) -->
       <footer class="rpg-footer">
         <div id="build-palette" class="build-palette" style="display:none;">
           <button class="tool-btn active" data-tool="move">🚶 移動</button>
           <button class="tool-btn" data-tool="seat">🪑 椅子</button>
           <button class="tool-btn" data-tool="shelf">📚 書架</button>
           <button class="tool-btn" data-tool="table">🪵 共讀桌</button>
+          <button class="tool-btn" data-tool="plant">盆栽</button>
         </div>
         <div id="default-palette" class="build-palette">
           <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
@@ -400,6 +401,7 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
+    // 🚀 一開始所有房間的 items 清單全部為空 ([])，完全由店主自由加進畫面！
     const rooms: Record<string, { 
       name: string; 
       items: { type: string; gx: number; gy: number; w: number; h: number; label: string; imgSrc: string }[];
@@ -407,11 +409,7 @@ import Layout from '../layouts/Layout.astro';
     }> = {
       study: {
         name: '自修室',
-        items: [
-          { type: 'seat', gx: 3, gy: 3, w: 1, h: 1, label: '木椅 A', imgSrc: '/assets/chair.png' },
-          { type: 'seat', gx: 8, gy: 3, w: 1, h: 1, label: '木椅 B', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 4, gy: 1, w: 4, h: 1, label: '橫書櫃', imgSrc: '/assets/shelf.png' }
-        ],
+        items: [], 
         npcs: [
           { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
           { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 2, imgSrc: '/assets/intern.png', action: 'skill' }
@@ -419,10 +417,7 @@ import Layout from '../layouts/Layout.astro';
       },
       chat: {
         name: '書話間',
-        items: [
-          { type: 'seat', gx: 3, gy: 6, w: 1, h: 1, label: '沙發', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 10, gy: 2, w: 1, h: 3, label: '直書櫃', imgSrc: '/assets/shelf.png' }
-        ],
+        items: [],
         npcs: [
           { name: '屋主 (Mi)', task: '歡迎光臨', gx: 2, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
           { name: '客舍萬事屋', task: '能力共享', gx: 9, gy: 9, imgSrc: '/assets/intern.png', action: 'skill' }
@@ -430,10 +425,7 @@ import Layout from '../layouts/Layout.astro';
       },
       salon: {
         name: '沙龍',
-        items: [
-          { type: 'seat', gx: 6, gy: 5, w: 1, h: 1, label: '講者席', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 3, gy: 1, w: 3, h: 1, label: '沙龍書櫃', imgSrc: '/assets/shelf.png' }
-        ],
+        items: [],
         npcs: [
           { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
           { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 10, imgSrc: '/assets/intern.png', action: 'skill' }
@@ -748,7 +740,6 @@ import Layout from '../layouts/Layout.astro';
       return Object.values(onlinePlayers).find((p: any) => p.gx === gx && p.gy === gy);
     }
 
-    // 碰撞檢測：玩家之間允許重疊，僅阻擋傢俱、NPC與共讀桌
     function isCellSolidBlocked(gx: number, gy: number): boolean {
       if (gx < 0 || gx >= 12 || gy < 0 || gy >= 12) return true;
 
@@ -876,25 +867,22 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
 
       if (currentTool === 'move') {
-        // 1. 點擊 NPC
         const hitNpc = roomData.npcs.find(n => n.gx === targetGx && n.gy === targetGy);
         if (hitNpc) {
           if (hitNpc.action === 'home') {
             window.location.href = '/';
           } else if (hitNpc.action === 'skill') {
-            window.location.href = '/skillsupermarker';
+            window.location.href = '/skillsupermarket';
           }
           return;
         }
 
-        // 2. 點擊線上玩家
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
         if (hitPlayer) {
           openPeerLogs(hitPlayer.name, hitPlayer.role, hitPlayer.reading_log || []);
           return;
         }
 
-        // 3. 點擊共讀桌
         const hitTable = roomTables.find(t => targetGx >= t.table_gx && targetGx < t.table_gx + 2 && targetGy >= t.table_gy && targetGy < t.table_gy + 2);
         if (hitTable) {
           activeTableData = hitTable;
@@ -939,11 +927,9 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        // 4. 點擊書櫃
         const hitShelf = roomData.items.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
         if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
 
-        // 5. 點擊椅子
         const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
@@ -1006,9 +992,17 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const isShelf = currentTool === 'shelf';
-        const w = isShelf ? 3 : 1;
-        const h = isShelf ? 1 : 1;
+        // 🚀【新增物件設定對應區】新增其他種類物件在此處擴充尺寸與圖片路徑
+        let w = 1, h = 1, label = '新物件', imgSrc = '/assets/chair.png';
+        if (currentTool === 'shelf') {
+          w = 3; h = 1; label = '書櫃'; imgSrc = '/assets/shelf.png';
+        } else if (currentTool === 'seat') {
+          w = 1; h = 1; label = '木椅'; imgSrc = '/assets/chair.png';
+        }
+        else if (currentTool === 'plant') { // 👈 這裡新增你的新物件規則
+  w = 1; h = 1; label = '盆栽'; imgSrc = '/assets/plant.png'; // 確保你的 public/assets/ 資料夾內有這張圖
+        }
+        // 若新增植物、燈飾等，可在此處用 if/else 擴充！
 
         if (targetGx + w > 12 || targetGy + h > 12) {
           alert('物件超出 12x12 範圍！');
@@ -1029,14 +1023,13 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const imgSrc = isShelf ? '/assets/shelf.png' : '/assets/chair.png';
         roomData.items.push({
           type: currentTool,
           gx: targetGx,
           gy: targetGy,
           w,
           h,
-          label: isShelf ? '新書櫃' : '新木椅',
+          label,
           imgSrc
         });
         alert('傢俱放置成功！');
@@ -1188,7 +1181,6 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
-      // 1. 繪製傢俱
       roomData.items.forEach(item => {
         const px = item.gx * TILE_SIZE;
         const py = item.gy * TILE_SIZE;
@@ -1204,22 +1196,34 @@ import Layout from '../layouts/Layout.astro';
         }
         ctx.fillStyle = '#f8fafc';
         ctx.font = '8px sans-serif';
-        ctx.fillText(`${item.type === 'shelf' ? '📚' : '🪑'} ${item.label}`, px + 4, py + 14);
+        ctx.fillText(`${item.label}`, px + 4, py + 14);
       });
 
-      // 2. 繪製共讀桌
+      // 2. 繪製共讀桌 (佔 2x2 四格)
       roomTables.forEach(t => {
         const px = t.table_gx * TILE_SIZE;
         const py = t.table_gy * TILE_SIZE;
-        ctx.fillStyle = '#b45309';
-        ctx.fillRect(px + 2, py + 2, TILE_SIZE * 2 - 4, TILE_SIZE * 2 - 4);
+        const tw = TILE_SIZE * 2; // 2格寬 (64px)
+        const th = TILE_SIZE * 2; // 2格高 (64px)
+
+        // 呼叫圖片載入函式 (假設你的圖片路徑為 /assets/table.png)
+        const tableImg = getLoadedImage('/assets/table.png');
+
+        if (tableImg && tableImg.complete && tableImg.naturalWidth !== 0) {
+          ctx.drawImage(tableImg, px, py, tw, th);
+        } else {
+          // 若圖片尚未載入或找不到，顯示備用木色方塊
+          ctx.fillStyle = '#b45309';
+          ctx.fillRect(px + 2, py + 2, tw - 4, th - 4);
+        }
+
+        // 文字標籤
         ctx.fillStyle = '#fde68a';
         ctx.font = '9px sans-serif';
         const label = (t.book_title && t.book_title !== '') ? `🪵 共讀: ${t.book_title}` : `🪵 空共讀桌(點擊發起)`;
-        ctx.fillText(label, px + 4, py + 20);
+        ctx.fillText(label, px + 4, py + 16);
       });
 
-      // 3. NPC
       roomData.npcs.forEach(npc => {
         const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1235,7 +1239,6 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(npc.name, px - 18, py - 18);
       });
 
-      // 4. 其他線上玩家（允許多人重疊在同一個格子）
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1251,7 +1254,6 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(op.name, px - 20, py + 24);
       });
 
-      // 5. 自己
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
       const playerImg = getLoadedImage(playerAvatar);
