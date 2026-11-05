@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 手機版晴空共讀空間">
+<Layout title="空間客舍 · 手機沉浸共讀空間">
   <!-- 1. 創角與頭像選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
@@ -59,7 +59,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 3. 主介面 (手機直式版型) -->
+  <!-- 3. 主介面 (手機直式完美排版) -->
   <main class="rpg-container">
     <header class="rpg-hud">
       <div class="hud-top-row">
@@ -79,7 +79,7 @@ import Layout from '../layouts/Layout.astro';
     </header>
 
     <div class="canvas-wrapper">
-      <canvas id="rpg-canvas" width="384" height="512"></canvas>
+      <canvas id="rpg-canvas" width="384" height="480"></canvas>
     </div>
 
     <footer class="rpg-footer">
@@ -97,7 +97,25 @@ import Layout from '../layouts/Layout.astro';
   </main>
 
   <style is:global>
-    body { background-color: #0f172a; color: #cbd5e1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; overflow: hidden; touch-action: manipulation; }
+    /* 消除手機點擊時的藍色陰影與高亮閃爍 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    html, body {
+      background-color: #0f172a;
+      color: #cbd5e1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
     .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
     .rpg-window { background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     .rpg-title-bar { background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #334155; }
@@ -123,8 +141,9 @@ import Layout from '../layouts/Layout.astro';
     .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 8px; }
 
-    .rpg-container { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
-    .rpg-hud { background: #1e293b; border-bottom: 1px solid #334155; padding: 8px 12px; font-size: 12px; }
+    /* 手機完美版型：固定全螢幕，上下區塊緊湊不滾動 */
+    .rpg-container { width: 100vw; height: 100vh; height: 100dvh; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box; }
+    .rpg-hud { background: #1e293b; border-bottom: 1px solid #334155; padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
     .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .hud-brand { font-weight: 600; color: #38bdf8; }
     .hud-right { display: flex; align-items: center; gap: 8px; }
@@ -137,10 +156,11 @@ import Layout from '../layouts/Layout.astro';
     
     .rpg-btn-sm { background: #0f172a; color: #cbd5e1; border: 1px solid #334155; padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     
-    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #0b1329; padding: 8px; }
-    #rpg-canvas { border: 1px solid #1e293b; background: #0f172a; cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: auto; aspect-ratio: 384 / 512; }
+    /* 畫布自動縮放填滿剩餘空間，確保頁尾不消失 */
+    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #0b1329; padding: 4px; overflow: hidden; min-height: 0; }
+    #rpg-canvas { border: 1px solid #1e293b; background: #0f172a; cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 480px; object-fit: contain; }
     
-    .rpg-footer { background: #1e293b; border-top: 1px solid #334155; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .rpg-footer { background: #1e293b; border-top: 1px solid #334155; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .build-palette { display: flex; gap: 6px; }
     .tool-btn { background: #0f172a; color: #94a3b8; border: 1px solid #334155; padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     .tool-btn.active { background: #0284c7; color: #f8fafc; border-color: #0284c7; font-weight: 500; }
@@ -154,7 +174,7 @@ import Layout from '../layouts/Layout.astro';
     const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const TABLE_NAME = 'slowsplace_member'; // 綁定指定的 Supabase 資料表
+    const TABLE_NAME = 'slowsplace_member';
     const TILE_SIZE = 32;
 
     const userId = localStorage.getItem('rpg_user_id') || ('user_' + Math.random().toString(36).substring(2, 9));
@@ -247,9 +267,8 @@ import Layout from '../layouts/Layout.astro';
     let pendingSeat: { gx: number; gy: number; label: string } | null = null;
     let isGameStarted = false;
 
-    // 將玩家座標與狀態寫入 Supabase (slowsplace_member)
     async function syncMyStateToDB() {
-      const { error } = await supabase.from(TABLE_NAME).upsert({
+      await supabase.from(TABLE_NAME).upsert({
         user_id: userId,
         name: playerName,
         role: playerRole,
@@ -261,13 +280,8 @@ import Layout from '../layouts/Layout.astro';
         task: currentTask,
         updated_at: new Date()
       }, { onConflict: 'user_id' });
-
-      if (error) {
-        console.error('Supabase 同步錯誤:', error.message);
-      }
     }
 
-    // 抓取當前房間的在線玩家
     async function fetchOnlinePlayers() {
       const { data } = await supabase
         .from(TABLE_NAME)
@@ -287,7 +301,6 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
-    // 啟動 Realtime 變更監聽
     function initDatabaseRealtime() {
       supabase
         .channel('db-changes')
@@ -296,14 +309,30 @@ import Layout from '../layouts/Layout.astro';
         })
         .subscribe();
 
-      // 每 5 秒 Heartbeat 心跳包
       setInterval(() => {
         syncMyStateToDB();
         fetchOnlinePlayers();
       }, 5000);
     }
 
-    // 重整自動登入
+    // 檢查該座標是否已有其他人佔用（椅子只允許一人入座、不可重疊站立）
+    function isCellOccupiedByOther(gx: number, gy: number): boolean {
+      return Object.values(onlinePlayers).some((p: any) => p.gx === gx && p.gy === gy);
+    }
+
+    // 檢查格子是否完全不能站立（牆壁、NPC、傢俱、或其他玩家）
+    function isCellBlocked(gx: number, gy: number): boolean {
+      const maxCols = Math.floor(canvas.width / TILE_SIZE);
+      const maxRows = Math.floor(canvas.height / TILE_SIZE);
+      if (gx < 0 || gx >= maxCols || gy < 0 || gy >= maxRows) return true;
+
+      const roomData = rooms[currentRoom];
+      const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
+      const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
+      const hasOther = isCellOccupiedByOther(gx, gy);
+      return hasItem || hasNpc || hasOther;
+    }
+
     if (savedName) {
       playerName = savedName;
       if (hudName) hudName.textContent = playerName;
@@ -315,7 +344,6 @@ import Layout from '../layouts/Layout.astro';
       gameLoop();
     }
 
-    // 登入按鈕（含名字不可重複檢查）
     startBtn?.addEventListener('click', async () => {
       const val = nameInput?.value.trim();
       if (!val) {
@@ -323,7 +351,6 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
-      // 🔍 向 Supabase 查詢名字是否已被佔用
       const { data: existingUser } = await supabase
         .from(TABLE_NAME)
         .select('*')
@@ -331,7 +358,7 @@ import Layout from '../layouts/Layout.astro';
         .maybeSingle();
 
       if (existingUser && existingUser.user_id !== userId) {
-        alert(`「${val}」這個稱號已經被其他書友使用了，請換一個獨一無二的名字吧！`);
+        alert(`「${val}」這個稱號已經被其他書友使用了！`);
         return;
       }
 
@@ -384,18 +411,6 @@ import Layout from '../layouts/Layout.astro';
       });
     });
 
-    function isCellOccupied(gx: number, gy: number): boolean {
-      const maxCols = Math.floor(canvas.width / TILE_SIZE);
-      const maxRows = Math.floor(canvas.height / TILE_SIZE);
-      if (gx < 0 || gx >= maxCols || gy < 0 || gy >= maxRows) return true;
-
-      const roomData = rooms[currentRoom];
-      const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
-      const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      const hasOther = Object.values(onlinePlayers).some((p: any) => p.gx === gx && p.gy === gy);
-      return hasItem || hasNpc || hasOther;
-    }
-
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -410,9 +425,16 @@ import Layout from '../layouts/Layout.astro';
       if (currentTool === 'move') {
         const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
+          // 🛑 檢查該椅子是否已經被自己或「其他線上玩家」佔用（只允許一人入座）
+          const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
+          if (isSeatTakenByOther) {
+            alert('這張椅子已經有其他書友入座囉！');
+            return;
+          }
+
           pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
           if (seatModal) seatModal.style.display = 'flex';
-        } else if (!isCellOccupied(targetGx, targetGy)) {
+        } else if (!isCellBlocked(targetGx, targetGy)) {
           moveQueue = [];
           let currX = playerGx;
           let currY = playerGy;
@@ -432,7 +454,7 @@ import Layout from '../layouts/Layout.astro';
           }
         }
       } else {
-        if (!isCellOccupied(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
+        if (!isCellBlocked(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
           const imgSrc = currentTool === 'shelf' ? '/assets/shelf.png' : '/assets/chair.png';
           roomData.items.push({ type: currentTool, gx: targetGx, gy: targetGy, label: '傢俱', imgSrc });
         }
@@ -460,7 +482,7 @@ import Layout from '../layouts/Layout.astro';
 
     leaveSeatBtn?.addEventListener('click', async () => {
       isDND = false;
-      if (playerGy + 1 < Math.floor(canvas.height / TILE_SIZE) && !isCellOccupied(playerGx, playerGy + 1)) {
+      if (playerGy + 1 < Math.floor(canvas.height / TILE_SIZE) && !isCellBlocked(playerGx, playerGy + 1)) {
         playerGy += 1;
       }
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
@@ -488,7 +510,7 @@ import Layout from '../layouts/Layout.astro';
       moveTimer++;
       if (moveQueue.length > 0 && moveTimer % 8 === 0) {
         const nextStep = moveQueue.shift()!;
-        if (!isCellOccupied(nextStep.gx, nextStep.gy)) {
+        if (!isCellBlocked(nextStep.gx, nextStep.gy)) {
           playerGx = nextStep.gx;
           playerGy = nextStep.gy;
           syncMyStateToDB();
