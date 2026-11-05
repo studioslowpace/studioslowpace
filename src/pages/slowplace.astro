@@ -3,12 +3,12 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="空間客舍 · 自由佈置空間">
-  <!-- 1. 登入與身份選擇 Modal -->
+  <!-- 1. 登入 Modal (一般人預設為鄰里人) -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>◆ 空間客舍 · 身份登入 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">午後的長沙灣天空湛藍。請選擇你的分身造型、稱號與客舍身份：</p>
+        <p class="rpg-text">午後的長沙灣天空湛藍。請選擇你的分身造型與稱號：</p>
         
         <div class="avatar-selector-label">選擇分身造型：</div>
         <div class="avatar-selector-group">
@@ -27,16 +27,8 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <input type="text" id="rpg-name-input" placeholder="輸入你的獨一無二稱號" maxlength="12" autofocus />
-        
-        <div class="avatar-selector-label">選擇身份階層：</div>
-        <select id="rpg-tier-select" class="theme-select-dropdown" style="width:100%; padding:10px; margin-bottom:12px; border-radius:8px;">
-          <option value="鄰里人">🌱 鄰里人 (一般書友)</option>
-          <option value="客舍人">☕ 客舍人 (常駐會員)</option>
-          <option value="空間友">🤝 空間友 (共創夥伴)</option>
-          <option value="店主">👑 店主 (擁有完全空間佈置權限)</option>
-        </select>
 
-        <div class="role-selector-group">
+        <div class="role-selector-group" style="margin-top: 10px;">
           <label class="role-chip"><input type="radio" name="user-role" value="晴空選書" checked /> ☁️ 晴空選書</label>
           <label class="role-chip"><input type="radio" name="user-role" value="散文漫遊" /> 🍃 散文漫遊</label>
           <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
@@ -114,19 +106,36 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 5. 新增自訂物件 Modal (店主專用) -->
+  <!-- 5. 彈出網頁視窗 (Modal 預覽用) -->
+  <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window embed-window">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="custom-modal-title">📄 內容預覽</span>
+        <button id="custom-modal-close" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+      </div>
+      <div class="embed-frame-wrapper">
+        <iframe id="custom-modal-iframe" src="" class="embed-iframe"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 新增自訂物件 Modal (店主專用) -->
   <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>🛠️ 新增空間物件/NPC/傳送門</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後要跳轉的頁面：</p>
+        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
         <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/npc_mi.png）" style="margin-bottom:6px;" />
-        <input type="text" id="cf-link" placeholder="傳送目標頁面（例：/ 或 /skillsupermarker，無則留空）" style="margin-bottom:6px;" />
+        <input type="text" id="cf-link" placeholder="連結網址（例：/ 或外部網址，無則留空）" style="margin-bottom:6px;" />
+        
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">連結開啟方式：</div>
         <select id="cf-open-type" style="width:100%; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
           <option value="current">🌐 在當前頁面跳轉 (預設)</option>
           <option value="blank">📑 在新分頁開啟 (_blank)</option>
+          <option value="modal">🪟 以彈出視窗 (Modal) 顯示</option>
         </select>
+
         <textarea id="cf-desc" placeholder="物件圖示說明文字..." style="width:100%; height:50px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
         <div style="display:flex; gap:6px; margin-bottom:8px;">
           <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
@@ -140,7 +149,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 6. 閱讀記錄詳情 Modal -->
+  <!-- 7. 閱讀記錄詳情 Modal -->
   <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -153,7 +162,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 7. 查看其他玩家閱讀記錄 Modal -->
+  <!-- 8. 查看其他玩家閱讀記錄 Modal -->
   <div id="peer-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px; max-height: 80vh; display: flex; flex-direction: column;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -222,7 +231,7 @@ import Layout from '../layouts/Layout.astro';
           </form>
         </div>
 
-        <!-- 2. 閱讀記錄面板 (大字體只顯示書名與作者) -->
+        <!-- 2. 閱讀記錄面板 (書名與作者同行，空間不足自動換行) -->
         <div id="pane-logs" class="pane-content" style="display:none;">
           <div class="logs-header-sub">
             <span>📖 個人閱讀清單與書摘</span>
@@ -231,7 +240,7 @@ import Layout from '../layouts/Layout.astro';
           <div id="log-list-container" class="logs-list-box"></div>
         </div>
 
-        <!-- 3. 圖示指南說明面板 -->
+        <!-- 3. 圖示指南說明面板 (不顯示連結與書名) -->
         <div id="pane-guide" class="pane-content" style="display:none;">
           <div class="logs-header-sub"><span>📖 空間物件與圖示指南</span></div>
           <div id="guide-content-box" class="logs-list-box"></div>
@@ -430,6 +439,12 @@ import Layout from '../layouts/Layout.astro';
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
+    // 彈出預覽視窗 Modal 元素
+    const customModalFrame = document.getElementById('custom-modal-frame');
+    const customModalClose = document.getElementById('custom-modal-close');
+    const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
+    const customModalTitle = document.getElementById('custom-modal-title');
+
     const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
     const authorInput = document.getElementById('rpg-author-input') as HTMLInputElement;
     const currentPageInput = document.getElementById('rpg-current-page') as HTMLInputElement;
@@ -487,7 +502,6 @@ import Layout from '../layouts/Layout.astro';
     const customToolsContainer = document.getElementById('custom-tools-container');
 
     const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
-    const tierSelect = document.getElementById('rpg-tier-select') as HTMLSelectElement;
     const startBtn = document.getElementById('rpg-start-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const hudName = document.getElementById('hud-name');
@@ -573,10 +587,11 @@ import Layout from '../layouts/Layout.astro';
       alert(`成功新增「${name}」！`);
     });
 
+    // 📖 圖示指南 (不顯示連結與書名，只保留名稱與說明)
     function renderGuideContent() {
       if (!guideContentBox) return;
       if (roomItems.length === 0) {
-        guideContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件或共讀桌。</div>';
+        guideContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件。</div>';
         return;
       }
       let html = '';
@@ -588,8 +603,6 @@ import Layout from '../layouts/Layout.astro';
             <div style="flex:1;">
               <div style="font-weight:bold; color:var(--accent-color);">${item.label} ${isTable ? '(🪵共讀桌)' : ''}</div>
               <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
-              ${isTable ? `<div style="font-size:10px; color:#fde68a; margin-top:2px;">書名：${item.book_title ? '《' + item.book_title + '》' : '尚無共讀書目'}</div>` : ''}
-              ${item.link ? `<div style="font-size:10px; color:#34d399; margin-top:2px;">🔗 連結：${item.link} (${item.open_type === 'blank' ? '新分頁' : '當前頁'})</div>` : ''}
             </div>
           </div>
         `;
@@ -625,7 +638,7 @@ import Layout from '../layouts/Layout.astro';
 
     logQuickAddBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'flex'; });
 
-    // 閱讀清單：大字體只顯示書名和作者
+    // 📚 閱讀清單：書名與作者名同一行，空間不足時自動換行
     function renderMyLogs() {
       if (!logListContainer) return;
       if (myReadingLogs.length === 0) {
@@ -636,8 +649,10 @@ import Layout from '../layouts/Layout.astro';
       myReadingLogs.forEach((item, index) => {
         html += `
           <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
-            <div style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book}》</div>
-            <div style="font-size:12px; color:#cbd5e1; margin-top:3px;">作者：${item.author}</div>
+            <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;">
+              <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book}》</span>
+              <span style="font-size:12px; color:#cbd5e1;">作者：${item.author}</span>
+            </div>
           </div>
         `;
       });
@@ -664,6 +679,7 @@ import Layout from '../layouts/Layout.astro';
 
     detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
     peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
+    customModalClose?.addEventListener('click', () => { if (customModalFrame) customModalFrame.style.display = 'none'; });
 
     function openPeerLogs(peerName: string, peerRole: string, peerLogs: any[]) {
       if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
@@ -861,7 +877,7 @@ import Layout from '../layouts/Layout.astro';
       playerName = savedName;
       playerTier = savedTier;
       if (hudName) hudName.textContent = playerName;
-      if (hudTierTag) hudTierTag.textContent = `👑 ${playerTier}`;
+      if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
       if (modal) modal.style.display = 'none';
 
       if (playerTier === '店主') {
@@ -886,7 +902,10 @@ import Layout from '../layouts/Layout.astro';
       }
 
       playerName = val;
-      playerTier = tierSelect?.value || '鄰里人';
+
+      // 🔑 只有你的帳號名稱設定為店主（例如你的名字），其他人預設皆為鄰里人
+      const isOwner = playerName === 'Mi' || playerName === '店主'; // 可依你的店主暱稱調整
+      playerTier = isOwner ? '店主' : '鄰里人';
 
       const selectedAvatar = document.querySelector('input[name="player-avatar"]:checked') as HTMLInputElement;
       if (selectedAvatar) playerAvatar = selectedAvatar.value;
@@ -899,7 +918,7 @@ import Layout from '../layouts/Layout.astro';
       localStorage.setItem('rpg_player_tier', playerTier);
 
       if (hudName) hudName.textContent = playerName;
-      if (hudTierTag) hudTierTag.textContent = `👑 ${playerTier}`;
+      if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
       if (modal) modal.style.display = 'none';
 
       if (playerTier === '店主') {
@@ -955,13 +974,17 @@ import Layout from '../layouts/Layout.astro';
       const targetGy = Math.floor(clickY / TILE_SIZE);
 
       if (currentTool === 'move') {
-        // 1. 檢查共讀桌
+        // 1. 檢查共讀桌 (只有店主可以點擊編輯/發起活動，或者一般人點擊參與)
         const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + item.w && targetGy >= item.gy && targetGy < item.gy + item.h);
         if (hitTable) {
           activeTableData = hitTable;
           pendingTableItem = hitTable;
 
           if (!hitTable.book_title || hitTable.book_title === '') {
+            if (playerTier !== '店主') {
+              alert('此共讀桌目前尚未發起活動，請等待店主設定！');
+              return;
+            }
             if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
             if (tableFormView) tableFormView.style.display = 'block';
             if (tableInfoView) tableInfoView.style.display = 'none';
@@ -977,7 +1000,7 @@ import Layout from '../layouts/Layout.astro';
           const now = new Date();
           const oneDayAfter = new Date(finishDate.getTime() + 24 * 60 * 60 * 1000);
           const isExpired = now > oneDayAfter;
-          const isHost = hitTable.host_id === userId;
+          const isHost = hitTable.host_id === userId || playerTier === '店主';
 
           if (isExpired || isHost) {
             if (tableEndBtn) tableEndBtn.style.display = 'block';
@@ -1000,11 +1023,15 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        // 2. 檢查連結物件 (區分 新分頁 或 當前頁跳轉)
+        // 2. 檢查連結物件 (支援 current / blank / modal 三種開啟方式)
         const hitLinkedItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.link && item.link.trim() !== '');
         if (hitLinkedItem) {
           if (hitLinkedItem.open_type === 'blank') {
             window.open(hitLinkedItem.link, '_blank');
+          } else if (hitLinkedItem.open_type === 'modal') {
+            if (customModalIframe) customModalIframe.src = hitLinkedItem.link;
+            if (customModalTitle) customModalTitle.textContent = hitLinkedItem.label;
+            if (customModalFrame) customModalFrame.style.display = 'flex';
           } else {
             window.location.href = hitLinkedItem.link;
           }
@@ -1039,7 +1066,7 @@ import Layout from '../layouts/Layout.astro';
         }
       } else {
         if (playerTier !== '店主') {
-          alert('權限不足：只有「店主」階層才可編輯館內物件！');
+          alert('權限不足：只有「店主」階層才可編輯館內物件與共讀桌！');
           return;
         }
 
