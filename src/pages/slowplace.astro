@@ -1159,12 +1159,21 @@ import Layout from '../layouts/Layout.astro';
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      const theme = document.documentElement.getAttribute('data-theme') || 'blue';
-      const bgMap: Record<string, string> = { blue: '#0f172a', green: '#064e3b', purple: '#3b0764' };
-      ctx.fillStyle = bgMap[theme] || '#0f172a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 1. 載入並繪製背景圖 (假設圖片為 /assets/background.jpg)
+      const bgImg = getLoadedImage('/assets/background.jpg');
+      if (bgImg && bgImg.complete && bgImg.naturalWidth !== 0) {
+        // 將圖片延展填滿整個 384x384 畫布
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+      } else {
+        // 若圖片還沒載入或找不到，維持原本的主題色作為備用底色
+        const theme = document.documentElement.getAttribute('data-theme') || 'blue';
+        const bgMap: Record<string, string> = { blue: '#0f172a', green: '#064e3b', purple: '#3b0764' };
+        ctx.fillStyle = bgMap[theme] || '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      // 2. 12x12 網格線 (可選：若背景圖本身有地板紋理，可把網格線透明度調低或註解掉)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += TILE_SIZE) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
       for (let y = 0; y < canvas.height; y += TILE_SIZE) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
@@ -1181,6 +1190,7 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
+      // 3. 繪製傢俱
       roomData.items.forEach(item => {
         const px = item.gx * TILE_SIZE;
         const py = item.gy * TILE_SIZE;
@@ -1199,31 +1209,19 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(`${item.label}`, px + 4, py + 14);
       });
 
-      // 2. 繪製共讀桌 (佔 2x2 四格)
+      // 4. 繪製共讀桌
       roomTables.forEach(t => {
         const px = t.table_gx * TILE_SIZE;
         const py = t.table_gy * TILE_SIZE;
-        const tw = TILE_SIZE * 2; // 2格寬 (64px)
-        const th = TILE_SIZE * 2; // 2格高 (64px)
-
-        // 呼叫圖片載入函式 (假設你的圖片路徑為 /assets/table.png)
-        const tableImg = getLoadedImage('/assets/table.png');
-
-        if (tableImg && tableImg.complete && tableImg.naturalWidth !== 0) {
-          ctx.drawImage(tableImg, px, py, tw, th);
-        } else {
-          // 若圖片尚未載入或找不到，顯示備用木色方塊
-          ctx.fillStyle = '#b45309';
-          ctx.fillRect(px + 2, py + 2, tw - 4, th - 4);
-        }
-
-        // 文字標籤
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(px + 2, py + 2, TILE_SIZE * 2 - 4, TILE_SIZE * 2 - 4);
         ctx.fillStyle = '#fde68a';
         ctx.font = '9px sans-serif';
         const label = (t.book_title && t.book_title !== '') ? `🪵 共讀: ${t.book_title}` : `🪵 空共讀桌(點擊發起)`;
-        ctx.fillText(label, px + 4, py + 16);
+        ctx.fillText(label, px + 4, py + 20);
       });
 
+      // 5. 繪製 NPC
       roomData.npcs.forEach(npc => {
         const px = npc.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = npc.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1239,6 +1237,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(npc.name, px - 18, py - 18);
       });
 
+      // 6. 繪製線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * TILE_SIZE + TILE_SIZE / 2;
         const py = op.gy * TILE_SIZE + TILE_SIZE / 2;
@@ -1254,6 +1253,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillText(op.name, px - 20, py + 24);
       });
 
+      // 7. 繪製自己
       const pScreenX = playerGx * TILE_SIZE + TILE_SIZE / 2;
       const pScreenY = playerGy * TILE_SIZE + TILE_SIZE / 2;
       const playerImg = getLoadedImage(playerAvatar);
