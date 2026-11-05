@@ -123,6 +123,10 @@ import Layout from '../layouts/Layout.astro';
         <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/npc_mi.png）" style="margin-bottom:6px;" />
         <input type="text" id="cf-link" placeholder="傳送目標頁面（例：/ 或 /skillsupermarker，無則留空）" style="margin-bottom:6px;" />
+        <select id="cf-open-type" style="width:100%; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
+          <option value="current">🌐 在當前頁面跳轉 (預設)</option>
+          <option value="blank">📑 在新分頁開啟 (_blank)</option>
+        </select>
         <textarea id="cf-desc" placeholder="物件圖示說明文字..." style="width:100%; height:50px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
         <div style="display:flex; gap:6px; margin-bottom:8px;">
           <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
@@ -194,7 +198,7 @@ import Layout from '../layouts/Layout.astro';
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
-      <!-- 下方面板：將聊天、閱讀記錄、圖示指南、店主佈置工具列整合在此切換 -->
+      <!-- 下方面板 -->
       <section class="split-panel">
         <div class="panel-tabs-bar">
           <button class="panel-tab-btn active" data-tab="chat">💬 聊天</button>
@@ -218,7 +222,7 @@ import Layout from '../layouts/Layout.astro';
           </form>
         </div>
 
-        <!-- 2. 閱讀記錄面板 -->
+        <!-- 2. 閱讀記錄面板 (大字體只顯示書名與作者) -->
         <div id="pane-logs" class="pane-content" style="display:none;">
           <div class="logs-header-sub">
             <span>📖 個人閱讀清單與書摘</span>
@@ -233,7 +237,7 @@ import Layout from '../layouts/Layout.astro';
           <div id="guide-content-box" class="logs-list-box"></div>
         </div>
 
-        <!-- 4. 店主佈置工具列面板 (僅店主可見) -->
+        <!-- 4. 店主佈置工具列面板 -->
         <div id="pane-build" class="pane-content" style="display:none;">
           <div class="logs-header-sub"><span>🛠️ 店主佈置工具列</span></div>
           <div class="build-palette" style="display:flex; flex-wrap:wrap; gap:4px; align-items:center; overflow-y:auto; flex:1;">
@@ -419,7 +423,7 @@ import Layout from '../layouts/Layout.astro';
     let roomItems: any[] = [];
     let activeTableData: any = null;
 
-    let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
+    let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string; openType: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
     const modal = document.getElementById('rpg-modal');
     const seatModal = document.getElementById('seat-modal');
@@ -476,6 +480,7 @@ import Layout from '../layouts/Layout.astro';
     const cfNameInput = document.getElementById('cf-name') as HTMLInputElement;
     const cfImgInput = document.getElementById('cf-img') as HTMLInputElement;
     const cfLinkInput = document.getElementById('cf-link') as HTMLInputElement;
+    const cfOpenTypeSelect = document.getElementById('cf-open-type') as HTMLSelectElement;
     const cfDescInput = document.getElementById('cf-desc') as HTMLTextAreaElement;
     const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
     const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
@@ -548,6 +553,7 @@ import Layout from '../layouts/Layout.astro';
       const name = cfNameInput?.value.trim();
       const img = cfImgInput?.value.trim();
       const link = cfLinkInput?.value.trim() || '';
+      const openType = cfOpenTypeSelect?.value || 'current';
       const description = cfDescInput?.value.trim() || '無詳細說明';
       const w = parseInt(cfWInput?.value) || 1;
       const h = parseInt(cfHInput?.value) || 1;
@@ -555,7 +561,7 @@ import Layout from '../layouts/Layout.astro';
       if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
 
       const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
-      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img, description, link });
+      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img, description, link, openType });
       localStorage.setItem('rpg_custom_furnitures', JSON.stringify(customFurnitureTypes));
 
       renderCustomToolsUI();
@@ -567,7 +573,6 @@ import Layout from '../layouts/Layout.astro';
       alert(`成功新增「${name}」！`);
     });
 
-    // 渲染圖示指南內容
     function renderGuideContent() {
       if (!guideContentBox) return;
       if (roomItems.length === 0) {
@@ -584,7 +589,7 @@ import Layout from '../layouts/Layout.astro';
               <div style="font-weight:bold; color:var(--accent-color);">${item.label} ${isTable ? '(🪵共讀桌)' : ''}</div>
               <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
               ${isTable ? `<div style="font-size:10px; color:#fde68a; margin-top:2px;">書名：${item.book_title ? '《' + item.book_title + '》' : '尚無共讀書目'}</div>` : ''}
-              ${item.link ? `<div style="font-size:10px; color:#34d399; margin-top:2px;">🔗 連結頁面：${item.link}</div>` : ''}
+              ${item.link ? `<div style="font-size:10px; color:#34d399; margin-top:2px;">🔗 連結：${item.link} (${item.open_type === 'blank' ? '新分頁' : '當前頁'})</div>` : ''}
             </div>
           </div>
         `;
@@ -620,6 +625,7 @@ import Layout from '../layouts/Layout.astro';
 
     logQuickAddBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'flex'; });
 
+    // 閱讀清單：大字體只顯示書名和作者
     function renderMyLogs() {
       if (!logListContainer) return;
       if (myReadingLogs.length === 0) {
@@ -637,7 +643,6 @@ import Layout from '../layouts/Layout.astro';
       });
       logListContainer.innerHTML = html;
 
-      // 點擊卡片時一樣可以彈出詳細閱讀心得與書摘
       document.querySelectorAll('.log-item-card').forEach(card => {
         card.addEventListener('click', (e) => {
           const idx = Number((e.currentTarget as HTMLElement).dataset.index);
@@ -950,7 +955,7 @@ import Layout from '../layouts/Layout.astro';
       const targetGy = Math.floor(clickY / TILE_SIZE);
 
       if (currentTool === 'move') {
-        // 1. 檢查是否點擊到共讀桌
+        // 1. 檢查共讀桌
         const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + item.w && targetGy >= item.gy && targetGy < item.gy + item.h);
         if (hitTable) {
           activeTableData = hitTable;
@@ -995,10 +1000,14 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        // 2. 檢查是否點擊到其他具備連結的物件
+        // 2. 檢查連結物件 (區分 新分頁 或 當前頁跳轉)
         const hitLinkedItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.link && item.link.trim() !== '');
         if (hitLinkedItem) {
-          window.location.href = hitLinkedItem.link;
+          if (hitLinkedItem.open_type === 'blank') {
+            window.open(hitLinkedItem.link, '_blank');
+          } else {
+            window.location.href = hitLinkedItem.link;
+          }
           return;
         }
 
@@ -1043,7 +1052,7 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        let w = 1, h = 1, label = '物件', imgSrc = '/assets/chair.png', description = '無說明', link = '';
+        let w = 1, h = 1, label = '物件', imgSrc = '/assets/chair.png', description = '無說明', link = '', openType = 'current';
         if (currentTool === 'shelf') {
           w = 3; h = 1; label = '書櫃'; imgSrc = '/assets/shelf.png'; description = '客舍館藏書櫃';
         } else if (currentTool === 'seat') {
@@ -1059,6 +1068,7 @@ import Layout from '../layouts/Layout.astro';
             imgSrc = custom.imgSrc;
             description = custom.description;
             link = custom.link;
+            openType = custom.openType || 'current';
           }
         }
 
@@ -1090,6 +1100,7 @@ import Layout from '../layouts/Layout.astro';
           img_src: imgSrc,
           description,
           link,
+          open_type: openType,
           book_title: '',
           author: '',
           finish_date: '',
@@ -1233,7 +1244,7 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
-      // 1. 繪製所有物件 (包含椅子、書櫃、NPC、自訂物件、共讀桌)
+      // 1. 繪製所有物件
       roomItems.forEach(item => {
         const px = item.gx * TILE_SIZE;
         const py = item.gy * TILE_SIZE;
@@ -1292,22 +1303,5 @@ import Layout from '../layouts/Layout.astro';
       draw();
       requestAnimationFrame(gameLoop);
     }
-
-    // 假設你點擊某個物件時抓取到的資料為 item
-const itemLink = item.link;         // 例如傳送的網址或頁面路徑
-const openType = item.open_type;     // 'modal' 或 'blank'
-
-if (itemLink && itemLink.trim() !== '') {
-  if (openType === 'blank') {
-    // 🌐 1. 開啟新分頁
-    window.open(itemLink, '_blank');
-  } else {
-    // 🪟 2. 以彈出視窗 (Modal) 顯示
-    // 這裡可以透過 iframe 載入該網址，或者顯示對應的 Modal
-    const modalIframe = document.getElementById('my-custom-modal-iframe');
-    if (modalIframe) modalIframe.src = itemLink;
-    document.getElementById('my-custom-modal').style.display = 'flex';
-  }
-}
   </script>
 </Layout>
