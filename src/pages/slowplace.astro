@@ -615,28 +615,39 @@ import Layout from '../layouts/Layout.astro';
 
     // 🔄 從 Supabase 同步房間列表
     async function fetchRooms() {
-      const { data } = await supabase.from(ROOMS_TABLE).select('*');
+      // 從 slowsplace_items 撈取所有 type 為 room_config 的房間設定
+      const { data } = await supabase
+        .from(ITEMS_TABLE)
+        .select('*')
+        .eq('type', 'room_config');
+
       if (data && data.length > 0) {
         customRooms = data.map((r: any) => ({
-          key: r.room_key,
-          name: r.room_name,
-          bgImg: r.bg_img || '',
-          gridSize: r.grid_size || 12
+          key: r.room_key || r.room,
+          name: r.room_name || r.label,
+          bgImg: r.img_src || '',
+          gridSize: r.w || 12
         }));
       } else {
-        // 預設房間初始化
+        // 如果還沒有任何自訂房間設定，初始化預設的 3 個房間進 slowsplace_items
         const defaults = [
           { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
           { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
           { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
         ];
         for (const dr of defaults) {
-          await supabase.from(ROOMS_TABLE).upsert({
+          await supabase.from(ITEMS_TABLE).upsert({
+            room: dr.key,
             room_key: dr.key,
             room_name: dr.name,
-            bg_img: dr.bgImg,
-            grid_size: dr.gridSize
-          }, { onConflict: 'room_key' });
+            label: dr.name,
+            type: 'room_config',
+            img_src: dr.bgImg,
+            w: dr.gridSize,
+            h: 1,
+            gx: 0,
+            gy: 0
+          }, { onConflict: 'room,type' }); // 確保不重複
         }
         customRooms = defaults;
       }
@@ -687,12 +698,19 @@ import Layout from '../layouts/Layout.astro';
 
       if (!key || !name) { alert('請填寫房間代碼與顯示名稱'); return; }
 
-      const { error } = await supabase.from(ROOMS_TABLE).upsert({
+      // 直接將房間設定當作一筆特殊 item 寫入 slowsplace_items
+      const { error } = await supabase.from(ITEMS_TABLE).insert({
+        room: key,
         room_key: key,
         room_name: name,
-        bg_img: bgImg,
-        grid_size: gridSize
-      }, { onConflict: 'room_key' });
+        label: name,
+        type: 'room_config',
+        img_src: bgImg,
+        w: gridSize, // 用 w 欄位記錄格子數
+        h: 1,
+        gx: 0,
+        gy: 0
+      });
 
       if (error) {
         alert('建立房間失敗：' + error.message);
@@ -716,7 +734,6 @@ import Layout from '../layouts/Layout.astro';
       alert(`成功建立並切換至「${name}」！`);
     });
 
-    // 🗑️ 店主刪除房間功能
     deleteRoomBtn?.addEventListener('click', async () => {
       if (currentRoom === 'study' || currentRoom === 'chat' || currentRoom === 'salon') {
         alert('預設房間無法刪除！');
@@ -724,7 +741,7 @@ import Layout from '../layouts/Layout.astro';
       }
 
       if (confirm(`確定要刪除當前房間嗎？房內的物件與設定將一併清除。`)) {
-        await supabase.from(ROOMS_TABLE).delete().eq('room_key', currentRoom);
+        // 刪除該房間的 room_config 設定與所有房內物件
         await supabase.from(ITEMS_TABLE).delete().eq('room', currentRoom);
 
         currentRoom = 'study';
