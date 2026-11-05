@@ -1258,8 +1258,8 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    logoutBtn?.addEventListener('click', async () => {
-      await supabase.from(TABLE_NAME).delete().eq('user_id', userId);
+    logoutBtn?.addEventListener('click', () => {
+      // 僅清除本機瀏覽器暫存，不刪除雲端 member 資料
       localStorage.clear();
       window.location.reload();
     });
