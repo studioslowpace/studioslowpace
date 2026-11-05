@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="空間客舍 · 1/3面板共讀空間">
+<Layout title="空間客舍 · 共讀空間">
   <!-- 1. 登入與身份選擇 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
@@ -33,7 +33,7 @@ import Layout from '../layouts/Layout.astro';
           <option value="鄰里人">🌱 鄰里人 (一般書友)</option>
           <option value="客舍人">☕ 客舍人 (常駐會員)</option>
           <option value="空間友">🤝 空間友 (共創夥伴)</option>
-          <option value="店主">👑 店主 (擁有傢俱與桌子建造權限)</option>
+          <option value="店主">👑 店主 (擁有傢俱與共讀桌建造權限)</option>
         </select>
 
         <div class="role-selector-group">
@@ -89,9 +89,11 @@ import Layout from '../layouts/Layout.astro';
       <div class="rpg-title-bar"><span id="table-modal-title">📖 共讀桌活動</span></div>
       <div class="rpg-content">
         <div id="table-form-view" style="display:none;">
-          <p class="rpg-text">發起一場共讀活動（最多 3 人參加）：</p>
+          <p class="rpg-text">發起一場新的共讀活動：</p>
           <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:6px;" />
           <input type="text" id="table-author" placeholder="作者" style="margin-bottom:6px;" />
+          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">限制參加人數：</div>
+          <input type="number" id="table-max" value="3" min="1" max="10" style="margin-bottom:6px;" />
           <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">預定完讀日期：</div>
           <input type="date" id="table-date" style="width:100%; background:var(--bg-main); border:1px solid var(--border-color); color:#fff; padding:8px; border-radius:8px; margin-bottom:12px;" />
           <div class="rpg-btn-group">
@@ -102,9 +104,10 @@ import Layout from '../layouts/Layout.astro';
 
         <div id="table-info-view">
           <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:12px;"></div>
-          <div class="rpg-btn-group">
-            <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
+          <div class="rpg-btn-group" style="flex-direction:column; gap:6px;">
             <button id="table-join-btn" class="rpg-btn" style="background:#10b981;">🤝 加入共讀</button>
+            <button id="table-end-btn" class="rpg-btn" style="background:#ef4444; display:none;">🛑 結束共讀</button>
+            <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
           </div>
         </div>
       </div>
@@ -135,7 +138,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 7. 主介面 (完整手機/桌面直式設計) -->
+  <!-- 7. 主介面 (完美適配手機與桌面) -->
   <div class="app-viewport">
     <main class="rpg-container">
       <header class="rpg-hud">
@@ -167,7 +170,7 @@ import Layout from '../layouts/Layout.astro';
 
       <!-- 畫布區塊 -->
       <div class="canvas-wrapper">
-        <canvas id="rpg-canvas" width="384" height="280"></canvas>
+        <canvas id="rpg-canvas" width="384" height="260"></canvas>
       </div>
 
       <!-- 8. 下方 1/3 畫面面板 (切換「聊天」與「閱讀記錄」) -->
@@ -177,7 +180,6 @@ import Layout from '../layouts/Layout.astro';
           <button class="panel-tab-btn" data-tab="logs">📚 我的閱讀記錄</button>
         </div>
 
-        <!-- 聊天頁籤內容 -->
         <div id="pane-chat" class="pane-content active">
           <div class="chat-header-sub">
             <span id="chat-mode-indicator" class="chat-mode-tag">📢 公開發言中</span>
@@ -192,7 +194,6 @@ import Layout from '../layouts/Layout.astro';
           </form>
         </div>
 
-        <!-- 閱讀記錄頁籤內容 -->
         <div id="pane-logs" class="pane-content" style="display:none;">
           <div class="logs-header-sub">
             <span>📖 個人閱讀清單與書摘</span>
@@ -255,12 +256,12 @@ import Layout from '../layouts/Layout.astro';
       background-color: #020617;
       color: #cbd5e1;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; touch-action: manipulation;
+      margin: 0; padding: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; touch-action: manipulation;
     }
 
     .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: #020617; }
     .rpg-container {
-      width: 100vw; max-width: 414px; height: 100vh; height: 100dvh; max-height: 896px;
+      width: 100vw; max-width: 414px; height: 100vh; height: 100dvh;
       display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box;
       background-color: var(--bg-main); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.3s ease;
@@ -273,16 +274,15 @@ import Layout from '../layouts/Layout.astro';
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
-    /* 下方 1/3 分頁面板樣式 */
-    .split-panel { flex: 0 0 32vh; display: flex; flex-direction: column; background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 0; }
-    .panel-tabs-bar { display: flex; background: var(--bg-main); border-bottom: 1px solid var(--border-color); }
+    .split-panel { flex: 0 0 30vh; display: flex; flex-direction: column; background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 0; }
+    .panel-tabs-bar { display: flex; background: var(--bg-main); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
     .panel-tab-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 6px; font-size: 11px; cursor: pointer; font-weight: 500; text-align: center; }
     .panel-tab-btn.active { color: var(--accent-color); background: var(--bg-card); border-bottom: 2px solid var(--accent-color); }
 
     .pane-content { flex: 1; display: flex; flex-direction: column; padding: 6px 10px; min-height: 0; overflow: hidden; }
     .pane-content.active { display: flex; }
 
-    .chat-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10px; }
+    .chat-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10px; flex-shrink: 0; }
     .chat-mode-tag { color: var(--accent-color); font-weight: bold; }
     .chat-messages-box { flex: 1; padding: 4px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 11px; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 4px; }
     .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 2px; }
@@ -294,7 +294,7 @@ import Layout from '../layouts/Layout.astro';
     .chat-input-row input { flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 6px 8px; font-size: 11px; border-radius: 4px; outline: none; }
     .chat-send-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 0 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: 500; }
 
-    .logs-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #94a3b8; font-weight: bold; }
+    .logs-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #94a3b8; font-weight: bold; flex-shrink: 0; }
     .logs-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
 
     .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid var(--border-color); }
@@ -320,8 +320,8 @@ import Layout from '../layouts/Layout.astro';
     .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 8px; }
 
-    .rpg-hud { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 8px 12px; font-size: 12px; flex-shrink: 0; }
-    .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .rpg-hud { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
+    .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .hud-brand { font-weight: 600; color: var(--accent-color); }
     .hud-right { display: flex; align-items: center; gap: 6px; }
     .online-indicator { color: #34d399; }
@@ -329,16 +329,16 @@ import Layout from '../layouts/Layout.astro';
     
     .hud-mid-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .channel-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-    .channel-tab { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 4px 10px; font-size: 11px; cursor: pointer; border-radius: 14px; white-space: nowrap; }
+    .channel-tab { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 3px 8px; font-size: 11px; cursor: pointer; border-radius: 14px; white-space: nowrap; }
     .channel-tab.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
     
     .theme-select-dropdown { background: var(--bg-main); color: var(--accent-color); border: 1px solid var(--border-color); padding: 3px 6px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; }
     .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 4px; overflow: hidden; min-height: 0; }
-    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 280px; object-fit: contain; }
+    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 260px; object-fit: contain; }
 
-    .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .build-palette { display: flex; gap: 6px; }
     .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 6px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
     .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
@@ -402,37 +402,42 @@ import Layout from '../layouts/Layout.astro';
 
     const rooms: Record<string, { 
       name: string; 
-      items: { type: string; gx: number; gy: number; label: string; imgSrc: string }[];
-      npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string }[];
+      items: { type: string; gx: number; gy: number; w: number; h: number; label: string; imgSrc: string }[];
+      npcs: { name: string; task: string; gx: number; gy: number; imgSrc: string; action: string }[];
     }> = {
       study: {
         name: '自修室',
         items: [
-          { type: 'seat', gx: 3, gy: 3, label: '木椅 A', imgSrc: '/assets/chair.png' },
-          { type: 'seat', gx: 8, gy: 3, label: '木椅 B', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 5, gy: 1, label: '書櫃', imgSrc: '/assets/shelf.png' }
+          { type: 'seat', gx: 3, gy: 3, w: 1, h: 1, label: '木椅 A', imgSrc: '/assets/chair.png' },
+          { type: 'seat', gx: 8, gy: 3, w: 1, h: 1, label: '木椅 B', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 5, gy: 1, w: 3, h: 1, label: '橫書櫃', imgSrc: '/assets/shelf.png' }
         ],
         npcs: [
-          { name: 'Mi', task: '整理筆記', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png' }
+          { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
+          { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 2, imgSrc: '/assets/intern.png', action: 'skill' }
         ]
       },
       chat: {
         name: '書話間',
         items: [
-          { type: 'seat', gx: 3, gy: 4, label: '沙發', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 10, gy: 1, label: '熱門書架', imgSrc: '/assets/shelf.png' }
+          { type: 'seat', gx: 3, gy: 4, w: 1, h: 1, label: '沙發', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 10, gy: 1, w: 1, h: 3, label: '直書櫃', imgSrc: '/assets/shelf.png' }
         ],
         npcs: [
-          { name: '實習生', task: '澆花', gx: 8, gy: 5, imgSrc: '/assets/intern.png' }
+          { name: '屋主 (Mi)', task: '歡迎光臨', gx: 2, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
+          { name: '客舍萬事屋', task: '能力共享', gx: 8, gy: 5, imgSrc: '/assets/intern.png', action: 'skill' }
         ]
       },
       salon: {
         name: '沙龍',
         items: [
-          { type: 'seat', gx: 6, gy: 3, label: '講者席', imgSrc: '/assets/chair.png' },
-          { type: 'shelf', gx: 2, gy: 1, label: '沙龍選書', imgSrc: '/assets/shelf.png' }
+          { type: 'seat', gx: 6, gy: 3, w: 1, h: 1, label: '講者席', imgSrc: '/assets/chair.png' },
+          { type: 'shelf', gx: 2, gy: 1, w: 3, h: 1, label: '沙龍書櫃', imgSrc: '/assets/shelf.png' }
         ],
-        npcs: []
+        npcs: [
+          { name: '屋主 (Mi)', task: '歡迎光臨', gx: 10, gy: 2, imgSrc: '/assets/npc_mi.png', action: 'home' },
+          { name: '客舍萬事屋', task: '能力共享', gx: 1, gy: 5, imgSrc: '/assets/intern.png', action: 'skill' }
+        ]
       }
     };
 
@@ -441,7 +446,6 @@ import Layout from '../layouts/Layout.astro';
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
-    // 閱讀設定 DOM
     const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
     const authorInput = document.getElementById('rpg-author-input') as HTMLInputElement;
     const currentPageInput = document.getElementById('rpg-current-page') as HTMLInputElement;
@@ -451,14 +455,12 @@ import Layout from '../layouts/Layout.astro';
     const confirmSeatBtn = document.getElementById('seat-confirm-btn');
     const cancelSeatBtn = document.getElementById('seat-cancel-btn');
 
-    // 下方 1/3 面板分頁 DOM
     const panelTabBtns = document.querySelectorAll('.panel-tab-btn');
     const paneChat = document.getElementById('pane-chat');
     const paneLogs = document.getElementById('pane-logs');
     const logListContainer = document.getElementById('log-list-container');
     const logQuickAddBtn = document.getElementById('log-quick-add-btn');
 
-    // 詳情與共讀桌 MODAL DOM
     const detailModal = document.getElementById('log-detail-modal');
     const detailCloseBtn = document.getElementById('detail-close-btn');
     const detailContent = document.getElementById('detail-content');
@@ -474,9 +476,11 @@ import Layout from '../layouts/Layout.astro';
     const tableInfoView = document.getElementById('table-info-view');
     const tableBook = document.getElementById('table-book') as HTMLInputElement;
     const tableAuthor = document.getElementById('table-author') as HTMLInputElement;
+    const tableMax = document.getElementById('table-max') as HTMLInputElement;
     const tableDate = document.getElementById('table-date') as HTMLInputElement;
     const tableCreateBtn = document.getElementById('table-create-btn');
     const tableJoinBtn = document.getElementById('table-join-btn');
+    const tableEndBtn = document.getElementById('table-end-btn') as HTMLButtonElement;
     const tableCancelBtn = document.getElementById('table-cancel-btn');
     const tableInfoClose = document.getElementById('table-info-close');
     const tableDetails = document.getElementById('table-details');
@@ -506,7 +510,6 @@ import Layout from '../layouts/Layout.astro';
     let activeTableData: any = null;
     let isGameStarted = false;
 
-    // 1/3 面板頁籤切換
     panelTabBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         panelTabBtns.forEach(b => b.classList.remove('active'));
@@ -524,15 +527,12 @@ import Layout from '../layouts/Layout.astro';
       });
     });
 
-    logQuickAddBtn?.addEventListener('click', () => {
-      if (seatModal) seatModal.style.display = 'flex';
-    });
+    logQuickAddBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'flex'; });
 
-    // 渲染個人閱讀記錄清單
     function renderMyLogs() {
       if (!logListContainer) return;
       if (myReadingLogs.length === 0) {
-        logListContainer.innerHTML = '<div style="color:#64748b; font-size:10px; text-align:center; padding:10px;">目前尚無記錄，點擊右上方新增或透過入座記錄</div>';
+        logListContainer.innerHTML = '<div style="color:#64748b; font-size:10px; text-align:center; padding:10px;">目前尚無記錄</div>';
         return;
       }
       let html = '';
@@ -748,16 +748,31 @@ import Layout from '../layouts/Layout.astro';
       return Object.values(onlinePlayers).find((p: any) => p.gx === gx && p.gy === gy);
     }
 
+    // 檢查物件佔格碰撞 (支援長寬 w, h)
     function isCellSolidBlocked(gx: number, gy: number): boolean {
       const maxCols = Math.floor(canvas.width / TILE_SIZE);
       const maxRows = Math.floor(canvas.height / TILE_SIZE);
       if (gx < 0 || gx >= maxCols || gy < 0 || gy >= maxRows) return true;
 
       const roomData = rooms[currentRoom];
-      const hasItem = roomData.items.some(item => item.gx === gx && item.gy === gy);
+      
+      // 檢查傢俱佔格
+      for (const item of roomData.items) {
+        const iw = item.w || 1;
+        const ih = item.h || 1;
+        if (gx >= item.gx && gx < item.gx + iw && gy >= item.gy && gy < item.gy + ih) return true;
+      }
+
+      // 檢查 NPC
       const hasNpc = roomData.npcs.some(npc => npc.gx === gx && npc.gy === gy);
-      const hasTable = roomData.items.some(i => i.type === 'table' && i.gx === gx && i.gy === gy) || roomTables.some(t => t.table_gx === gx && t.table_gy === gy);
-      return hasItem || hasNpc || hasTable;
+      if (hasNpc) return true;
+
+      // 檢查共讀桌 (佔 2x2 四格)
+      for (const t of roomTables) {
+        if (gx >= t.table_gx && gx < t.table_gx + 2 && gy >= t.table_gy && gy < t.table_gy + 2) return true;
+      }
+
+      return false;
     }
 
     if (savedName) {
@@ -866,21 +881,45 @@ import Layout from '../layouts/Layout.astro';
       const roomData = rooms[currentRoom];
 
       if (currentTool === 'move') {
-        // 1. 點擊線上玩家
+        // 1. 點擊 NPC (屋主或萬事屋)
+        const hitNpc = roomData.npcs.find(n => n.gx === targetGx && n.gy === targetGy);
+        if (hitNpc) {
+          if (hitNpc.action === 'home') {
+            window.location.href = '/'; // 進入主網站
+          } else if (hitNpc.action === 'skill') {
+            window.location.href = '/skillsupermarker'; // 進入能力共享市集
+          }
+          return;
+        }
+
+        // 2. 點擊線上玩家
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
         if (hitPlayer) {
           openPeerLogs(hitPlayer.name, hitPlayer.role, hitPlayer.reading_log || []);
           return;
         }
 
-        // 2. 點擊共讀桌 (Table)
-        const hitTable = roomTables.find(t => t.table_gx === targetGx && t.table_gy === targetGy);
+        // 3. 點擊共讀桌 (Table 佔 2x2)
+        const hitTable = roomTables.find(t => targetGx >= t.table_gx && targetGx < t.table_gx + 2 && targetGy >= t.table_gy && targetGy < t.table_gy + 2);
         if (hitTable) {
           activeTableData = hitTable;
           if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
           if (tableFormView) tableFormView.style.display = 'none';
           if (tableInfoView) tableInfoView.style.display = 'block';
-          
+
+          // 檢查是否逾期超過一天，或由發起者手動結束
+          const finishDate = new Date(hitTable.finish_date);
+          const now = new Date();
+          const oneDayAfter = new Date(finishDate.getTime() + 24 * 60 * 60 * 1000);
+          const isExpired = now > oneDayAfter;
+          const isHost = hitTable.host_id === userId;
+
+          if (isExpired || isHost) {
+            if (tableEndBtn) tableEndBtn.style.display = 'block';
+          } else {
+            if (tableEndBtn) tableEndBtn.style.display = 'none';
+          }
+
           let membersList = hitTable.members.map((m: any) => m.name).join(', ') || '尚無';
           if (tableDetails) {
             tableDetails.innerHTML = `
@@ -888,18 +927,19 @@ import Layout from '../layouts/Layout.astro';
               <p><strong>作者：</strong>${hitTable.author}</p>
               <p><strong>發起人：</strong>${hitTable.host_name}</p>
               <p><strong>預定完讀日期：</strong>${hitTable.finish_date}</p>
-              <p><strong>參與成員 (${hitTable.members.length}/3)：</strong>${membersList}</p>
+              <p><strong>參與成員 (${hitTable.members.length}/${hitTable.max_members || 3})：</strong>${membersList}</p>
+              ${isExpired ? '<p style="color:#ef4444; font-weight:bold;">⚠️ 此共讀已逾期超過一天可進行結算清空</p>' : ''}
             `;
           }
           if (tableModal) tableModal.style.display = 'flex';
           return;
         }
 
-        // 3. 點擊書櫃
-        const hitShelf = roomData.items.find(item => item.type === 'shelf' && item.gx === targetGx && item.gy === targetGy);
+        // 4. 點擊書櫃
+        const hitShelf = roomData.items.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
         if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
 
-        // 4. 點擊椅子
+        // 5. 點擊椅子
         const hitSeat = roomData.items.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
@@ -932,12 +972,20 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const existingItemIndex = roomData.items.findIndex(item => item.gx === targetGx && item.gy === targetGy);
+        const existingItemIndex = roomData.items.findIndex(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
         if (existingItemIndex !== -1) {
           if (confirm('確定要移除此處的傢俱嗎？')) { roomData.items.splice(existingItemIndex, 1); }
         } else if (!isCellSolidBlocked(targetGx, targetGy) && !getPlayerAtCell(targetGx, targetGy) && !(playerGx === targetGx && playerGy === targetGy)) {
-          const imgSrc = currentTool === 'shelf' ? '/assets/shelf.png' : '/assets/chair.png';
-          roomData.items.push({ type: currentTool, gx: targetGx, gy: targetGy, label: currentTool === 'shelf' ? '新書架' : '新木椅', imgSrc });
+          const isShelf = currentTool === 'shelf';
+          roomData.items.push({
+            type: currentTool,
+            gx: targetGx,
+            gy: targetGy,
+            w: isShelf ? 3 : 1, // 書櫃預設佔 3 格
+            h: isShelf ? 1 : 1,
+            label: isShelf ? '新書櫃' : '新木椅',
+            imgSrc: isShelf ? '/assets/shelf.png' : '/assets/chair.png'
+          });
         }
       }
     });
@@ -946,6 +994,7 @@ import Layout from '../layouts/Layout.astro';
     tableCreateBtn?.addEventListener('click', async () => {
       const book = tableBook?.value.trim();
       const author = tableAuthor?.value.trim();
+      const maxM = parseInt(tableMax?.value) || 3;
       const date = tableDate?.value;
 
       if (!book || !date || !pendingTablePos) { alert('請完整填寫書名與完讀日期'); return; }
@@ -957,6 +1006,8 @@ import Layout from '../layouts/Layout.astro';
         book_title: book,
         author: author || '佚名',
         finish_date: date,
+        max_members: maxM,
+        host_id: userId,
         host_name: playerName,
         members: [{ id: userId, name: playerName }]
       });
@@ -972,7 +1023,8 @@ import Layout from '../layouts/Layout.astro';
     tableJoinBtn?.addEventListener('click', async () => {
       if (!activeTableData) return;
       const members = activeTableData.members || [];
-      if (members.length >= 3) { alert('此共讀桌人數已滿（最多 3 人）！'); return; }
+      const maxLimit = activeTableData.max_members || 3;
+      if (members.length >= maxLimit) { alert(`此共讀桌人數已滿（上限 ${maxLimit} 人）！`); return; }
       if (members.some((m: any) => m.id === userId)) { alert('你已經加入過這個共讀桌了！'); return; }
 
       members.push({ id: userId, name: playerName });
@@ -981,6 +1033,15 @@ import Layout from '../layouts/Layout.astro';
       if (tableModal) tableModal.style.display = 'none';
       fetchRoomTables();
       alert('成功加入共讀行列！');
+    });
+
+    // 結束共讀（清空桌子）
+    tableEndBtn?.addEventListener('click', async () => {
+      if (!activeTableData) return;
+      await supabase.from(COREADING_TABLE).delete().eq('id', activeTableData.id);
+      if (tableModal) tableModal.style.display = 'none';
+      fetchRoomTables();
+      alert('共讀已結束並清空，現在可以發起新的共讀了！');
     });
 
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
@@ -1001,7 +1062,6 @@ import Layout from '../layouts/Layout.astro';
         currentTask = `《${bookName}》 p.${currentP}/${totalP}`;
         isDND = true;
 
-        // 同時加入個人閱讀記錄
         myReadingLogs.unshift({
           book: bookName,
           author: authorName,
@@ -1057,31 +1117,34 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
-      // 1. 繪製傢俱
+      // 1. 繪製傢俱 (支援 w, h 尺寸繪製)
       roomData.items.forEach(item => {
-        const px = item.gx * TILE_SIZE + TILE_SIZE / 2;
-        const py = item.gy * TILE_SIZE + TILE_SIZE / 2;
+        const px = item.gx * TILE_SIZE;
+        const py = item.gy * TILE_SIZE;
+        const iw = (item.w || 1) * TILE_SIZE;
+        const ih = (item.h || 1) * TILE_SIZE;
+
         const img = getLoadedImage(item.imgSrc);
         if (img && img.complete && img.naturalWidth !== 0) {
-          ctx.drawImage(img, px - 16, py - 16, 32, 32);
+          ctx.drawImage(img, px, py, iw, ih);
         } else {
           ctx.fillStyle = item.type === 'shelf' ? '#854d0e' : '#334155';
-          ctx.fillRect(px - 14, py - 14, 28, 28);
+          ctx.fillRect(px + 2, py + 2, iw - 4, ih - 4);
         }
         ctx.fillStyle = '#f8fafc';
         ctx.font = '8px sans-serif';
-        ctx.fillText(`${item.type === 'shelf' ? '📚' : '🪑'} ${item.label}`, px - 20, py - 18);
+        ctx.fillText(`${item.type === 'shelf' ? '📚' : '🪑'} ${item.label}`, px + 4, py + 14);
       });
 
-      // 2. 繪製共讀桌 (Table)
+      // 2. 繪製共讀桌 (佔 2x2 四格)
       roomTables.forEach(t => {
-        const px = t.table_gx * TILE_SIZE + TILE_SIZE / 2;
-        const py = t.table_gy * TILE_SIZE + TILE_SIZE / 2;
+        const px = t.table_gx * TILE_SIZE;
+        const py = t.table_gy * TILE_SIZE;
         ctx.fillStyle = '#b45309';
-        ctx.fillRect(px - 14, py - 14, 28, 28);
+        ctx.fillRect(px + 2, py + 2, TILE_SIZE * 2 - 4, TILE_SIZE * 2 - 4);
         ctx.fillStyle = '#fde68a';
-        ctx.font = '8px sans-serif';
-        ctx.fillText(`🪵 共讀桌`, px - 22, py - 18);
+        ctx.font = '9px sans-serif';
+        ctx.fillText(`🪵 共讀: ${t.book_title}`, px + 6, py + 20);
       });
 
       // 3. NPC
@@ -1095,9 +1158,9 @@ import Layout from '../layouts/Layout.astro';
           ctx.fillStyle = '#0284c7';
           ctx.fillRect(px - 12, py - 12, 24, 24);
         }
-        ctx.fillStyle = '#f8fafc';
+        ctx.fillStyle = '#38bdf8';
         ctx.font = '9px sans-serif';
-        ctx.fillText(npc.name, px - 14, py - 18);
+        ctx.fillText(npc.name, px - 18, py - 18);
       });
 
       // 4. 其他線上玩家
