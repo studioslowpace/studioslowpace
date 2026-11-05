@@ -168,7 +168,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 8. 玩家互動選單 Modal (點擊玩家後出現) -->
+  <!-- 8. 玩家互動選單 Modal -->
   <div id="player-action-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 280px; text-align: center;">
       <div class="rpg-title-bar"><span id="pam-title">👤 玩家選單</span></div>
@@ -219,13 +219,18 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <div class="hud-mid-row">
-          <div class="channel-tabs" id="room-tabs-container">
-            <button class="channel-tab active" data-room="study">📖 自修室</button>
-            <button class="channel-tab" data-room="chat">☕ 書話間</button>
-            <button class="channel-tab" data-room="salon">🏛️ 沙龍</button>
+          <!-- 房間下拉選單（直式展開） -->
+          <div class="room-selector-wrapper">
+            <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:4px 8px; font-weight:bold;">
+              <option value="study">📖 自修室</option>
+              <option value="chat">☕ 書話間</option>
+              <option value="salon">🏛️ 沙龍</option>
+            </select>
           </div>
+
           <div style="display:flex; gap:4px; align-items:center;">
             <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新房間</button>
+            <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-size:10px;">🗑️ 刪除此房間</button>
             <select id="theme-select" class="theme-select-dropdown">
               <option value="blue">☁️ 晴空藍</option>
               <option value="green">🍃 森林綠</option>
@@ -406,9 +411,6 @@ import Layout from '../layouts/Layout.astro';
     .user-tag { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 8px; font-size: 10px; color: var(--accent-color); }
     
     .hud-mid-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .channel-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-    .channel-tab { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 3px 8px; font-size: 11px; cursor: pointer; border-radius: 14px; white-space: nowrap; }
-    .channel-tab.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
     
     .theme-select-dropdown { background: var(--bg-main); color: var(--accent-color); border: 1px solid var(--border-color); padding: 3px 6px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; }
     .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
@@ -432,6 +434,7 @@ import Layout from '../layouts/Layout.astro';
     const TABLE_NAME = 'slowsplace_member';
     const MSG_TABLE_NAME = 'slowsplace_messages';
     const ITEMS_TABLE = 'slowsplace_items';
+    const ROOMS_TABLE = 'slowsplace_rooms';
 
     const userId = localStorage.getItem('rpg_user_id') || ('user_' + Math.random().toString(36).substring(2, 9));
     localStorage.setItem('rpg_user_id', userId);
@@ -463,12 +466,11 @@ import Layout from '../layouts/Layout.astro';
     let roomItems: any[] = [];
     let activeTableData: any = null;
 
-    // 動態房間列表與自訂設定 (支援店主新增房間、背景圖、格子數)
-    let customRooms: { key: string; name: string; bgImg: string; gridSize: number }[] = JSON.parse(localStorage.getItem('rpg_custom_rooms') || JSON.stringify([
+    let customRooms: { key: string; name: string; bgImg: string; gridSize: number }[] = [
       { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
       { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
       { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
-    ]));
+    ];
 
     let currentGridSize = 12;
     let currentBgImg = '';
@@ -492,16 +494,17 @@ import Layout from '../layouts/Layout.astro';
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
-    // 房間設定 Modal
+    // 房間設定 Modal 與下拉選單
     const roomSettingsModal = document.getElementById('room-settings-modal');
     const openRoomModalBtn = document.getElementById('open-room-modal-btn');
+    const deleteRoomBtn = document.getElementById('delete-room-btn') as HTMLButtonElement;
     const rsCancelBtn = document.getElementById('rs-cancel-btn');
     const rsConfirmBtn = document.getElementById('rs-confirm-btn');
     const rsRoomKey = document.getElementById('rs-room-key') as HTMLInputElement;
     const rsRoomName = document.getElementById('rs-room-name') as HTMLInputElement;
     const rsBgImg = document.getElementById('rs-bg-img') as HTMLInputElement;
     const rsGridSize = document.getElementById('rs-grid-size') as HTMLInputElement;
-    const roomTabsContainer = document.getElementById('room-tabs-container');
+    const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
 
     // 玩家互動選單 Modal
     const playerActionModal = document.getElementById('player-action-modal');
@@ -610,36 +613,68 @@ import Layout from '../layouts/Layout.astro';
       return imageFailed[src] ? null : imageCache[src];
     }
 
-    function renderRoomTabs() {
-      if (!roomTabsContainer) return;
-      let html = '';
-      customRooms.forEach(rc => {
-        const isActive = rc.key === currentRoom ? 'active' : '';
-        html += `<button class="channel-tab ${isActive}" data-room="${rc.key}">${rc.name}</button>`;
-      });
-      roomTabsContainer.innerHTML = html;
-      bindRoomTabs();
+    // 🔄 從 Supabase 同步房間列表
+    async function fetchRooms() {
+      const { data } = await supabase.from(ROOMS_TABLE).select('*');
+      if (data && data.length > 0) {
+        customRooms = data.map((r: any) => ({
+          key: r.room_key,
+          name: r.room_name,
+          bgImg: r.bg_img || '',
+          gridSize: r.grid_size || 12
+        }));
+      } else {
+        // 預設房間初始化
+        const defaults = [
+          { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
+          { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
+          { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
+        ];
+        for (const dr of defaults) {
+          await supabase.from(ROOMS_TABLE).upsert({
+            room_key: dr.key,
+            room_name: dr.name,
+            bg_img: dr.bgImg,
+            grid_size: dr.gridSize
+          }, { onConflict: 'room_key' });
+        }
+        customRooms = defaults;
+      }
+      renderRoomDropdown();
+      updateCurrentRoomConfig();
     }
 
-    function bindRoomTabs() {
-      document.querySelectorAll('.channel-tab').forEach(tab => {
-        tab.addEventListener('click', async (e) => {
-          document.querySelectorAll('.channel-tab').forEach(t => t.classList.remove('active'));
-          const target = e.currentTarget as HTMLElement;
-          target.classList.add('active');
-          currentRoom = target.dataset.room!;
-          updateCurrentRoomConfig();
-          isDND = false;
-          if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-          playerGx = 1; playerGy = 1;
-          moveQueue = [];
-          await syncMyStateToDB();
-          await fetchOnlinePlayers();
-          await fetchRoomItems();
-          await fetchMessages();
-        });
+    function renderRoomDropdown() {
+      if (!roomSelectDropdown) return;
+      let html = '';
+      customRooms.forEach(rc => {
+        const selected = rc.key === currentRoom ? 'selected' : '';
+        html += `<option value="${rc.key}" ${selected}>${rc.name}</option>`;
       });
+      roomSelectDropdown.innerHTML = html;
+
+      // 如果是店主且在自訂房間，顯示刪除按鈕
+      if (playerTier === '店主' && currentRoom !== 'study' && currentRoom !== 'chat' && currentRoom !== 'salon') {
+        if (deleteRoomBtn) deleteRoomBtn.style.display = 'inline-block';
+      } else {
+        if (deleteRoomBtn) deleteRoomBtn.style.display = 'none';
+      }
     }
+
+    roomSelectDropdown?.addEventListener('change', async (e) => {
+      const target = e.target as HTMLSelectElement;
+      currentRoom = target.value;
+      updateCurrentRoomConfig();
+      isDND = false;
+      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      playerGx = 1; playerGy = 1;
+      moveQueue = [];
+      renderRoomDropdown();
+      await syncMyStateToDB();
+      await fetchOnlinePlayers();
+      await fetchRoomItems();
+      await fetchMessages();
+    });
 
     openRoomModalBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'flex'; });
     rsCancelBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'none'; });
@@ -652,32 +687,56 @@ import Layout from '../layouts/Layout.astro';
 
       if (!key || !name) { alert('請填寫房間代碼與顯示名稱'); return; }
 
-      if (customRooms.some(r => r.key === key)) {
-        alert('此房間代碼已經存在！');
+      const { error } = await supabase.from(ROOMS_TABLE).upsert({
+        room_key: key,
+        room_name: name,
+        bg_img: bgImg,
+        grid_size: gridSize
+      }, { onConflict: 'room_key' });
+
+      if (error) {
+        alert('建立房間失敗：' + error.message);
         return;
       }
 
-      customRooms.push({ key, name, bgImg, gridSize });
-      localStorage.setItem('rpg_custom_rooms', JSON.stringify(customRooms));
-
-      renderRoomTabs();
+      await fetchRooms();
       if (roomSettingsModal) roomSettingsModal.style.display = 'none';
       rsRoomKey.value = '';
       rsRoomName.value = '';
       rsBgImg.value = '';
 
-      // 自動切換至新房間
       currentRoom = key;
       updateCurrentRoomConfig();
       playerGx = 1; playerGy = 1;
+      renderRoomDropdown();
       await syncMyStateToDB();
       await fetchOnlinePlayers();
       await fetchRoomItems();
       await fetchMessages();
-      alert(`成功建立新房間「${name}」！`);
+      alert(`成功建立並切換至「${name}」！`);
     });
 
-    renderRoomTabs();
+    // 🗑️ 店主刪除房間功能
+    deleteRoomBtn?.addEventListener('click', async () => {
+      if (currentRoom === 'study' || currentRoom === 'chat' || currentRoom === 'salon') {
+        alert('預設房間無法刪除！');
+        return;
+      }
+
+      if (confirm(`確定要刪除當前房間嗎？房內的物件與設定將一併清除。`)) {
+        await supabase.from(ROOMS_TABLE).delete().eq('room_key', currentRoom);
+        await supabase.from(ITEMS_TABLE).delete().eq('room', currentRoom);
+
+        currentRoom = 'study';
+        updateCurrentRoomConfig();
+        playerGx = 1; playerGy = 1;
+        await fetchRooms();
+        await fetchOnlinePlayers();
+        await fetchRoomItems();
+        await fetchMessages();
+        alert('房間已刪除，已自動切回自修室。');
+      }
+    });
 
     function renderCustomToolsUI() {
       if (!customToolsContainer) return;
@@ -832,7 +891,6 @@ import Layout from '../layouts/Layout.astro';
         if (switchPublicBtn) switchPublicBtn.style.display = 'inline-block';
         if (playerActionModal) playerActionModal.style.display = 'none';
         
-        // 切換到聊天面板
         panelTabBtns.forEach(b => b.classList.remove('active'));
         document.querySelector('[data-tab="chat"]')?.classList.add('active');
         if (paneChat) paneChat.style.display = 'flex';
@@ -952,6 +1010,10 @@ import Layout from '../layouts/Layout.astro';
         fetchRoomItems();
       }).subscribe();
 
+      supabase.channel('room-changes').on('postgres_changes', { event: '*', schema: 'public', table: ROOMS_TABLE }, () => {
+        fetchRooms();
+      }).subscribe();
+
       supabase.channel('chat-changes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: MSG_TABLE_NAME }, (payload) => {
         if (payload.new && payload.new.room === currentRoom && chatMessagesBox) {
           const m = payload.new;
@@ -1025,9 +1087,15 @@ import Layout from '../layouts/Layout.astro';
       }
 
       isGameStarted = true;
-      syncMyStateToDB().then(() => { fetchOnlinePlayers(); fetchRoomItems(); fetchMessages(); renderMyLogs(); });
-      initDatabaseRealtime();
-      gameLoop();
+      fetchRooms().then(async () => {
+        await syncMyStateToDB();
+        await fetchOnlinePlayers();
+        await fetchRoomItems();
+        await fetchMessages();
+        renderMyLogs();
+        initDatabaseRealtime();
+        gameLoop();
+      });
     }
 
     startBtn?.addEventListener('click', async () => {
@@ -1066,6 +1134,7 @@ import Layout from '../layouts/Layout.astro';
 
       if (!isGameStarted) {
         isGameStarted = true;
+        await fetchRooms();
         await syncMyStateToDB();
         await fetchOnlinePlayers();
         await fetchRoomItems();
@@ -1096,7 +1165,6 @@ import Layout from '../layouts/Layout.astro';
       const targetGy = Math.floor(clickY / tileSize);
 
       if (currentTool === 'move') {
-        // 1. 檢查共讀桌
         const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + item.w && targetGy >= item.gy && targetGy < item.gy + item.h);
         if (hitTable) {
           activeTableData = hitTable;
@@ -1145,7 +1213,6 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        // 2. 檢查連結物件
         const hitLinkedItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.link && item.link.trim() !== '');
         if (hitLinkedItem) {
           if (hitLinkedItem.open_type === 'blank') {
@@ -1160,7 +1227,6 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        // 3. 檢查點擊其他玩家 (彈出聊天/記錄互動選單)
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
         if (hitPlayer) {
           selectedPeer = hitPlayer;
@@ -1378,7 +1444,6 @@ import Layout from '../layouts/Layout.astro';
       
       const tileSize = canvas.width / currentGridSize;
 
-      // 1. 背景繪製 (支援店主自訂背景圖)
       const bgImgObj = getLoadedImage(currentBgImg);
       if (bgImgObj && bgImgObj.complete && bgImgObj.naturalWidth !== 0) {
         ctx.drawImage(bgImgObj, 0, 0, canvas.width, canvas.height);
@@ -1389,7 +1454,6 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // 格線
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += tileSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
@@ -1405,7 +1469,6 @@ import Layout from '../layouts/Layout.astro';
         } else { moveQueue = []; }
       }
 
-      // 2. 繪製所有物件 (畫面乾淨，不顯示多餘文字)
       roomItems.forEach(item => {
         const px = item.gx * tileSize;
         const py = item.gy * tileSize;
@@ -1421,7 +1484,6 @@ import Layout from '../layouts/Layout.astro';
         }
       });
 
-      // 3. 線上玩家 (名字放在正下方，無多餘文字)
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * tileSize + tileSize / 2;
         const py = op.gy * tileSize + tileSize / 2;
@@ -1439,7 +1501,6 @@ import Layout from '../layouts/Layout.astro';
         ctx.textAlign = 'left';
       });
 
-      // 4. 自己 (名字放在正下方)
       const pScreenX = playerGx * tileSize + tileSize / 2;
       const pScreenY = playerGy * tileSize + tileSize / 2;
       const playerImg = getLoadedImage(playerAvatar);
