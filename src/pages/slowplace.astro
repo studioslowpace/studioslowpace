@@ -1001,18 +1001,34 @@ import Layout from '../layouts/Layout.astro';
         .select('*')
         .eq('room', currentRoom)
         .order('created_at', { ascending: true })
-        .limit(30);
+        .limit(50);
 
       if (data && chatMessagesBox) {
         let html = '';
         data.forEach(m => {
           const isPM = m.target_id !== null;
-          const isMyPM = m.sender_id === userId || m.target_id === userId;
-          if (!isPM || isMyPM) {
-            const pmTag = isPM ? `[🔒 私訊]` : '';
-            html += `<div class="chat-msg ${isPM ? 'pm' : ''}"><span class="chat-msg-author" data-sender-id="${m.sender_id}" data-sender-name="${m.sender_name}">${m.sender_name} ${pmTag}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+          
+          if (!isPM) {
+            // 公開訊息：只有在沒有選擇私人對話對象時才顯示
+            if (!privateTargetId) {
+              html += `<div class="chat-msg"><span class="chat-msg-author" data-sender-id="${m.sender_id}" data-sender-name="${m.sender_name}">${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+            }
+          } else {
+            // 私訊訊息：必須是「我發給當前私訊對象」或「當前私訊對象發給我」的才顯示
+            const isRelevantPM = 
+              (m.sender_id === userId && m.target_id === privateTargetId) ||
+              (m.sender_id === privateTargetId && m.target_id === userId);
+
+            if (isRelevantPM) {
+              html += `<div class="chat-msg pm"><span class="chat-msg-author" data-sender-id="${m.sender_id}" data-sender-name="${m.sender_name}">[🔒 私訊] ${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+            }
           }
         });
+
+        if (html === '') {
+          html = `<div class="chat-welcome">${privateTargetId ? `✨ 正在與 ${privateTargetName} 進行專屬私訊對話` : '✨ 點擊線上玩家頭像可發起私人對話或查看記錄！'}</div>`;
+        }
+
         chatMessagesBox.innerHTML = html;
         chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
       }
@@ -1072,6 +1088,7 @@ import Layout from '../layouts/Layout.astro';
       privateTargetName = null;
       if (chatModeIndicator) chatModeIndicator.textContent = '📢 公開發言中';
       if (switchPublicBtn) switchPublicBtn.style.display = 'none';
+      fetchMessages();
     });
 
     function getPlayerAtCell(gx: number, gy: number) {
