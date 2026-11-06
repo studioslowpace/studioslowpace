@@ -1,1523 +1,1130 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import LoginModal from '../components/LoginModal.astro';
 ---
 
 <Layout title="空間客舍 · 自由佈置空間">
+    <Fragment slot="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    <title>客舍萬事屋 | 鄰里人交流區</title>
+    
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    </Fragment>
 
-  <!-- 1. 登入 / 訪客 Modal (內嵌 /login 頁面) -->
-  <div id="rpg-modal" class="rpg-modal-overlay">
-    <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>◆ 空間客舍 · 身分認證 ◆</span>
-      </div>
-      <div class="embed-frame-wrapper" style="flex:1;">
-        <iframe id="auth-iframe" src="/login" class="embed-iframe"></iframe>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. 入座與詳細閱讀設定 Modal -->
-  <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 閱讀與專心設定 ◆</span></div>
-      <div class="rpg-content">
-        <p class="rpg-text">你在此處安坐。請輸入詳細的閱讀進度與筆記：</p>
-        <input type="text" id="rpg-book-input" placeholder="書名（例：《希臘語課》）" maxlength="25" style="margin-bottom:6px;" />
-        <input type="text" id="rpg-author-input" placeholder="作者名" maxlength="20" style="margin-bottom:6px;" />
-        <div style="display:flex; gap:6px; margin-bottom:6px;">
-          <input type="number" id="rpg-current-page" placeholder="目前頁數" min="0" max="9999" style="flex:1; margin-bottom:0;" />
-          <input type="number" id="rpg-total-page" placeholder="總頁數" min="1" max="9999" style="flex:1; margin-bottom:0;" />
-        </div>
-        <textarea id="rpg-quote-input" placeholder="書摘句子..." style="width:100%; height:45px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
-        <textarea id="rpg-review-input" placeholder="讀後感與心得..." style="width:100%; height:55px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:10px;"></textarea>
+    <style is:global>
+        /* ==========================================
+           0. 全域重置與基礎樣式 (文青自然風)
+           ========================================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         
-        <div class="rpg-btn-group">
-          <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
-          <button id="seat-confirm-btn" class="rpg-btn">☁️ 開啟專心 (DND)</button>
-        </div>
-      </div>
-    </div>
-  </div>
+        html, body { 
+            height: 100%; 
+            background-color: #f3f6f9; 
+            color: #334155; 
+            overflow: hidden; 
+        }
+        .hidden { display: none !important; }
 
-  <!-- 3. 圖書館藏 Modal -->
-  <div id="library-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window embed-window">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>📚 客舍館藏書單 (Library)</span>
-        <button id="library-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
-      </div>
-      <div class="embed-frame-wrapper">
-        <iframe src="/library" class="embed-iframe"></iframe>
-      </div>
-    </div>
-  </div>
+        .btn-blue { 
+            background-color: #2563eb; 
+            color: #ffffff; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 600; 
+            border-radius: 0.75rem; 
+            transition: background 0.2s;
+        }
+        .btn-blue:hover { background-color: #1d4ed8; }
 
-  <!-- 4. 共讀桌 Modal -->
-  <div id="table-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window">
-      <div class="rpg-title-bar"><span id="table-modal-title">📖 共讀桌活動</span></div>
-      <div class="rpg-content">
-        <div id="table-form-view" style="display:none;">
-          <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：</p>
-          <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:6px;" />
-          <input type="text" id="table-author" placeholder="作者" style="margin-bottom:6px;" />
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">限制參加人數：</div>
-          <input type="number" id="table-max" value="3" min="1" max="10" style="margin-bottom:6px;" />
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">預定完讀日期：</div>
-          <input type="date" id="table-date" style="width:100%; background:var(--bg-main); border:1px solid var(--border-color); color:#fff; padding:8px; border-radius:8px; margin-bottom:12px;" />
-          <div class="rpg-btn-group">
-            <button id="table-cancel-btn" class="rpg-btn-ghost">取消</button>
-            <button id="table-create-btn" class="rpg-btn">✨ 發起共讀</button>
-          </div>
-        </div>
+        /* ==========================================
+           1. 📱 手機 App 容器 (自動適應 100dvh)
+           ========================================== */
+        .phone-app-wrapper {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            height: 100dvh;
+            margin: 0 auto;
+            background: #fafcfd;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+        @media (min-width: 421px) {
+            body { padding: 1rem 0; }
+            .phone-app-wrapper {
+                position: relative;
+                height: calc(100vh - 2rem);
+                height: calc(100dvh - 2rem);
+                border: 1px solid #cbd5e1;
+                border-radius: 1.5rem;
+            }
+        }
 
-        <div id="table-info-view">
-          <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:12px;"></div>
-          <div class="rpg-btn-group" style="flex-direction:column; gap:6px;">
-            <button id="table-join-btn" class="rpg-btn" style="background:#10b981;">🤝 加入共讀</button>
-            <button id="table-end-btn" class="rpg-btn" style="background:#ef4444; display:none;">🛑 結束共讀</button>
-            <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. 彈出網頁視窗 (Modal 預覽用) -->
-  <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window embed-window">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="custom-modal-title">📄 內容預覽</span>
-        <button id="custom-modal-close" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
-      </div>
-      <div class="embed-frame-wrapper">
-        <iframe id="custom-modal-iframe" src="" class="embed-iframe"></iframe>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6. 新增自訂物件 Modal (店主專用) -->
-  <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window">
-      <div class="rpg-title-bar"><span>🛠️ 新增空間物件/NPC/傳送門</span></div>
-      <div class="rpg-content">
-        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
-        <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
-        <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/npc_mi.png）" style="margin-bottom:6px;" />
-        <input type="text" id="cf-link" placeholder="連結網址（例：/ 或外部網址，無則留空）" style="margin-bottom:6px;" />
+        /* ==========================================
+           2. 頂部導航與標題列
+           ========================================== */
+        .admin-nav { background-color: #0f172a; color: #ffffff; padding: 0.75rem 1rem; border-bottom: 2px solid #2563eb; flex-shrink: 0; }
         
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">連結開啟方式：</div>
-        <select id="cf-open-type" style="width:100%; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-          <option value="current">🌐 在當前頁面跳轉 (預設)</option>
-          <option value="blank">📑 在新分頁開啟 (_blank)</option>
-          <option value="modal">🪟 以彈出視窗 (Modal) 顯示</option>
-        </select>
+        .phone-title-bar {
+            flex-shrink: 0;
+            background: #e2e8f0;
+            border-bottom: 1px solid #cbd5e1;
+            padding: 0.6rem 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        .main-title-box {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            color: #1e293b;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+        .logo-btn {
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+        .logo-btn:hover { transform: scale(1.15); }
+        .banner-logo-img { width: 15px; height: 15px; object-fit: cover; }
 
-        <textarea id="cf-desc" placeholder="物件圖示說明文字..." style="width:100%; height:50px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
-        <div style="display:flex; gap:6px; margin-bottom:8px;">
-          <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
-          <input type="number" id="cf-h" placeholder="高度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
-        </div>
-        <div class="rpg-btn-group" style="margin-top:10px;">
-          <button id="cf-cancel-btn" class="rpg-btn-ghost">取消</button>
-          <button id="cf-confirm-btn" class="rpg-btn">✨ 新增至工具列</button>
-        </div>
-      </div>
+        .nav-link-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.6rem;
+            padding: 0.25rem 0.55rem;
+            font-size: 0.725rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .phone-header {
+            flex-shrink: 0;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.55rem 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+            z-index: 10;
+        }
+        .phone-header-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #1e293b;
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.5rem;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+        }
+        .phone-header-title:hover { background: #e2e8f0; }
+
+        .identity-badge {
+            font-size: 0.725rem;
+            font-weight: 600;
+            color: #2563eb;
+            background: #ffffff;
+            border: 1px solid #bfdbfe;
+            padding: 0.2rem 0.55rem;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+        .identity-badge:hover { background: #eff6ff; }
+
+        /* ==========================================
+           3. 數據統計與資訊卡片
+           ========================================== */
+        .phone-sub-bar {
+            flex-shrink: 0;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.725rem;
+            color: #64748b;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .phone-sub-bar strong { color: #2563eb; }
+
+        .info-card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .info-trigger-btn {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            padding: 0.6rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .info-trigger-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .info-trigger-btn h5 { font-size: 0.8rem; font-weight: 800; color: #1e293b; }
+        .info-trigger-btn span { font-size: 0.65rem; color: #64748b; }
+
+        /* ==========================================
+           4. 對話訊息捲動區
+           ========================================== */
+        .phone-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#e2e8f0 0.8px, transparent 0.8px);
+            background-size: 10px 10px;
+            overscroll-behavior: contain;
+        }
+
+        .msg-bubble {
+            max-width: 78%;
+            padding: 0.5rem 0.75rem 0.35rem 0.75rem;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            word-break: break-word;
+        }
+        .msg-row-other { display: flex; justify-content: flex-start; }
+        .msg-bubble-other { background-color: #ffffff; color: #1e293b; border: 1px solid #e2e8f0; border-top-left-radius: 0.1rem; }
+
+        .msg-row-self { display: flex; justify-content: flex-end; }
+        .msg-bubble-self { background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-top-right-radius: 0.1rem; }
+
+        .msg-sender-name { font-size: 0.7rem; font-weight: 700; color: #2563eb; margin-bottom: 0.15rem; display: block; }
+        .msg-time-stamp { font-size: 0.6rem; color: #94a3b8; float: right; margin-left: 0.5rem; margin-top: 0.2rem; }
+
+        /* ==========================================
+           5. 底部打字輸入列
+           ========================================== */
+        .phone-input-bar {
+            flex-shrink: 0;
+            padding: 0.6rem 0.75rem;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .phone-input-field {
+            flex: 1;
+            padding: 0.6rem 0.85rem;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 1.25rem;
+            font-size: 0.875rem;
+            outline: none;
+        }
+        .phone-input-field:focus { border-color: #2563eb; }
+        .phone-send-btn {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 1.25rem;
+            padding: 0.6rem 1.1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .phone-send-btn:hover { background-color: #1d4ed8; }
+
+        .topic-select-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 0.85rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .topic-select-card:hover { border-color: #2563eb; background: #fafcfd; }
+        .input-field { width: 100%; padding: 0.625rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.875rem; outline: none; }
+        .input-field:focus { border-color: #2563eb; }
+
+        /* ==========================================
+           6. 登入 / 訪客 Modal 樣式
+           ========================================== */
+        .rpg-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1rem;
+        }
+        .rpg-window {
+            background: #fafcfd;
+            border: 2px solid #cbd5e1;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+        .rpg-title-bar {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+        .embed-frame-wrapper {
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+        .embed-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 1. 登入 / 訪客 Modal (直接內嵌 LoginModal 元件，不需要 iframe) -->
+<div id="rpg-modal" class="rpg-modal-overlay">
+  <div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
+    <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>◆ 空間客舍 · 身分認證 ◆</span>
+    </div>
+    <div class="embed-frame-wrapper" style="flex:1; overflow-y: auto;">
+      <LoginModal />
     </div>
   </div>
+</div>
 
-  <!-- 7. 店主新增房間/設定背景與格子 Modal -->
-  <div id="room-settings-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window">
-      <div class="rpg-title-bar"><span>🏠 房間與背景設定 (店主專用)</span></div>
-      <div class="rpg-content">
-        <p class="rpg-text">新增房間代碼、房間名稱、背景圖網址及格子數量：</p>
-        <input type="text" id="rs-room-key" placeholder="房間代碼（例：reading_room）" style="margin-bottom:6px;" />
-        <input type="text" id="rs-room-name" placeholder="房間顯示名稱（例：📖 靜心閱覽室）" style="margin-bottom:6px;" />
-        <input type="text" id="rs-bg-img" placeholder="背景圖片網址（留空則使用純色背景）" style="margin-bottom:6px;" />
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">格子大小 (預設 12x12)：</div>
-        <input type="number" id="rs-grid-size" placeholder="格子數 (預設 12)" value="12" min="6" max="30" style="margin-bottom:12px;" />
-        <div class="rpg-btn-group">
-          <button id="rs-cancel-btn" class="rpg-btn-ghost">取消</button>
-          <button id="rs-confirm-btn" class="rpg-btn">✨ 建立並切換房間</button>
+    <!-- 🏮 頂部管理選單 (點擊 Logo 展開) -->
+    <div id="admin-navbar" class="hidden admin-nav">
+        <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
+                <strong>主理人模式</strong>
+            </div>
+            <div id="admin-logged-out" style="display: flex; gap: 6px;">
+                <input type="password" id="admin-password-input" placeholder="密碼" class="input-field" style="padding: 2px 6px; width: 80px; font-size: 0.75rem;">
+                <button id="admin-login-btn" class="btn-blue" style="padding: 2px 8px; font-size: 0.75rem;">登入</button>
+            </div>
+            <div id="admin-logged-in" class="hidden" style="display: flex; gap: 6px; align-items: center;">
+                <span style="color: #4ade80; font-size: 0.75rem;">🟢 已登入</span>
+                <button id="admin-logout-btn" style="background:#64748b; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem;">登出</button>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- 8. 玩家互動選單 Modal -->
-  <div id="player-action-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 280px; text-align: center;">
-      <div class="rpg-title-bar"><span id="pam-title">👤 玩家選單</span></div>
-      <div class="rpg-content" style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="pam-chat-btn" class="rpg-btn" style="background: var(--accent-hover);">💬 發起私人對話 (PM)</button>
-        <button id="pam-logs-btn" class="rpg-btn" style="background: #10b981;">📚 查看閱讀記錄</button>
-        <button id="pam-cancel-btn" class="rpg-btn-ghost">取消</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 9. 閱讀記錄詳情 Modal -->
-  <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 360px;">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="detail-title">📖 記錄詳情</span>
-        <button id="detail-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
-      </div>
-      <div class="rpg-content">
-        <div id="detail-content" style="font-size:12px; line-height:1.6; color:#f8fafc; word-break:break-all;"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 10. 查看其他玩家閱讀記錄 Modal -->
-  <div id="peer-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 360px; max-height: 80vh; display: flex; flex-direction: column;">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="peer-modal-title">👤 書友的閱讀記錄</span>
-        <button id="peer-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
-      </div>
-      <div class="rpg-content" id="peer-content-box" style="overflow-y: auto; flex: 1; font-size: 12px;"></div>
-    </div>
-  </div>
-
-  <!-- 主介面 -->
-  <div class="app-viewport">
-    <main class="rpg-container">
-      <header class="rpg-hud">
-        <div class="hud-top-row">
-          <span class="hud-brand">☁️ 空間客舍</span>
-          <div class="hud-right">
-            <span class="online-indicator">🟢 在線: <strong id="online-count">1</strong></span>
-            <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
-            <strong id="hud-name" style="color: var(--accent-light, #e0f2fe);">旅人</strong>
-            <button id="logout-btn" class="rpg-btn-sm" style="background:#ef4444; color:#fff; border:none;">🚪 登出</button>
-          </div>
+    <!-- 📱 手機應用主容器 -->
+    <main class="phone-app-wrapper">
+        
+        <!-- 頂部標題列 -->
+        <div class="phone-title-bar">
+            <div class="main-title-box">
+                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
+                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
+                </span>
+                <span>鄰里人交流區</span>
+            </div>
+            <button id="external-link-btn" class="nav-link-btn">客舍萬事屋 ↗</button>
         </div>
 
-        <div class="hud-mid-row">
-          <!-- 房間下拉選單（直式展開） -->
-          <div class="room-selector-wrapper">
-            <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:4px 8px; font-weight:bold;">
-              <option value="study">📖 自修室</option>
-              <option value="chat">☕ 書話間</option>
-              <option value="salon">🏛️ 沙龍</option>
-            </select>
-          </div>
+        <!-- 🔓 交流區主視窗 -->
+        <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
 
-          <div style="display:flex; gap:4px; align-items:center;">
-            <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新房間</button>
-            <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-size:10px;">🗑️ 刪除</button>
-            <select id="theme-select" class="theme-select-dropdown">
-              <option value="blue">☁️ 晴空藍</option>
-              <option value="green">🍃 森林綠</option>
-              <option value="purple">🔮 暮光紫</option>
-            </select>
-          </div>
+            <!-- 🏠 PAGE 1: 交流區首頁 -->
+            <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
+                
+                <!-- 數據統計欄 -->
+                <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
+                    <span>🟢 在線：<strong id="online-users-count-home">1</strong> 人</span>
+                    <span>|</span>
+                    <span>📜 鄰里人總數：<strong id="total-users-count-home">0</strong> 人</span>
+                </div>
+
+                <!-- 📖 資訊按鈕卡片 (源由 / 守則) -->
+                <div class="info-card-grid">
+                    <div class="info-trigger-btn" data-modal="modal-origin">
+                        <h5>🌱 社群源由</h5>
+                        <span>點擊查看詳情</span>
+                    </div>
+                    <div class="info-trigger-btn" data-modal="modal-rules">
+                        <h5>📜 交流區守則</h5>
+                        <span>點擊查看公約</span>
+                    </div>
+                </div>
+
+                <!-- 👤 身分切換列 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.1rem;">
+                    <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 請選擇討論主題</span>
+                    <div id="my-identity-badge-home" class="identity-badge">👤 載入中</div>
+                </div>
+
+                <!-- 主題列表容器 -->
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
+                        <button id="btn-add-topic" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
+                    </div>
+                    <div id="topics-list-container"></div>
+                </div>
+            </div>
+
+            <!-- 💬 PAGE 2: 手機對話模式 -->
+            <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                
+                <!-- 對話頂部 Header Bar -->
+                <div class="phone-header">
+                    <button class="nav-link-btn" id="back-to-home-btn">< 首頁</button>
+                    
+                    <div class="phone-header-title" id="topic-switcher-trigger">
+                        <div style="display: flex; align-items: center; gap: 3px;">
+                            <span id="current-topic-title">選擇主題</span>
+                            <span style="font-size: 0.6rem; color: #94a3b8;">▼</span>
+                        </div>
+                        <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
+                    </div>
+
+                    <div id="my-identity-badge-chat" class="identity-badge">👤 載入中</div>
+                </div>
+
+                <!-- 次頂部數據統計欄 -->
+                <div class="phone-sub-bar">
+                    <span>🟢 在線：<strong id="online-users-count-chat">1</strong> 人</span>
+                    <span>|</span>
+                    <span>📜 鄰里人總數：<strong id="total-users-count-chat">0</strong> 人</span>
+                </div>
+
+                <!-- 獨立滾動的訊息對話區 -->
+                <div id="topic-chat-messages" class="phone-chat-messages">
+                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
+                </div>
+
+                <!-- 底部打字發送欄 -->
+                <form id="chat-message-form" class="phone-input-bar">
+                    <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
+                    <button type="submit" class="phone-send-btn">送出</button>
+                </form>
+            </div>
         </div>
-      </header>
-
-      <div class="canvas-wrapper">
-        <canvas id="rpg-canvas" width="384" height="384"></canvas>
-      </div>
-
-      <!-- 下方面板（可自由垂直拉大拉小 resize） -->
-      <section class="split-panel">
-        <div class="panel-tabs-bar">
-          <button class="panel-tab-btn active" data-tab="chat">💬 聊天</button>
-          <button class="panel-tab-btn" data-tab="logs">📚 閱讀</button>
-          <button class="panel-tab-btn" data-tab="guide">📖 指南</button>
-          <button class="panel-tab-btn shopkeeper-only-tab" data-tab="build" style="display:none; color:#fde68a;">🛠️ 佈置</button>
-        </div>
-
-        <!-- 1. 聊天面板 (WhatsApp風格對話視窗) -->
-        <div id="pane-chat" class="pane-content active">
-          <!-- 聊天頂端切換分頁 -->
-          <div class="chat-mode-tabs" style="display:flex; gap:4px; margin-bottom:4px; flex-shrink:0;">
-            <button id="chat-tab-public" class="rpg-btn-sm active" style="flex:1; background:var(--accent-hover); color:#fff; font-size:10px;">📢 公開大廳</button>
-            <button id="chat-tab-dm-list" class="rpg-btn-sm" style="flex:1; background:var(--bg-main); color:#94a3b8; font-size:10px;">🔒 私訊列表</button>
-          </div>
-
-          <!-- 私訊對象標頭 -->
-          <div id="dm-active-header" class="chat-header-sub" style="display:none;">
-            <span id="chat-mode-indicator" class="chat-mode-tag">🔒 專屬私訊</span>
-            <button id="back-to-dm-list-btn" class="rpg-btn-sm" style="font-size:9px;">返回私訊列表</button>
-          </div>
-
-          <!-- 訊息顯示框 (WhatsApp 綠背景與氣泡) -->
-          <div id="chat-messages" class="chat-messages-box whatsapp-style">
-            <div class="chat-welcome">✨ 點擊線上玩家頭像可發起私人對話或查看記錄！</div>
-          </div>
-
-          <!-- 私訊列表清單容器 -->
-          <div id="dm-list-container" class="chat-messages-box whatsapp-style" style="display:none;">
-            <div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！</div>
-          </div>
-
-          <form id="chat-form" class="chat-input-row" style="margin-top:4px;">
-            <input type="text" id="chat-input" placeholder="說點什麼..." maxlength="80" autocomplete="off" />
-            <button type="submit" class="chat-send-btn">發送</button>
-          </form>
-        </div>
-
-        <!-- 2. 閱讀記錄面板 -->
-        <div id="pane-logs" class="pane-content" style="display:none;">
-          <div class="logs-header-sub">
-            <span>📖 個人閱讀清單與書摘</span>
-            <button id="log-quick-add-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff;">➕ 新增記錄</button>
-          </div>
-          <div id="log-list-container" class="logs-list-box"></div>
-        </div>
-
-        <!-- 3. 圖示指南說明面板 -->
-        <div id="pane-guide" class="pane-content" style="display:none;">
-          <div class="logs-header-sub"><span>📖 空間物件與圖示指南</span></div>
-          <div id="guide-content-box" class="logs-list-box"></div>
-        </div>
-
-        <!-- 4. 店主佈置工具列面板 -->
-        <div id="pane-build" class="pane-content" style="display:none;">
-          <div class="logs-header-sub"><span>🛠️ 店主佈置工具列</span></div>
-          <div class="build-palette" style="display:flex; flex-wrap:wrap; gap:4px; align-items:center; overflow-y:auto; flex:1;">
-            <button class="tool-btn active" data-tool="move">🚶 移動</button>
-            <button class="tool-btn" data-tool="seat">🪑 木椅</button>
-            <button class="tool-btn" data-tool="shelf">📚 書架</button>
-            <button class="tool-btn" data-tool="table">🪵 共讀桌</button>
-            <div id="custom-tools-container" style="display:inline-flex; gap:4px; flex-wrap:wrap;"></div>
-            <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新增物件/NPC</button>
-          </div>
-        </div>
-      </section>
-
-      <footer class="rpg-footer">
-        <div style="font-size:11px; color:#94a3b8;">空間客舍 SLOW PACE STUDIO</div>
-        <div class="action-dock">
-          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background: var(--accent-color, #38bdf8); color:#0f172a; font-weight:bold;">🚶 起立</button>
-        </div>
-      </footer>
     </main>
-  </div>
 
-  <style is:global>
-    :root {
-      --bg-main: #0f172a;
-      --bg-card: #1e293b;
-      --border-color: #334155;
-      --accent-color: #38bdf8;
-      --accent-hover: #0284c7;
-      --accent-light: #e0f2fe;
+    <!-- 📖 彈窗：社群源由 -->
+    <div id="modal-origin" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1200; padding:1rem;">
+        <div style="background:#fafcfd; border:1.5px solid #cbd5e1; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.4rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">🌱 「客舍萬事屋」源由</h3>
+                <button class="modal-close-btn" data-target="modal-origin" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <p style="font-size: 0.775rem; color: #475569; line-height: 1.6;">
+                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。除了任務委託之外，這裡提供了一個專屬於居民的自由對話角落，讓大家能在此分享點滴、互相串聯。
+            </p>
+            <button class="btn-blue modal-close-btn" data-target="modal-origin" style="padding:0.4rem; font-size:0.8rem;">了解</button>
+        </div>
+    </div>
 
-      /* WhatsApp 配色變數 */
-      --wa-bg: #0b141a;
-      --wa-bubble-me: #005c4b;
-      --wa-bubble-other: #202c33;
-    }
+    <!-- 📖 彈窗：鄰里守則 -->
+    <div id="modal-rules" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1200; padding:1rem;">
+        <div style="background:#fafcfd; border:1.5px solid #cbd5e1; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.4rem;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📜 鄰里公約 (使用守則)</h3>
+                <button class="modal-close-btn" data-target="modal-rules" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <ul style="font-size: 0.775rem; color: #475569; line-height: 1.6; padding-left: 1.1rem; display:flex; flex-direction:column; gap:0.35rem;">
+                <li><strong>友善溫暖交流</strong>：請保持尊重與包容，嚴禁言語攻擊。</li>
+                <li><strong>維護資訊安全</strong>：請勿散播他人私隱或未授權廣告。</li>
+                <li><strong>私密主題密碼</strong>：有密碼保護的主題請勿擅自外流。</li>
+            </ul>
+            <button class="btn-blue modal-close-btn" data-target="modal-rules" style="padding:0.4rem; font-size:0.8rem;">我已瞭解</button>
+        </div>
+    </div>
 
-    [data-theme="green"] {
-      --bg-main: #064e3b;
-      --bg-card: #065f46;
-      --border-color: #047857;
-      --accent-color: #34d399;
-      --accent-hover: #059669;
-      --accent-light: #d1fae5;
-    }
+    <!-- 📌 彈窗：對話模式中的主題切換清單 -->
+    <div id="topic-switcher-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem;">
+        <div style="background:#fafcfd; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:360px; max-height:80vh; display:flex; flex-direction:column; gap:0.75rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #334155;">📌 切換討論主題</h3>
+                <button id="close-topic-switcher" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+            </div>
+            <div id="topics-switcher-list-container" style="overflow-y:auto; flex:1;"></div>
+        </div>
+    </div>
 
-    [data-theme="purple"] {
-      --bg-main: #3b0764;
-      --bg-card: #581c87;
-      --border-color: #7e22ce;
-      --accent-color: #c084fc;
-      --accent-hover: #9333ea;
-      --accent-light: #f3e8ff;
-    }
+    <!-- 📌 彈窗：主理人新增主題 -->
+    <div id="topic-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1100; padding:1rem;">
+        <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:320px; display:flex; flex-direction:column; gap:0.75rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📌 新增討論主題</h3>
+            <form id="create-topic-form" style="display:flex; flex-direction:column; gap:0.6rem;">
+                <div>
+                    <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">主題名稱</label>
+                    <input type="text" id="new-topic-title" required class="input-field" placeholder="例如: 🔒 核心幹部基地">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">主題簡介</label>
+                    <input type="text" id="new-topic-desc" class="input-field" placeholder="簡短描述">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; font-weight:bold; color:#2563eb;">進入密碼 (選填)</label>
+                    <input type="password" id="new-topic-password" class="input-field" placeholder="留空代表公開">
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.25rem;">
+                    <input type="checkbox" id="new-topic-anonymous" style="width:16px; height:16px; cursor:pointer;">
+                    <label for="new-topic-anonymous" style="font-size:0.75rem; font-weight:bold; color:#1e293b; cursor:pointer;">
+                        🕵️ 發起匿名限時主題（對話將保留 24 小時）
+                    </label>
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
+                    <button type="button" id="cancel-topic-modal" style="flex:1; padding:0.4rem; background:#f1f5f9; border:none; border-radius:0.6rem; font-weight:bold; cursor:pointer; font-size:0.8rem;">取消</button>
+                    <button type="submit" class="btn-blue" style="flex:1; padding:0.4rem; font-size:0.8rem;">確認建立</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; }
-
-    html, body {
-      background-color: #020617;
-      color: #cbd5e1;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0; padding: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; touch-action: manipulation;
-    }
-
-    .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: #020617; }
-    .rpg-container {
-      width: 100vw; max-width: 414px; height: 100vh; height: 100dvh;
-      display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box;
-      background-color: var(--bg-main); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.3s ease;
-    }
-
-    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .rpg-window { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-    
-    .embed-window { max-width: 390px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
-    .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
-    .embed-iframe { width: 100%; height: 100%; border: none; }
-
-    /* 下方面板：支援滑鼠或觸控垂直調整大小 (Resize) */
-    .split-panel {
-      flex: 0 0 30vh;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-card);
-      border-top: 2px solid var(--accent-hover);
-      border-bottom: 1px solid var(--border-color);
-      min-height: 120px;
-      max-height: 65vh;
-      resize: vertical;
-      overflow: hidden;
-    }
-    .panel-tabs-bar { display: flex; background: var(--bg-main); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
-    .panel-tab-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 6px; font-size: 11px; cursor: pointer; font-weight: 500; text-align: center; }
-    .panel-tab-btn.active { color: var(--accent-color); background: var(--bg-card); border-bottom: 2px solid var(--accent-color); }
-
-    .pane-content { flex: 1; display: flex; flex-direction: column; padding: 6px 10px; min-height: 0; overflow: hidden; }
-    .pane-content.active { display: flex; }
-
-    .chat-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10px; flex-shrink: 0; }
-    .chat-mode-tag { color: var(--accent-color); font-weight: bold; }
-
-    /* WhatsApp 風格視窗與氣泡配置 */
-    .chat-messages-box.whatsapp-style {
-      flex: 1;
-      padding: 8px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      font-size: 11px;
-      background: var(--wa-bg);
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      margin-bottom: 4px;
-      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
-      background-size: 8px 8px;
-    }
-
-    .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 4px; }
-    
-    .chat-msg-bubble {
-      max-width: 85%;
-      padding: 6px 10px;
-      border-radius: 8px;
-      line-height: 1.4;
-      word-break: break-all;
-      position: relative;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-
-    .chat-msg-bubble.me {
-      align-self: flex-end;
-      background: var(--wa-bubble-me);
-      color: #e9edef;
-      border-top-right-radius: 0;
-    }
-
-    .chat-msg-bubble.other {
-      align-self: flex-start;
-      background: var(--wa-bubble-other);
-      color: #e9edef;
-      border-top-left-radius: 0;
-    }
-
-    .chat-msg-bubble.pm {
-      border: 1px dashed #c084fc;
-    }
-
-    .chat-msg-header {
-      font-size: 10px;
-      font-weight: bold;
-      color: #00a884;
-      margin-bottom: 2px;
-    }
-    .chat-msg-bubble.me .chat-msg-header {
-      color: #53bdeb;
-    }
-
-    .chat-msg-time {
-      font-size: 9px;
-      color: #8696a0;
-      float: right;
-      margin-left: 8px;
-      margin-top: 3px;
-    }
-
-    .chat-input-row { display: flex; gap: 6px; flex-shrink: 0; }
-    .chat-input-row input { flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 6px 10px; font-size: 11px; border-radius: 20px; outline: none; }
-    .chat-send-btn { background: #00a884; color: #f8fafc; border: none; padding: 0 12px; font-size: 11px; border-radius: 20px; cursor: pointer; font-weight: bold; }
-    .chat-send-btn:hover { background: #008f6f; }
-
-    .logs-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #94a3b8; font-weight: bold; flex-shrink: 0; }
-    .logs-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-
-    .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid var(--border-color); }
-    .rpg-content { padding: 18px; }
-    .rpg-text { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.5; }
-    
-    .avatar-selector-label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
-    .avatar-selector-group { display: flex; gap: 10px; margin-bottom: 14px; }
-    .avatar-card { flex: 1; background: var(--bg-main); border: 2px solid var(--border-color); border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .avatar-card input { display: none; }
-    .avatar-card input:checked + img, .avatar-card input:checked ~ .avatar-fallback { border-color: var(--accent-color); }
-    .avatar-card input:checked ~ .avatar-name { color: var(--accent-color); font-weight: bold; }
-    .avatar-card img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; border-radius: 4px; background: var(--bg-card); padding: 2px; }
-    .avatar-fallback { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 4px; font-size: 12px; color: var(--accent-color); }
-    .avatar-name { font-size: 11px; color: #cbd5e1; }
-
-    .rpg-window input[type="text"], .rpg-window input[type="number"], .rpg-window input[type="email"], .rpg-window input[type="password"] { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
-    .role-selector-group { display: flex; gap: 6px; margin-bottom: 14px; }
-    .role-chip { background: var(--bg-main); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 16px; font-size: 11px; cursor: pointer; color: #cbd5e1; }
-    .role-chip input { margin-right: 4px; accent-color: var(--accent-color); }
-    .rpg-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
-    .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
-    .rpg-btn-group { display: flex; gap: 8px; }
-
-    .rpg-hud { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
-    .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .hud-brand { font-weight: 600; color: var(--accent-color); }
-    .hud-right { display: flex; align-items: center; gap: 6px; }
-    .online-indicator { color: #34d399; }
-    .user-tag { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 8px; font-size: 10px; color: var(--accent-color); }
-    
-    .hud-mid-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    
-    .theme-select-dropdown { background: var(--bg-main); color: var(--accent-color); border: 1px solid var(--border-color); padding: 3px 6px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; }
-    .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
-    .rpg-btn-sm.active { background: var(--accent-hover); color: #fff; border-color: var(--accent-hover); }
-    
-    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 2px; overflow: hidden; min-height: 0; }
-    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
-
-    .rpg-footer { background: var(--bg-card); border-top: 1px solid var(--border-color); padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 5px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
-    .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
-    .action-dock { display: flex; align-items: center; gap: 6px; }
-  </style>
-
-  <script>
-    import { createClient } from '@supabase/supabase-js';
+    <!-- JavaScript 邏輯 -->
+    <script>
+import { createClient } from '@supabase/supabase-js';
 
     const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const TABLE_NAME = 'slowpace_members';
-    const MSG_TABLE_NAME = 'slowsplace_messages';
-    const ITEMS_TABLE = 'slowsplace_items';
-    const ROOMS_TABLE = 'slowsplace_rooms';
 
-    let userId: string | null = null;
-    let playerName = '冒險者';
-    let playerRole = '☁️ 讀者';
-    let playerAvatar = '/assets/player1.png';
-    let playerTier = '鄰里人';
-    let playerGx = 2;
-    let playerGy = 2;
-    let currentTool = 'move';
-    let currentRoom = 'study';
-    let isDND = false;
-    let currentTask = '';
-
-    let myReadingLogs: { book: string; author: string; quote: string; review: string; current: number; total: number; date: string }[] = JSON.parse(localStorage.getItem('rpg_my_logs') || '[]');
-
-    let currentChatMode = 'public'; // 'public' | 'dmlist' | 'dm'
-    let activeDmUserId: string | null = null;
-    let activeDmUserName: string | null = null;
-
-    let moveQueue: { gx: number; gy: number }[] = [];
-    let moveTimer = 0;
-    let onlinePlayers: Record<string, any> = {};
-    let roomItems: any[] = [];
-    let activeTableData: any = null;
-
-    let customRooms: { key: string; name: string; bgImg: string; gridSize: number }[] = [
-      { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
-      { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
-      { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
-    ];
-
-    let currentGridSize = 12;
-    let currentBgImg = '';
-
-    function updateCurrentRoomConfig() {
-      const r = customRooms.find(rc => rc.key === currentRoom);
-      if (r) {
-        currentGridSize = r.gridSize || 12;
-        currentBgImg = r.bgImg || '';
-      } else {
-        currentGridSize = 12;
-        currentBgImg = '';
-      }
-    }
-    updateCurrentRoomConfig();
-
-    let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string; openType: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
-
-    // ==========================================
-    // 區塊一：身分驗證、初始化與登入狀態管理
-    // ==========================================
-    const modal = document.getElementById('rpg-modal');
-    const logoutBtn = document.getElementById('logout-btn');
-    const hudName = document.getElementById('hud-name');
-    const hudTierTag = document.getElementById('hud-tier-tag');
-
-    async function initAuthCheck() {
-      const guestId = sessionStorage.getItem('space_guest_id');
-
-      if (guestId) {
-        userId = guestId;
-        playerName = sessionStorage.getItem('space_guest_name') || '訪客';
-        playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
-        if (modal) modal.style.display = 'none';
-        if (hudName) hudName.textContent = playerName;
-        if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
-        await startAppSession();
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-          userId = session.user.id;
-          if (modal) modal.style.display = 'none';
-          await loadUserProfile(userId);
-          await startAppSession();
-        } else {
-          if (modal) modal.style.display = 'flex';
-        }
-      }
-    }
-
-// 監聽來自 iframe (/login) 的登入成功訊息
-    window.addEventListener('message', async (event) => {
-      // 處理訪客登入成功
-      if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-        userId = event.data.guestId;
-        playerName = event.data.name;
-        playerAvatar = event.data.avatar;
-        if (modal) modal.style.display = 'none';
-        if (hudName) hudName.textContent = playerName;
-        if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
-        await startAppSession();
-      }
-      
-      // 處理一般會員登入成功
-      if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-        if (modal) modal.style.display = 'none';
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-          userId = session.user.id;
-          await loadUserProfile(userId);
-          await startAppSession();
-        }
-      }
-    });
-
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-        userId = session.user.id;
-        if (modal) modal.style.display = 'none';
-        await loadUserProfile(userId);
-        await startAppSession();
-      }
-    });
-
-    async function loadUserProfile(uId: string) {
-      const { data } = await supabase.from(TABLE_NAME).select('*').eq('user_id', uId).single();
-      if (data) {
-        playerName = data.name || '冒險者';
-        playerRole = data.role || '☁️ 讀者';
-        playerAvatar = data.avatar || '/assets/player1.png';
-        playerTier = data.tier || '鄰里人';
-        if (hudName) hudName.textContent = playerName;
-        if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
-        if (playerTier === '店主') {
-          if (shopkeeperTab) shopkeeperTab.style.display = 'block';
-          shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
-        }
-      }
-    }
-
-    async function handleLeaveAndCleanup() {
-      const currentGuestId = sessionStorage.getItem('space_guest_id');
-      if (currentGuestId) {
-        await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-        sessionStorage.clear();
-      }
-      await supabase.auth.signOut();
-      localStorage.clear();
-      window.location.reload();
-    }
-
-    logoutBtn?.addEventListener('click', async () => {
-      await handleLeaveAndCleanup();
-    });
-
-    window.addEventListener('beforeunload', () => {
-      const currentGuestId = sessionStorage.getItem('space_guest_id');
-      if (currentGuestId) {
-        supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-      }
-    });
-
-
-    // ==========================================
-    // 區塊二：雲端同步、資料庫與聊天通訊
-    // ==========================================
-    const onlineCountSpan = document.getElementById('online-count');
-    const chatMessagesBox = document.getElementById('chat-messages');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    const chatTabPublic = document.getElementById('chat-tab-public');
-    const chatTabDmList = document.getElementById('chat-tab-dm-list');
-    const dmActiveHeader = document.getElementById('dm-active-header');
-    const dmListContainer = document.getElementById('dm-list-container') as HTMLElement;
-    const backToDmListBtn = document.getElementById('back-to-dm-list-btn');
-    const chatModeIndicator = document.getElementById('chat-mode-indicator');
-
-    async function startAppSession() {
-      await fetchRooms();
-      await syncMyStateToDB();
-      await fetchOnlinePlayers();
-      await fetchRoomItems();
-      await fetchMessages();
-      initDatabaseRealtime();
-      gameLoop();
-    }
-
-    async function syncMyStateToDB() {
-      if (!userId) return;
-      await supabase.from(TABLE_NAME).upsert({
-        user_id: userId,
-        name: playerName,
-        role: playerRole,
-        tier: playerTier,
-        avatar: playerAvatar,
-        room: currentRoom,
-        gx: playerGx,
-        gy: playerGy,
-        is_dnd: isDND,
-        task: currentTask,
-        reading_log: myReadingLogs,
-        updated_at: new Date()
-      }, { onConflict: 'user_id' });
-    }
-
-    async function fetchOnlinePlayers() {
-      const fifteenSecondsAgo = new Date(Date.now() - 15000).toISOString();
-      const { data } = await supabase
-        .from(TABLE_NAME)
-        .select('*')
-        .eq('room', currentRoom)
-        .gte('updated_at', fifteenSecondsAgo);
-
-      if (data) {
-        onlinePlayers = {};
-        let count = 0;
-        data.forEach((p: any) => {
-          if (p.user_id !== userId) onlinePlayers[p.user_id] = p;
-          count++;
-        });
-        if (onlineCountSpan) onlineCountSpan.textContent = String(count);
-      } else {
-        onlinePlayers = {};
-        if (onlineCountSpan) onlineCountSpan.textContent = "1";
-      }
-    }
-
-    async function fetchRoomItems() {
-      const { data } = await supabase.from(ITEMS_TABLE).select('*').eq('room', currentRoom);
-      roomItems = data || [];
-    }
-
-    async function fetchMessages() {
-      const { data } = await supabase
-        .from(MSG_TABLE_NAME)
-        .select('*')
-        .eq('room', currentRoom)
-        .order('created_at', { ascending: true })
-        .limit(60);
-
-      if (data && chatMessagesBox && currentChatMode !== 'dmlist') {
-        let html = '';
-        data.forEach(m => {
-          const isPM = m.target_id !== null;
-          const isMe = m.sender_id === userId;
-          const timeStr = new Date(m.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-          if (currentChatMode === 'public') {
-            if (!isPM) {
-              html += `
-                <div class="chat-msg-bubble ${isMe ? 'me' : 'other'}">
-                  ${!isMe ? `<div class="chat-msg-header">${m.sender_name}</div>` : ''}
-                  <span class="chat-msg-text">${m.message}</span>
-                  <span class="chat-msg-time">${timeStr}</span>
-                </div>
-              `;
-            }
-          } else if (currentChatMode === 'dm' && activeDmUserId) {
-            const isRelevant = 
-              (m.sender_id === userId && m.target_id === activeDmUserId) ||
-              (m.sender_id === activeDmUserId && m.target_id === userId);
-
-            if (isRelevant) {
-              html += `
-                <div class="chat-msg-bubble ${isMe ? 'me' : 'other'} pm">
-                  ${!isMe ? `<div class="chat-msg-header">${m.sender_name} (私訊)</div>` : ''}
-                  <span class="chat-msg-text">${m.message}</span>
-                  <span class="chat-msg-time">${timeStr}</span>
-                </div>
-              `;
-            }
-          }
-        });
-
-        if (html === '') {
-          html = `<div class="chat-welcome">${currentChatMode === 'dm' ? `與 ${activeDmUserName} 的對話尚為空白` : '目前沒有公開訊息'}</div>`;
-        }
-
-        chatMessagesBox.innerHTML = html;
-        chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
-      }
-    }
-
-    function initDatabaseRealtime() {
-      supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
-        fetchOnlinePlayers();
-      }).subscribe();
-
-      supabase.channel('item-changes').on('postgres_changes', { event: '*', schema: 'public', table: ITEMS_TABLE }, () => {
-        fetchRoomItems();
-      }).subscribe();
-
-      supabase.channel('room-changes').on('postgres_changes', { event: '*', schema: 'public', table: ROOMS_TABLE }, () => {
-        fetchRooms();
-      }).subscribe();
-
-      supabase.channel('chat-changes').on('postgres_changes', { event: 'INSERT', schema: 'public', table: MSG_TABLE_NAME }, (payload) => {
-        if (payload.new && payload.new.room === currentRoom) {
-          fetchMessages();
-          if (currentChatMode === 'dmlist') renderDmList();
-        }
-      }).subscribe();
-
-      setInterval(() => { syncMyStateToDB(); fetchOnlinePlayers(); fetchRoomItems(); }, 5000);
-    }
-
-    chatForm?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = chatInput?.value.trim();
-      if (!text) return;
-
-      const targetId = (currentChatMode === 'dm') ? activeDmUserId : null;
-      const targetName = (currentChatMode === 'dm') ? activeDmUserName : null;
-
-      await supabase.from(MSG_TABLE_NAME).insert({
-        room: currentRoom,
-        sender_id: userId,
-        sender_name: playerName,
-        target_id: targetId,
-        target_name: targetName,
-        message: text
-      });
-
-      if (chatInput) chatInput.value = '';
-      fetchMessages();
-    });
-
-
-    // ==========================================
-    // 區塊三：畫布渲染、遊戲迴圈與碰撞邏輯
-    // ==========================================
-    const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
-    const ctx = canvas?.getContext('2d');
-    const leaveSeatBtn = document.getElementById('btn-leave-seat');
-
-    const imageCache: Record<string, HTMLImageElement> = {};
-    const imageFailed: Record<string, boolean> = {};
-
-    function getLoadedImage(src: string): HTMLImageElement | null {
-      if (!src || src.trim() === '') return null;
-      if (imageFailed[src]) return null;
-      if (!imageCache[src]) {
-        const img = new Image();
-        img.onerror = () => { imageFailed[src] = true; };
-        img.src = src;
-        imageCache[src] = img;
-      }
-      return imageFailed[src] ? null : imageCache[src];
-    }
-
-    function getPlayerAtCell(gx: number, gy: number) {
-      return Object.values(onlinePlayers).find((p: any) => p.gx === gx && p.gy === gy);
-    }
-
-    function isCellSolidBlocked(gx: number, gy: number): boolean {
-      if (gx < 0 || gx >= currentGridSize || gy < 0 || gy >= currentGridSize) return true;
-      for (const item of roomItems) {
-        const iw = item.w || 1;
-        const ih = item.h || 1;
-        if (gx >= item.gx && gx < item.gx + iw && gy >= item.gy && gy < item.gy + ih) return true;
-      }
-      return false;
-    }
-
-    function draw() {
-      if (!ctx || !canvas) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      const tileSize = canvas.width / currentGridSize;
-
-      const bgImgObj = getLoadedImage(currentBgImg);
-      if (bgImgObj && bgImgObj.complete && bgImgObj.naturalWidth !== 0) {
-        ctx.drawImage(bgImgObj, 0, 0, canvas.width, canvas.height);
-      } else {
-        const theme = document.documentElement.getAttribute('data-theme') || 'blue';
-        const bgMap: Record<string, string> = { blue: '#0f172a', green: '#064e3b', purple: '#3b0764' };
-        ctx.fillStyle = bgMap[theme] || '#0f172a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += tileSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
-      for (let y = 0; y < canvas.height; y += tileSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-
-      moveTimer++;
-      if (moveQueue.length > 0 && moveTimer % 8 === 0) {
-        const nextStep = moveQueue.shift()!;
-        if (!isCellSolidBlocked(nextStep.gx, nextStep.gy)) {
-          playerGx = nextStep.gx;
-          playerGy = nextStep.gy;
-          syncMyStateToDB();
-        } else { moveQueue = []; }
-      }
-
-      roomItems.forEach(item => {
-        const px = item.gx * tileSize;
-        const py = item.gy * tileSize;
-        const iw = (item.w || 1) * tileSize;
-        const ih = (item.h || 1) * tileSize;
-
-        const img = getLoadedImage(item.img_src);
-        if (img && img.complete && img.naturalWidth !== 0) {
-          ctx.drawImage(img, px, py, iw, ih);
-        } else {
-          ctx.fillStyle = item.type === 'table' ? '#b45309' : '#334155';
-          ctx.fillRect(px + 2, py + 2, iw - 4, ih - 4);
-        }
-      });
-
-      Object.values(onlinePlayers).forEach((op: any) => {
-        const px = op.gx * tileSize + tileSize / 2;
-        const py = op.gy * tileSize + tileSize / 2;
-        const opImg = getLoadedImage(op.avatar || '/assets/player2.png');
-        if (opImg && opImg.complete && opImg.naturalWidth !== 0) {
-          ctx.drawImage(opImg, px - 16, py - 16, 32, 32);
-        } else {
-          ctx.fillStyle = '#10b981';
-          ctx.fillRect(px - 12, py - 12, 24, 24);
-        }
-        ctx.fillStyle = '#34d399';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(op.name, px, py + 26);
-        ctx.textAlign = 'left';
-      });
-
-      const pScreenX = playerGx * tileSize + tileSize / 2;
-      const pScreenY = playerGy * tileSize + tileSize / 2;
-      const playerImg = getLoadedImage(playerAvatar);
-      if (playerImg && playerImg.complete && playerImg.naturalWidth !== 0) {
-        ctx.drawImage(playerImg, pScreenX - 16, pScreenY - 16, 32, 32);
-      } else {
-        ctx.fillStyle = isDND ? '#10b981' : '#38bdf8';
-        ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
-      }
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(playerName, pScreenX, pScreenY + 26);
-      ctx.textAlign = 'left';
-    }
-
-    function gameLoop() {
-      draw();
-      requestAnimationFrame(gameLoop);
-    }
-
-
-    // ==========================================
-    // 區塊四：UI 互動、Modal 彈窗與事件監聽
-    // ==========================================
-    const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
-    const openRoomModalBtn = document.getElementById('open-room-modal-btn');
-    const deleteRoomBtn = document.getElementById('delete-room-btn') as HTMLButtonElement;
-    const roomSettingsModal = document.getElementById('room-settings-modal');
-    const rsCancelBtn = document.getElementById('rs-cancel-btn');
-    const rsConfirmBtn = document.getElementById('rs-confirm-btn');
-    const rsRoomKey = document.getElementById('rs-room-key') as HTMLInputElement;
-    const rsRoomName = document.getElementById('rs-room-name') as HTMLInputElement;
-    const rsBgImg = document.getElementById('rs-bg-img') as HTMLInputElement;
-    const rsGridSize = document.getElementById('rs-grid-size') as HTMLInputElement;
-
-    const seatModal = document.getElementById('seat-modal');
-    const libraryModal = document.getElementById('library-modal');
-    const libraryCloseBtn = document.getElementById('library-close-btn');
-
-    const playerActionModal = document.getElementById('player-action-modal');
-    const pamTitle = document.getElementById('pam-title');
-    const pamChatBtn = document.getElementById('pam-chat-btn');
-    const pamLogsBtn = document.getElementById('pam-logs-btn');
-    const pamCancelBtn = document.getElementById('pam-cancel-btn');
-    let selectedPeer: any = null;
-
-    const customModalFrame = document.getElementById('custom-modal-frame');
-    const customModalClose = document.getElementById('custom-modal-close');
-    const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
-    const customModalTitle = document.getElementById('custom-modal-title');
-
-    const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
-    const authorInput = document.getElementById('rpg-author-input') as HTMLInputElement;
-    const currentPageInput = document.getElementById('rpg-current-page') as HTMLInputElement;
-    const totalPageInput = document.getElementById('rpg-total-page') as HTMLInputElement;
-    const quoteInput = document.getElementById('rpg-quote-input') as HTMLTextAreaElement;
-    const reviewInput = document.getElementById('rpg-review-input') as HTMLTextAreaElement;
-    const confirmSeatBtn = document.getElementById('seat-confirm-btn');
-    const cancelSeatBtn = document.getElementById('seat-cancel-btn');
-
-    const panelTabBtns = document.querySelectorAll('.panel-tab-btn');
-    const paneChat = document.getElementById('pane-chat');
-    const paneLogs = document.getElementById('pane-logs');
-    const paneGuide = document.getElementById('pane-guide');
-    const paneBuild = document.getElementById('pane-build');
-    const logListContainer = document.getElementById('log-list-container');
-    const logQuickAddBtn = document.getElementById('log-quick-add-btn');
-    const guideContentBox = document.getElementById('guide-content-box');
-    const shopkeeperTab = document.querySelector('.shopkeeper-only-tab') as HTMLElement;
-    const shopkeeperBtns = document.querySelectorAll('.shopkeeper-only-btn');
-
-    const detailModal = document.getElementById('log-detail-modal');
-    const detailCloseBtn = document.getElementById('detail-close-btn');
-    const detailContent = document.getElementById('detail-content');
-
-    const peerModal = document.getElementById('peer-modal');
-    const peerCloseBtn = document.getElementById('peer-close-btn');
-    const peerModalTitle = document.getElementById('peer-modal-title');
-    const peerContentBox = document.getElementById('peer-content-box');
-
-    const tableModal = document.getElementById('table-modal');
-    const tableModalTitle = document.getElementById('table-modal-title');
-    const tableFormView = document.getElementById('table-form-view');
-    const tableInfoView = document.getElementById('table-info-view');
-    const tableBook = document.getElementById('table-book') as HTMLInputElement;
-    const tableAuthor = document.getElementById('table-author') as HTMLInputElement;
-    const tableMax = document.getElementById('table-max') as HTMLInputElement;
-    const tableDate = document.getElementById('table-date') as HTMLInputElement;
-    const tableCreateBtn = document.getElementById('table-create-btn');
-    const tableJoinBtn = document.getElementById('table-join-btn');
-    const tableEndBtn = document.getElementById('table-end-btn') as HTMLButtonElement;
-    const tableCancelBtn = document.getElementById('table-cancel-btn');
-    const tableInfoClose = document.getElementById('table-info-close');
-    const tableDetails = document.getElementById('table-details');
-
-    const cfModal = document.getElementById('custom-furniture-modal');
-    const openCfModalBtn = document.getElementById('open-cf-modal-btn');
-    const cfCancelBtn = document.getElementById('cf-cancel-btn');
-    const cfConfirmBtn = document.getElementById('cf-confirm-btn');
-    const cfNameInput = document.getElementById('cf-name') as HTMLInputElement;
-    const cfImgInput = document.getElementById('cf-img') as HTMLInputElement;
-    const cfLinkInput = document.getElementById('cf-link') as HTMLInputElement;
-    const cfOpenTypeSelect = document.getElementById('cf-open-type') as HTMLSelectElement;
-    const cfDescInput = document.getElementById('cf-desc') as HTMLTextAreaElement;
-    const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
-    const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
-    const customToolsContainer = document.getElementById('custom-tools-container');
-    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-
-    let pendingSeat: { gx: number; gy: number; label: string } | null = null;
-    let pendingTableItem: any = null;
-
-    async function fetchRooms() {
-      const { data } = await supabase.from(ROOMS_TABLE).select('*');
-      if (data && data.length > 0) {
-        customRooms = data.map((r: any) => ({
-          key: r.room_key,
-          name: r.room_name,
-          bgImg: r.bg_img || '',
-          gridSize: r.grid_size || 12
-        }));
-      } else {
-        const defaults = [
-          { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
-          { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
-          { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
-        ];
-        for (const dr of defaults) {
-          await supabase.from(ROOMS_TABLE).upsert({
-            room_key: dr.key,
-            room_name: dr.name,
-            bg_img: dr.bgImg,
-            grid_size: dr.gridSize
-          }, { onConflict: 'room_key' });
-        }
-        customRooms = defaults;
-      }
-      renderRoomDropdown();
-      updateCurrentRoomConfig();
-    }
-
-    function renderRoomDropdown() {
-      if (!roomSelectDropdown) return;
-      let html = '';
-      customRooms.forEach(rc => {
-        const selected = rc.key === currentRoom ? 'selected' : '';
-        html += `<option value="${rc.key}" ${selected}>${rc.name}</option>`;
-      });
-      roomSelectDropdown.innerHTML = html;
-
-      if (playerTier === '店主' && currentRoom !== 'study' && currentRoom !== 'chat' && currentRoom !== 'salon') {
-        if (deleteRoomBtn) deleteRoomBtn.style.display = 'inline-block';
-      } else {
-        if (deleteRoomBtn) deleteRoomBtn.style.display = 'none';
-      }
-    }
-
-    roomSelectDropdown?.addEventListener('change', async (e) => {
-      const target = e.target as HTMLSelectElement;
-      currentRoom = target.value;
-      updateCurrentRoomConfig();
-      isDND = false;
-      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-      playerGx = 1; playerGy = 1;
-      moveQueue = [];
-      renderRoomDropdown();
-      await syncMyStateToDB();
-      await fetchOnlinePlayers();
-      await fetchRoomItems();
-      await fetchMessages();
-    });
-
-    openRoomModalBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'flex'; });
-    rsCancelBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'none'; });
-
-    rsConfirmBtn?.addEventListener('click', async () => {
-      const key = rsRoomKey?.value.trim();
-      const name = rsRoomName?.value.trim();
-      const bgImg = rsBgImg?.value.trim() || '';
-      const gridSize = parseInt(rsGridSize?.value) || 12;
-
-      if (!key || !name) { alert('請填寫房間代碼與顯示名稱'); return; }
-
-      const { error } = await supabase.from(ROOMS_TABLE).upsert({
-        room_key: key,
-        room_name: name,
-        bg_img: bgImg,
-        grid_size: gridSize
-      }, { onConflict: 'room_key' });
-
-      if (error) { alert('建立房間失敗：' + error.message); return; }
-
-      await fetchRooms();
-      if (roomSettingsModal) roomSettingsModal.style.display = 'none';
-      rsRoomKey.value = ''; rsRoomName.value = ''; rsBgImg.value = '';
-
-      currentRoom = key;
-      updateCurrentRoomConfig();
-      playerGx = 1; playerGy = 1;
-      renderRoomDropdown();
-      await syncMyStateToDB();
-      await fetchOnlinePlayers();
-      await fetchRoomItems();
-      await fetchMessages();
-      alert(`成功建立並切換至「${name}」！`);
-    });
-
-    deleteRoomBtn?.addEventListener('click', async () => {
-      if (currentRoom === 'study' || currentRoom === 'chat' || currentRoom === 'salon') {
-        alert('預設房間無法刪除！');
-        return;
-      }
-
-      if (confirm(`確定要刪除當前房間嗎？`)) {
-        await supabase.from(ROOMS_TABLE).delete().eq('room_key', currentRoom);
-        await supabase.from(ITEMS_TABLE).delete().eq('room', currentRoom);
-
-        currentRoom = 'study';
-        updateCurrentRoomConfig();
-        playerGx = 1; playerGy = 1;
-        await fetchRooms();
-        await fetchOnlinePlayers();
-        await fetchRoomItems();
-        await fetchMessages();
-        alert('房間已刪除。');
-      }
-    });
-
-    function renderCustomToolsUI() {
-      if (!customToolsContainer) return;
-      let html = '';
-      customFurnitureTypes.forEach(cf => {
-        html += `<button class="tool-btn" data-tool="${cf.type}">${cf.label}</button>`;
-      });
-      customToolsContainer.innerHTML = html;
-      bindToolButtons();
-    }
-
-    function bindToolButtons() {
-      document.querySelectorAll('.tool-btn').forEach(btn => {
-        btn.replaceWith(btn.cloneNode(true));
-      });
-      document.querySelectorAll('.tool-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-          const target = e.currentTarget as HTMLElement;
-          target.classList.add('active');
-          currentTool = target.dataset.tool!;
-        });
-      });
-    }
-
-    openCfModalBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'flex'; });
-    cfCancelBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'none'; });
-
-    cfConfirmBtn?.addEventListener('click', () => {
-      const name = cfNameInput?.value.trim();
-      const img = cfImgInput?.value.trim();
-      const link = cfLinkInput?.value.trim() || '';
-      const openType = cfOpenTypeSelect?.value || 'current';
-      const description = cfDescInput?.value.trim() || '無詳細說明';
-      const w = parseInt(cfWInput?.value) || 1;
-      const h = parseInt(cfHInput?.value) || 1;
-
-      if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
-
-      const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
-      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img, description, link, openType });
-      localStorage.setItem('rpg_custom_furnitures', JSON.stringify(customFurnitureTypes));
-
-      renderCustomToolsUI();
-      if (cfModal) cfModal.style.display = 'none';
-      cfNameInput.value = ''; cfImgInput.value = ''; cfLinkInput.value = ''; cfDescInput.value = '';
-      alert(`成功新增「${name}」！`);
-    });
-
-    function renderGuideContent() {
-      if (!guideContentBox) return;
-      if (roomItems.length === 0) {
-        guideContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件。</div>';
-        return;
-      }
-      let html = '';
-      roomItems.forEach(item => {
-        const isTable = item.type === 'table';
-        html += `
-          <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-            <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
-            <div style="flex:1;">
-              <div style="font-weight:bold; color:var(--accent-color);">${item.label} ${isTable ? '(🪵共讀桌)' : ''}</div>
-              <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
-            </div>
-          </div>
-        `;
-      });
-      guideContentBox.innerHTML = html;
-    }
-
-    panelTabBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        panelTabBtns.forEach(b => b.classList.remove('active'));
-        const target = e.currentTarget as HTMLElement;
-        target.classList.add('active');
-        const tab = target.dataset.tab;
+        let allUserRecords = [];
+        let topics = [];
+        let activeTopicId = null;
+        let chatSubscription = null;
+        let presenceChannel = null;
+        let unlockedTopics = {};
+        let isAdmin = false;
         
-        if (paneChat) paneChat.style.display = 'none';
-        if (paneLogs) paneLogs.style.display = 'none';
-        if (paneGuide) paneGuide.style.display = 'none';
-        if (paneBuild) paneBuild.style.display = 'none';
+        // 用於儲存登入後的使用者資訊
+        let userId = null;
+        let playerName = '訪客';
+        let playerAvatar = '/assets/player1.png';
 
-        if (tab === 'chat') { if (paneChat) paneChat.style.display = 'flex'; }
-        else if (tab === 'logs') { if (paneLogs) paneLogs.style.display = 'flex'; renderMyLogs(); }
-        else if (tab === 'guide') { if (paneGuide) paneGuide.style.display = 'flex'; renderGuideContent(); }
-        else if (tab === 'build') { if (paneBuild) paneBuild.style.display = 'flex'; }
-      });
-    });
-
-    logQuickAddBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'flex'; });
-
-    function renderMyLogs() {
-      if (!logListContainer) return;
-      if (myReadingLogs.length === 0) {
-        logListContainer.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:15px;">目前尚無閱讀記錄</div>';
-        return;
-      }
-      let html = '';
-      myReadingLogs.forEach((item, index) => {
-        html += `
-          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
-            <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;">
-              <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book}》</span>
-              <span style="font-size:12px; color:#cbd5e1;">作者：${item.author}</span>
-            </div>
-          </div>
-        `;
-      });
-      logListContainer.innerHTML = html;
-
-      document.querySelectorAll('.log-item-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          const idx = Number((e.currentTarget as HTMLElement).dataset.index);
-          const log = myReadingLogs[idx];
-          if (detailContent) {
-            detailContent.innerHTML = `
-              <p style="font-size:14px;"><strong>書名：</strong>《${log.book}》</p>
-              <p style="font-size:13px;"><strong>作者：</strong>${log.author}</p>
-              <p style="font-size:13px;"><strong>閱讀進度：</strong>第 ${log.current} / ${log.total} 頁</p>
-              <p style="font-size:13px;"><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
-              <p style="font-size:13px;"><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
-              <p style="font-size:11px; color:#64748b; text-align:right;">記錄日期：${log.date}</p>
-            `;
-          }
-          if (detailModal) detailModal.style.display = 'flex';
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initAuthCheck();
+            fetchAllUserRecordsFromSupabase();
+            initPresenceTracker();
+            if (window.lucide) lucide.createIcons();
+            initEventListeners();
         });
-      });
-    }
 
-    detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
-    peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
-    customModalClose?.addEventListener('click', () => { if (customModalFrame) customModalFrame.style.display = 'none'; });
-    pamCancelBtn?.addEventListener('click', () => { if (playerActionModal) playerActionModal.style.display = 'none'; });
+// ==========================================
+        // 區塊一：身分驗證、初始化與登入狀態管理
+        // ==========================================
+        const modal = document.getElementById('rpg-modal');
+        const hudName = document.getElementById('my-identity-badge-home');
+        const hudTierTag = document.getElementById('my-identity-badge-chat');
 
-    pamLogsBtn?.addEventListener('click', () => {
-      if (selectedPeer) {
-        if (playerActionModal) playerActionModal.style.display = 'none';
-        openPeerLogs(selectedPeer.name, selectedPeer.role, selectedPeer.reading_log || []);
-      }
-    });
+        async function initAuthCheck() {
+            const guestId = sessionStorage.getItem('space_guest_id');
 
-    function openPeerLogs(peerName: string, peerRole: string, peerLogs: any[]) {
-      if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
-      if (peerContentBox) {
-        if (!peerLogs || peerLogs.length === 0) {
-          peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">這位書友目前還沒有新增閱讀記錄。</div>';
-        } else {
-          let html = '';
-          peerLogs.forEach((item: any) => {
-            html += `
-              <div style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-                <div style="font-weight:bold; color:var(--accent-color);">《${item.book}》 / ${item.author}</div>
-                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current}/${item.total} 頁</div>
-              </div>
-            `;
-          });
-          peerContentBox.innerHTML = html;
+            if (guestId) {
+                userId = guestId;
+                playerName = sessionStorage.getItem('space_guest_name') || '訪客';
+                playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
+                
+                // 確保強制關閉
+                if (modal) modal.style.display = 'none';
+                updateUserUI(playerName);
+                await checkAdminStatus(); // 👈 檢查是否為主理人
+                await startAppSession();
+            } else {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && session.user) {
+                    userId = session.user.id;
+                    
+                    // 確保強制關閉
+                    if (modal) modal.style.display = 'none';
+                    await loadUserProfile(userId);
+                    await checkAdminStatus(); // 👈 檢查是否為主理人
+                    await startAppSession();
+                } else {
+                    // 只有在真的一點登入狀態都沒有時才顯示彈窗
+                    if (modal) modal.style.display = 'flex';
+                }
+            }
         }
-      }
-      if (peerModal) peerModal.style.display = 'flex';
-    }
 
-    themeSelect?.addEventListener('change', (e) => {
-      const selected = (e.target as HTMLSelectElement).value;
-      document.documentElement.setAttribute('data-theme', selected);
-      localStorage.setItem('rpg_theme', selected);
-    });
-
-    libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
-
-    chatTabPublic?.addEventListener('click', () => {
-      currentChatMode = 'public';
-      activeDmUserId = null; activeDmUserName = null;
-      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
-      if (dmListContainer) dmListContainer.style.display = 'none';
-      if (chatTabPublic) { chatTabPublic.style.background = 'var(--accent-hover)'; chatTabPublic.style.color = '#fff'; }
-      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
-      fetchMessages();
-    });
-
-    chatTabDmList?.addEventListener('click', () => {
-      currentChatMode = 'dmlist';
-      activeDmUserId = null;
-      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
-      if (dmListContainer) dmListContainer.style.display = 'flex';
-      if (chatTabDmList) { chatTabDmList.style.background = 'var(--accent-hover)'; chatTabDmList.style.color = '#fff'; }
-      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
-      renderDmList();
-    });
-
-    backToDmListBtn?.addEventListener('click', () => {
-      activeDmUserId = null; activeDmUserName = null;
-      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
-      if (dmListContainer) dmListContainer.style.display = 'flex';
-      renderDmList();
-    });
-
-    function openDmWithUser(uId: string, uName: string) {
-      currentChatMode = 'dm';
-      activeDmUserId = uId; activeDmUserName = uName;
-      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
-      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
-      if (dmListContainer) dmListContainer.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
-      if (dmActiveHeader) dmActiveHeader.style.display = 'flex';
-      if (chatModeIndicator) chatModeIndicator.textContent = `🔒 與 ${uName} 的專屬私訊`;
-      fetchMessages();
-    }
-
-    async function renderDmList() {
-      const { data } = await supabase.from(MSG_TABLE_NAME).select('*').eq('room', currentRoom).or(`sender_id.eq.${userId},target_id.eq.${userId}`);
-      if (!data || data.length === 0) {
-        dmListContainer.innerHTML = '<div class="chat-welcome">目前沒有進行中的私訊。</div>';
-        return;
-      }
-      const dmUsersMap: Record<string, string> = {};
-      data.forEach((m: any) => {
-        if (m.target_id !== null) {
-          if (m.sender_id === userId) dmUsersMap[m.target_id] = m.target_name || '未知書友';
-          else if (m.target_id === userId) dmUsersMap[m.sender_id] = m.sender_name || '未知書友';
-        }
-      });
-      let html = '';
-      const uIds = Object.keys(dmUsersMap);
-      if (uIds.length === 0) html = '<div class="chat-welcome">尚無私訊記錄。</div>';
-      else {
-        uIds.forEach(uId => {
-          const uName = dmUsersMap[uId];
-          html += `<div class="dm-user-card" data-uid="${uId}" data-uname="${uName}" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;"><span style="font-weight:bold; color:var(--accent-color);">🔒 ${uName}</span></div>`;
-        });
-      }
-      dmListContainer.innerHTML = html;
-      document.querySelectorAll('.dm-user-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLElement;
-          openDmWithUser(target.dataset.uid!, target.dataset.uname!);
-        });
-      });
-    }
-
-    pamChatBtn?.addEventListener('click', () => {
-      if (selectedPeer) {
-        openDmWithUser(selectedPeer.user_id, selectedPeer.name);
-        if (playerActionModal) playerActionModal.style.display = 'none';
-      }
-    });
-
-    // 畫布點擊事件
-    canvas?.addEventListener('click', async (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const clickX = (e.clientX - rect.left) * scaleX;
-      const clickY = (e.clientY - rect.top) * scaleY;
-
-      const tileSize = canvas.width / currentGridSize;
-      const targetGx = Math.floor(clickX / tileSize);
-      const targetGy = Math.floor(clickY / tileSize);
-
-      if (currentTool === 'move') {
-        const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
-        if (hitTable) {
-          activeTableData = hitTable;
-          pendingTableItem = hitTable;
-          if (!hitTable.book_title || hitTable.book_title === '') {
-            if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
-            if (tableFormView) tableFormView.style.display = 'block';
-            if (tableInfoView) tableInfoView.style.display = 'none';
-            if (tableModal) tableModal.style.display = 'flex';
+        // 檢查當前登入者是否為主理人
+    async function checkAdminStatus() {
+        if (!userId) {
+            isAdmin = false;
             return;
-          }
-          if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
-          if (tableFormView) tableFormView.style.display = 'none';
-          if (tableInfoView) tableInfoView.style.display = 'block';
-          if (tableModal) tableModal.style.display = 'flex';
-          return;
         }
 
-        const hitPlayer = getPlayerAtCell(targetGx, targetGy);
-        if (hitPlayer) {
-          selectedPeer = hitPlayer;
-          if (pamTitle) pamTitle.textContent = `👤 ${hitPlayer.name} (${hitPlayer.role})`;
-          if (playerActionModal) playerActionModal.style.display = 'flex';
-          return;
+        try {
+            // 查詢 slowpace_members 裡該使用者的身分
+            const { data, error } = await supabase
+                .from('slowpace_members')
+                .select('*')
+                .eq('user_id', userId)
+                .single();
+
+            if (error) throw error;
+
+            // 判斷條件：假設資料表中 role 等於 '主理人' 或者是指定管理員
+            if (data && (data.role === '主理人' || data.role === 'admin')) {
+                isAdmin = true;
+                document.getElementById('admin-logged-out')?.classList.add('hidden');
+                document.getElementById('admin-logged-in')?.classList.remove('hidden');
+                document.getElementById('btn-add-topic')?.classList.remove('hidden');
+                renderTopicsList();
+                alert("🟢 偵測到主理人身分，權限已自動解鎖！");
+            } else {
+                isAdmin = false;
+            }
+        } catch (err) {
+            console.error("檢查主理人權限失敗:", err.message);
+            isAdmin = false;
+        }
+    }
+        // 監聽來自 iframe (/login) 的登入成功訊息
+        window.addEventListener('message', async (event) => {
+            const modalEl = document.getElementById('rpg-modal');
+
+            // 處理訪客登入成功
+            if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+                userId = event.data.guestId;
+                playerName = event.data.name;
+                playerAvatar = event.data.avatar;
+                
+                // 💡 強制關閉彈窗
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden'); // 雙重保險，配合 hidden class
+                }
+
+                updateUserUI(playerName);
+                await startAppSession();
+            }
+            
+            // 處理一般會員登入成功
+            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+                // 💡 強制關閉彈窗
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden');
+                }
+
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && session.user) {
+                    userId = session.user.id;
+                    await loadUserProfile(userId);
+                    await startAppSession();
+                }
+            }
+        });
+
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            const modalEl = document.getElementById('rpg-modal');
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+                userId = session.user.id;
+                
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden');
+                }
+                
+                await loadUserProfile(userId);
+                await startAppSession();
+            }
+        });
+
+        function updateUserUI(name) {
+            const homeBadge = document.getElementById('my-identity-badge-home');
+            const chatBadge = document.getElementById('my-identity-badge-chat');
+            if (homeBadge) homeBadge.textContent = `👤 ${name}`;
+            if (chatBadge) chatBadge.textContent = `👤 ${name}`;
         }
 
-        const hitShelf = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
-        if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
-
-        const hitSeat = roomItems.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
-        if (hitSeat) {
-          pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
-          if (seatModal) seatModal.style.display = 'flex';
-        } else {
-          if (!isCellSolidBlocked(targetGx, targetGy)) {
-            moveQueue = [];
-            let currX = playerGx; let currY = playerGy;
-            while (currX !== targetGx) { currX += currX < targetGx ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-            while (currY !== targetGy) { currY += currY < targetGy ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-            if (isDND) { isDND = false; if (leaveSeatBtn) leaveSeatBtn.style.display = 'none'; }
-          }
+        async function loadUserProfile(uid) {
+            try {
+                const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+                if (data) {
+                    playerName = data.name || data.full_name || '會員';
+                    updateUserUI(playerName);
+                }
+            } catch (err) {
+                console.error("載入使用者檔案失敗", err);
+            }
         }
+
+        async function startAppSession() {
+            fetchTopics();
+        }
+
+        // ==========================================
+        // 區塊二：其他聊天室與應用邏輯
+        // ==========================================
+        async function fetchAllUserRecordsFromSupabase() {
+            try {
+                const { data, error } = await supabase.from('alluser_record').select('*');
+                if (error) throw error;
+                allUserRecords = data || [];
+                const totalCount = allUserRecords.length;
+                document.getElementById('total-users-count-home').textContent = totalCount;
+                document.getElementById('total-users-count-chat').textContent = totalCount;
+            } catch (err) { console.error("讀取用戶紀錄失敗:", err.message); }
+        }
+
+        function initPresenceTracker() {
+            if (presenceChannel) supabase.removeChannel(presenceChannel);
+
+            presenceChannel = supabase.channel('community-online-room', {
+                config: { presence: { key: userId || 'anonymous' } }
+            });
+
+            presenceChannel
+                .on('presence', { event: 'sync' }, () => {
+                    const state = presenceChannel.presenceState();
+                    const onlineCount = Object.keys(state).length || 1;
+                    document.getElementById('online-users-count-home').textContent = onlineCount;
+                    document.getElementById('online-users-count-chat').textContent = onlineCount;
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await presenceChannel.track({ name: playerName, online_at: new Date().toISOString() });
+                    }
+                });
+        }
+
+
+        import { logoutAndCleanGuest } from '../utils/auth';
+
+    // 當使用者點擊確認切換身分或登出時
+    async function confirmSwitchIdentity() {
+      const currentName = sessionStorage.getItem('space_guest_name') || '使用者';
+      if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
+        // 直接呼叫共用函式，自動刪除資料庫訪客並登出
+        await logoutAndCleanGuest();
       }
+    }
+
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+      await logoutAndCleanGuest();
     });
 
-    confirmSeatBtn?.addEventListener('click', async () => {
-      if (pendingSeat) {
-        playerGx = pendingSeat.gx; playerGy = pendingSeat.gy;
-        moveQueue = [];
-        const bookName = bookInput?.value.trim() || '閱讀中';
-        const authorName = authorInput?.value.trim() || '佚名';
-        const currentP = parseInt(currentPageInput?.value) || 1;
-        const totalP = parseInt(totalPageInput?.value) || 100;
-        isDND = true;
-        myReadingLogs.unshift({ book: bookName, author: authorName, quote: quoteInput?.value.trim() || '', review: reviewInput?.value.trim() || '', current: currentP, total: totalP, date: new Date().toLocaleDateString() });
-        localStorage.setItem('rpg_my_logs', JSON.stringify(myReadingLogs));
-        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
-        if (seatModal) seatModal.style.display = 'none';
-        await syncMyStateToDB();
-      }
-    });
-    cancelSeatBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
+        async function fetchTopics() {
+            try {
+                const { data, error } = await supabase
+                    .from('chat_topics')
+                    .select('*')
+                    .order('sort_order', { ascending: true })
+                    .order('created_at', { ascending: false });
 
-    leaveSeatBtn?.addEventListener('click', async () => {
-      isDND = false;
-      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) playerGy += 1;
-      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-      await syncMyStateToDB();
-    });
+                if (error) throw error;
+                topics = data || [];
+                renderTopicsList();
+            } catch (err) { console.error("讀取主題失敗:", err.message); }
+        }
 
-    tableCreateBtn?.addEventListener('click', async () => {
-      const book = tableBook?.value.trim();
-      const author = tableAuthor?.value.trim();
-      const maxM = parseInt(tableMax?.value) || 3;
-      const date = tableDate?.value;
-      if (!book || !date) { alert('請完整填寫書名與完讀日期'); return; }
-      if (pendingTableItem) {
-        await supabase.from(ITEMS_TABLE).update({ book_title: book, author: author || '佚名', finish_date: date, max_members: maxM, host_id: userId, host_name: playerName, members: [{ id: userId, name: playerName }] }).eq('id', pendingTableItem.id);
-      }
-      if (tableModal) tableModal.style.display = 'none';
-      fetchRoomItems();
-    });
+        window.moveTopicOrder = async function(event, topicId, direction) {
+            event.stopPropagation();
+            const index = topics.findIndex(t => String(t.id) === String(topicId));
+            if (index === -1) return;
 
-    tableJoinBtn?.addEventListener('click', async () => {
-      if (!activeTableData) return;
-      const members = activeTableData.members || [];
-      members.push({ id: userId, name: playerName });
-      await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
-      if (tableModal) tableModal.style.display = 'none';
-      fetchRoomItems();
-    });
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= topics.length) {
+                alert("已經到底囉，無法再移動！");
+                return;
+            }
 
-    tableEndBtn?.addEventListener('click', async () => {
-      if (!activeTableData) return;
-      await supabase.from(ITEMS_TABLE).update({ book_title: '', author: '', finish_date: '', max_members: 3, host_id: '', host_name: '', members: [] }).eq('id', activeTableData.id);
-      if (tableModal) tableModal.style.display = 'none';
-      fetchRoomItems();
-    });
+            const currentTopic = topics[index];
+            const targetTopic = topics[targetIndex];
 
-    tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
-    tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+            let newCurrentOrder = targetTopic.sort_order ?? targetIndex;
+            let newTargetOrder = currentTopic.sort_order ?? index;
 
-    // 啟動身分檢查
-    initAuthCheck();
-  </script>
+            if (newCurrentOrder === newTargetOrder) {
+                newCurrentOrder = direction === 'up' ? newTargetOrder - 1 : newTargetOrder + 1;
+            }
+
+            try {
+                const { error: err1 } = await supabase.from('chat_topics').update({ sort_order: newCurrentOrder }).eq('id', currentTopic.id);
+                const { error: err2 } = await supabase.from('chat_topics').update({ sort_order: newTargetOrder }).eq('id', targetTopic.id);
+
+                if (err1 || err2) throw (err1 || err2);
+                fetchTopics();
+            } catch (err) {
+                alert("排序調整失敗: " + err.message);
+            }
+        };
+
+        window.deleteTopic = async function(event, topicId, topicTitle) {
+            event.stopPropagation();
+            if (!confirm(`⚠️ 確定要立即刪除主題「${topicTitle}」嗎？\n此動作會即時清空該主題內的所有對話，且無法復原！`)) return;
+
+            try {
+                const { error } = await supabase.from('chat_topics').delete().eq('id', topicId);
+                if (error) throw error;
+
+                alert("🗑️ 主題與對話紀錄已成功刪除！");
+                if (String(activeTopicId) === String(topicId)) {
+                    backToHome();
+                }
+                fetchTopics();
+            } catch (err) {
+                alert("刪除失敗: " + err.message);
+            }
+        };
+
+        function renderTopicsList() {
+            const container = document.getElementById('topics-list-container');
+            const switcherContainer = document.getElementById('topics-switcher-list-container');
+            
+            const htmlContent = topics.length === 0 
+                ? `<p style="font-size:0.75rem; color:#a09587; text-align:center; padding:1rem;">尚無討論主題</p>`
+                : topics.map((topic, index) => {
+                    const hasPassword = topic.password && topic.password.trim() !== '';
+                    const timeInfo = getTopicTimeRemainingHtml(topic);
+                    const timeRemainingText = timeInfo.text 
+                        ? ` <span style="font-size:0.6rem; background:${timeInfo.expired ? '#f3f4f6' : '#fee2e2'}; color:${timeInfo.expired ? '#6b7280' : '#991b1b'}; padding:1px 4px; border-radius:3px;">${timeInfo.text}</span>` 
+                        : '';
+
+                    const lockIcon = hasPassword ? '🔒 ' : (topic.is_anonymous ? '⏳ ' : '💬 ');
+                    
+                    let adminControls = '';
+                    if (isAdmin) {
+                        const upBtn = index > 0 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'up')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
+                        const downBtn = index < topics.length - 1 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'down')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬇️</button>` : '';
+                        const deleteBtn = `<button onclick="deleteTopic(event, '${topic.id}', '${topic.title}')" style="background:#ef4444; color:white; border:none; padding:1px 5px; border-radius:3px; font-size:0.6rem; cursor:pointer;">刪除</button>`;
+                        
+                        adminControls = `<div style="display:flex; gap:3px; align-items:center;" onclick="event.stopPropagation();">${upBtn}${downBtn}${deleteBtn}</div>`;
+                    }
+
+                    return `
+                        <div onclick="trySelectTopic('${topic.id}')" class="topic-select-card" style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h4 style="font-size: 0.85rem; font-weight: 800; color: #574332; display:flex; align-items:center; gap:4px;">
+                                    ${lockIcon}${topic.title}${timeRemainingText}
+                                </h4>
+                                ${adminControls}
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <p style="font-size: 0.7rem; color: #786858; margin:0;">${topic.description || '無簡介'}</p>
+                                <span style="font-size:0.7rem; color:#3b7a57; font-weight:bold;">進入 〉</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            if (container) container.innerHTML = htmlContent;
+            if (switcherContainer) switcherContainer.innerHTML = htmlContent;
+        }
+
+        window.trySelectTopic = function(topicId) {
+            const topic = topics.find(t => String(t.id) === String(topicId));
+            if (!topic) return;
+
+            if (topic.password && topic.password.trim() !== '' && !unlockedTopics[topicId]) {
+                const inputPwd = prompt(`🔒 主題「${topic.title}」需要密碼：`);
+                if (inputPwd === null) return;
+
+                if (inputPwd.trim() === topic.password.trim()) {
+                    unlockedTopics[topicId] = true;
+                    enterTopicChat(topic);
+                } else {
+                    alert("❌ 密碼錯誤！");
+                }
+            } else {
+                enterTopicChat(topic);
+            }
+        };
+
+        function enterTopicChat(topic) {
+            activeTopicId = topic.id;
+            document.getElementById('current-topic-title').textContent = topic.title;
+
+            const badgeContainer = document.getElementById('current-topic-status-badge');
+            if (badgeContainer) {
+                const timeInfo = getTopicTimeRemainingHtml(topic);
+
+                if (timeInfo.text) {
+                    badgeContainer.innerHTML = timeInfo.text;
+                    badgeContainer.style.background = timeInfo.expired ? '#f3f4f6' : '#fee2e2';
+                    badgeContainer.style.color = timeInfo.expired ? '#6b7280' : '#991b1b';
+                    badgeContainer.style.display = 'inline-block';
+                } else if (topic.is_anonymous) {
+                    badgeContainer.innerHTML = `🕵️ 匿名主題`;
+                    badgeContainer.style.background = '#e0f2fe';
+                    badgeContainer.style.color = '#0369a1';
+                    badgeContainer.style.display = 'inline-block';
+                } else {
+                    badgeContainer.style.display = 'none';
+                }
+            }
+
+            document.getElementById('topic-switcher-modal').classList.add('hidden');
+            document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-chat').classList.remove('hidden');
+
+            loadTopicMessages(topic.id);
+            subscribeToTopicChat(topic.id);
+        }
+
+        function getTopicTimeRemainingHtml(topic) {
+            if (!topic.is_anonymous || !topic.expires_at) return '';
+
+            const now = new Date();
+            const expireDate = new Date(topic.expires_at);
+            const diffMs = expireDate - now;
+
+            if (!isNaN(expireDate.getTime()) && diffMs > 0) {
+                const diffHrs = String(Math.floor(diffMs / (1000 * 60 * 60))).padStart(2, '0');
+                const diffMins = String(Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+                
+                return { text: `⏳ 剩餘 ${diffHrs}小時 ${diffMins}分`, expired: false };
+            } else {
+                return { text: `⏳ 已過期`, expired: true };
+            }
+        }
+
+        function backToHome() {
+            activeTopicId = null;
+            document.getElementById('page-chat').classList.add('hidden');
+            document.getElementById('page-home').classList.remove('hidden');
+        }
+
+        async function loadTopicMessages(topicId) {
+            const container = document.getElementById('topic-chat-messages');
+            if (!container) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('topic_messages')
+                    .select('*')
+                    .eq('topic_id', topicId)
+                    .order('created_at', { ascending: true });
+
+                if (error) throw error;
+                renderTopicMessages(data || []);
+            } catch (err) {
+                container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">載入失敗</p>`;
+            }
+        }
+
+        function renderTopicMessages(messages) {
+            const container = document.getElementById('topic-chat-messages');
+            if (!container) return;
+
+            if (messages.length === 0) {
+                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">開始交流吧！</p>`;
+                return;
+            }
+
+            const currentUserName = playerName || '';
+            const currentTopic = topics.find(t => String(t.id) === String(activeTopicId));
+            const isAnonTopic = currentTopic && currentTopic.is_anonymous;
+
+            container.innerHTML = messages.map(msg => {
+                const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const isSelf = (msg.sender_name === currentUserName);
+
+                const displayName = isAnonTopic 
+                    ? (isSelf ? `我 (匿名)` : getConsistentAnonymousName(msg.sender_name, activeTopicId))
+                    : msg.sender_name;
+
+                if (isSelf) {
+                    return `
+                        <div class="msg-row-self">
+                            <div class="msg-bubble msg-bubble-self">
+                                <div>${msg.content}</div>
+                                <span class="msg-time-stamp">${timeStr}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="msg-row-other">
+                            <div class="msg-bubble msg-bubble-other">
+                                <span class="msg-sender-name">${displayName}</span>
+                                <div>${msg.content}</div>
+                                <span class="msg-time-stamp">${timeStr}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getConsistentAnonymousName(realName, topicId) {
+            let hash = 0;
+            const str = (realName || '居民') + (topicId || '');
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const anonymousNumbers = Math.abs(hash) % 900 + 100;
+            return `🕵️ 匿名居民 #${anonymousNumbers}`;
+        }
+
+        function subscribeToTopicChat(topicId) {
+            if (chatSubscription) supabase.removeChannel(chatSubscription);
+
+            chatSubscription = supabase.channel(`topic-${topicId}`)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'topic_messages', filter: `topic_id=eq.${topicId}` }, () => {
+                    loadTopicMessages(topicId);
+                })
+                .subscribe();
+        }
+
+        // ==========================================
+        // 區塊三：事件綁定初始化
+        // ==========================================
+        function initEventListeners() {
+            // 身分切換點擊
+            document.getElementById('my-identity-badge-home').addEventListener('click', confirmSwitchIdentity);
+            document.getElementById('my-identity-badge-chat').addEventListener('click', confirmSwitchIdentity);
+
+            // 外部連結跳轉
+            document.getElementById('external-link-btn').addEventListener('click', () => {
+                window.open('https://studioslowpace.com/skillsupermarket.html', '_blank');
+            });
+
+            // Logo 切換主理人面板
+            document.getElementById('logo-toggle-btn').addEventListener('click', () => {
+                document.getElementById('admin-navbar').classList.toggle('hidden');
+            });
+
+            // 主理人登入與登出
+            document.getElementById('admin-login-btn').addEventListener('click', () => {
+                if (document.getElementById('admin-password-input').value === defaultPassword) {
+                    isAdmin = true;
+                    document.getElementById('admin-logged-out').classList.add('hidden');
+                    document.getElementById('admin-logged-in').classList.remove('hidden');
+                    document.getElementById('btn-add-topic').classList.remove('hidden');
+                    renderTopicsList();
+                    alert("🟢 主理人權限已解鎖！");
+                } else { alert("密碼錯誤"); }
+            });
+
+            document.getElementById('admin-logout-btn').addEventListener('click', () => {
+                isAdmin = false;
+                document.getElementById('admin-logged-out').classList.remove('hidden');
+                document.getElementById('admin-logged-in').classList.add('hidden');
+                document.getElementById('btn-add-topic').classList.add('hidden');
+                renderTopicsList();
+            });
+
+            // 資訊彈窗開關
+            document.querySelectorAll('.info-trigger-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-modal');
+                    document.getElementById(targetId).classList.remove('hidden');
+                });
+            });
+
+            document.querySelectorAll('.modal-close-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+                    document.getElementById(targetId).classList.add('hidden');
+                });
+            });
+
+            // 新增主題按鈕與 Modal
+            document.getElementById('btn-add-topic').addEventListener('click', () => {
+                document.getElementById('topic-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('cancel-topic-modal').addEventListener('click', () => {
+                document.getElementById('topic-modal').classList.add('hidden');
+            });
+
+            document.getElementById('create-topic-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const title = document.getElementById('new-topic-title').value.trim();
+                const desc = document.getElementById('new-topic-desc').value.trim();
+                const password = document.getElementById('new-topic-password').value.trim();
+                const isAnon = document.getElementById('new-topic-anonymous').checked;
+
+                if (!title) return;
+
+                let expiresAt = null;
+                if (isAnon) {
+                    const now = new Date();
+                    now.setHours(now.getHours() + 24);
+                    expiresAt = now.toISOString();
+                }
+
+                try {
+                    const { error } = await supabase.from('chat_topics').insert([{ 
+                        title: isAnon ? `⏳ [限時] ${title}` : title, 
+                        description: desc, 
+                        password: password,
+                        is_anonymous: isAnon,
+                        expires_at: expiresAt
+                    }]);
+                    if (error) throw error;
+
+                    document.getElementById('topic-modal').classList.add('hidden');
+                    document.getElementById('new-topic-title').value = '';
+                    document.getElementById('new-topic-desc').value = '';
+                    document.getElementById('new-topic-password').value = '';
+                    document.getElementById('new-topic-anonymous').checked = false;
+                    
+                    fetchTopics();
+                    alert(isAnon ? "⏳ 已成功發起匿名限時討論區（將於 24 小時後自動銷毀）！" : "📌 成功建立新討論主題！");
+                } catch (err) { alert("建立失敗: " + err.message); }
+            });
+
+            // 對話中切換主題 Modal
+            document.getElementById('topic-switcher-trigger').addEventListener('click', () => {
+                document.getElementById('topic-switcher-modal').classList.remove('hidden');
+            });
+
+            document.getElementById('close-topic-switcher').addEventListener('click', () => {
+                document.getElementById('topic-switcher-modal').classList.add('hidden');
+            });
+
+            // 返回首頁
+            document.getElementById('back-to-home-btn').addEventListener('click', backToHome);
+
+            // 發送訊息表單
+            document.getElementById('chat-message-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!activeTopicId) return;
+
+                const contentInput = document.getElementById('chat-input-content');
+                if (!playerName || !contentInput.value.trim()) return;
+
+                try {
+                    const { error } = await supabase.from('topic_messages').insert([{
+                        topic_id: activeTopicId,
+                        sender_name: playerName,
+                        content: contentInput.value.trim()
+                    }]);
+
+                    if (error) throw error;
+                    contentInput.value = '';
+                } catch (err) { alert("發送失敗: " + err.message); }
+            });
+        }
+    </script>
 </Layout>
