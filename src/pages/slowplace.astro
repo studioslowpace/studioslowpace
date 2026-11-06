@@ -4,17 +4,17 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="空間客舍 · 自由佈置空間">
 
- <!-- 1. 登入 / 訪客 Modal (改為內嵌 /login 頁面) -->
-<div id="rpg-modal" class="rpg-modal-overlay">
-  <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
-    <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>◆ 空間客舍 · 身分認證 ◆</span>
-    </div>
-    <div class="embed-frame-wrapper" style="flex:1;">
-      <iframe id="auth-iframe" src="/login" class="embed-iframe"></iframe>
+  <!-- 1. 登入 / 訪客 Modal (內嵌 /login 頁面) -->
+  <div id="rpg-modal" class="rpg-modal-overlay">
+    <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>◆ 空間客舍 · 身分認證 ◆</span>
+      </div>
+      <div class="embed-frame-wrapper" style="flex:1;">
+        <iframe id="auth-iframe" src="/login" class="embed-iframe"></iframe>
+      </div>
     </div>
   </div>
-</div>
 
   <!-- 2. 入座與詳細閱讀設定 Modal -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
@@ -507,9 +507,7 @@ import Layout from '../layouts/Layout.astro';
     const ITEMS_TABLE = 'slowsplace_items';
     const ROOMS_TABLE = 'slowsplace_rooms';
 
-    let authMode = 'login'; // 'login' | 'signup'
     let userId: string | null = null;
-
     let playerName = '冒險者';
     let playerRole = '☁️ 讀者';
     let playerAvatar = '/assets/player1.png';
@@ -556,572 +554,122 @@ import Layout from '../layouts/Layout.astro';
 
     let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string; openType: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
+    // ==========================================
+    // 區塊一：身分驗證、初始化與登入狀態管理
+    // ==========================================
     const modal = document.getElementById('rpg-modal');
-    const authTabLogin = document.getElementById('auth-tab-login');
-    const authTabSignup = document.getElementById('auth-tab-signup');
-    const signupExtraFields = document.getElementById('signup-extra-fields');
-    const authEmailInput = document.getElementById('auth-email') as HTMLInputElement;
-    const authPasswordInput = document.getElementById('auth-password') as HTMLInputElement;
+    const logoutBtn = document.getElementById('logout-btn');
+    const hudName = document.getElementById('hud-name');
+    const hudTierTag = document.getElementById('hud-tier-tag');
 
-    const seatModal = document.getElementById('seat-modal');
-    const libraryModal = document.getElementById('library-modal');
-    const libraryCloseBtn = document.getElementById('library-close-btn');
+    async function initAuthCheck() {
+      const guestId = sessionStorage.getItem('space_guest_id');
 
-    const roomSettingsModal = document.getElementById('room-settings-modal');
-    const openRoomModalBtn = document.getElementById('open-room-modal-btn');
-    const deleteRoomBtn = document.getElementById('delete-room-btn') as HTMLButtonElement;
-    const rsCancelBtn = document.getElementById('rs-cancel-btn');
-    const rsConfirmBtn = document.getElementById('rs-confirm-btn');
-    const rsRoomKey = document.getElementById('rs-room-key') as HTMLInputElement;
-    const rsRoomName = document.getElementById('rs-room-name') as HTMLInputElement;
-    const rsBgImg = document.getElementById('rs-bg-img') as HTMLInputElement;
-    const rsGridSize = document.getElementById('rs-grid-size') as HTMLInputElement;
-    const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
+      if (guestId) {
+        userId = guestId;
+        playerName = sessionStorage.getItem('space_guest_name') || '訪客';
+        playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
+        if (modal) modal.style.display = 'none';
+        if (hudName) hudName.textContent = playerName;
+        if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
+        await startAppSession();
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          userId = session.user.id;
+          if (modal) modal.style.display = 'none';
+          await loadUserProfile(userId);
+          await startAppSession();
+        } else {
+          if (modal) modal.style.display = 'flex';
+        }
+      }
+    }
 
+    // 監聽來自 iframe (/login) 的登入成功訊息
+    window.addEventListener('message', async (event) => {
+      if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+        userId = event.data.guestId;
+        playerName = event.data.name;
+        playerAvatar = event.data.avatar;
+        if (modal) modal.style.display = 'none';
+        if (hudName) hudName.textContent = playerName;
+        if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
+        await startAppSession();
+      }
+    });
+
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        userId = session.user.id;
+        if (modal) modal.style.display = 'none';
+        await loadUserProfile(userId);
+        await startAppSession();
+      }
+    });
+
+    async function loadUserProfile(uId: string) {
+      const { data } = await supabase.from(TABLE_NAME).select('*').eq('user_id', uId).single();
+      if (data) {
+        playerName = data.name || '冒險者';
+        playerRole = data.role || '☁️ 讀者';
+        playerAvatar = data.avatar || '/assets/player1.png';
+        playerTier = data.tier || '鄰里人';
+        if (hudName) hudName.textContent = playerName;
+        if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
+        if (playerTier === '店主') {
+          if (shopkeeperTab) shopkeeperTab.style.display = 'block';
+          shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
+        }
+      }
+    }
+
+    async function handleLeaveAndCleanup() {
+      const currentGuestId = sessionStorage.getItem('space_guest_id');
+      if (currentGuestId) {
+        await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+        sessionStorage.clear();
+      }
+      await supabase.auth.signOut();
+      localStorage.clear();
+      window.location.reload();
+    }
+
+    logoutBtn?.addEventListener('click', async () => {
+      await handleLeaveAndCleanup();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      const currentGuestId = sessionStorage.getItem('space_guest_id');
+      if (currentGuestId) {
+        supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+      }
+    });
+
+
+    // ==========================================
+    // 區塊二：雲端同步、資料庫與聊天通訊
+    // ==========================================
+    const onlineCountSpan = document.getElementById('online-count');
+    const chatMessagesBox = document.getElementById('chat-messages');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
     const chatTabPublic = document.getElementById('chat-tab-public');
     const chatTabDmList = document.getElementById('chat-tab-dm-list');
     const dmActiveHeader = document.getElementById('dm-active-header');
     const dmListContainer = document.getElementById('dm-list-container') as HTMLElement;
     const backToDmListBtn = document.getElementById('back-to-dm-list-btn');
-
-    const playerActionModal = document.getElementById('player-action-modal');
-    const pamTitle = document.getElementById('pam-title');
-    const pamChatBtn = document.getElementById('pam-chat-btn');
-    const pamLogsBtn = document.getElementById('pam-logs-btn');
-    const pamCancelBtn = document.getElementById('pam-cancel-btn');
-    let selectedPeer: any = null;
-
-    const customModalFrame = document.getElementById('custom-modal-frame');
-    const customModalClose = document.getElementById('custom-modal-close');
-    const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
-    const customModalTitle = document.getElementById('custom-modal-title');
-
-    const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
-    const authorInput = document.getElementById('rpg-author-input') as HTMLInputElement;
-    const currentPageInput = document.getElementById('rpg-current-page') as HTMLInputElement;
-    const totalPageInput = document.getElementById('rpg-total-page') as HTMLInputElement;
-    const quoteInput = document.getElementById('rpg-quote-input') as HTMLTextAreaElement;
-    const reviewInput = document.getElementById('rpg-review-input') as HTMLTextAreaElement;
-    const confirmSeatBtn = document.getElementById('seat-confirm-btn');
-    const cancelSeatBtn = document.getElementById('seat-cancel-btn');
-
-    const panelTabBtns = document.querySelectorAll('.panel-tab-btn');
-    const paneChat = document.getElementById('pane-chat');
-    const paneLogs = document.getElementById('pane-logs');
-    const paneGuide = document.getElementById('pane-guide');
-    const paneBuild = document.getElementById('pane-build');
-    const logListContainer = document.getElementById('log-list-container');
-    const logQuickAddBtn = document.getElementById('log-quick-add-btn');
-    const guideContentBox = document.getElementById('guide-content-box');
-    const shopkeeperTab = document.querySelector('.shopkeeper-only-tab') as HTMLElement;
-    const shopkeeperBtns = document.querySelectorAll('.shopkeeper-only-btn');
-
-    const detailModal = document.getElementById('log-detail-modal');
-    const detailCloseBtn = document.getElementById('detail-close-btn');
-    const detailContent = document.getElementById('detail-content');
-
-    const peerModal = document.getElementById('peer-modal');
-    const peerCloseBtn = document.getElementById('peer-close-btn');
-    const peerModalTitle = document.getElementById('peer-modal-title');
-    const peerContentBox = document.getElementById('peer-content-box');
-
-    const tableModal = document.getElementById('table-modal');
-    const tableModalTitle = document.getElementById('table-modal-title');
-    const tableFormView = document.getElementById('table-form-view');
-    const tableInfoView = document.getElementById('table-info-view');
-    const tableBook = document.getElementById('table-book') as HTMLInputElement;
-    const tableAuthor = document.getElementById('table-author') as HTMLInputElement;
-    const tableMax = document.getElementById('table-max') as HTMLInputElement;
-    const tableDate = document.getElementById('table-date') as HTMLInputElement;
-    const tableCreateBtn = document.getElementById('table-create-btn');
-    const tableJoinBtn = document.getElementById('table-join-btn');
-    const tableEndBtn = document.getElementById('table-end-btn') as HTMLButtonElement;
-    const tableCancelBtn = document.getElementById('table-cancel-btn');
-    const tableInfoClose = document.getElementById('table-info-close');
-    const tableDetails = document.getElementById('table-details');
-
-    const cfModal = document.getElementById('custom-furniture-modal');
-    const openCfModalBtn = document.getElementById('open-cf-modal-btn');
-    const cfCancelBtn = document.getElementById('cf-cancel-btn');
-    const cfConfirmBtn = document.getElementById('cf-confirm-btn');
-    const cfNameInput = document.getElementById('cf-name') as HTMLInputElement;
-    const cfImgInput = document.getElementById('cf-img') as HTMLInputElement;
-    const cfLinkInput = document.getElementById('cf-link') as HTMLInputElement;
-    const cfOpenTypeSelect = document.getElementById('cf-open-type') as HTMLSelectElement;
-    const cfDescInput = document.getElementById('cf-desc') as HTMLTextAreaElement;
-    const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
-    const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
-    const customToolsContainer = document.getElementById('custom-tools-container');
-
-    const nameInput = document.getElementById('rpg-name-input') as HTMLInputElement;
-    const startBtn = document.getElementById('rpg-start-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const hudName = document.getElementById('hud-name');
-    const hudTierTag = document.getElementById('hud-tier-tag');
-    const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
-    const ctx = canvas?.getContext('2d');
-    const leaveSeatBtn = document.getElementById('btn-leave-seat');
-    const onlineCountSpan = document.getElementById('online-count');
-    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-
-    const chatMessagesBox = document.getElementById('chat-messages');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
     const chatModeIndicator = document.getElementById('chat-mode-indicator');
 
-    let pendingSeat: { gx: number; gy: number; label: string } | null = null;
-    let pendingTableItem: any = null;
-    let isGameStarted = false;
-
-    const imageCache: Record<string, HTMLImageElement> = {};
-    const imageFailed: Record<string, boolean> = {};
-
-    function getLoadedImage(src: string): HTMLImageElement | null {
-      if (!src || src.trim() === '') return null;
-      if (imageFailed[src]) return null;
-      if (!imageCache[src]) {
-        const img = new Image();
-        img.onerror = () => { imageFailed[src] = true; };
-        img.src = src;
-        imageCache[src] = img;
-      }
-      return imageFailed[src] ? null : imageCache[src];
-    }
-
-    // 登入 / 註冊 Tab 切換邏輯
-    authTabLogin?.addEventListener('click', () => {
-      authMode = 'login';
-      authTabLogin.classList.add('active');
-      authTabSignup?.classList.remove('active');
-      if (signupExtraFields) signupExtraFields.style.display = 'none';
-      if (startBtn) startBtn.textContent = '▶ 進入客舍空間';
-    });
-
-    authTabSignup?.addEventListener('click', () => {
-      authMode = 'signup';
-      authTabSignup.classList.add('active');
-      authTabLogin?.classList.remove('active');
-      if (signupExtraFields) signupExtraFields.style.display = 'flex';
-      if (startBtn) startBtn.textContent = '✨ 完成註冊並進入';
-    });
-
-    // 聊天分頁切換邏輯
-    chatTabPublic?.addEventListener('click', () => {
-      currentChatMode = 'public';
-      activeDmUserId = null;
-      activeDmUserName = null;
-      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
-      if (dmListContainer) dmListContainer.style.display = 'none';
-      if (chatTabPublic) { chatTabPublic.style.background = 'var(--accent-hover)'; chatTabPublic.style.color = '#fff'; }
-      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
-      fetchMessages();
-    });
-
-    chatTabDmList?.addEventListener('click', () => {
-      currentChatMode = 'dmlist';
-      activeDmUserId = null;
-      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
-      if (dmListContainer) dmListContainer.style.display = 'flex';
-      if (chatTabDmList) { chatTabDmList.style.background = 'var(--accent-hover)'; chatTabDmList.style.color = '#fff'; }
-      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
-      renderDmList();
-    });
-
-    backToDmListBtn?.addEventListener('click', () => {
-      activeDmUserId = null;
-      activeDmUserName = null;
-      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
-      if (dmListContainer) dmListContainer.style.display = 'flex';
-      renderDmList();
-    });
-
-    function openDmWithUser(uId: string, uName: string) {
-      currentChatMode = 'dm';
-      activeDmUserId = uId;
-      activeDmUserName = uName;
-
-      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
-      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
-      if (dmListContainer) dmListContainer.style.display = 'none';
-      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
-      if (dmActiveHeader) dmActiveHeader.style.display = 'flex';
-      if (chatModeIndicator) chatModeIndicator.textContent = `🔒 與 ${uName} 的專屬私訊`;
-
-      panelTabBtns.forEach(b => b.classList.remove('active'));
-      document.querySelector('[data-tab="chat"]')?.classList.add('active');
-      if (paneChat) paneChat.style.display = 'flex';
-      if (paneLogs) paneLogs.style.display = 'none';
-      if (paneGuide) paneGuide.style.display = 'none';
-      if (paneBuild) paneBuild.style.display = 'none';
-
-      fetchMessages();
-    }
-
-    async function renderDmList() {
-      const { data } = await supabase
-        .from(MSG_TABLE_NAME)
-        .select('*')
-        .eq('room', currentRoom)
-        .or(`sender_id.eq.${userId},target_id.eq.${userId}`);
-
-      if (!data || data.length === 0) {
-        dmListContainer.innerHTML = '<div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！</div>';
-        return;
-      }
-
-      const dmUsersMap: Record<string, string> = {};
-      data.forEach((m: any) => {
-        if (m.target_id !== null) {
-          if (m.sender_id === userId) {
-            dmUsersMap[m.target_id] = m.target_name || '未知書友';
-          } else if (m.target_id === userId) {
-            dmUsersMap[m.sender_id] = m.sender_name || '未知書友';
-          }
-        }
-      });
-
-      let html = '';
-      const uIds = Object.keys(dmUsersMap);
-      if (uIds.length === 0) {
-        html = '<div class="chat-welcome">尚無私訊記錄。</div>';
-      } else {
-        uIds.forEach(uId => {
-          const uName = dmUsersMap[uId];
-          html += `
-            <div class="dm-user-card" data-uid="${uId}" data-uname="${uName}" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-weight:bold; color:var(--accent-color);">🔒 ${uName}</span>
-              <span style="font-size:10px; color:#94a3b8;">進入對話 ➔</span>
-            </div>
-          `;
-        });
-      }
-      dmListContainer.innerHTML = html;
-
-      document.querySelectorAll('.dm-user-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLElement;
-          openDmWithUser(target.dataset.uid!, target.dataset.uname!);
-        });
-      });
-    }
-
-    pamChatBtn?.addEventListener('click', () => {
-      if (selectedPeer) {
-        openDmWithUser(selectedPeer.user_id, selectedPeer.name);
-        if (playerActionModal) playerActionModal.style.display = 'none';
-      }
-    });
-
-    async function fetchRooms() {
-      const { data } = await supabase.from(ROOMS_TABLE).select('*');
-      if (data && data.length > 0) {
-        customRooms = data.map((r: any) => ({
-          key: r.room_key,
-          name: r.room_name,
-          bgImg: r.bg_img || '',
-          gridSize: r.grid_size || 12
-        }));
-      } else {
-        const defaults = [
-          { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
-          { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
-          { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
-        ];
-        for (const dr of defaults) {
-          await supabase.from(ROOMS_TABLE).upsert({
-            room_key: dr.key,
-            room_name: dr.name,
-            bg_img: dr.bgImg,
-            grid_size: dr.gridSize
-          }, { onConflict: 'room_key' });
-        }
-        customRooms = defaults;
-      }
-      renderRoomDropdown();
-      updateCurrentRoomConfig();
-    }
-
-    function renderRoomDropdown() {
-      if (!roomSelectDropdown) return;
-      let html = '';
-      customRooms.forEach(rc => {
-        const selected = rc.key === currentRoom ? 'selected' : '';
-        html += `<option value="${rc.key}" ${selected}>${rc.name}</option>`;
-      });
-      roomSelectDropdown.innerHTML = html;
-
-      if (playerTier === '店主' && currentRoom !== 'study' && currentRoom !== 'chat' && currentRoom !== 'salon') {
-        if (deleteRoomBtn) deleteRoomBtn.style.display = 'inline-block';
-      } else {
-        if (deleteRoomBtn) deleteRoomBtn.style.display = 'none';
-      }
-    }
-
-    roomSelectDropdown?.addEventListener('change', async (e) => {
-      const target = e.target as HTMLSelectElement;
-      currentRoom = target.value;
-      updateCurrentRoomConfig();
-      isDND = false;
-      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-      playerGx = 1; playerGy = 1;
-      moveQueue = [];
-      renderRoomDropdown();
-      await syncMyStateToDB();
-      await fetchOnlinePlayers();
-      await fetchRoomItems();
-      await fetchMessages();
-    });
-
-    openRoomModalBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'flex'; });
-    rsCancelBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'none'; });
-
-    rsConfirmBtn?.addEventListener('click', async () => {
-      const key = rsRoomKey?.value.trim();
-      const name = rsRoomName?.value.trim();
-      const bgImg = rsBgImg?.value.trim() || '';
-      const gridSize = parseInt(rsGridSize?.value) || 12;
-
-      if (!key || !name) { alert('請填寫房間代碼與顯示名稱'); return; }
-
-      const { error } = await supabase.from(ROOMS_TABLE).upsert({
-        room_key: key,
-        room_name: name,
-        bg_img: bgImg,
-        grid_size: gridSize
-      }, { onConflict: 'room_key' });
-
-      if (error) {
-        alert('建立房間失敗：' + error.message);
-        return;
-      }
-
+    async function startAppSession() {
       await fetchRooms();
-      if (roomSettingsModal) roomSettingsModal.style.display = 'none';
-      rsRoomKey.value = '';
-      rsRoomName.value = '';
-      rsBgImg.value = '';
-
-      currentRoom = key;
-      updateCurrentRoomConfig();
-      playerGx = 1; playerGy = 1;
-      renderRoomDropdown();
       await syncMyStateToDB();
       await fetchOnlinePlayers();
       await fetchRoomItems();
       await fetchMessages();
-      alert(`成功建立並切換至「${name}」！`);
-    });
-
-    deleteRoomBtn?.addEventListener('click', async () => {
-      if (currentRoom === 'study' || currentRoom === 'chat' || currentRoom === 'salon') {
-        alert('預設房間無法刪除！');
-        return;
-      }
-
-      if (confirm(`確定要刪除當前房間嗎？房內的物件與設定將一併清除。`)) {
-        await supabase.from(ROOMS_TABLE).delete().eq('room_key', currentRoom);
-        await supabase.from(ITEMS_TABLE).delete().eq('room', currentRoom);
-
-        currentRoom = 'study';
-        updateCurrentRoomConfig();
-        playerGx = 1; playerGy = 1;
-        await fetchRooms();
-        await fetchOnlinePlayers();
-        await fetchRoomItems();
-        await fetchMessages();
-        alert('房間已刪除，已自動切回自修室。');
-      }
-    });
-
-    function renderCustomToolsUI() {
-      if (!customToolsContainer) return;
-      let html = '';
-      customFurnitureTypes.forEach(cf => {
-        html += `<button class="tool-btn" data-tool="${cf.type}">${cf.label}</button>`;
-      });
-      customToolsContainer.innerHTML = html;
-      bindToolButtons();
+      initDatabaseRealtime();
+      gameLoop();
     }
-
-    function bindToolButtons() {
-      document.querySelectorAll('.tool-btn').forEach(btn => {
-        btn.replaceWith(btn.cloneNode(true));
-      });
-      document.querySelectorAll('.tool-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-          const target = e.currentTarget as HTMLElement;
-          target.classList.add('active');
-          currentTool = target.dataset.tool!;
-        });
-      });
-    }
-
-    openCfModalBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'flex'; });
-    cfCancelBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'none'; });
-
-    cfConfirmBtn?.addEventListener('click', () => {
-      const name = cfNameInput?.value.trim();
-      const img = cfImgInput?.value.trim();
-      const link = cfLinkInput?.value.trim() || '';
-      const openType = cfOpenTypeSelect?.value || 'current';
-      const description = cfDescInput?.value.trim() || '無詳細說明';
-      const w = parseInt(cfWInput?.value) || 1;
-      const h = parseInt(cfHInput?.value) || 1;
-
-      if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
-
-      const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
-      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img, description, link, openType });
-      localStorage.setItem('rpg_custom_furnitures', JSON.stringify(customFurnitureTypes));
-
-      renderCustomToolsUI();
-      if (cfModal) cfModal.style.display = 'none';
-      cfNameInput.value = '';
-      cfImgInput.value = '';
-      cfLinkInput.value = '';
-      cfDescInput.value = '';
-      alert(`成功新增「${name}」！`);
-    });
-
-    function renderGuideContent() {
-      if (!guideContentBox) return;
-      if (roomItems.length === 0) {
-        guideContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件。</div>';
-        return;
-      }
-      let html = '';
-      roomItems.forEach(item => {
-        const isTable = item.type === 'table';
-        html += `
-          <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-            <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
-            <div style="flex:1;">
-              <div style="font-weight:bold; color:var(--accent-color);">${item.label} ${isTable ? '(🪵共讀桌)' : ''}</div>
-              <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
-            </div>
-          </div>
-        `;
-      });
-      guideContentBox.innerHTML = html;
-    }
-
-    panelTabBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        panelTabBtns.forEach(b => b.classList.remove('active'));
-        const target = e.currentTarget as HTMLElement;
-        target.classList.add('active');
-        const tab = target.dataset.tab;
-        
-        if (paneChat) paneChat.style.display = 'none';
-        if (paneLogs) paneLogs.style.display = 'none';
-        if (paneGuide) paneGuide.style.display = 'none';
-        if (paneBuild) paneBuild.style.display = 'none';
-
-        if (tab === 'chat') {
-          if (paneChat) paneChat.style.display = 'flex';
-        } else if (tab === 'logs') {
-          if (paneLogs) paneLogs.style.display = 'flex';
-          renderMyLogs();
-        } else if (tab === 'guide') {
-          if (paneGuide) paneGuide.style.display = 'flex';
-          renderGuideContent();
-        } else if (tab === 'build') {
-          if (paneBuild) paneBuild.style.display = 'flex';
-        }
-      });
-    });
-
-    logQuickAddBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'flex'; });
-
-    function renderMyLogs() {
-      if (!logListContainer) return;
-      if (myReadingLogs.length === 0) {
-        logListContainer.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:15px;">目前尚無閱讀記錄</div>';
-        return;
-      }
-      let html = '';
-      myReadingLogs.forEach((item, index) => {
-        html += `
-          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
-            <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;">
-              <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book}》</span>
-              <span style="font-size:12px; color:#cbd5e1;">作者：${item.author}</span>
-            </div>
-          </div>
-        `;
-      });
-      logListContainer.innerHTML = html;
-
-      document.querySelectorAll('.log-item-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          const idx = Number((e.currentTarget as HTMLElement).dataset.index);
-          const log = myReadingLogs[idx];
-          if (detailContent) {
-            detailContent.innerHTML = `
-              <p style="font-size:14px;"><strong>書名：</strong>《${log.book}》</p>
-              <p style="font-size:13px;"><strong>作者：</strong>${log.author}</p>
-              <p style="font-size:13px;"><strong>閱讀進度：</strong>第 ${log.current} / ${log.total} 頁</p>
-              <p style="font-size:13px;"><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
-              <p style="font-size:13px;"><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
-              <p style="font-size:11px; color:#64748b; text-align:right;">記錄日期：${log.date}</p>
-            `;
-          }
-          if (detailModal) detailModal.style.display = 'flex';
-        });
-      });
-    }
-
-    detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
-    peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
-    customModalClose?.addEventListener('click', () => { if (customModalFrame) customModalFrame.style.display = 'none'; });
-    pamCancelBtn?.addEventListener('click', () => { if (playerActionModal) playerActionModal.style.display = 'none'; });
-
-    pamLogsBtn?.addEventListener('click', () => {
-      if (selectedPeer) {
-        if (playerActionModal) playerActionModal.style.display = 'none';
-        openPeerLogs(selectedPeer.name, selectedPeer.role, selectedPeer.reading_log || []);
-      }
-    });
-
-    function openPeerLogs(peerName: string, peerRole: string, peerLogs: any[]) {
-      if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
-      if (peerContentBox) {
-        if (!peerLogs || peerLogs.length === 0) {
-          peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">這位書友目前還沒有新增閱讀記錄。</div>';
-        } else {
-          let html = '';
-          peerLogs.forEach((item: any) => {
-            html += `
-              <div style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-                <div style="font-weight:bold; color:var(--accent-color);">《${item.book}》 / ${item.author}</div>
-                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current}/${item.total} 頁</div>
-                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">摘：${item.quote}</div>
-                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">感：${item.review}</div>
-              </div>
-            `;
-          });
-          peerContentBox.innerHTML = html;
-        }
-      }
-      if (peerModal) peerModal.style.display = 'flex';
-    }
-
-    const savedTheme = localStorage.getItem('rpg_theme') || 'blue';
-    if (themeSelect) {
-      themeSelect.value = savedTheme;
-      document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-    themeSelect?.addEventListener('change', (e) => {
-      const selected = (e.target as HTMLSelectElement).value;
-      document.documentElement.setAttribute('data-theme', selected);
-      localStorage.setItem('rpg_theme', selected);
-    });
-
-    libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
     async function syncMyStateToDB() {
       if (!userId) return;
@@ -1153,9 +701,7 @@ import Layout from '../layouts/Layout.astro';
         onlinePlayers = {};
         let count = 0;
         data.forEach((p: any) => {
-          if (p.user_id !== userId) {
-            onlinePlayers[p.user_id] = p;
-          }
+          if (p.user_id !== userId) onlinePlayers[p.user_id] = p;
           count++;
         });
         if (onlineCountSpan) onlineCountSpan.textContent = String(count);
@@ -1170,7 +716,6 @@ import Layout from '../layouts/Layout.astro';
       roomItems = data || [];
     }
 
-    /* 渲染 WhatsApp 風格對話訊息 */
     async function fetchMessages() {
       const { data } = await supabase
         .from(MSG_TABLE_NAME)
@@ -1266,380 +811,42 @@ import Layout from '../layouts/Layout.astro';
       fetchMessages();
     });
 
+
+    // ==========================================
+    // 區塊三：畫布渲染、遊戲迴圈與碰撞邏輯
+    // ==========================================
+    const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
+    const ctx = canvas?.getContext('2d');
+    const leaveSeatBtn = document.getElementById('btn-leave-seat');
+
+    const imageCache: Record<string, HTMLImageElement> = {};
+    const imageFailed: Record<string, boolean> = {};
+
+    function getLoadedImage(src: string): HTMLImageElement | null {
+      if (!src || src.trim() === '') return null;
+      if (imageFailed[src]) return null;
+      if (!imageCache[src]) {
+        const img = new Image();
+        img.onerror = () => { imageFailed[src] = true; };
+        img.src = src;
+        imageCache[src] = img;
+      }
+      return imageFailed[src] ? null : imageCache[src];
+    }
+
     function getPlayerAtCell(gx: number, gy: number) {
       return Object.values(onlinePlayers).find((p: any) => p.gx === gx && p.gy === gy);
     }
 
     function isCellSolidBlocked(gx: number, gy: number): boolean {
       if (gx < 0 || gx >= currentGridSize || gy < 0 || gy >= currentGridSize) return true;
-
       for (const item of roomItems) {
         const iw = item.w || 1;
         const ih = item.h || 1;
         if (gx >= item.gx && gx < item.gx + iw && gy >= item.gy && gy < item.gy + ih) return true;
       }
-
       return false;
     }
-
-    // 1. 初始化身分檢查（判斷是否為訪客或已有 Supabase Auth Session）
-  async function initAuthCheck() {
-    const guestId = sessionStorage.getItem('space_guest_id');
-
-    if (guestId) {
-      // 訪客模式登入
-      userId = guestId;
-      await loadUserProfile(userId);
-    } else {
-      // 會員模式登入檢查
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user) {
-        userId = session.user.id;
-        await loadUserProfile(userId);
-      } else {
-        // 未登入：顯示登入彈出視窗
-        if (modal) modal.style.display = 'flex';
-      }
-    }
-  }
-
-  // 2. 監聽 Supabase Auth 登入成功事件 (當 iframe 內完成登入時觸發)
-  supabase.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-      userId = session.user.id;
-      if (modal) modal.style.display = 'none';
-      await loadUserProfile(userId);
-    }
-  });
-
-  // 3. 處理訪客清理與登出/離開
-  async function handleLeaveAndCleanup() {
-    const currentGuestId = sessionStorage.getItem('space_guest_id');
-    
-    if (currentGuestId) {
-      // 訪客離開：即時從 Supabase 資料庫徹底刪除訪客紀錄
-      await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-      sessionStorage.removeItem('space_guest_id');
-    }
-
-    // 一般會員登入：清除 Supabase Auth
-    await supabase.auth.signOut();
-    localStorage.clear();
-    
-    // 重新整理並打開登入 Modal
-    window.location.reload();
-  }
-
-  // 綁定登出 / 離開按鈕
-  logoutBtn?.addEventListener('click', async () => {
-    await handleLeaveAndCleanup();
-  });
-
-  // 當訪客關閉分頁或離開網站時自動刪除資料
-  window.addEventListener('beforeunload', () => {
-    const currentGuestId = sessionStorage.getItem('space_guest_id');
-    if (currentGuestId) {
-      supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-    }
-  });
-
-  // 執行身分驗證檢查
-  initAuthCheck();
-
-    
-
-    bindToolButtons();
-
-    /* 地圖點擊互動判斷 */
-    canvas?.addEventListener('click', async (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const clickX = (e.clientX - rect.left) * scaleX;
-      const clickY = (e.clientY - rect.top) * scaleY;
-
-      const tileSize = canvas.width / currentGridSize;
-      const targetGx = Math.floor(clickX / tileSize);
-      const targetGy = Math.floor(clickY / tileSize);
-
-      if (currentTool === 'move') {
-        // 1. 點擊共讀桌 (開放所有玩家發起共讀)
-        const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
-        if (hitTable) {
-          activeTableData = hitTable;
-          pendingTableItem = hitTable;
-
-          // 空桌時：所有玩家皆可點擊開啟發起表單
-          if (!hitTable.book_title || hitTable.book_title === '') {
-            if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
-            if (tableFormView) tableFormView.style.display = 'block';
-            if (tableInfoView) tableInfoView.style.display = 'none';
-            if (tableModal) tableModal.style.display = 'flex';
-            return;
-          }
-
-          // 已發起的共讀桌：顯示詳情
-          if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
-          if (tableFormView) tableFormView.style.display = 'none';
-          if (tableInfoView) tableInfoView.style.display = 'block';
-
-          const finishDate = new Date(hitTable.finish_date);
-          const now = new Date();
-          const oneDayAfter = new Date(finishDate.getTime() + 24 * 60 * 60 * 1000);
-          const isExpired = now > oneDayAfter;
-          const isHost = hitTable.host_id === userId || playerTier === '店主';
-
-          if (isExpired || isHost) {
-            if (tableEndBtn) tableEndBtn.style.display = 'block';
-          } else {
-            if (tableEndBtn) tableEndBtn.style.display = 'none';
-          }
-
-          let membersList = (hitTable.members || []).map((m: any) => m.name).join(', ') || '尚無';
-          if (tableDetails) {
-            tableDetails.innerHTML = `
-              <p><strong>書名：</strong>《${hitTable.book_title}》</p>
-              <p><strong>作者：</strong>${hitTable.author}</p>
-              <p><strong>發起人：</strong>${hitTable.host_name}</p>
-              <p><strong>預定完讀日期：</strong>${hitTable.finish_date}</p>
-              <p><strong>參與成員 (${(hitTable.members || []).length}/${hitTable.max_members || 3})：</strong>${membersList}</p>
-              ${isExpired ? '<p style="color:#ef4444; font-weight:bold;">⚠️ 此共讀已逾期超過一天可進行結算清空</p>' : ''}
-            `;
-          }
-          if (tableModal) tableModal.style.display = 'flex';
-          return;
-        }
-
-        // 2. 點擊帶有連結的物件
-        const hitLinkedItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.link && item.link.trim() !== '');
-        if (hitLinkedItem) {
-          if (hitLinkedItem.open_type === 'blank') {
-            window.open(hitLinkedItem.link, '_blank');
-          } else if (hitLinkedItem.open_type === 'modal') {
-            if (customModalIframe) customModalIframe.src = hitLinkedItem.link;
-            if (customModalTitle) customModalTitle.textContent = hitLinkedItem.label;
-            if (customModalFrame) customModalFrame.style.display = 'flex';
-          } else {
-            window.location.href = hitLinkedItem.link;
-          }
-          return;
-        }
-
-        // 3. 點擊玩家 avatar
-        const hitPlayer = getPlayerAtCell(targetGx, targetGy);
-        if (hitPlayer) {
-          selectedPeer = hitPlayer;
-          if (pamTitle) pamTitle.textContent = `👤 ${hitPlayer.name} (${hitPlayer.role})`;
-          if (playerActionModal) playerActionModal.style.display = 'flex';
-          return;
-        }
-
-        // 4. 點擊書櫃
-        const hitShelf = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
-        if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
-
-        // 5. 點擊木椅
-        const hitSeat = roomItems.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
-        if (hitSeat) {
-          const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
-          if (isSeatTakenByOther) { alert('這張椅子已經有其他書友入座囉！'); return; }
-
-          pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
-          if (seatModal) seatModal.style.display = 'flex';
-        } else {
-          // 6. 一般行走
-          if (!isCellSolidBlocked(targetGx, targetGy)) {
-            moveQueue = [];
-            let currX = playerGx;
-            let currY = playerGy;
-            while (currX !== targetGx) { currX += currX < targetGx ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-            while (currY !== targetGy) { currY += currY < targetGy ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-            if (isDND) { isDND = false; if (leaveSeatBtn) leaveSeatBtn.style.display = 'none'; }
-          }
-        }
-      } else {
-        // 店主佈置邏輯
-        if (playerTier !== '店主') {
-          alert('權限不足：只有「店主」階層才可編輯館內物件與共讀桌！');
-          return;
-        }
-
-        const existingItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
-        if (existingItem) {
-          if (confirm('確定要刪除此處的物件嗎？')) {
-            await supabase.from(ITEMS_TABLE).delete().eq('id', existingItem.id);
-            fetchRoomItems();
-          }
-          return;
-        }
-
-        let w = 1, h = 1, label = '物件', imgSrc = '/assets/chair.png', description = '無說明', link = '', openType = 'current';
-        if (currentTool === 'shelf') {
-          w = 3; h = 1; label = '書櫃'; imgSrc = '/assets/shelf.png'; description = '客舍館藏書櫃';
-        } else if (currentTool === 'seat') {
-          w = 1; h = 1; label = '木椅'; imgSrc = '/assets/chair.png'; description = '供書友安坐閱讀的椅子';
-        } else if (currentTool === 'table') {
-          w = 2; h = 2; label = '共讀桌'; imgSrc = '/assets/table.png'; description = '書友發起共讀活動的交流桌';
-        } else {
-          const custom = customFurnitureTypes.find(c => c.type === currentTool);
-          if (custom) {
-            w = custom.w;
-            h = custom.h;
-            label = custom.label;
-            imgSrc = custom.imgSrc;
-            description = custom.description;
-            link = custom.link;
-            openType = custom.openType || 'current';
-          }
-        }
-
-        if (targetGx + w > currentGridSize || targetGy + h > currentGridSize) {
-          alert(`物件超出 ${currentGridSize}x${currentGridSize} 範圍！`);
-          return;
-        }
-
-        let hasOverlap = false;
-        for (let x = targetGx; x < targetGx + w; x++) {
-          for (let y = targetGy; y < targetGy + h; y++) {
-            if (isCellSolidBlocked(x, y)) hasOverlap = true;
-          }
-        }
-
-        if (hasOverlap) {
-          alert('此處已有其他傢俱或物件，不可重疊放置！');
-          return;
-        }
-
-        await supabase.from(ITEMS_TABLE).insert({
-          room: currentRoom,
-          type: currentTool,
-          gx: targetGx,
-          gy: targetGy,
-          w,
-          h,
-          label,
-          img_src: imgSrc,
-          description,
-          link,
-          open_type: openType,
-          book_title: '',
-          author: '',
-          finish_date: '',
-          max_members: 3,
-          host_id: '',
-          host_name: '',
-          members: []
-        });
-        fetchRoomItems();
-        alert('物件已放置並同步至雲端！');
-      }
-    });
-
-    tableCreateBtn?.addEventListener('click', async () => {
-      const book = tableBook?.value.trim();
-      const author = tableAuthor?.value.trim();
-      const maxM = parseInt(tableMax?.value) || 3;
-      const date = tableDate?.value;
-
-      if (!book || !date) { alert('請完整填寫書名與完讀日期'); return; }
-
-      if (pendingTableItem) {
-        await supabase.from(ITEMS_TABLE).update({
-          book_title: book,
-          author: author || '佚名',
-          finish_date: date,
-          max_members: maxM,
-          host_id: userId,
-          host_name: playerName,
-          members: [{ id: userId, name: playerName }]
-        }).eq('id', pendingTableItem.id);
-      }
-
-      if (tableModal) tableModal.style.display = 'none';
-      if (tableBook) tableBook.value = '';
-      if (tableAuthor) tableAuthor.value = '';
-      fetchRoomItems();
-      alert('共讀活動已成功發起！');
-    });
-
-    tableJoinBtn?.addEventListener('click', async () => {
-      if (!activeTableData) return;
-      const members = activeTableData.members || [];
-      const maxLimit = activeTableData.max_members || 3;
-      if (members.length >= maxLimit) { alert(`此共讀桌人數已滿（上限 ${maxLimit} 人）！`); return; }
-      if (members.some((m: any) => m.id === userId)) { alert('你已經加入過這個共讀桌了！'); return; }
-
-      members.push({ id: userId, name: playerName });
-      await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
-
-      if (tableModal) tableModal.style.display = 'none';
-      fetchRoomItems();
-      alert('成功加入共讀行列！');
-    });
-
-    tableEndBtn?.addEventListener('click', async () => {
-      if (!activeTableData) return;
-      await supabase.from(ITEMS_TABLE).update({
-        book_title: '',
-        author: '',
-        finish_date: '',
-        max_members: 3,
-        host_id: '',
-        host_name: '',
-        members: []
-      }).eq('id', activeTableData.id);
-
-      if (tableModal) tableModal.style.display = 'none';
-      fetchRoomItems();
-      alert('共讀已結束並清空！');
-    });
-
-    tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
-    tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
-
-    confirmSeatBtn?.addEventListener('click', async () => {
-      if (pendingSeat) {
-        playerGx = pendingSeat.gx;
-        playerGy = pendingSeat.gy;
-        moveQueue = [];
-        const bookName = bookInput?.value.trim() || '閱讀中';
-        const authorName = authorInput?.value.trim() || '佚名';
-        const currentP = parseInt(currentPageInput?.value) || 1;
-        const totalP = parseInt(totalPageInput?.value) || 100;
-        const quote = quoteInput?.value.trim() || '';
-        const review = reviewInput?.value.trim() || '';
-
-        currentTask = `《${bookName}》 p.${currentP}/${totalP}`;
-        isDND = true;
-
-        myReadingLogs.unshift({
-          book: bookName,
-          author: authorName,
-          quote,
-          review,
-          current: currentP,
-          total: totalP,
-          date: new Date().toLocaleDateString()
-        });
-        localStorage.setItem('rpg_my_logs', JSON.stringify(myReadingLogs));
-        renderMyLogs();
-
-        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
-        if (seatModal) seatModal.style.display = 'none';
-        await syncMyStateToDB();
-      }
-    });
-
-    cancelSeatBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
-
-    leaveSeatBtn?.addEventListener('click', async () => {
-      isDND = false;
-      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) {
-        playerGy += 1;
-      }
-      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
-      await syncMyStateToDB();
-    });
 
     function draw() {
       if (!ctx || !canvas) return;
@@ -1724,5 +931,581 @@ import Layout from '../layouts/Layout.astro';
       draw();
       requestAnimationFrame(gameLoop);
     }
+
+
+    // ==========================================
+    // 區塊四：UI 互動、Modal 彈窗與事件監聽
+    // ==========================================
+    const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
+    const openRoomModalBtn = document.getElementById('open-room-modal-btn');
+    const deleteRoomBtn = document.getElementById('delete-room-btn') as HTMLButtonElement;
+    const roomSettingsModal = document.getElementById('room-settings-modal');
+    const rsCancelBtn = document.getElementById('rs-cancel-btn');
+    const rsConfirmBtn = document.getElementById('rs-confirm-btn');
+    const rsRoomKey = document.getElementById('rs-room-key') as HTMLInputElement;
+    const rsRoomName = document.getElementById('rs-room-name') as HTMLInputElement;
+    const rsBgImg = document.getElementById('rs-bg-img') as HTMLInputElement;
+    const rsGridSize = document.getElementById('rs-grid-size') as HTMLInputElement;
+
+    const seatModal = document.getElementById('seat-modal');
+    const libraryModal = document.getElementById('library-modal');
+    const libraryCloseBtn = document.getElementById('library-close-btn');
+
+    const playerActionModal = document.getElementById('player-action-modal');
+    const pamTitle = document.getElementById('pam-title');
+    const pamChatBtn = document.getElementById('pam-chat-btn');
+    const pamLogsBtn = document.getElementById('pam-logs-btn');
+    const pamCancelBtn = document.getElementById('pam-cancel-btn');
+    let selectedPeer: any = null;
+
+    const customModalFrame = document.getElementById('custom-modal-frame');
+    const customModalClose = document.getElementById('custom-modal-close');
+    const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
+    const customModalTitle = document.getElementById('custom-modal-title');
+
+    const bookInput = document.getElementById('rpg-book-input') as HTMLInputElement;
+    const authorInput = document.getElementById('rpg-author-input') as HTMLInputElement;
+    const currentPageInput = document.getElementById('rpg-current-page') as HTMLInputElement;
+    const totalPageInput = document.getElementById('rpg-total-page') as HTMLInputElement;
+    const quoteInput = document.getElementById('rpg-quote-input') as HTMLTextAreaElement;
+    const reviewInput = document.getElementById('rpg-review-input') as HTMLTextAreaElement;
+    const confirmSeatBtn = document.getElementById('seat-confirm-btn');
+    const cancelSeatBtn = document.getElementById('seat-cancel-btn');
+
+    const panelTabBtns = document.querySelectorAll('.panel-tab-btn');
+    const paneChat = document.getElementById('pane-chat');
+    const paneLogs = document.getElementById('pane-logs');
+    const paneGuide = document.getElementById('pane-guide');
+    const paneBuild = document.getElementById('pane-build');
+    const logListContainer = document.getElementById('log-list-container');
+    const logQuickAddBtn = document.getElementById('log-quick-add-btn');
+    const guideContentBox = document.getElementById('guide-content-box');
+    const shopkeeperTab = document.querySelector('.shopkeeper-only-tab') as HTMLElement;
+    const shopkeeperBtns = document.querySelectorAll('.shopkeeper-only-btn');
+
+    const detailModal = document.getElementById('log-detail-modal');
+    const detailCloseBtn = document.getElementById('detail-close-btn');
+    const detailContent = document.getElementById('detail-content');
+
+    const peerModal = document.getElementById('peer-modal');
+    const peerCloseBtn = document.getElementById('peer-close-btn');
+    const peerModalTitle = document.getElementById('peer-modal-title');
+    const peerContentBox = document.getElementById('peer-content-box');
+
+    const tableModal = document.getElementById('table-modal');
+    const tableModalTitle = document.getElementById('table-modal-title');
+    const tableFormView = document.getElementById('table-form-view');
+    const tableInfoView = document.getElementById('table-info-view');
+    const tableBook = document.getElementById('table-book') as HTMLInputElement;
+    const tableAuthor = document.getElementById('table-author') as HTMLInputElement;
+    const tableMax = document.getElementById('table-max') as HTMLInputElement;
+    const tableDate = document.getElementById('table-date') as HTMLInputElement;
+    const tableCreateBtn = document.getElementById('table-create-btn');
+    const tableJoinBtn = document.getElementById('table-join-btn');
+    const tableEndBtn = document.getElementById('table-end-btn') as HTMLButtonElement;
+    const tableCancelBtn = document.getElementById('table-cancel-btn');
+    const tableInfoClose = document.getElementById('table-info-close');
+    const tableDetails = document.getElementById('table-details');
+
+    const cfModal = document.getElementById('custom-furniture-modal');
+    const openCfModalBtn = document.getElementById('open-cf-modal-btn');
+    const cfCancelBtn = document.getElementById('cf-cancel-btn');
+    const cfConfirmBtn = document.getElementById('cf-confirm-btn');
+    const cfNameInput = document.getElementById('cf-name') as HTMLInputElement;
+    const cfImgInput = document.getElementById('cf-img') as HTMLInputElement;
+    const cfLinkInput = document.getElementById('cf-link') as HTMLInputElement;
+    const cfOpenTypeSelect = document.getElementById('cf-open-type') as HTMLSelectElement;
+    const cfDescInput = document.getElementById('cf-desc') as HTMLTextAreaElement;
+    const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
+    const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
+    const customToolsContainer = document.getElementById('custom-tools-container');
+    const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+
+    let pendingSeat: { gx: number; gy: number; label: string } | null = null;
+    let pendingTableItem: any = null;
+
+    async function fetchRooms() {
+      const { data } = await supabase.from(ROOMS_TABLE).select('*');
+      if (data && data.length > 0) {
+        customRooms = data.map((r: any) => ({
+          key: r.room_key,
+          name: r.room_name,
+          bgImg: r.bg_img || '',
+          gridSize: r.grid_size || 12
+        }));
+      } else {
+        const defaults = [
+          { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
+          { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
+          { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
+        ];
+        for (const dr of defaults) {
+          await supabase.from(ROOMS_TABLE).upsert({
+            room_key: dr.key,
+            room_name: dr.name,
+            bg_img: dr.bgImg,
+            grid_size: dr.gridSize
+          }, { onConflict: 'room_key' });
+        }
+        customRooms = defaults;
+      }
+      renderRoomDropdown();
+      updateCurrentRoomConfig();
+    }
+
+    function renderRoomDropdown() {
+      if (!roomSelectDropdown) return;
+      let html = '';
+      customRooms.forEach(rc => {
+        const selected = rc.key === currentRoom ? 'selected' : '';
+        html += `<option value="${rc.key}" ${selected}>${rc.name}</option>`;
+      });
+      roomSelectDropdown.innerHTML = html;
+
+      if (playerTier === '店主' && currentRoom !== 'study' && currentRoom !== 'chat' && currentRoom !== 'salon') {
+        if (deleteRoomBtn) deleteRoomBtn.style.display = 'inline-block';
+      } else {
+        if (deleteRoomBtn) deleteRoomBtn.style.display = 'none';
+      }
+    }
+
+    roomSelectDropdown?.addEventListener('change', async (e) => {
+      const target = e.target as HTMLSelectElement;
+      currentRoom = target.value;
+      updateCurrentRoomConfig();
+      isDND = false;
+      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      playerGx = 1; playerGy = 1;
+      moveQueue = [];
+      renderRoomDropdown();
+      await syncMyStateToDB();
+      await fetchOnlinePlayers();
+      await fetchRoomItems();
+      await fetchMessages();
+    });
+
+    openRoomModalBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'flex'; });
+    rsCancelBtn?.addEventListener('click', () => { if (roomSettingsModal) roomSettingsModal.style.display = 'none'; });
+
+    rsConfirmBtn?.addEventListener('click', async () => {
+      const key = rsRoomKey?.value.trim();
+      const name = rsRoomName?.value.trim();
+      const bgImg = rsBgImg?.value.trim() || '';
+      const gridSize = parseInt(rsGridSize?.value) || 12;
+
+      if (!key || !name) { alert('請填寫房間代碼與顯示名稱'); return; }
+
+      const { error } = await supabase.from(ROOMS_TABLE).upsert({
+        room_key: key,
+        room_name: name,
+        bg_img: bgImg,
+        grid_size: gridSize
+      }, { onConflict: 'room_key' });
+
+      if (error) { alert('建立房間失敗：' + error.message); return; }
+
+      await fetchRooms();
+      if (roomSettingsModal) roomSettingsModal.style.display = 'none';
+      rsRoomKey.value = ''; rsRoomName.value = ''; rsBgImg.value = '';
+
+      currentRoom = key;
+      updateCurrentRoomConfig();
+      playerGx = 1; playerGy = 1;
+      renderRoomDropdown();
+      await syncMyStateToDB();
+      await fetchOnlinePlayers();
+      await fetchRoomItems();
+      await fetchMessages();
+      alert(`成功建立並切換至「${name}」！`);
+    });
+
+    deleteRoomBtn?.addEventListener('click', async () => {
+      if (currentRoom === 'study' || currentRoom === 'chat' || currentRoom === 'salon') {
+        alert('預設房間無法刪除！');
+        return;
+      }
+
+      if (confirm(`確定要刪除當前房間嗎？`)) {
+        await supabase.from(ROOMS_TABLE).delete().eq('room_key', currentRoom);
+        await supabase.from(ITEMS_TABLE).delete().eq('room', currentRoom);
+
+        currentRoom = 'study';
+        updateCurrentRoomConfig();
+        playerGx = 1; playerGy = 1;
+        await fetchRooms();
+        await fetchOnlinePlayers();
+        await fetchRoomItems();
+        await fetchMessages();
+        alert('房間已刪除。');
+      }
+    });
+
+    function renderCustomToolsUI() {
+      if (!customToolsContainer) return;
+      let html = '';
+      customFurnitureTypes.forEach(cf => {
+        html += `<button class="tool-btn" data-tool="${cf.type}">${cf.label}</button>`;
+      });
+      customToolsContainer.innerHTML = html;
+      bindToolButtons();
+    }
+
+    function bindToolButtons() {
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+      });
+      document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+          const target = e.currentTarget as HTMLElement;
+          target.classList.add('active');
+          currentTool = target.dataset.tool!;
+        });
+      });
+    }
+
+    openCfModalBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'flex'; });
+    cfCancelBtn?.addEventListener('click', () => { if (cfModal) cfModal.style.display = 'none'; });
+
+    cfConfirmBtn?.addEventListener('click', () => {
+      const name = cfNameInput?.value.trim();
+      const img = cfImgInput?.value.trim();
+      const link = cfLinkInput?.value.trim() || '';
+      const openType = cfOpenTypeSelect?.value || 'current';
+      const description = cfDescInput?.value.trim() || '無詳細說明';
+      const w = parseInt(cfWInput?.value) || 1;
+      const h = parseInt(cfHInput?.value) || 1;
+
+      if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
+
+      const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
+      customFurnitureTypes.push({ type: typeKey, label: name, w, h, imgSrc: img, description, link, openType });
+      localStorage.setItem('rpg_custom_furnitures', JSON.stringify(customFurnitureTypes));
+
+      renderCustomToolsUI();
+      if (cfModal) cfModal.style.display = 'none';
+      cfNameInput.value = ''; cfImgInput.value = ''; cfLinkInput.value = ''; cfDescInput.value = '';
+      alert(`成功新增「${name}」！`);
+    });
+
+    function renderGuideContent() {
+      if (!guideContentBox) return;
+      if (roomItems.length === 0) {
+        guideContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件。</div>';
+        return;
+      }
+      let html = '';
+      roomItems.forEach(item => {
+        const isTable = item.type === 'table';
+        html += `
+          <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
+            <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
+            <div style="flex:1;">
+              <div style="font-weight:bold; color:var(--accent-color);">${item.label} ${isTable ? '(🪵共讀桌)' : ''}</div>
+              <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
+            </div>
+          </div>
+        `;
+      });
+      guideContentBox.innerHTML = html;
+    }
+
+    panelTabBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        panelTabBtns.forEach(b => b.classList.remove('active'));
+        const target = e.currentTarget as HTMLElement;
+        target.classList.add('active');
+        const tab = target.dataset.tab;
+        
+        if (paneChat) paneChat.style.display = 'none';
+        if (paneLogs) paneLogs.style.display = 'none';
+        if (paneGuide) paneGuide.style.display = 'none';
+        if (paneBuild) paneBuild.style.display = 'none';
+
+        if (tab === 'chat') { if (paneChat) paneChat.style.display = 'flex'; }
+        else if (tab === 'logs') { if (paneLogs) paneLogs.style.display = 'flex'; renderMyLogs(); }
+        else if (tab === 'guide') { if (paneGuide) paneGuide.style.display = 'flex'; renderGuideContent(); }
+        else if (tab === 'build') { if (paneBuild) paneBuild.style.display = 'flex'; }
+      });
+    });
+
+    logQuickAddBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'flex'; });
+
+    function renderMyLogs() {
+      if (!logListContainer) return;
+      if (myReadingLogs.length === 0) {
+        logListContainer.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:15px;">目前尚無閱讀記錄</div>';
+        return;
+      }
+      let html = '';
+      myReadingLogs.forEach((item, index) => {
+        html += `
+          <div class="log-item-card" data-index="${index}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
+            <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;">
+              <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book}》</span>
+              <span style="font-size:12px; color:#cbd5e1;">作者：${item.author}</span>
+            </div>
+          </div>
+        `;
+      });
+      logListContainer.innerHTML = html;
+
+      document.querySelectorAll('.log-item-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+          const log = myReadingLogs[idx];
+          if (detailContent) {
+            detailContent.innerHTML = `
+              <p style="font-size:14px;"><strong>書名：</strong>《${log.book}》</p>
+              <p style="font-size:13px;"><strong>作者：</strong>${log.author}</p>
+              <p style="font-size:13px;"><strong>閱讀進度：</strong>第 ${log.current} / ${log.total} 頁</p>
+              <p style="font-size:13px;"><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
+              <p style="font-size:13px;"><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
+              <p style="font-size:11px; color:#64748b; text-align:right;">記錄日期：${log.date}</p>
+            `;
+          }
+          if (detailModal) detailModal.style.display = 'flex';
+        });
+      });
+    }
+
+    detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
+    peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
+    customModalClose?.addEventListener('click', () => { if (customModalFrame) customModalFrame.style.display = 'none'; });
+    pamCancelBtn?.addEventListener('click', () => { if (playerActionModal) playerActionModal.style.display = 'none'; });
+
+    pamLogsBtn?.addEventListener('click', () => {
+      if (selectedPeer) {
+        if (playerActionModal) playerActionModal.style.display = 'none';
+        openPeerLogs(selectedPeer.name, selectedPeer.role, selectedPeer.reading_log || []);
+      }
+    });
+
+    function openPeerLogs(peerName: string, peerRole: string, peerLogs: any[]) {
+      if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
+      if (peerContentBox) {
+        if (!peerLogs || peerLogs.length === 0) {
+          peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">這位書友目前還沒有新增閱讀記錄。</div>';
+        } else {
+          let html = '';
+          peerLogs.forEach((item: any) => {
+            html += `
+              <div style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
+                <div style="font-weight:bold; color:var(--accent-color);">《${item.book}》 / ${item.author}</div>
+                <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current}/${item.total} 頁</div>
+              </div>
+            `;
+          });
+          peerContentBox.innerHTML = html;
+        }
+      }
+      if (peerModal) peerModal.style.display = 'flex';
+    }
+
+    themeSelect?.addEventListener('change', (e) => {
+      const selected = (e.target as HTMLSelectElement).value;
+      document.documentElement.setAttribute('data-theme', selected);
+      localStorage.setItem('rpg_theme', selected);
+    });
+
+    libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
+
+    chatTabPublic?.addEventListener('click', () => {
+      currentChatMode = 'public';
+      activeDmUserId = null; activeDmUserName = null;
+      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
+      if (dmListContainer) dmListContainer.style.display = 'none';
+      if (chatTabPublic) { chatTabPublic.style.background = 'var(--accent-hover)'; chatTabPublic.style.color = '#fff'; }
+      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
+      fetchMessages();
+    });
+
+    chatTabDmList?.addEventListener('click', () => {
+      currentChatMode = 'dmlist';
+      activeDmUserId = null;
+      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
+      if (dmListContainer) dmListContainer.style.display = 'flex';
+      if (chatTabDmList) { chatTabDmList.style.background = 'var(--accent-hover)'; chatTabDmList.style.color = '#fff'; }
+      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
+      renderDmList();
+    });
+
+    backToDmListBtn?.addEventListener('click', () => {
+      activeDmUserId = null; activeDmUserName = null;
+      if (dmActiveHeader) dmActiveHeader.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'none';
+      if (dmListContainer) dmListContainer.style.display = 'flex';
+      renderDmList();
+    });
+
+    function openDmWithUser(uId: string, uName: string) {
+      currentChatMode = 'dm';
+      activeDmUserId = uId; activeDmUserName = uName;
+      if (chatTabPublic) { chatTabPublic.style.background = 'var(--bg-main)'; chatTabPublic.style.color = '#94a3b8'; }
+      if (chatTabDmList) { chatTabDmList.style.background = 'var(--bg-main)'; chatTabDmList.style.color = '#94a3b8'; }
+      if (dmListContainer) dmListContainer.style.display = 'none';
+      if (chatMessagesBox) chatMessagesBox.style.display = 'flex';
+      if (dmActiveHeader) dmActiveHeader.style.display = 'flex';
+      if (chatModeIndicator) chatModeIndicator.textContent = `🔒 與 ${uName} 的專屬私訊`;
+      fetchMessages();
+    }
+
+    async function renderDmList() {
+      const { data } = await supabase.from(MSG_TABLE_NAME).select('*').eq('room', currentRoom).or(`sender_id.eq.${userId},target_id.eq.${userId}`);
+      if (!data || data.length === 0) {
+        dmListContainer.innerHTML = '<div class="chat-welcome">目前沒有進行中的私訊。</div>';
+        return;
+      }
+      const dmUsersMap: Record<string, string> = {};
+      data.forEach((m: any) => {
+        if (m.target_id !== null) {
+          if (m.sender_id === userId) dmUsersMap[m.target_id] = m.target_name || '未知書友';
+          else if (m.target_id === userId) dmUsersMap[m.sender_id] = m.sender_name || '未知書友';
+        }
+      });
+      let html = '';
+      const uIds = Object.keys(dmUsersMap);
+      if (uIds.length === 0) html = '<div class="chat-welcome">尚無私訊記錄。</div>';
+      else {
+        uIds.forEach(uId => {
+          const uName = dmUsersMap[uId];
+          html += `<div class="dm-user-card" data-uid="${uId}" data-uname="${uName}" style="background:var(--bg-card); border:1px solid var(--border-color); padding:8px 12px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;"><span style="font-weight:bold; color:var(--accent-color);">🔒 ${uName}</span></div>`;
+        });
+      }
+      dmListContainer.innerHTML = html;
+      document.querySelectorAll('.dm-user-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLElement;
+          openDmWithUser(target.dataset.uid!, target.dataset.uname!);
+        });
+      });
+    }
+
+    pamChatBtn?.addEventListener('click', () => {
+      if (selectedPeer) {
+        openDmWithUser(selectedPeer.user_id, selectedPeer.name);
+        if (playerActionModal) playerActionModal.style.display = 'none';
+      }
+    });
+
+    // 畫布點擊事件
+    canvas?.addEventListener('click', async (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
+
+      const tileSize = canvas.width / currentGridSize;
+      const targetGx = Math.floor(clickX / tileSize);
+      const targetGy = Math.floor(clickY / tileSize);
+
+      if (currentTool === 'move') {
+        const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
+        if (hitTable) {
+          activeTableData = hitTable;
+          pendingTableItem = hitTable;
+          if (!hitTable.book_title || hitTable.book_title === '') {
+            if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
+            if (tableFormView) tableFormView.style.display = 'block';
+            if (tableInfoView) tableInfoView.style.display = 'none';
+            if (tableModal) tableModal.style.display = 'flex';
+            return;
+          }
+          if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
+          if (tableFormView) tableFormView.style.display = 'none';
+          if (tableInfoView) tableInfoView.style.display = 'block';
+          if (tableModal) tableModal.style.display = 'flex';
+          return;
+        }
+
+        const hitPlayer = getPlayerAtCell(targetGx, targetGy);
+        if (hitPlayer) {
+          selectedPeer = hitPlayer;
+          if (pamTitle) pamTitle.textContent = `👤 ${hitPlayer.name} (${hitPlayer.role})`;
+          if (playerActionModal) playerActionModal.style.display = 'flex';
+          return;
+        }
+
+        const hitShelf = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
+        if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
+
+        const hitSeat = roomItems.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
+        if (hitSeat) {
+          pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
+          if (seatModal) seatModal.style.display = 'flex';
+        } else {
+          if (!isCellSolidBlocked(targetGx, targetGy)) {
+            moveQueue = [];
+            let currX = playerGx; let currY = playerGy;
+            while (currX !== targetGx) { currX += currX < targetGx ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
+            while (currY !== targetGy) { currY += currY < targetGy ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
+            if (isDND) { isDND = false; if (leaveSeatBtn) leaveSeatBtn.style.display = 'none'; }
+          }
+        }
+      }
+    });
+
+    confirmSeatBtn?.addEventListener('click', async () => {
+      if (pendingSeat) {
+        playerGx = pendingSeat.gx; playerGy = pendingSeat.gy;
+        moveQueue = [];
+        const bookName = bookInput?.value.trim() || '閱讀中';
+        const authorName = authorInput?.value.trim() || '佚名';
+        const currentP = parseInt(currentPageInput?.value) || 1;
+        const totalP = parseInt(totalPageInput?.value) || 100;
+        isDND = true;
+        myReadingLogs.unshift({ book: bookName, author: authorName, quote: quoteInput?.value.trim() || '', review: reviewInput?.value.trim() || '', current: currentP, total: totalP, date: new Date().toLocaleDateString() });
+        localStorage.setItem('rpg_my_logs', JSON.stringify(myReadingLogs));
+        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
+        if (seatModal) seatModal.style.display = 'none';
+        await syncMyStateToDB();
+      }
+    });
+    cancelSeatBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
+
+    leaveSeatBtn?.addEventListener('click', async () => {
+      isDND = false;
+      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) playerGy += 1;
+      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      await syncMyStateToDB();
+    });
+
+    tableCreateBtn?.addEventListener('click', async () => {
+      const book = tableBook?.value.trim();
+      const author = tableAuthor?.value.trim();
+      const maxM = parseInt(tableMax?.value) || 3;
+      const date = tableDate?.value;
+      if (!book || !date) { alert('請完整填寫書名與完讀日期'); return; }
+      if (pendingTableItem) {
+        await supabase.from(ITEMS_TABLE).update({ book_title: book, author: author || '佚名', finish_date: date, max_members: maxM, host_id: userId, host_name: playerName, members: [{ id: userId, name: playerName }] }).eq('id', pendingTableItem.id);
+      }
+      if (tableModal) tableModal.style.display = 'none';
+      fetchRoomItems();
+    });
+
+    tableJoinBtn?.addEventListener('click', async () => {
+      if (!activeTableData) return;
+      const members = activeTableData.members || [];
+      members.push({ id: userId, name: playerName });
+      await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
+      if (tableModal) tableModal.style.display = 'none';
+      fetchRoomItems();
+    });
+
+    tableEndBtn?.addEventListener('click', async () => {
+      if (!activeTableData) return;
+      await supabase.from(ITEMS_TABLE).update({ book_title: '', author: '', finish_date: '', max_members: 3, host_id: '', host_name: '', members: [] }).eq('id', activeTableData.id);
+      if (tableModal) tableModal.style.display = 'none';
+      fetchRoomItems();
+    });
+
+    tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+    tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+
+    // 啟動身分檢查
+    initAuthCheck();
   </script>
 </Layout>
