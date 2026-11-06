@@ -1,86 +1,140 @@
 ---
-import PageA from '../components/PageA.astro';
-import PageB from '../components/PageB.astro';
-import PageC from '../components/PageC.astro';
+// 如果你已經有 Component，請取消以下註解並引入它們
+// import PageA from '../components/PageA.astro';
+// import PageB from '../components/PageB.astro';
+// import PageC from '../components/PageC.astro';
 ---
 
 <html lang="zh-HK">
 <head>
   <meta charset="utf-8" />
-  <title>可調整高度的分割視窗</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>可調高度的手機模擬檢視</title>
   <style>
     body {
       margin: 0;
       padding: 0;
       font-family: sans-serif;
-      overflow: hidden; /* 防止整個畫面出現雙卷軸 */
+      background-color: #f0f2f5; /* 電腦版背景色，襯托手機外框 */
+      overflow: hidden; /* 防止整個視窗出現雙滾動條 */
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
+    /* 模擬手機外框容器 */
     .layout-container {
       display: flex;
       flex-direction: column;
-      height: 100vh;
       width: 100vw;
-    }
-    
-    .top-section {
-      height: 40%; /* 初始高度 */
-      min-height: 100px;
-      overflow-y: auto;
+      height: 100vh;
+      max-width: 430px; /* 模擬手機最大寬度 (如 iPhone Pro Max) */
+      max-height: 932px; /* 模擬手機最大高度 */
       background: #fff;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* 加上陰影質感 */
+      position: relative;
+      overflow: hidden;
     }
 
-    /* 拖曳分割條 */
+    /* 在真正的行動裝置上自動佔滿全螢幕，取消陰影與限制 */
+    @media (max-width: 430px) {
+      .layout-container {
+        max-width: 100vw;
+        max-height: 100vh;
+        box-shadow: none;
+      }
+      body {
+        background-color: #fff;
+      }
+    }
+    
+    /* 上方區域 */
+    .top-section {
+      height: 40%; /* 初始高度 */
+      min-height: 80px;
+      overflow-y: auto;
+      background: #ffffff;
+    }
+
+    /* 可拖曳的分隔線 */
     .resizer {
-      height: 6px;
-      background: #e0e0e0;
+      height: 8px;
+      background: #e4e6eb;
       cursor: row-resize;
       width: 100%;
       transition: background 0.2s;
       z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* 分隔線中間的小橫槓裝飾 */
+    .resizer::after {
+      content: '';
+      width: 36px;
+      height: 4px;
+      background-color: #bcc0c4;
+      border-radius: 2px;
     }
 
     .resizer:hover, .resizer.dragging {
-      background: #0070f3;
+      background: #d8dadf;
     }
 
+    .resizer:hover::after, .resizer.dragging::after {
+      background-color: #0070f3;
+    }
+
+    /* 下方區域 */
     .bottom-section {
       flex: 1; /* 佔滿剩餘空間 */
-      min-height: 100px;
+      min-height: 80px;
       display: flex;
       flex-direction: column;
       background: #fafafa;
       overflow: hidden;
     }
 
+    /* 分頁按鈕列 */
     .tab-bar {
       display: flex;
-      background: #f0f0f0;
+      background: #f0f2f5;
       border-bottom: 1px solid #ddd;
     }
 
     .tab-btn {
-      padding: 10px 20px;
+      flex: 1;
+      padding: 12px 0;
       border: none;
       background: none;
       cursor: pointer;
+      font-size: 14px;
+      color: #65676b;
+      transition: all 0.2s;
     }
 
     .tab-btn.active {
       background: #fff;
+      color: #0070f3;
       font-weight: bold;
       border-bottom: 2px solid #0070f3;
     }
 
+    /* 分頁內容區 */
     .tab-content {
       flex: 1;
       overflow-y: auto;
       position: relative;
+      background: #fff;
     }
 
     .tab-pane {
       display: none;
       height: 100%;
+      padding: 16px;
+      box-sizing: border-box;
     }
 
     .tab-pane.active {
@@ -93,7 +147,11 @@ import PageC from '../components/PageC.astro';
   <div class="layout-container" id="layoutContainer">
     <!-- 上方固定頁面 -->
     <div class="top-section" id="topSection">
-      <PageA />
+      <div style="padding: 16px;">
+        <h2>上方頁面 (Page A)</h2>
+        <p>這裡放置你的第一個頁面內容。</p>
+      </div>
+      <PageA /> 
     </div>
 
     <!-- 可拖曳的分隔線 -->
@@ -101,17 +159,19 @@ import PageC from '../components/PageC.astro';
 
     <!-- 下方切換頁面 -->
     <div class="bottom-section">
+      <!-- 頁籤按鈕 -->
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="tab-b">頁面 B</button>
         <button class="tab-btn" data-tab="tab-c">頁面 C</button>
       </div>
 
+      <!-- 頁籤內容區域 -->
       <div class="tab-content">
         <div id="tab-b" class="tab-pane active">
-          <PageB />
+          <PageB /> 
         </div>
         <div id="tab-c" class="tab-pane">
-          <PageC />
+          <PageC /> 
         </div>
       </div>
     </div>
@@ -136,38 +196,43 @@ import PageC from '../components/PageC.astro';
       });
     });
 
-    // 2. 上下拉動調整高度邏輯
+    // 2. 支援滑鼠與手機觸控的上下拉動調整高度邏輯 (Pointer Events)
     const resizer = document.getElementById('dragResizer');
     const topSection = document.getElementById('topSection');
     const container = document.getElementById('layoutContainer');
 
     let isDragging = false;
 
-    resizer?.addEventListener('mousedown', (e) => {
+    resizer?.addEventListener('pointerdown', (e) => {
       isDragging = true;
       resizer.classList.add('dragging');
-      document.body.style.cursor = 'row-resize';
-      e.preventDefault(); // 防止選取文字
+      resizer.setPointerCapture(e.pointerId);
+      e.preventDefault();
     });
 
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('pointermove', (e) => {
       if (!isDragging) return;
 
+      const containerRect = container.getBoundingClientRect();
+      const newTopHeight = e.clientY - containerRect.top;
       const containerHeight = container.clientHeight;
-      const newTopHeight = e.clientY;
 
-      // 限制上方區域最小 50px，最大為視窗高度減 100px
-      if (newTopHeight > 50 && newTopHeight < containerHeight - 100) {
+      // 限制上方區域最小 60px，最大不超過總高度減 100px
+      if (newTopHeight > 60 && newTopHeight < containerHeight - 100) {
         const percentage = (newTopHeight / containerHeight) * 100;
         topSection.style.height = `${percentage}%`;
       }
     });
 
-    window.addEventListener('mouseup', () => {
+    window.addEventListener('pointerup', (e) => {
       if (isDragging) {
         isDragging = false;
         resizer.classList.remove('dragging');
-        document.body.style.cursor = 'default';
+        try {
+          resizer.releasePointerCapture(e.pointerId);
+        } catch (err) {
+          // 略過例外
+        }
       }
     });
   </script>
