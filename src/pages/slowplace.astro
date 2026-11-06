@@ -3,35 +3,47 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="空間客舍 · 自由佈置空間">
-  <!-- 1. 登入 Modal -->
+  <!-- 1. 登入 / 註冊 Modal (整合 Supabase Auth) -->
   <div id="rpg-modal" class="rpg-modal-overlay">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 空間客舍 · 身份登入 ◆</span></div>
+      <div class="rpg-title-bar"><span>◆ 空間客舍 · 會員認證系統 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">午後的長沙灣天空湛藍。請選擇你的分身造型與稱號：</p>
-        
-        <div class="avatar-selector-label">選擇分身造型：</div>
-        <div class="avatar-selector-group">
-          <label class="avatar-card">
-            <input type="radio" name="player-avatar" value="/assets/player1.png" checked />
-            <img src="/assets/player1.png" alt="P1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-            <span class="avatar-fallback" style="display:none;">👤 P1</span>
-            <span class="avatar-name">分身一號</span>
-          </label>
-          <label class="avatar-card">
-            <input type="radio" name="player-avatar" value="/assets/player2.png" />
-            <img src="/assets/player2.png" alt="P2" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-            <span class="avatar-fallback" style="display:none;">👤 P2</span>
-            <span class="avatar-name">分身二號</span>
-          </label>
+        <!-- 登入 / 註冊切換分頁 -->
+        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+          <button id="auth-tab-login" class="rpg-btn-sm active" style="flex:1;">登入帳號</button>
+          <button id="auth-tab-signup" class="rpg-btn-sm" style="flex:1;">註冊新帳號</button>
         </div>
 
-        <input type="text" id="rpg-name-input" placeholder="輸入你的獨一無二稱號" maxlength="12" autofocus />
+        <input type="email" id="auth-email" placeholder="電子信箱 (Email)" required style="margin-bottom:8px;" />
+        <input type="password" id="auth-password" placeholder="密碼 (至少 6 位數)" required style="margin-bottom:12px;" />
 
-        <div class="role-selector-group" style="margin-top: 10px;">
-          <label class="role-chip"><input type="radio" name="user-role" value="晴空選書" checked /> ☁️ 晴空選書</label>
-          <label class="role-chip"><input type="radio" name="user-role" value="散文漫遊" /> 🍃 散文漫遊</label>
-          <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
+        <!-- 註冊專用擴充欄位 -->
+        <div id="signup-extra-fields" style="display: none; flex-direction: column; gap: 8px;">
+          <p class="rpg-text" style="margin-bottom:4px;">午後的長沙灣天空湛藍。請選擇你的分身造型與稱號：</p>
+          
+          <div class="avatar-selector-label">選擇分身造型：</div>
+          <div class="avatar-selector-group">
+            <label class="avatar-card">
+              <input type="radio" name="player-avatar" value="/assets/player1.png" checked />
+              <img src="/assets/player1.png" alt="P1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+              <span class="avatar-fallback" style="display:none;">👤 P1</span>
+              <span class="avatar-name">分身一號</span>
+            </label>
+            <label class="avatar-card">
+              <input type="radio" name="player-avatar" value="/assets/player2.png" />
+              <img src="/assets/player2.png" alt="P2" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+              <span class="avatar-fallback" style="display:none;">👤 P2</span>
+              <span class="avatar-name">分身二號</span>
+            </label>
+          </div>
+
+          <input type="text" id="rpg-name-input" placeholder="輸入你的獨一無二稱號 (例: Mi)" maxlength="12" style="margin-bottom:8px;" />
+
+          <div class="role-selector-group" style="margin-bottom: 10px;">
+            <label class="role-chip"><input type="radio" name="user-role" value="晴空選書" checked /> ☁️ 晴空選書</label>
+            <label class="role-chip"><input type="radio" name="user-role" value="散文漫遊" /> 🍃 散文漫遊</label>
+            <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
+          </div>
         </div>
 
         <button id="rpg-start-btn" class="rpg-btn">▶ 進入客舍空間</button>
@@ -410,7 +422,7 @@ import Layout from '../layouts/Layout.astro';
     .avatar-fallback { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 4px; font-size: 12px; color: var(--accent-color); }
     .avatar-name { font-size: 11px; color: #cbd5e1; }
 
-    .rpg-window input[type="text"], .rpg-window input[type="number"] { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
+    .rpg-window input[type="text"], .rpg-window input[type="number"], .rpg-window input[type="email"], .rpg-window input[type="password"] { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
     .role-selector-group { display: flex; gap: 6px; margin-bottom: 14px; }
     .role-chip { background: var(--bg-main); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 16px; font-size: 11px; cursor: pointer; color: #cbd5e1; }
     .role-chip input { margin-right: 4px; accent-color: var(--accent-color); }
@@ -429,6 +441,7 @@ import Layout from '../layouts/Layout.astro';
     
     .theme-select-dropdown { background: var(--bg-main); color: var(--accent-color); border: 1px solid var(--border-color); padding: 3px 6px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; }
     .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
+    .rpg-btn-sm.active { background: var(--accent-hover); color: #fff; border-color: var(--accent-hover); }
     
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 2px; overflow: hidden; min-height: 0; }
     #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
@@ -446,23 +459,19 @@ import Layout from '../layouts/Layout.astro';
     const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const TABLE_NAME = 'slowsplace_member';
+    // 已將表格名稱全面更名為 slowpace_members
+    const TABLE_NAME = 'slowpace_members';
     const MSG_TABLE_NAME = 'slowsplace_messages';
     const ITEMS_TABLE = 'slowsplace_items';
     const ROOMS_TABLE = 'slowsplace_rooms';
 
-    const userId = localStorage.getItem('rpg_user_id') || ('user_' + Math.random().toString(36).substring(2, 9));
-    localStorage.setItem('rpg_user_id', userId);
+    let authMode = 'login'; // 'login' | 'signup'
+    let userId: string | null = null;
 
-    const savedName = localStorage.getItem('rpg_player_name');
-    const savedAvatar = localStorage.getItem('rpg_player_avatar');
-    const savedRole = localStorage.getItem('rpg_player_role');
-    const savedTier = localStorage.getItem('rpg_player_tier') || '鄰里人';
-
-    let playerName = savedName || '冒險者';
-    let playerRole = savedRole || '☁️ 讀者';
-    let playerAvatar = savedAvatar || '/assets/player1.png';
-    let playerTier = savedTier;
+    let playerName = '冒險者';
+    let playerRole = '☁️ 讀者';
+    let playerAvatar = '/assets/player1.png';
+    let playerTier = '鄰里人';
     let playerGx = 2;
     let playerGy = 2;
     let currentTool = 'move';
@@ -506,6 +515,12 @@ import Layout from '../layouts/Layout.astro';
     let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string; openType: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
     const modal = document.getElementById('rpg-modal');
+    const authTabLogin = document.getElementById('auth-tab-login');
+    const authTabSignup = document.getElementById('auth-tab-signup');
+    const signupExtraFields = document.getElementById('signup-extra-fields');
+    const authEmailInput = document.getElementById('auth-email') as HTMLInputElement;
+    const authPasswordInput = document.getElementById('auth-password') as HTMLInputElement;
+
     const seatModal = document.getElementById('seat-modal');
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
@@ -634,6 +649,23 @@ import Layout from '../layouts/Layout.astro';
       }
       return imageFailed[src] ? null : imageCache[src];
     }
+
+    // 登入 / 註冊 Tab 切換邏輯
+    authTabLogin?.addEventListener('click', () => {
+      authMode = 'login';
+      authTabLogin.classList.add('active');
+      authTabSignup?.classList.remove('active');
+      if (signupExtraFields) signupExtraFields.style.display = 'none';
+      if (startBtn) startBtn.textContent = '▶ 進入客舍空間';
+    });
+
+    authTabSignup?.addEventListener('click', () => {
+      authMode = 'signup';
+      authTabSignup.classList.add('active');
+      authTabLogin?.classList.remove('active');
+      if (signupExtraFields) signupExtraFields.style.display = 'flex';
+      if (startBtn) startBtn.textContent = '✨ 完成註冊並進入';
+    });
 
     // 聊天分頁切換邏輯
     chatTabPublic?.addEventListener('click', () => {
@@ -1008,7 +1040,6 @@ import Layout from '../layouts/Layout.astro';
     detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
     peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
     customModalClose?.addEventListener('click', () => { if (customModalFrame) customModalFrame.style.display = 'none'; });
-
     pamCancelBtn?.addEventListener('click', () => { if (playerActionModal) playerActionModal.style.display = 'none'; });
 
     pamLogsBtn?.addEventListener('click', () => {
@@ -1055,6 +1086,7 @@ import Layout from '../layouts/Layout.astro';
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
     async function syncMyStateToDB() {
+      if (!userId) return;
       await supabase.from(TABLE_NAME).upsert({
         user_id: userId,
         name: playerName,
@@ -1072,10 +1104,7 @@ import Layout from '../layouts/Layout.astro';
     }
 
     async function fetchOnlinePlayers() {
-      // 計算 15 秒前的时间點（作為判定在線的閥值）
       const fifteenSecondsAgo = new Date(Date.now() - 15000).toISOString();
-
-      // 只撈取當前房間、且 updated_at 在 15 秒以內的活躍玩家
       const { data } = await supabase
         .from(TABLE_NAME)
         .select('*')
@@ -1200,81 +1229,139 @@ import Layout from '../layouts/Layout.astro';
       return false;
     }
 
-    if (savedName) {
-      playerName = savedName;
-      playerTier = savedTier;
-      if (hudName) hudName.textContent = playerName;
-      if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
-      if (modal) modal.style.display = 'none';
-
-      if (playerTier === '店主') {
-        if (shopkeeperTab) shopkeeperTab.style.display = 'block';
-        shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
-        renderCustomToolsUI();
+    // 初始化：檢查 Supabase Auth Session
+    async function checkExistingAuthSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        userId = session.user.id;
+        await loadUserProfile(userId);
       }
-
-      isGameStarted = true;
-      fetchRooms().then(async () => {
-        await syncMyStateToDB();
-        await fetchOnlinePlayers();
-        await fetchRoomItems();
-        await fetchMessages();
-        renderMyLogs();
-        initDatabaseRealtime();
-        gameLoop();
-      });
     }
 
-    startBtn?.addEventListener('click', async () => {
-      const val = nameInput?.value.trim();
-      if (!val) { alert('請輸入有效的稱號'); return; }
+    async function loadUserProfile(uid: string) {
+      const { data: profile } = await supabase
+        .from(TABLE_NAME)
+        .select('*')
+        .eq('user_id', uid)
+        .single();
 
-      const { data: existingUser } = await supabase.from(TABLE_NAME).select('*').eq('name', val).maybeSingle();
-      if (existingUser && existingUser.user_id !== userId) {
-        alert(`「${val}」這個稱號已經被其他書友使用了！`);
+      if (profile) {
+        playerName = profile.name;
+        playerRole = profile.role || '☁️ 讀者';
+        playerAvatar = profile.avatar || '/assets/player1.png';
+        playerTier = profile.tier || '鄰里人';
+
+        if (hudName) hudName.textContent = playerName;
+        if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
+        if (modal) modal.style.display = 'none';
+
+        if (playerTier === '店主') {
+          if (shopkeeperTab) shopkeeperTab.style.display = 'block';
+          shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
+          renderCustomToolsUI();
+        }
+
+        if (!isGameStarted) {
+          isGameStarted = true;
+          await fetchRooms();
+          await syncMyStateToDB();
+          await fetchOnlinePlayers();
+          await fetchRoomItems();
+          await fetchMessages();
+          renderMyLogs();
+          initDatabaseRealtime();
+          gameLoop();
+        }
+      } else {
+        // 如果有 Auth 帳號但尚未建立 slowspace_members 資料
+        if (modal) modal.style.display = 'flex';
+        if (authTabSignup) authTabSignup.click();
+      }
+    }
+
+    checkExistingAuthSession();
+
+    // 點擊登入 / 註冊按鈕
+    startBtn?.addEventListener('click', async () => {
+      const email = authEmailInput?.value.trim();
+      const password = authPasswordInput?.value.trim();
+
+      if (!email || !password) {
+        alert('請完整填寫電子信箱與密碼');
         return;
       }
 
-      playerName = val;
-      const isOwner = playerName === 'Mi' || playerName === '店主';
-      playerTier = isOwner ? '店主' : '鄰里人';
+      if (authMode === 'signup') {
+        const nameVal = nameInput?.value.trim();
+        if (!nameVal) { alert('請輸入您的客舍稱號'); return; }
 
-      const selectedAvatar = document.querySelector('input[name="player-avatar"]:checked') as HTMLInputElement;
-      if (selectedAvatar) playerAvatar = selectedAvatar.value;
-      const selectedRole = document.querySelector('input[name="user-role"]:checked') as HTMLInputElement;
-      if (selectedRole) playerRole = selectedRole.value;
+        // 1. 執行 Supabase Auth 註冊
+        const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+        if (authError) { alert('註冊失敗：' + authError.message); return; }
 
-      localStorage.setItem('rpg_player_name', playerName);
-      localStorage.setItem('rpg_player_avatar', playerAvatar);
-      localStorage.setItem('rpg_player_role', playerRole);
-      localStorage.setItem('rpg_player_tier', playerTier);
+        if (authData.user) {
+          userId = authData.user.id;
+          playerName = nameVal;
+          const isOwner = playerName === 'Mi' || playerName === '店主';
+          playerTier = isOwner ? '店主' : '鄰里人';
 
-      if (hudName) hudName.textContent = playerName;
-      if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
-      if (modal) modal.style.display = 'none';
+          const selectedAvatar = document.querySelector('input[name="player-avatar"]:checked') as HTMLInputElement;
+          if (selectedAvatar) playerAvatar = selectedAvatar.value;
+          const selectedRole = document.querySelector('input[name="user-role"]:checked') as HTMLInputElement;
+          if (selectedRole) playerRole = selectedRole.value;
 
-      if (playerTier === '店主') {
-        if (shopkeeperTab) shopkeeperTab.style.display = 'block';
-        shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
-        renderCustomToolsUI();
-      }
+          // 2. 寫入 slowpace_members 資料表
+          const { error: dbError } = await supabase.from(TABLE_NAME).upsert({
+            user_id: userId,
+            name: playerName,
+            role: playerRole,
+            tier: playerTier,
+            avatar: playerAvatar,
+            room: currentRoom,
+            gx: playerGx,
+            gy: playerGy,
+            reading_log: [],
+            updated_at: new Date()
+          }, { onConflict: 'user_id' });
 
-      if (!isGameStarted) {
-        isGameStarted = true;
-        await fetchRooms();
-        await syncMyStateToDB();
-        await fetchOnlinePlayers();
-        await fetchRoomItems();
-        await fetchMessages();
-        renderMyLogs();
-        initDatabaseRealtime();
-        gameLoop();
+          if (dbError) { alert('建立會員資料失敗：' + dbError.message); return; }
+
+          if (modal) modal.style.display = 'none';
+          if (hudName) hudName.textContent = playerName;
+          if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
+
+          if (playerTier === '店主') {
+            if (shopkeeperTab) shopkeeperTab.style.display = 'block';
+            shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
+            renderCustomToolsUI();
+          }
+
+          if (!isGameStarted) {
+            isGameStarted = true;
+            await fetchRooms();
+            await syncMyStateToDB();
+            await fetchOnlinePlayers();
+            await fetchRoomItems();
+            await fetchMessages();
+            renderMyLogs();
+            initDatabaseRealtime();
+            gameLoop();
+          }
+        }
+      } else {
+        // 1. 執行 Supabase Auth 登入
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+        if (authError) { alert('登入失敗：帳號或密碼錯誤'); return; }
+
+        if (authData.user) {
+          userId = authData.user.id;
+          await loadUserProfile(userId);
+        }
       }
     });
 
     logoutBtn?.addEventListener('click', async () => {
-      // 1. 最後向雲端更新一次狀態（可選，或直接讓心跳停止）
-      // 2. 僅清除本機瀏覽器暫存，絕不刪除 slowsplace_member 裡的會員資料
+      await supabase.auth.signOut();
       localStorage.clear();
       window.location.reload();
     });
