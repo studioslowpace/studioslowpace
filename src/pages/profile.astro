@@ -59,6 +59,13 @@ import Layout from '../layouts/BaseLayout.astro';
           <div id="logs-container" class="logs-container"></div>
         </div>
 
+        <div class="profile-form" style="margin-top: 20px;">
+  <h3>🔒 修改密碼</h3>
+  <label>新密碼 (至少 6 位數)：</label>
+  <input type="password" id="new-password" placeholder="輸入新密碼" />
+  <button id="update-password-btn" class="rpg-btn" style="background: #0284c7; margin-top: 8px;">更新密碼</button>
+</div>
+
         <button id="profile-logout-btn" class="rpg-btn rpg-btn-danger" style="margin-top: 20px;">🚪 登出帳號</button>
       </div>
     </div>
@@ -351,5 +358,25 @@ import Layout from '../layouts/BaseLayout.astro';
     });
 
     initProfile();
+
+    document.getElementById('update-password-btn')?.addEventListener('click', async () => {
+  const newPassword = (document.getElementById('new-password') as HTMLInputElement).value.trim();
+
+  if (!newPassword || newPassword.length < 6) {
+    alert('新密碼長度至少需要 6 個字元');
+    return;
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (error) {
+    alert('修改密碼失敗：' + error.message);
+  } else {
+    alert('密碼已成功更新！');
+    (document.getElementById('new-password') as HTMLInputElement).value = '';
+  }
+});
   </script>
 </Layout>
