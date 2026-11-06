@@ -1072,15 +1072,29 @@ import Layout from '../layouts/Layout.astro';
     }
 
     async function fetchOnlinePlayers() {
-      const { data } = await supabase.from(TABLE_NAME).select('*').eq('room', currentRoom);
+      // 計算 15 秒前的时间點（作為判定在線的閥值）
+      const fifteenSecondsAgo = new Date(Date.now() - 15000).toISOString();
+
+      // 只撈取當前房間、且 updated_at 在 15 秒以內的活躍玩家
+      const { data } = await supabase
+        .from(TABLE_NAME)
+        .select('*')
+        .eq('room', currentRoom)
+        .gte('updated_at', fifteenSecondsAgo);
+
       if (data) {
         onlinePlayers = {};
         let count = 0;
         data.forEach((p: any) => {
-          if (p.user_id !== userId) onlinePlayers[p.user_id] = p;
+          if (p.user_id !== userId) {
+            onlinePlayers[p.user_id] = p;
+          }
           count++;
         });
         if (onlineCountSpan) onlineCountSpan.textContent = String(count);
+      } else {
+        onlinePlayers = {};
+        if (onlineCountSpan) onlineCountSpan.textContent = "1";
       }
     }
 
@@ -1258,8 +1272,9 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    logoutBtn?.addEventListener('click', () => {
-      // 僅清除本機瀏覽器暫存，不刪除雲端 member 資料
+    logoutBtn?.addEventListener('click', async () => {
+      // 1. 最後向雲端更新一次狀態（可選，或直接讓心跳停止）
+      // 2. 僅清除本機瀏覽器暫存，絕不刪除 slowsplace_member 裡的會員資料
       localStorage.clear();
       window.location.reload();
     });
