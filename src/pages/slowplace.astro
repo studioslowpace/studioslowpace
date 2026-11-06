@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import LoginModal from '../components/LoginModal.astro';
 ---
 
 <Layout title="空間客舍 · 自由佈置空間">
@@ -11,7 +12,7 @@ import Layout from '../layouts/Layout.astro';
         <span>◆ 空間客舍 · 身分認證 ◆</span>
       </div>
       <div class="embed-frame-wrapper" style="flex:1;">
-        <iframe id="auth-iframe" src="/login" class="embed-iframe"></iframe>
+        <LoginModal />
       </div>
     </div>
   </div>

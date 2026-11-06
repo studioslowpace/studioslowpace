@@ -1,9 +1,10 @@
 ---
+import Layout from '../layouts/Layout.astro';
 import LoginModal from '../components/LoginModal.astro';
 ---
 
-<html lang="zh-TW">
-<head>
+<Layout title="空間客舍 · 自由佈置空間">
+    <Fragment slot="head">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>客舍萬事屋 | 鄰里人交流區</title>
@@ -12,6 +13,7 @@ import LoginModal from '../components/LoginModal.astro';
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    </Fragment>
 
     <style is:global>
         /* ==========================================
@@ -1087,5 +1089,4 @@ import { createClient } from '@supabase/supabase-js';
             });
         }
     </script>
-</body>
-</html>
+</Layout>
