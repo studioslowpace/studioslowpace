@@ -256,7 +256,7 @@ import Layout from '../layouts/Layout.astro';
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
-      <!-- 下方面板 -->
+      <!-- 下方面板（可自由垂直拉大拉小 resize） -->
       <section class="split-panel">
         <div class="panel-tabs-bar">
           <button class="panel-tab-btn active" data-tab="chat">💬 聊天</button>
@@ -265,7 +265,7 @@ import Layout from '../layouts/Layout.astro';
           <button class="panel-tab-btn shopkeeper-only-tab" data-tab="build" style="display:none; color:#fde68a;">🛠️ 佈置</button>
         </div>
 
-        <!-- 1. 聊天面板 (含公頻與獨立私訊列表切換) -->
+        <!-- 1. 聊天面板 (WhatsApp風格對話視窗) -->
         <div id="pane-chat" class="pane-content active">
           <!-- 聊天頂端切換分頁 -->
           <div class="chat-mode-tabs" style="display:flex; gap:4px; margin-bottom:4px; flex-shrink:0;">
@@ -279,13 +279,13 @@ import Layout from '../layouts/Layout.astro';
             <button id="back-to-dm-list-btn" class="rpg-btn-sm" style="font-size:9px;">返回私訊列表</button>
           </div>
 
-          <!-- 訊息顯示框 -->
-          <div id="chat-messages" class="chat-messages-box">
+          <!-- 訊息顯示框 (WhatsApp 綠背景與氣泡) -->
+          <div id="chat-messages" class="chat-messages-box whatsapp-style">
             <div class="chat-welcome">✨ 點擊線上玩家頭像可發起私人對話或查看記錄！</div>
           </div>
 
           <!-- 私訊列表清單容器 -->
-          <div id="dm-list-container" class="chat-messages-box" style="display:none;">
+          <div id="dm-list-container" class="chat-messages-box whatsapp-style" style="display:none;">
             <div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！</div>
           </div>
 
@@ -341,6 +341,11 @@ import Layout from '../layouts/Layout.astro';
       --accent-color: #38bdf8;
       --accent-hover: #0284c7;
       --accent-light: #e0f2fe;
+
+      /* WhatsApp 配色變數 */
+      --wa-bg: #0b141a;
+      --wa-bubble-me: #005c4b;
+      --wa-bubble-other: #202c33;
     }
 
     [data-theme="green"] {
@@ -385,7 +390,19 @@ import Layout from '../layouts/Layout.astro';
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
-    .split-panel { flex: 0 0 28vh; display: flex; flex-direction: column; background: var(--bg-card); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 0; }
+    /* 下方面板：支援滑鼠或觸控垂直調整大小 (Resize) */
+    .split-panel {
+      flex: 0 0 30vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border-top: 2px solid var(--accent-hover);
+      border-bottom: 1px solid var(--border-color);
+      min-height: 120px;
+      max-height: 65vh;
+      resize: vertical;
+      overflow: hidden;
+    }
     .panel-tabs-bar { display: flex; background: var(--bg-main); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
     .panel-tab-btn { flex: 1; background: transparent; border: none; color: #94a3b8; padding: 6px; font-size: 11px; cursor: pointer; font-weight: 500; text-align: center; }
     .panel-tab-btn.active { color: var(--accent-color); background: var(--bg-card); border-bottom: 2px solid var(--accent-color); }
@@ -395,15 +412,76 @@ import Layout from '../layouts/Layout.astro';
 
     .chat-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10px; flex-shrink: 0; }
     .chat-mode-tag { color: var(--accent-color); font-weight: bold; }
-    .chat-messages-box { flex: 1; padding: 4px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; font-size: 11px; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 4px; }
-    .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 2px; }
-    .chat-msg { background: var(--bg-card); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); word-break: break-all; line-height: 1.4; }
-    .chat-msg.pm { background: rgba(192, 132, 252, 0.15); border-color: #c084fc; }
-    .chat-msg-author { color: var(--accent-color); font-weight: bold; margin-right: 4px; }
-    .chat-msg-text { color: #f8fafc; }
+
+    /* WhatsApp 風格視窗與氣泡配置 */
+    .chat-messages-box.whatsapp-style {
+      flex: 1;
+      padding: 8px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      background: var(--wa-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 4px;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0);
+      background-size: 8px 8px;
+    }
+
+    .chat-welcome { color: #94a3b8; text-align: center; font-size: 10px; padding: 4px; }
+    
+    .chat-msg-bubble {
+      max-width: 85%;
+      padding: 6px 10px;
+      border-radius: 8px;
+      line-height: 1.4;
+      word-break: break-all;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .chat-msg-bubble.me {
+      align-self: flex-end;
+      background: var(--wa-bubble-me);
+      color: #e9edef;
+      border-top-right-radius: 0;
+    }
+
+    .chat-msg-bubble.other {
+      align-self: flex-start;
+      background: var(--wa-bubble-other);
+      color: #e9edef;
+      border-top-left-radius: 0;
+    }
+
+    .chat-msg-bubble.pm {
+      border: 1px dashed #c084fc;
+    }
+
+    .chat-msg-header {
+      font-size: 10px;
+      font-weight: bold;
+      color: #00a884;
+      margin-bottom: 2px;
+    }
+    .chat-msg-bubble.me .chat-msg-header {
+      color: #53bdeb;
+    }
+
+    .chat-msg-time {
+      font-size: 9px;
+      color: #8696a0;
+      float: right;
+      margin-left: 8px;
+      margin-top: 3px;
+    }
+
     .chat-input-row { display: flex; gap: 6px; flex-shrink: 0; }
-    .chat-input-row input { flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 6px 8px; font-size: 11px; border-radius: 4px; outline: none; }
-    .chat-send-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 0 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: 500; }
+    .chat-input-row input { flex: 1; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 6px 10px; font-size: 11px; border-radius: 20px; outline: none; }
+    .chat-send-btn { background: #00a884; color: #f8fafc; border: none; padding: 0 12px; font-size: 11px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    .chat-send-btn:hover { background: #008f6f; }
 
     .logs-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; color: #94a3b8; font-weight: bold; flex-shrink: 0; }
     .logs-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
@@ -459,7 +537,6 @@ import Layout from '../layouts/Layout.astro';
     const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 已將表格名稱全面更名為 slowpace_members
     const TABLE_NAME = 'slowpace_members';
     const MSG_TABLE_NAME = 'slowsplace_messages';
     const ITEMS_TABLE = 'slowsplace_items';
@@ -525,7 +602,6 @@ import Layout from '../layouts/Layout.astro';
     const libraryModal = document.getElementById('library-modal');
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
-    // 房間設定 Modal 與下拉選單
     const roomSettingsModal = document.getElementById('room-settings-modal');
     const openRoomModalBtn = document.getElementById('open-room-modal-btn');
     const deleteRoomBtn = document.getElementById('delete-room-btn') as HTMLButtonElement;
@@ -537,14 +613,12 @@ import Layout from '../layouts/Layout.astro';
     const rsGridSize = document.getElementById('rs-grid-size') as HTMLInputElement;
     const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
 
-    // 聊天分頁 DOM
     const chatTabPublic = document.getElementById('chat-tab-public');
     const chatTabDmList = document.getElementById('chat-tab-dm-list');
     const dmActiveHeader = document.getElementById('dm-active-header');
     const dmListContainer = document.getElementById('dm-list-container') as HTMLElement;
     const backToDmListBtn = document.getElementById('back-to-dm-list-btn');
 
-    // 玩家互動選單 Modal
     const playerActionModal = document.getElementById('player-action-modal');
     const pamTitle = document.getElementById('pam-title');
     const pamChatBtn = document.getElementById('pam-chat-btn');
@@ -552,7 +626,6 @@ import Layout from '../layouts/Layout.astro';
     const pamCancelBtn = document.getElementById('pam-cancel-btn');
     let selectedPeer: any = null;
 
-    // 彈出預覽視窗 Modal
     const customModalFrame = document.getElementById('custom-modal-frame');
     const customModalClose = document.getElementById('custom-modal-close');
     const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
@@ -1132,6 +1205,7 @@ import Layout from '../layouts/Layout.astro';
       roomItems = data || [];
     }
 
+    /* 渲染 WhatsApp 風格對話訊息 */
     async function fetchMessages() {
       const { data } = await supabase
         .from(MSG_TABLE_NAME)
@@ -1144,10 +1218,18 @@ import Layout from '../layouts/Layout.astro';
         let html = '';
         data.forEach(m => {
           const isPM = m.target_id !== null;
+          const isMe = m.sender_id === userId;
+          const timeStr = new Date(m.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
           if (currentChatMode === 'public') {
             if (!isPM) {
-              html += `<div class="chat-msg"><span class="chat-msg-author">${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+              html += `
+                <div class="chat-msg-bubble ${isMe ? 'me' : 'other'}">
+                  ${!isMe ? `<div class="chat-msg-header">${m.sender_name}</div>` : ''}
+                  <span class="chat-msg-text">${m.message}</span>
+                  <span class="chat-msg-time">${timeStr}</span>
+                </div>
+              `;
             }
           } else if (currentChatMode === 'dm' && activeDmUserId) {
             const isRelevant = 
@@ -1155,7 +1237,13 @@ import Layout from '../layouts/Layout.astro';
               (m.sender_id === activeDmUserId && m.target_id === userId);
 
             if (isRelevant) {
-              html += `<div class="chat-msg pm"><span class="chat-msg-author">${m.sender_name}:</span><span class="chat-msg-text">${m.message}</span></div>`;
+              html += `
+                <div class="chat-msg-bubble ${isMe ? 'me' : 'other'} pm">
+                  ${!isMe ? `<div class="chat-msg-header">${m.sender_name} (私訊)</div>` : ''}
+                  <span class="chat-msg-text">${m.message}</span>
+                  <span class="chat-msg-time">${timeStr}</span>
+                </div>
+              `;
             }
           }
         });
@@ -1273,7 +1361,6 @@ import Layout from '../layouts/Layout.astro';
           gameLoop();
         }
       } else {
-        // 如果有 Auth 帳號但尚未建立 slowspace_members 資料
         if (modal) modal.style.display = 'flex';
         if (authTabSignup) authTabSignup.click();
       }
@@ -1295,7 +1382,6 @@ import Layout from '../layouts/Layout.astro';
         const nameVal = nameInput?.value.trim();
         if (!nameVal) { alert('請輸入您的客舍稱號'); return; }
 
-        // 1. 執行 Supabase Auth 註冊
         const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
         if (authError) { alert('註冊失敗：' + authError.message); return; }
 
@@ -1310,7 +1396,6 @@ import Layout from '../layouts/Layout.astro';
           const selectedRole = document.querySelector('input[name="user-role"]:checked') as HTMLInputElement;
           if (selectedRole) playerRole = selectedRole.value;
 
-          // 2. 寫入 slowpace_members 資料表
           const { error: dbError } = await supabase.from(TABLE_NAME).upsert({
             user_id: userId,
             name: playerName,
@@ -1349,7 +1434,6 @@ import Layout from '../layouts/Layout.astro';
           }
         }
       } else {
-        // 1. 執行 Supabase Auth 登入
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) { alert('登入失敗：帳號或密碼錯誤'); return; }
 
@@ -1368,6 +1452,7 @@ import Layout from '../layouts/Layout.astro';
 
     bindToolButtons();
 
+    /* 地圖點擊互動判斷 */
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -1380,16 +1465,14 @@ import Layout from '../layouts/Layout.astro';
       const targetGy = Math.floor(clickY / tileSize);
 
       if (currentTool === 'move') {
-        const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + item.w && targetGy >= item.gy && targetGy < item.gy + item.h);
+        // 1. 點擊共讀桌 (開放所有玩家發起共讀)
+        const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
         if (hitTable) {
           activeTableData = hitTable;
           pendingTableItem = hitTable;
 
+          // 空桌時：所有玩家皆可點擊開啟發起表單
           if (!hitTable.book_title || hitTable.book_title === '') {
-            if (playerTier !== '店主') {
-              alert('此共讀桌目前尚未發起活動，請等待店主設定！');
-              return;
-            }
             if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
             if (tableFormView) tableFormView.style.display = 'block';
             if (tableInfoView) tableInfoView.style.display = 'none';
@@ -1397,6 +1480,7 @@ import Layout from '../layouts/Layout.astro';
             return;
           }
 
+          // 已發起的共讀桌：顯示詳情
           if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
           if (tableFormView) tableFormView.style.display = 'none';
           if (tableInfoView) tableInfoView.style.display = 'block';
@@ -1428,6 +1512,7 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
+        // 2. 點擊帶有連結的物件
         const hitLinkedItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.link && item.link.trim() !== '');
         if (hitLinkedItem) {
           if (hitLinkedItem.open_type === 'blank') {
@@ -1442,6 +1527,7 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
+        // 3. 點擊玩家 avatar
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
         if (hitPlayer) {
           selectedPeer = hitPlayer;
@@ -1450,9 +1536,11 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
+        // 4. 點擊書櫃
         const hitShelf = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
         if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
 
+        // 5. 點擊木椅
         const hitSeat = roomItems.find(item => item.type === 'seat' && item.gx === targetGx && item.gy === targetGy);
         if (hitSeat) {
           const isSeatTakenByOther = Object.values(onlinePlayers).some((p: any) => p.gx === hitSeat.gx && p.gy === hitSeat.gy && p.is_dnd);
@@ -1461,6 +1549,7 @@ import Layout from '../layouts/Layout.astro';
           pendingSeat = { gx: hitSeat.gx, gy: hitSeat.gy, label: hitSeat.label };
           if (seatModal) seatModal.style.display = 'flex';
         } else {
+          // 6. 一般行走
           if (!isCellSolidBlocked(targetGx, targetGy)) {
             moveQueue = [];
             let currX = playerGx;
@@ -1471,6 +1560,7 @@ import Layout from '../layouts/Layout.astro';
           }
         }
       } else {
+        // 店主佈置邏輯
         if (playerTier !== '店主') {
           alert('權限不足：只有「店主」階層才可編輯館內物件與共讀桌！');
           return;
