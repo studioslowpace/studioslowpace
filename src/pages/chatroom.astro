@@ -533,11 +533,10 @@
             initEventListeners();
         });
 
-        // ==========================================
+// ==========================================
         // 區塊一：身分驗證、初始化與登入狀態管理
         // ==========================================
         const modal = document.getElementById('rpg-modal');
-        const logoutBtn = document.getElementById('logout-btn');
         const hudName = document.getElementById('my-identity-badge-home');
         const hudTierTag = document.getElementById('my-identity-badge-chat');
 
@@ -548,6 +547,8 @@
                 userId = guestId;
                 playerName = sessionStorage.getItem('space_guest_name') || '訪客';
                 playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
+                
+                // 確保強制關閉
                 if (modal) modal.style.display = 'none';
                 updateUserUI(playerName);
                 await startAppSession();
@@ -555,56 +556,69 @@
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     userId = session.user.id;
+                    
+                    // 確保強制關閉
                     if (modal) modal.style.display = 'none';
                     await loadUserProfile(userId);
                     await startAppSession();
                 } else {
+                    // 只有在真的一點登入狀態都沒有時才顯示彈窗
                     if (modal) modal.style.display = 'flex';
                 }
             }
         }
 
         // 監聽來自 iframe (/login) 的登入成功訊息
-window.addEventListener('message', async (event) => {
-    // 取得 modal 元素（確保有抓到）
-    const modal = document.getElementById('rpg-modal');
+        window.addEventListener('message', async (event) => {
+            const modalEl = document.getElementById('rpg-modal');
 
-    // 處理訪客登入成功
-    if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-        userId = event.data.guestId;
-        playerName = event.data.name;
-        playerAvatar = event.data.avatar;
-        
-        // 💡 關鍵：強制關閉彈窗
-        if (modal) modal.style.display = 'none';
+            // 處理訪客登入成功
+            if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+                userId = event.data.guestId;
+                playerName = event.data.name;
+                playerAvatar = event.data.avatar;
+                
+                // 💡 強制關閉彈窗
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden'); // 雙重保險，配合 hidden class
+                }
 
-        updateUserUI(playerName);
-        await startAppSession();
-    }
-    
-    // 處理一般會員登入成功
-    if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-        // 💡 關鍵：強制關閉彈窗
-        if (modal) modal.style.display = 'none';
+                updateUserUI(playerName);
+                await startAppSession();
+            }
+            
+            // 處理一般會員登入成功
+            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+                // 💡 強制關閉彈窗
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden');
+                }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-            userId = session.user.id;
-            await loadUserProfile(userId);
-            await startAppSession();
-        }
-    }
-});
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && session.user) {
+                    userId = session.user.id;
+                    await loadUserProfile(userId);
+                    await startAppSession();
+                }
+            }
+        });
 
-      supabase.auth.onAuthStateChange(async (event, session) => {
-    const modal = document.getElementById('rpg-modal');
-    if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-        userId = session.user.id;
-        if (modal) modal.style.display = 'none'; // 確保關閉
-        await loadUserProfile(userId);
-        await startAppSession();
-    }
-});
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            const modalEl = document.getElementById('rpg-modal');
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+                userId = session.user.id;
+                
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden');
+                }
+                
+                await loadUserProfile(userId);
+                await startAppSession();
+            }
+        });
 
         function updateUserUI(name) {
             const homeBadge = document.getElementById('my-identity-badge-home');
