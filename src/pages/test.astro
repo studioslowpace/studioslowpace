@@ -1,0 +1,175 @@
+---
+import PageA from '../components/PageA.astro';
+import PageB from '../components/PageB.astro';
+import PageC from '../components/PageC.astro';
+---
+
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <title>可調整高度的分割視窗</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      overflow: hidden; /* 防止整個畫面出現雙卷軸 */
+    }
+
+    .layout-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    .top-section {
+      height: 40%; /* 初始高度 */
+      min-height: 100px;
+      overflow-y: auto;
+      background: #fff;
+    }
+
+    /* 拖曳分割條 */
+    .resizer {
+      height: 6px;
+      background: #e0e0e0;
+      cursor: row-resize;
+      width: 100%;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+
+    .resizer:hover, .resizer.dragging {
+      background: #0070f3;
+    }
+
+    .bottom-section {
+      flex: 1; /* 佔滿剩餘空間 */
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+      overflow: hidden;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: #fff;
+      font-weight: bold;
+      border-bottom: 2px solid #0070f3;
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .tab-pane {
+      display: none;
+      height: 100%;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="layout-container" id="layoutContainer">
+    <!-- 上方固定頁面 -->
+    <div class="top-section" id="topSection">
+      <PageA />
+    </div>
+
+    <!-- 可拖曳的分隔線 -->
+    <div class="resizer" id="dragResizer"></div>
+
+    <!-- 下方切換頁面 -->
+    <div class="bottom-section">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="tab-b">頁面 B</button>
+        <button class="tab-btn" data-tab="tab-c">頁面 C</button>
+      </div>
+
+      <div class="tab-content">
+        <div id="tab-b" class="tab-pane active">
+          <PageB />
+        </div>
+        <div id="tab-c" class="tab-pane">
+          <PageC />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Tab 切換邏輯
+    const buttons = document.querySelectorAll('.tab-btn');
+    const panes = document.querySelectorAll('.tab-pane');
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-tab');
+
+        buttons.forEach(b => b.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        if (targetId) {
+          document.getElementById(targetId)?.classList.add('active');
+        }
+      });
+    });
+
+    // 2. 上下拉動調整高度邏輯
+    const resizer = document.getElementById('dragResizer');
+    const topSection = document.getElementById('topSection');
+    const container = document.getElementById('layoutContainer');
+
+    let isDragging = false;
+
+    resizer?.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      resizer.classList.add('dragging');
+      document.body.style.cursor = 'row-resize';
+      e.preventDefault(); // 防止選取文字
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      const containerHeight = container.clientHeight;
+      const newTopHeight = e.clientY;
+
+      // 限制上方區域最小 50px，最大為視窗高度減 100px
+      if (newTopHeight > 50 && newTopHeight < containerHeight - 100) {
+        const percentage = (newTopHeight / containerHeight) * 100;
+        topSection.style.height = `${percentage}%`;
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        resizer.classList.remove('dragging');
+        document.body.style.cursor = 'default';
+      }
+    });
+  </script>
+</body>
+</html>
