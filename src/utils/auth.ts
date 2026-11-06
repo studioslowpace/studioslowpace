@@ -20,3 +20,37 @@ export async function getCurrentMember() {
 
   return { authUser, profile };
 }
+
+/**
+ * 共用登出與訪客清理函式（可在全站任何頁面呼叫）
+ */
+export async function logoutAndCleanGuest() {
+  const guestId = sessionStorage.getItem('space_guest_id');
+
+  // 如果是訪客身分，從 Supabase 的 slowpace_members 刪除該筆暫存資料
+  if (guestId) {
+    try {
+      const { error } = await supabase
+        .from(TABLE_NAME)
+        .delete()
+        .eq('user_id', guestId);
+      
+      if (error) {
+        console.error("刪除訪客資料失敗:", error.message);
+      }
+    } catch (err) {
+      console.error("刪除訪客資料發生異常:", err);
+    }
+  }
+
+  // 清除本地儲存
+  sessionStorage.clear();
+  localStorage.removeItem('verified_chat_contact');
+  localStorage.removeItem('verified_chat_name');
+  
+  // 登出 Supabase 官方會員身分 (若是正式會員)
+  await supabase.auth.signOut();
+  
+  // 重新整理或跳轉回登入頁面
+  window.location.href = '/login';
+}

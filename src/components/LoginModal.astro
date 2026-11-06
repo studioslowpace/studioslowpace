@@ -158,4 +158,10 @@
       alert('重設密碼信已發送！請檢查您的電子信箱（包含垃圾郵件匣）。');
     }
   });
+
+  import { logoutAndCleanGuest } from '../utils/auth';
+
+    document.getElementById('global-logout-btn')?.addEventListener('click', async () => {
+      await logoutAndCleanGuest();
+    });
 </script>
