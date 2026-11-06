@@ -133,6 +133,8 @@ if (response.ok) {
 
 <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  import { createClient } from '@supabase/supabase-js';
+
   window.supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
   window.supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
   window.TABLE_NAME = 'reading_clubs'; 
@@ -148,7 +150,9 @@ if (response.ok) {
     loadExternalHeader();
     loadExternalFooter();
     bindDOMEvents();
-    checkLoginState();
+    
+    // 🌟 改為初始化檢查 isAdmin 狀態
+    await initAuthCheck();
   });
 
   function bindDOMEvents() {
@@ -197,21 +201,52 @@ if (response.ok) {
       showAlert("❌ 通行密碼錯誤，拒絕存取。");
     } else {
       closePasswordModal();
-      showAlert("🔓 驗證成功！已開啟管理員權限。");
-      checkLoginState();
+      showAlert("🔓 驗證成功！正在驗證管理員權限...");
+      // 登入成功後，onAuthStateChange 會自動觸發並更新 isAdmin 介面
     }
   }
 
-  async function checkLoginState() {
-    const { data: { session } } = await window.client.auth.getSession();
-    const addBlock = document.getElementById('clubGlobalAddBlock');
-    if (session) {
-      document.body.classList.add('admin-mode-active');
-      if (addBlock) addBlock.style.display = 'flex';
-    } else {
-      document.body.classList.remove('admin-mode-active');
-      if (addBlock) addBlock.style.display = 'none';
+  // 🌟 共用的查詢 slowpace_members 是否為管理員函式
+  async function checkAdminStatus(user) {
+    if (!user) return false;
+    
+    const { data: profile, error } = await window.client
+        .from('slowpace_members')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+
+    return !error && profile?.is_admin === true;
+  }
+
+  // 🌟 雙管齊下：初始化檢查 + 即時監聽 auth 狀態改變
+  async function initAuthCheck() {
+    const updateUI = (isAdmin) => {
+      const addBlock = document.getElementById('clubGlobalAddBlock');
+      if (isAdmin) {
+        document.body.classList.add('admin-mode-active');
+        if (addBlock) addBlock.style.display = 'flex';
+      } else {
+        document.body.classList.remove('admin-mode-active');
+        if (addBlock) addBlock.style.display = 'none';
+      }
+    };
+
+    // 1. 網頁一載入先主動抓取一次 session 並檢查
+    try {
+      const { data: { session } } = await window.client.auth.getSession();
+      const isAdmin = await checkAdminStatus(session?.user);
+      updateUI(isAdmin);
+    } catch (err) {
+      console.error("檢查初始狀態失敗:", err);
+      updateUI(false);
     }
+
+    // 2. 持續實時監聽後續的登入/登出狀態
+    window.client.auth.onAuthStateChange(async (event, session) => {
+      const isAdmin = await checkAdminStatus(session?.user);
+      updateUI(isAdmin);
+    });
   }
 
   async function loadExternalHeader() {
@@ -319,20 +354,18 @@ if (response.ok) {
         imageUrl = document.getElementById('clubImageUrlInput').value.trim();
       }
 
-const payload = { title, content, sort_order: sortOrder };
-if (imageUrl) payload.image_url = imageUrl;
+      const payload = { title, content, sort_order: sortOrder };
+      if (imageUrl) payload.image_url = imageUrl;
 
-let resError = editingId 
-  ? (await window.client.from(window.TABLE_NAME).update(payload).eq('id', editingId)).error
-  : (await window.client.from(window.TABLE_NAME).insert([payload])).error;
+      let resError = editingId 
+        ? (await window.client.from(window.TABLE_NAME).update(payload).eq('id', editingId)).error
+        : (await window.client.from(window.TABLE_NAME).insert([payload])).error;
 
-if (resError) throw resError;
+      if (resError) throw resError;
 
-// 💡 移除原本的 fetch('https://api.github.com/...') 區塊
-
-showAlert("🎉 資料儲存成功！網頁大約 1~2 分鐘後會更新線上畫面。");
-closeAdminModal();
-setTimeout(() => window.location.reload(), 1500);
+      showAlert("🎉 資料儲存成功！網頁大約 1~2 分鐘後會更新線上畫面。");
+      closeAdminModal();
+      setTimeout(() => window.location.reload(), 1500);
 
     } catch (err) {
       showAlert("❌ 錯誤：" + err.message);
