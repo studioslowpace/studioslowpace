@@ -47,7 +47,7 @@ import Layout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <script>
+<script>
     import { supabase } from '../utils/auth';
 
     const TABLE_NAME = 'slowpace_members';
@@ -78,8 +78,8 @@ import Layout from '../layouts/BaseLayout.astro';
 
     // 會員登入按鈕事件
     document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
-      const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
-      const password = (document.getElementById('login-password') as HTMLInputElement).value.trim();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
 
       if (!email || !password) {
         alert('請完整填寫 Email 與密碼');
@@ -87,27 +87,27 @@ import Layout from '../layouts/BaseLayout.astro';
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-if (error) {
-  alert('登入失敗：' + error.message);
-} else {
-  alert('登入成功！');
-  // 通知父視窗 (slowpace.astro) 關閉 Modal 並重新整理狀態
-  window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
-}
+      if (error) {
+        alert('登入失敗：' + error.message);
+      } else {
+        alert('登入成功！');
+        // 通知父視窗 (chatroom.astro) 關閉 Modal 並重新整理狀態
+        window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
+      }
     });
 
     // 訪客模式進入按鈕事件
     document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
-      const nameVal = (document.getElementById('guest-name-input') as HTMLInputElement).value.trim();
+      const nameVal = document.getElementById('guest-name-input').value.trim();
       if (!nameVal) {
         alert('請輸入您的訪客稱號');
         return;
       }
 
-      const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked') as HTMLInputElement;
+      const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
       const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
 
-      // 產生專屬的暫時訪客 ID 並存入 sessionStorage（離開網站或關閉頁面時自動失效）
+      // 產生專屬的暫時訪客 ID 並存入 sessionStorage
       const guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
       
       const guestData = {
@@ -130,25 +130,25 @@ if (error) {
         return;
       }
 
-      // 寫入 Supabase 成功後：
-sessionStorage.setItem('space_guest_id', guestId);
-sessionStorage.setItem('space_guest_name', nameVal);
-sessionStorage.setItem('space_guest_avatar', avatarVal);
+      // 寫入 SessionStorage
+      sessionStorage.setItem('space_guest_id', guestId);
+      sessionStorage.setItem('space_guest_name', nameVal);
+      sessionStorage.setItem('space_guest_avatar', avatarVal);
 
-// 傳遞資料給父視窗並關閉 Modal
-window.parent.postMessage({
-  type: 'GUEST_LOGIN_SUCCESS',
-  guestId: guestId,
-  name: nameVal,
-  avatar: avatarVal
-}, '*');
+      // 傳遞資料給父視窗並關閉 Modal
+      window.parent.postMessage({
+        type: 'GUEST_LOGIN_SUCCESS',
+        guestId: guestId,
+        name: nameVal,
+        avatar: avatarVal
+      }, '*');
 
       alert(`歡迎進入，${nameVal}！`);
     });
 
     // 忘記密碼按鈕事件
     document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
-      const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
+      const email = document.getElementById('login-email').value.trim();
       if (!email) {
         alert('請先在上方欄位輸入您的電子信箱 (Email)');
         return;
