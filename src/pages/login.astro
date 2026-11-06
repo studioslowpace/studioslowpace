@@ -1,0 +1,28 @@
+---
+import Layout from '../layouts/BaseLayout.astro';
+---
+<Layout title="會員登入 · 空間客舍">
+  <div style="max-width: 400px; margin: 100px auto; padding: 20px; background: #1e293b; border-radius: 8px; color: #fff;">
+    <h2>🔐 會員登入</h2>
+    <input type="email" id="login-email" placeholder="電子信箱 (Email)" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px;" />
+    <input type="password" id="login-password" placeholder="密碼" style="width:100%; padding:10px; margin-bottom:15px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px;" />
+    <button id="login-submit-btn" style="width:100%; padding:10px; background:#0284c7; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">登入</button>
+  </div>
+
+  <script>
+    import { supabase } from '../utils/auth';
+
+    document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
+      const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
+      const password = (document.getElementById('login-password') as HTMLInputElement).value.trim();
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('登入失敗：' + error.message);
+      } else {
+        alert('登入成功！');
+        window.location.href = '/sanctuary'; // 登入後自動導向 2D 空間主頁
+      }
+    });
+  </script>
+</Layout>

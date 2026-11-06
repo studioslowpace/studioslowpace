@@ -1,0 +1,355 @@
+---
+import Layout from '../layouts/BaseLayout.astro';
+---
+
+<Layout title="個人會員專區 · 空間客舍">
+  <div class="profile-viewport">
+    <div class="profile-card">
+      <div class="profile-header">
+        <button id="back-to-sanctuary" class="rpg-btn-sm">🏠 返回客舍空間</button>
+        <h2>👤 會員個人專區</h2>
+      </div>
+
+      <div id="loading-state" class="state-msg">正在載入會員資料...</div>
+
+      <div id="profile-content" style="display: none;">
+        <!-- 基本身分資訊 -->
+        <div class="avatar-preview-box">
+          <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" />
+          <div>
+            <div id="profile-name-display" class="profile-name">旅人</div>
+            <div id="profile-tier-badge" class="profile-badge">🌱 鄰里人</div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- 修改個人資料表單 -->
+        <form id="profile-form" class="profile-form">
+          <label>客舍稱號：</label>
+          <input type="text" id="edit-name" maxlength="12" required />
+
+          <label>身份標籤：</label>
+          <select id="edit-role">
+            <option value="☁️ 晴空選書">☁️ 晴空選書</option>
+            <option value="🍃 散文漫遊">🍃 散文漫遊</option>
+            <option value="✍️ 靜心寫作">✍️ 靜心寫作</option>
+          </select>
+
+          <label>分身造型：</label>
+          <div class="avatar-options">
+            <label class="avatar-option">
+              <input type="radio" name="edit-avatar" value="/assets/player1.png" />
+              <span>分身一號</span>
+            </label>
+            <label class="avatar-option">
+              <input type="radio" name="edit-avatar" value="/assets/player2.png" />
+              <span>分身二號</span>
+            </label>
+          </div>
+
+          <button type="submit" class="rpg-btn" style="margin-top: 15px;">💾 儲存修改</button>
+        </form>
+
+        <hr class="divider" />
+
+        <!-- 個人歷史閱讀記錄 -->
+        <div class="logs-section">
+          <h3>📚 我的個人閱讀清單 (<span id="logs-count">0</span>)</h3>
+          <div id="logs-container" class="logs-container"></div>
+        </div>
+
+        <button id="profile-logout-btn" class="rpg-btn rpg-btn-danger" style="margin-top: 20px;">🚪 登出帳號</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .profile-viewport {
+      min-height: 100vh;
+      background: #020617;
+      color: #cbd5e1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .profile-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .profile-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: #38bdf8;
+    }
+    .state-msg {
+      text-align: center;
+      color: #94a3b8;
+      padding: 40px 0;
+    }
+    .avatar-preview-box {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .avatar-preview-box img {
+      width: 56px;
+      height: 56px;
+      background: #0f172a;
+      border: 2px solid #38bdf8;
+      border-radius: 8px;
+      padding: 4px;
+      object-fit: contain;
+    }
+    .profile-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #f8fafc;
+    }
+    .profile-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.8rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 2px 8px;
+      border-radius: 12px;
+      color: #38bdf8;
+    }
+    .divider {
+      border: 0;
+      border-top: 1px solid #334155;
+      margin: 20px 0;
+    }
+    .profile-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .profile-form label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+    .profile-form input[type="text"], .profile-form select {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .avatar-options {
+      display: flex;
+      gap: 12px;
+    }
+    .avatar-option {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .avatar-option:has(input:checked) {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .rpg-btn {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    .rpg-btn:hover { background: #0369a1; }
+    .rpg-btn-danger { background: #ef4444; }
+    .rpg-btn-danger:hover { background: #dc2626; }
+    .rpg-btn-sm {
+      background: #0f172a;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .logs-container {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .log-card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+  </style>
+
+  <script>
+    import { createClient } from '@supabase/supabase-js';
+
+    const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const TABLE_NAME = 'slowpace_members';
+
+    let currentUserId: string | null = null;
+    let currentProfile: any = null;
+
+    const loadingState = document.getElementById('loading-state');
+    const profileContent = document.getElementById('profile-content');
+    const backBtn = document.getElementById('back-to-sanctuary');
+    const logoutBtn = document.getElementById('profile-logout-btn');
+    const form = document.getElementById('profile-form') as HTMLFormElement;
+
+    // 返回 2D 空間頁面
+    backBtn?.addEventListener('click', () => {
+      window.location.href = '/sanctuary';
+    });
+
+    // 登出
+    logoutBtn?.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      localStorage.clear();
+      window.location.href = '/sanctuary';
+    });
+
+    // 初始化：檢查登入狀態與載入個人資料
+    async function initProfile() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !session.user) {
+        alert('您尚未登入，請先前往客舍空間進行登入。');
+        window.location.href = '/sanctuary';
+        return;
+      }
+
+      currentUserId = session.user.id;
+      const { data: profile, error } = await supabase
+        .from(TABLE_NAME)
+        .select('*')
+        .eq('user_id', currentUserId)
+        .single();
+
+      if (profile) {
+        currentProfile = profile;
+        renderProfileData();
+        if (loadingState) loadingState.style.display = 'none';
+        if (profileContent) profileContent.style.display = 'block';
+      } else {
+        alert('找不到對應的會員資料。');
+        window.location.href = '/sanctuary';
+      }
+    }
+
+    // 將資料渲染至 UI 與表單
+    function renderProfileData() {
+      const avatarImg = document.getElementById('profile-avatar-img') as HTMLImageElement;
+      const nameDisplay = document.getElementById('profile-name-display');
+      const tierBadge = document.getElementById('profile-tier-badge');
+      const editName = document.getElementById('edit-name') as HTMLInputElement;
+      const editRole = document.getElementById('edit-role') as HTMLSelectElement;
+      const logsCount = document.getElementById('logs-count');
+      const logsContainer = document.getElementById('logs-container');
+
+      if (avatarImg) avatarImg.src = currentProfile.avatar || '/assets/player1.png';
+      if (nameDisplay) nameDisplay.textContent = currentProfile.name;
+      if (tierBadge) tierBadge.textContent = currentProfile.tier === '店主' ? '👑 店主' : '🌱 鄰里人';
+      
+      if (editName) editName.value = currentProfile.name;
+      if (editRole) editRole.value = currentProfile.role || '☁️ 晴空選書';
+
+      // 設定分身選取
+      const avatarRadio = document.querySelector(`input[name="edit-avatar"][value="${currentProfile.avatar}"]`) as HTMLInputElement;
+      if (avatarRadio) avatarRadio.checked = true;
+
+      // 渲染歷史閱讀紀錄
+      const logs = currentProfile.reading_log || [];
+      if (logsCount) logsCount.textContent = String(logs.length);
+      
+      if (logsContainer) {
+        if (logs.length === 0) {
+          logsContainer.innerHTML = '<div style="color:#64748b; text-align:center;">尚無閱讀紀錄</div>';
+        } else {
+          let html = '';
+          logs.forEach((log: any) => {
+            html += `
+              <div class="log-card">
+                <div style="font-weight:bold; color:#38bdf8;">《${log.book}》 / ${log.author}</div>
+                <div style="color:#94a3b8; font-size:0.8rem; margin-top:2px;">進度：第 ${log.current}/${log.total} 頁 (${log.date || ''})</div>
+              </div>
+            `;
+          });
+          logsContainer.innerHTML = html;
+        }
+      }
+    }
+
+    // 儲存表單修改
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUserId) return;
+
+      const newName = (document.getElementById('edit-name') as HTMLInputElement).value.trim();
+      const newRole = (document.getElementById('edit-role') as HTMLSelectElement).value;
+      const selectedAvatar = (document.querySelector('input[name="edit-avatar"]:checked') as HTMLInputElement)?.value || '/assets/player1.png';
+
+      if (!newName) {
+        alert('請輸入有效的稱號');
+        return;
+      }
+
+      // 如果名稱更改為 Mi 或 店主，自動提升權限
+      const isOwner = newName === 'Mi' || newName === '店主';
+      const newTier = isOwner ? '店主' : currentProfile.tier;
+
+      const { error } = await supabase
+        .from(TABLE_NAME)
+        .update({
+          name: newName,
+          role: newRole,
+          avatar: selectedAvatar,
+          tier: newTier,
+          updated_at: new Date()
+        })
+        .eq('user_id', currentUserId);
+
+      if (error) {
+        alert('儲存失敗：' + error.message);
+      } else {
+        alert('個人資料已成功更新！');
+        currentProfile.name = newName;
+        currentProfile.role = newRole;
+        currentProfile.avatar = selectedAvatar;
+        currentProfile.tier = newTier;
+        renderProfileData();
+      }
+    });
+
+    initProfile();
+  </script>
+</Layout>
