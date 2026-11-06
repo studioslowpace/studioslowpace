@@ -3,53 +3,18 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="空間客舍 · 自由佈置空間">
-  <!-- 1. 登入 / 註冊 Modal (整合 Supabase Auth) -->
-  <div id="rpg-modal" class="rpg-modal-overlay">
-    <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 空間客舍 · 會員認證系統 ◆</span></div>
-      <div class="rpg-content">
-        <!-- 登入 / 註冊切換分頁 -->
-        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
-          <button id="auth-tab-login" class="rpg-btn-sm active" style="flex:1;">登入帳號</button>
-          <button id="auth-tab-signup" class="rpg-btn-sm" style="flex:1;">註冊新帳號</button>
-        </div>
 
-        <input type="email" id="auth-email" placeholder="電子信箱 (Email)" required style="margin-bottom:8px;" />
-        <input type="password" id="auth-password" placeholder="密碼 (至少 6 位數)" required style="margin-bottom:12px;" />
-
-        <!-- 註冊專用擴充欄位 -->
-        <div id="signup-extra-fields" style="display: none; flex-direction: column; gap: 8px;">
-          <p class="rpg-text" style="margin-bottom:4px;">午後的長沙灣天空湛藍。請選擇你的分身造型與稱號：</p>
-          
-          <div class="avatar-selector-label">選擇分身造型：</div>
-          <div class="avatar-selector-group">
-            <label class="avatar-card">
-              <input type="radio" name="player-avatar" value="/assets/player1.png" checked />
-              <img src="/assets/player1.png" alt="P1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-              <span class="avatar-fallback" style="display:none;">👤 P1</span>
-              <span class="avatar-name">分身一號</span>
-            </label>
-            <label class="avatar-card">
-              <input type="radio" name="player-avatar" value="/assets/player2.png" />
-              <img src="/assets/player2.png" alt="P2" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-              <span class="avatar-fallback" style="display:none;">👤 P2</span>
-              <span class="avatar-name">分身二號</span>
-            </label>
-          </div>
-
-          <input type="text" id="rpg-name-input" placeholder="輸入你的獨一無二稱號 (例: Mi)" maxlength="12" style="margin-bottom:8px;" />
-
-          <div class="role-selector-group" style="margin-bottom: 10px;">
-            <label class="role-chip"><input type="radio" name="user-role" value="晴空選書" checked /> ☁️ 晴空選書</label>
-            <label class="role-chip"><input type="radio" name="user-role" value="散文漫遊" /> 🍃 散文漫遊</label>
-            <label class="role-chip"><input type="radio" name="user-role" value="靜心寫作" /> ✍️ 靜心寫作</label>
-          </div>
-        </div>
-
-        <button id="rpg-start-btn" class="rpg-btn">▶ 進入客舍空間</button>
-      </div>
+ <!-- 1. 登入 / 訪客 Modal (改為內嵌 /login 頁面) -->
+<div id="rpg-modal" class="rpg-modal-overlay">
+  <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
+    <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>◆ 空間客舍 · 身分認證 ◆</span>
+    </div>
+    <div class="embed-frame-wrapper" style="flex:1;">
+      <iframe id="auth-iframe" src="/login" class="embed-iframe"></iframe>
     </div>
   </div>
+</div>
 
   <!-- 2. 入座與詳細閱讀設定 Modal -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
@@ -1317,138 +1282,71 @@ import Layout from '../layouts/Layout.astro';
       return false;
     }
 
-    // 初始化：檢查 Supabase Auth Session
-    async function checkExistingAuthSession() {
+    // 1. 初始化身分檢查（判斷是否為訪客或已有 Supabase Auth Session）
+  async function initAuthCheck() {
+    const guestId = sessionStorage.getItem('space_guest_id');
+
+    if (guestId) {
+      // 訪客模式登入
+      userId = guestId;
+      await loadUserProfile(userId);
+    } else {
+      // 會員模式登入檢查
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         userId = session.user.id;
         await loadUserProfile(userId);
-      }
-    }
-
-    async function loadUserProfile(uid: string) {
-      const { data: profile } = await supabase
-        .from(TABLE_NAME)
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-
-      if (profile) {
-        playerName = profile.name;
-        playerRole = profile.role || '☁️ 讀者';
-        playerAvatar = profile.avatar || '/assets/player1.png';
-        playerTier = profile.tier || '鄰里人';
-
-        if (hudName) hudName.textContent = playerName;
-        if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
-        if (modal) modal.style.display = 'none';
-
-        if (playerTier === '店主') {
-          if (shopkeeperTab) shopkeeperTab.style.display = 'block';
-          shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
-          renderCustomToolsUI();
-        }
-
-        if (!isGameStarted) {
-          isGameStarted = true;
-          await fetchRooms();
-          await syncMyStateToDB();
-          await fetchOnlinePlayers();
-          await fetchRoomItems();
-          await fetchMessages();
-          renderMyLogs();
-          initDatabaseRealtime();
-          gameLoop();
-        }
       } else {
+        // 未登入：顯示登入彈出視窗
         if (modal) modal.style.display = 'flex';
-        if (authTabSignup) authTabSignup.click();
       }
     }
+  }
 
-    checkExistingAuthSession();
+  // 2. 監聽 Supabase Auth 登入成功事件 (當 iframe 內完成登入時觸發)
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+      userId = session.user.id;
+      if (modal) modal.style.display = 'none';
+      await loadUserProfile(userId);
+    }
+  });
 
-    // 點擊登入 / 註冊按鈕
-    startBtn?.addEventListener('click', async () => {
-      const email = authEmailInput?.value.trim();
-      const password = authPasswordInput?.value.trim();
+  // 3. 處理訪客清理與登出/離開
+  async function handleLeaveAndCleanup() {
+    const currentGuestId = sessionStorage.getItem('space_guest_id');
+    
+    if (currentGuestId) {
+      // 訪客離開：即時從 Supabase 資料庫徹底刪除訪客紀錄
+      await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+      sessionStorage.removeItem('space_guest_id');
+    }
 
-      if (!email || !password) {
-        alert('請完整填寫電子信箱與密碼');
-        return;
-      }
+    // 一般會員登入：清除 Supabase Auth
+    await supabase.auth.signOut();
+    localStorage.clear();
+    
+    // 重新整理並打開登入 Modal
+    window.location.reload();
+  }
 
-      if (authMode === 'signup') {
-        const nameVal = nameInput?.value.trim();
-        if (!nameVal) { alert('請輸入您的客舍稱號'); return; }
+  // 綁定登出 / 離開按鈕
+  logoutBtn?.addEventListener('click', async () => {
+    await handleLeaveAndCleanup();
+  });
 
-        const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-        if (authError) { alert('註冊失敗：' + authError.message); return; }
+  // 當訪客關閉分頁或離開網站時自動刪除資料
+  window.addEventListener('beforeunload', () => {
+    const currentGuestId = sessionStorage.getItem('space_guest_id');
+    if (currentGuestId) {
+      supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+    }
+  });
 
-        if (authData.user) {
-          userId = authData.user.id;
-          playerName = nameVal;
-          const isOwner = playerName === 'Mi' || playerName === '店主';
-          playerTier = isOwner ? '店主' : '鄰里人';
+  // 執行身分驗證檢查
+  initAuthCheck();
 
-          const selectedAvatar = document.querySelector('input[name="player-avatar"]:checked') as HTMLInputElement;
-          if (selectedAvatar) playerAvatar = selectedAvatar.value;
-          const selectedRole = document.querySelector('input[name="user-role"]:checked') as HTMLInputElement;
-          if (selectedRole) playerRole = selectedRole.value;
-
-          const { error: dbError } = await supabase.from(TABLE_NAME).upsert({
-            user_id: userId,
-            name: playerName,
-            role: playerRole,
-            tier: playerTier,
-            avatar: playerAvatar,
-            room: currentRoom,
-            gx: playerGx,
-            gy: playerGy,
-            reading_log: [],
-            updated_at: new Date()
-          }, { onConflict: 'user_id' });
-
-          if (dbError) { alert('建立會員資料失敗：' + dbError.message); return; }
-
-          if (modal) modal.style.display = 'none';
-          if (hudName) hudName.textContent = playerName;
-          if (hudTierTag) hudTierTag.textContent = playerTier === '店主' ? '👑 店主' : '🌱 鄰里人';
-
-          if (playerTier === '店主') {
-            if (shopkeeperTab) shopkeeperTab.style.display = 'block';
-            shopkeeperBtns.forEach(b => (b as HTMLElement).style.display = 'inline-block');
-            renderCustomToolsUI();
-          }
-
-          if (!isGameStarted) {
-            isGameStarted = true;
-            await fetchRooms();
-            await syncMyStateToDB();
-            await fetchOnlinePlayers();
-            await fetchRoomItems();
-            await fetchMessages();
-            renderMyLogs();
-            initDatabaseRealtime();
-            gameLoop();
-          }
-        }
-      } else {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-        if (authError) { alert('登入失敗：帳號或密碼錯誤'); return; }
-
-        if (authData.user) {
-          userId = authData.user.id;
-          await loadUserProfile(userId);
-        }
-      }
-    });
-
-    logoutBtn?.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      localStorage.clear();
-      window.location.reload();
-    });
+    
 
     bindToolButtons();
 

@@ -2,22 +2,81 @@
 import Layout from '../layouts/BaseLayout.astro';
 ---
 <Layout title="會員登入 · 空間客舍">
-  <div style="max-width: 400px; margin: 100px auto; padding: 20px; background: #1e293b; border-radius: 8px; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-    <h2>🔐 會員登入</h2>
-    <input type="email" id="login-email" placeholder="電子信箱 (Email)" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
-    <input type="password" id="login-password" placeholder="密碼" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
-    
-    <button id="login-submit-btn" style="width:100%; padding:10px; background:#0284c7; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-bottom: 12px;">登入</button>
-    
-    <div style="text-align: right;">
-      <button id="forgot-password-btn" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
+  <div style="max-width: 400px; margin: 80px auto; padding: 20px; background: #1e293b; border-radius: 8px; color: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+    <!-- 切換登入與訪客模式分頁 -->
+    <div style="display: flex; gap: 6px; margin-bottom: 16px;">
+      <button id="tab-login-mode" class="auth-tab-btn active" style="flex:1; padding:8px; background:#0284c7; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">會員登入</button>
+      <button id="tab-guest-mode" class="auth-tab-btn" style="flex:1; padding:8px; background:#0f172a; color:#94a3b8; border:1px solid #334155; border-radius:4px; cursor:pointer;">👤 訪客模式</button>
+    </div>
+
+    <!-- 會員登入表單區塊 -->
+    <div id="login-form-container">
+      <h2>🔐 會員登入</h2>
+      <input type="email" id="login-email" placeholder="電子信箱 (Email)" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
+      <input type="password" id="login-password" placeholder="密碼" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
+      
+      <button id="login-submit-btn" style="width:100%; padding:10px; background:#0284c7; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-bottom: 12px;">登入</button>
+      
+      <div style="text-align: right;">
+        <button id="forgot-password-btn" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
+      </div>
+    </div>
+
+    <!-- 訪客快速進入表單區塊 -->
+    <div id="guest-form-container" style="display: none;">
+      <h2>👤 訪客快速進入</h2>
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">訪客身分無需註冊密碼，離開空間後資料將自動清除。</p>
+      
+      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">選擇分身造型：</div>
+      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <label style="flex:1; background:#0f172a; border:1px solid #334155; padding:8px; text-align:center; border-radius:6px; cursor:pointer;">
+          <input type="radio" name="guest-avatar" value="/assets/player1.png" checked style="display:none;" />
+          <img src="/assets/player1.png" alt="P1" style="width:32px; height:32px;" />
+          <div style="font-size:11px; color:#fff;">分身一號</div>
+        </label>
+        <label style="flex:1; background:#0f172a; border:1px solid #334155; padding:8px; text-align:center; border-radius:6px; cursor:pointer;">
+          <input type="radio" name="guest-avatar" value="/assets/player2.png" style="display:none;" />
+          <img src="/assets/player2.png" alt="P2" style="width:32px; height:32px;" />
+          <div style="font-size:11px; color:#fff;">分身二號</div>
+        </label>
+      </div>
+
+      <input type="text" id="guest-name-input" placeholder="輸入您的訪客稱號 (例: 訪客小明)" maxlength="12" style="width:100%; padding:10px; margin-bottom:12px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
+
+      <button id="guest-submit-btn" style="width:100%; padding:10px; background:#10b981; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">🚀 進入客舍空間</button>
     </div>
   </div>
 
   <script>
     import { supabase } from '../utils/auth';
 
-    // 登入按鈕事件
+    const TABLE_NAME = 'slowpace_members';
+
+    // 分頁切換按鈕
+    const tabLoginMode = document.getElementById('tab-login-mode');
+    const tabGuestMode = document.getElementById('tab-guest-mode');
+    const loginFormContainer = document.getElementById('login-form-container');
+    const guestFormContainer = document.getElementById('guest-form-container');
+
+    tabLoginMode?.addEventListener('click', () => {
+      tabLoginMode.style.background = '#0284c7';
+      tabLoginMode.style.color = '#fff';
+      tabLoginMode.style.border = 'none';
+      if (tabGuestMode) { tabGuestMode.style.background = '#0f172a'; tabGuestMode.style.color = '#94a3b8'; tabGuestMode.style.border = '1px solid #334155'; }
+      if (loginFormContainer) loginFormContainer.style.display = 'block';
+      if (guestFormContainer) guestFormContainer.style.display = 'none';
+    });
+
+    tabGuestMode?.addEventListener('click', () => {
+      tabGuestMode.style.background = '#10b981';
+      tabGuestMode.style.color = '#fff';
+      tabGuestMode.style.border = 'none';
+      if (tabLoginMode) { tabLoginMode.style.background = '#0f172a'; tabLoginMode.style.color = '#94a3b8'; tabLoginMode.style.border = '1px solid #334155'; }
+      if (guestFormContainer) guestFormContainer.style.display = 'block';
+      if (loginFormContainer) loginFormContainer.style.display = 'none';
+    });
+
+    // 會員登入按鈕事件
     document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
       const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
       const password = (document.getElementById('login-password') as HTMLInputElement).value.trim();
@@ -32,21 +91,61 @@ import Layout from '../layouts/BaseLayout.astro';
         alert('登入失敗：' + error.message);
       } else {
         alert('登入成功！');
-        window.location.href = '/'; // 登入後自動導向 2D 空間主頁
+        window.location.href = '/'; 
       }
     });
 
-    // 忘記密碼按鈕事件（已修正 ID 對應至 #login-email）
+    // 訪客模式進入按鈕事件
+    document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
+      const nameVal = (document.getElementById('guest-name-input') as HTMLInputElement).value.trim();
+      if (!nameVal) {
+        alert('請輸入您的訪客稱號');
+        return;
+      }
+
+      const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked') as HTMLInputElement;
+      const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
+
+      // 產生專屬的暫時訪客 ID 並存入 sessionStorage（離開網站或關閉頁面時自動失效）
+      const guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
+      
+      const guestData = {
+        user_id: guestId,
+        name: nameVal,
+        role: '☁️ 訪客',
+        tier: '鄰里人',
+        avatar: avatarVal,
+        room: 'study',
+        gx: 2,
+        gy: 2,
+        reading_log: [],
+        updated_at: new Date()
+      };
+
+      // 寫入 Supabase 資料庫
+      const { error } = await supabase.from(TABLE_NAME).upsert(guestData, { onConflict: 'user_id' });
+      if (error) {
+        alert('進入空間失敗：' + error.message);
+        return;
+      }
+
+      // 將訪客資訊暫存於 sessionStorage
+      sessionStorage.setItem('space_guest_id', guestId);
+
+      alert(`歡迎進入，${nameVal}！`);
+      window.location.href = '/';
+    });
+
+    // 忘記密碼按鈕事件
     document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
       const email = (document.getElementById('login-email') as HTMLInputElement).value.trim();
-      
       if (!email) {
         alert('請先在上方欄位輸入您的電子信箱 (Email)');
         return;
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/profile`, // 重設密碼後導向的頁面
+        redirectTo: `${window.location.origin}/profile`,
       });
 
       if (error) {
