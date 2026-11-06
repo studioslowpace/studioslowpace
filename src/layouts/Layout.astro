@@ -1,27 +1,84 @@
 ---
-
 const { title = "預設標題" } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{title}</title>
+    </head>
+    <body>
+        <!-- 假設這裡放你的 Header，你可以加上 id 方便 JS 控制 -->
+        <header id="site-header">
+            <nav>
+                <a href="/">首頁</a>
+                <!-- 管理員專屬按鈕，預設隱藏 -->
+                <a href="/admin" id="admin-link" style="display: none;">管理後台</a>
+            </nav>
+        </header>
+
+        <main>
+            <slot />
+        </main>
+    </body>
 </html>
 
 <style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
+    html,
+    body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+    }
 </style>
+
+<!-- 讓這段 JS 在客戶端（瀏覽器）執行 -->
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+  const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+  const client = createClient(supabaseUrl, supabaseKey);
+
+  // 統一的權限檢查
+  async function checkLayoutAdminStatus(user) {
+    if (!user) return false;
+    const { data: profile, error } = await client
+        .from('slowpace_members')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+    return !error && profile?.is_admin === true;
+  }
+
+  // 初始化 Layout 的管理員狀態
+  async function initLayoutAuth() {
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      const isAdmin = await checkLayoutAdminStatus(session?.user);
+      
+      // 依據 isAdmin 控制 Layout 中的按鈕（例如 header 裡的管理者連結）
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) {
+        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
+      }
+    } catch (err) {
+      console.error("Layout 權限檢查失敗:", err);
+    }
+
+    // 實時監聽
+    client.auth.onAuthStateChange(async (event, session) => {
+      const isAdmin = await checkLayoutAdminStatus(session?.user);
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) {
+        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  initLayoutAuth();
+</script>

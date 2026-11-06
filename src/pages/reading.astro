@@ -1,6 +1,6 @@
 ---
 // =========================================================================
-// 1. Astro 圍欄區：這裡的程式碼只在「GitHub Actions 打包時」執行 (SEO 核心)
+// 1. Astro 圍欄區：打包時取得初始讀書會資料
 // =========================================================================
 import BaseLayout from '../layouts/BaseLayout.astro';
 
@@ -8,7 +8,6 @@ const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
 const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
 const tableName = 'reading_clubs';
 
-// 在打包時，用原生最輕量安全的 fetch 取得最新資料並生成 HTML
 const response = await fetch(`${supabaseUrl}/rest/v1/${tableName}?select=*&order=sort_order.desc`, {
   headers: {
     'apikey': supabaseKey,
@@ -32,38 +31,38 @@ if (response.ok) {
       <div class="banner">
         <img src="/images/reading_clubs.jpg" alt="讀書會活動橫幅" oncontextmenu="return false;" ondragstart="return false;">
       </div>
+      <!-- 這裡保留密道按鈕（若 BaseLayout 有獨立控制登入，也可直接在此點擊登入） -->
       <button class="logo-btn" id="adminSecretBtn" title="管理員密道">
         <img src="/images/logo-small2.png" alt="Slow Pace Studio Logo" oncontextmenu="return false;" ondragstart="return false;">
       </button>
     </div>
 
+    <!-- 新增按鈕區塊 -->
     <div class="club-global-add-wrap" id="clubGlobalAddBlock">
       <button class="btn-global-add" id="openCreateModalBtn">
         <span>新增讀書會項目</span>
       </button>
     </div>
 
-<div class="grid-container" id="clubs-container">
-  {clubsData.map((item, index) => {
-    // 處理內文字串換行
-    const formattedContent = item.content ? item.content.replace(/\n/g, '<br>') : '';
-    return (
-      /* 🌟 修正點：把網址的 ${item.id} 改成 ${encodeURIComponent(item.title)} */
-      <a href={`/clubs/${encodeURIComponent(item.title || '未命名')}/`} class="card-link" style="text-decoration: none; color: inherit;">
-        <section class="card" data-index={index}>
-          {/* 🌟 編輯按鈕加上 stopPropagation 避免觸發點擊跳轉 */}
-          <div class="edit-badge" data-edit-index={index} onclick="event.preventDefault(); event.stopPropagation();">編輯 ✎</div>
-          <h2>{item.title || '未命名'}</h2>
-          <hr />
-          <img class="card-img" src={item.image_url || ''} alt={item.title} oncontextmenu="return false;" ondragstart="return false;" />
-          <div class="content-text" set:html={formattedContent}></div>
-        </section>
-      </a>
-    );
-  })}
-</div>
+    <div class="grid-container" id="clubs-container">
+      {clubsData.map((item, index) => {
+        const formattedContent = item.content ? item.content.replace(/\n/g, '<br>') : '';
+        return (
+          <a href={`/clubs/${encodeURIComponent(item.title || '未命名')}/`} class="card-link" style="text-decoration: none; color: inherit;">
+            <section class="card" data-index={index}>
+              <div class="edit-badge" data-edit-index={index} onclick="event.preventDefault(); event.stopPropagation();">編輯 ✎</div>
+              <h2>{item.title || '未命名'}</h2>
+              <hr />
+              <img class="card-img" src={item.image_url || ''} alt={item.title} oncontextmenu="return false;" ondragstart="return false;" />
+              <div class="content-text" set:html={formattedContent}></div>
+            </section>
+          </a>
+        );
+      })}
+    </div>
   </main>
 
+  <!-- 提示與編輯 Modal 維持不變 -->
   <div class="alert-modal" id="customAlert">
     <div class="alert-content">
       <p id="alertMessage">提示訊息</p>
@@ -98,7 +97,7 @@ if (response.ok) {
         
         <div class="form-group">
           <label>顯示排序權重 (sort_order)</label>
-          <input type="number" id="clubSortOrder" required value="10" placeholder="數字越小越後面，1會落在最右下角">
+          <input type="number" id="clubSortOrder" required value="10" placeholder="數字越小越前面">
         </div>
         
         <div class="form-group">
@@ -111,7 +110,7 @@ if (response.ok) {
             <input type="file" id="clubImageFile" accept="image/*">
           </div>
           <div id="urlInputSection" style="display: none;">
-            <input type="text" id="clubImageUrlInput" placeholder="可填寫外部網址或 GitHub 的相片路徑，例如: images/book1.jpg">
+            <input type="text" id="clubImageUrlInput" placeholder="例如: images/book1.jpg">
           </div>
         </div>
 
@@ -127,32 +126,20 @@ if (response.ok) {
       </form>
     </div>
   </div>
-
-
-</Baselayout>
+</BaseLayout>
 
 <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  import { createClient } from '@supabase/supabase-js';
-
+<script define:vars={{ clubsData }}>
   window.supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
   window.supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
   window.TABLE_NAME = 'reading_clubs'; 
   window.STORAGE_BUCKET_NAME = 'reading_clubs'; 
   window.client = supabase.createClient(window.supabaseUrl, window.supabaseKey);
 
-  let globalClubsData = []; 
+  let globalClubsData = clubsData; 
 
-  document.addEventListener("DOMContentLoaded", async () => {
-    const { data } = await window.client.from(window.TABLE_NAME).select('*').order('sort_order', { ascending: false });
-    globalClubsData = data || [];
-
-    loadExternalHeader();
-    loadExternalFooter();
+  document.addEventListener("DOMContentLoaded", () => {
     bindDOMEvents();
-    
-    // 🌟 改為初始化檢查 isAdmin 狀態
-    await initAuthCheck();
   });
 
   function bindDOMEvents() {
@@ -191,6 +178,7 @@ if (response.ok) {
     document.getElementById('adminPwd').value = '';
   }
 
+  // 密碼驗證登入（若 BaseLayout 已處理，這裡保留作為密道直接登入入口）
   async function verifyPassword() {
     const pwd = document.getElementById('adminPwd').value.trim();
     if (!pwd) return;
@@ -201,65 +189,9 @@ if (response.ok) {
       showAlert("❌ 通行密碼錯誤，拒絕存取。");
     } else {
       closePasswordModal();
-      showAlert("🔓 驗證成功！正在驗證管理員權限...");
-      // 登入成功後，onAuthStateChange 會自動觸發並更新 isAdmin 介面
+      showAlert("🔓 驗證成功！網頁即將重新整理。");
+      setTimeout(() => window.location.reload(), 1000);
     }
-  }
-
-  // 🌟 共用的查詢 slowpace_members 是否為管理員函式
-  async function checkAdminStatus(user) {
-    if (!user) return false;
-    
-    const { data: profile, error } = await window.client
-        .from('slowpace_members')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-
-    return !error && profile?.is_admin === true;
-  }
-
-  // 🌟 雙管齊下：初始化檢查 + 即時監聽 auth 狀態改變
-  async function initAuthCheck() {
-    const updateUI = (isAdmin) => {
-      const addBlock = document.getElementById('clubGlobalAddBlock');
-      if (isAdmin) {
-        document.body.classList.add('admin-mode-active');
-        if (addBlock) addBlock.style.display = 'flex';
-      } else {
-        document.body.classList.remove('admin-mode-active');
-        if (addBlock) addBlock.style.display = 'none';
-      }
-    };
-
-    // 1. 網頁一載入先主動抓取一次 session 並檢查
-    try {
-      const { data: { session } } = await window.client.auth.getSession();
-      const isAdmin = await checkAdminStatus(session?.user);
-      updateUI(isAdmin);
-    } catch (err) {
-      console.error("檢查初始狀態失敗:", err);
-      updateUI(false);
-    }
-
-    // 2. 持續實時監聽後續的登入/登出狀態
-    window.client.auth.onAuthStateChange(async (event, session) => {
-      const isAdmin = await checkAdminStatus(session?.user);
-      updateUI(isAdmin);
-    });
-  }
-
-  async function loadExternalHeader() {
-    try {
-      const resp = await fetch('/header.html');
-      if (resp.ok) document.getElementById('header-container').innerHTML = await resp.text();
-    } catch (e) {}
-  }
-  async function loadExternalFooter() {
-    try {
-      const resp = await fetch('/footer.html');
-      if (resp.ok) document.getElementById('global-footer').innerHTML = await resp.text();
-    } catch (e) {}
   }
 
   function openCreateModal() {
@@ -373,191 +305,3 @@ if (response.ok) {
     }
   }
 </script>
-
-<style>
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    --scrollbar-width: 0px;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    font-size: 10px;
-    overflow-x: auto;
-    overflow-y: scroll;
-    background-color: #70b39b; 
-  }
-  .main-container {
-    line-height: 1.8;
-    color: #333;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 40px 20px;
-  }
-  .header-area {
-    position: relative;
-    max-width: 100%;
-    margin-bottom: 40px;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .banner img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-  .logo-btn {
-    position: absolute;
-    left: 15px;
-    bottom: 12px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    z-index: 10;
-    transition: transform 0.2s;
-  }
-  .logo-btn:hover {
-    transform: scale(1.05);
-  }
-  .logo-btn img {
-    max-width: 70px;
-    height: auto;
-    display: block;
-    opacity: 0.9;
-  }
-  .grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 40px;
-  }
-  /* 🌟 卡片外層加上 Link 包裹樣式調整 */
-  .card-link {
-    display: block;
-    transition: all 0.3s ease;
-  }
-  .card {
-    background: #fff;
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    height: 100%;
-    position: relative;
-  }
-  .card-link:hover .card {
-    transform: translateY(-5px);
-  }
-  .card h2 {
-    font-size: 22px;
-    color: #4a3728;
-    text-align: center;
-    margin-top: 0;
-    font-weight: bold;
-    padding: 0 20px;
-  }
-  .card hr {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 15px 0;
-  }
-  .card-img {
-    width: 100%;
-    aspect-ratio: 108 / 135; 
-    object-fit: cover;
-    border-radius: 4px;
-    margin-bottom: 20px;
-  }
-  .edit-badge {
-    display: none;
-    position: absolute;
-    top: 15px; right: 15px;
-    background: #c8963e;
-    color: white;
-    padding: 4px 10px;
-    font-size: 12px;
-    border-radius: 4px;
-    z-index: 5;
-  }
-  body.admin-mode-active .edit-badge {
-    display: block;
-  }
-  .card .content-text {
-    font-size: 15px;
-    color: #555;
-    text-align: justify;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .alert-modal, .admin-modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
-    z-index: 20000;
-    justify-content: center;
-    align-items: center;
-  }
-  .alert-content {
-    background: white; padding: 25px; border-radius: 8px; width: 300px; text-align: center; font-size: 14px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  }
-  .alert-content p { margin: 0 0 20px 0; color: #333; font-weight: bold; line-height: 1.5; }
-
-  .admin-content {
-    background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; font-size: 14px; max-height: 90vh; overflow-y: auto;
-  }
-  .admin-content h3 { margin-top: 0; font-size: 20px; }
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-  .form-group input, .form-group textarea {
-    width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;
-  }
-  .radio-group { display: flex; gap: 15px; margin-bottom: 10px; }
-  .radio-group label { display: inline; font-weight: normal; cursor: pointer; }
-  .btn-group { text-align: right; margin-top: 20px; }
-  .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
-  .btn-submit { background: #2b3929; color: white; margin-left: 10px; }
-
-  .club-global-add-wrap {
-    display: none;
-    justify-content: center;
-    margin: 30px auto 10px;
-    width: 100%;
-    max-width: 1500px;
-  }
-  .btn-global-add {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background-color: #2b73ff;
-    color: #ffffff;
-    border: none;
-    padding: 12px 24px;
-    font-size: 15px;
-    font-weight: 500;
-    border-radius: 6px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(43, 115, 255, 0.2);
-    transition: all 0.2s ease;
-  }
-  .btn-global-add:hover {
-    background-color: #1456db;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 15px rgba(43, 115, 255, 0.3);
-  }
-
-  @media (max-width: 600px) {
-    .logo-btn img {
-      max-width: 30px;
-    }
-  }
-</style>
