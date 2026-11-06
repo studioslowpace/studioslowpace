@@ -507,9 +507,11 @@
 
     <!-- JavaScript 邏輯 -->
     <script>
-        const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-        const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+import { createClient } from '@supabase/supabase-js';
+
+    const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const defaultPassword = "slow2024";
 
         let allUserRecords = [];
