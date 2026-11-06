@@ -235,14 +235,14 @@ import Layout from '../layouts/BaseLayout.astro';
 
     // 返回 2D 空間頁面
     backBtn?.addEventListener('click', () => {
-      window.location.href = '/sanctuary';
+      window.location.href = '/';
     });
 
     // 登出
     logoutBtn?.addEventListener('click', async () => {
       await supabase.auth.signOut();
       localStorage.clear();
-      window.location.href = '/sanctuary';
+      window.location.href = '/';
     });
 
     // 初始化：檢查登入狀態與載入個人資料
@@ -251,7 +251,7 @@ import Layout from '../layouts/BaseLayout.astro';
       
       if (!session || !session.user) {
         alert('您尚未登入，請先前往客舍空間進行登入。');
-        window.location.href = '/sanctuary';
+        window.location.href = '/';
         return;
       }
 
@@ -269,7 +269,7 @@ import Layout from '../layouts/BaseLayout.astro';
         if (profileContent) profileContent.style.display = 'block';
       } else {
         alert('找不到對應的會員資料。');
-        window.location.href = '/sanctuary';
+        window.location.href = '/';
       }
     }
 
