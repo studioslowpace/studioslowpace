@@ -18,10 +18,65 @@ const { title = "預設標題" } = Astro.props;
 <body>
     <Header />
 
-    <main>
-        <slot />
-    </main>
-
-    <Footer />
-</body>
+        <main>
+            <slot />
+        </main>
+    </body>
 </html>
+
+<style>
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<!-- 讓這段 JS 在客戶端（瀏覽器）執行 -->
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+  const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+  const client = createClient(supabaseUrl, supabaseKey);
+
+  // 統一的權限檢查
+  async function checkLayoutAdminStatus(user) {
+    if (!user) return false;
+    const { data: profile, error } = await client
+        .from('slowpace_members')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
+    return !error && profile?.is_admin === true;
+  }
+
+  // 初始化 Layout 的管理員狀態
+  async function initLayoutAuth() {
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      const isAdmin = await checkLayoutAdminStatus(session?.user);
+      
+      // 依據 isAdmin 控制 Layout 中的按鈕（例如 header 裡的管理者連結）
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) {
+        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
+      }
+    } catch (err) {
+      console.error("Layout 權限檢查失敗:", err);
+    }
+
+    // 實時監聽
+    client.auth.onAuthStateChange(async (event, session) => {
+      const isAdmin = await checkLayoutAdminStatus(session?.user);
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) {
+        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  initLayoutAuth();
+</script>
