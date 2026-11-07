@@ -497,11 +497,25 @@ import LoginModal from '../components/LoginModal.astro';
   </style>
 
   <script>
-    import { createClient } from '@supabase/supabase-js';
+      import { supabase } from '../lib/supabase';
 
-    const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const TABLE_NAME = 'slowpace_members';
+    const MSG_TABLE_NAME = 'slowsplace_messages';
+    const ITEMS_TABLE = 'slowsplace_items';
+    const ROOMS_TABLE = 'slowsplace_rooms';
+
+    let userId: string | null = null;
+    let playerName = '冒險者';
+    let playerRole = '☁️ 讀者';
+    let playerAvatar = '/assets/player1.png';
+    let playerTier = '鄰里人';
+    let playerGx = 2;
+    let playerGy = 2;
+    let currentTool = 'move';
+    let currentRoom = 'study';
+    let isDND = false;
+    let currentTask = '';
+
 
     const TABLE_NAME = 'slowpace_members';
     const MSG_TABLE_NAME = 'slowsplace_messages';
