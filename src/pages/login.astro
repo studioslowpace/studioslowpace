@@ -8,3 +8,13 @@ import LoginModal from '../components/LoginModal.astro';
     <LoginModal />
   </div>
 </Layout>
+<script>
+  import { supabase } from '../lib/supabase';
+
+  // 方法二：直接用 Supabase 狀態監聽（只要偵測到登入狀態成立就自動跳轉）
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      window.location.href = '/profile';
+    }
+  });
+</script>
