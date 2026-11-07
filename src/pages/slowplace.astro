@@ -497,11 +497,7 @@ import LoginModal from '../components/LoginModal.astro';
   </style>
 
   <script>
-    import { createClient } from '@supabase/supabase-js';
-
-    const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    import { supabase } from '../lib/supabase';
 
     const TABLE_NAME = 'slowpace_members';
     const MSG_TABLE_NAME = 'slowsplace_messages';
