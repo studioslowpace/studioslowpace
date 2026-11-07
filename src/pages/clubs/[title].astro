@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 // 1. 開啟 SSR 動態渲染，移除舊的 getStaticPaths
 export const prerender = false;
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 const tableName = 'reading_clubs';
 
 // 1. 取得網址帶過來的書名參數 (例如從 /reading/[title] 傳來)
