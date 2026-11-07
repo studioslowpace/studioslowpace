@@ -517,23 +517,6 @@ import LoginModal from '../components/LoginModal.astro';
     let currentTask = '';
 
 
-    const TABLE_NAME = 'slowpace_members';
-    const MSG_TABLE_NAME = 'slowsplace_messages';
-    const ITEMS_TABLE = 'slowsplace_items';
-    const ROOMS_TABLE = 'slowsplace_rooms';
-
-    let userId: string | null = null;
-    let playerName = '冒險者';
-    let playerRole = '☁️ 讀者';
-    let playerAvatar = '/assets/player1.png';
-    let playerTier = '鄰里人';
-    let playerGx = 2;
-    let playerGy = 2;
-    let currentTool = 'move';
-    let currentRoom = 'study';
-    let isDND = false;
-    let currentTask = '';
-
     let myReadingLogs: { book: string; author: string; quote: string; review: string; current: number; total: number; date: string }[] = JSON.parse(localStorage.getItem('rpg_my_logs') || '[]');
 
     let currentChatMode = 'public'; // 'public' | 'dmlist' | 'dm'
