@@ -1,19 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import LoginModal from '../components/LoginModal.astro';
+//
 ---
-
-<Layout title="空間客舍 · 自由佈置空間">
-    <Fragment slot="head">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>客舍萬事屋 | 鄰里人交流區</title>
-    
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    </Fragment>
 
     <style is:global>
         /* ==========================================
@@ -310,17 +297,7 @@ import LoginModal from '../components/LoginModal.astro';
 </head>
 <body>
 
-<!-- 1. 登入 / 訪客 Modal (直接內嵌 LoginModal 元件，不需要 iframe) -->
-<div id="rpg-modal" class="rpg-modal-overlay">
-  <div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
-    <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>◆ 空間客舍 · 身分認證 ◆</span>
-    </div>
-    <div class="embed-frame-wrapper" style="flex:1; overflow-y: auto;">
-      <LoginModal />
-    </div>
-  </div>
-</div>
+
 
     <!-- 🏮 頂部管理選單 (點擊 Logo 展開) -->
     <div id="admin-navbar" class="hidden admin-nav">
@@ -1123,4 +1100,3 @@ import { supabase } from '../lib/supabase';
             });
         }
     </script>
-</Layout>

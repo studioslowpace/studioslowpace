@@ -1,15 +1,20 @@
 ---
+
+import Layout from '../layouts/Layout.astro';
+
+
 // 如果你已經有 Component，請取消以下註解並引入它們
 import PageA from '../components/PageA.astro';
 import PageB from '../components/PageB.astro';
 import PageC from '../components/PageC.astro';
 ---
+<Layout title="空間客舍 · 自由佈置空間">
 
-<html lang="zh-HK">
-<head>
+<Fragment slot="head">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>可調高度的手機模擬檢視</title>
+</Fragment>
   <style>
     body {
       margin: 0;
@@ -141,8 +146,7 @@ import PageC from '../components/PageC.astro';
       display: block;
     }
   </style>
-</head>
-<body>
+
 
   <div class="layout-container" id="layoutContainer">
     <!-- 上方固定頁面 -->
@@ -236,5 +240,3 @@ import PageC from '../components/PageC.astro';
       }
     });
   </script>
-</body>
-</html>
