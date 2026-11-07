@@ -4,37 +4,34 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 // 1. 開啟 SSR 動態渲染，移除舊的 getStaticPaths
 export const prerender = false;
 
-// 2. 從網址取得當前的書名標題並解碼
-const { title } = Astro.params;
-const decodedTitle = decodeURIComponent(title || '');
-
-const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+import { supabase } from '../lib/supabase';
 const tableName = 'reading_clubs';
 
-// 3. 即時從 Supabase 抓取所有讀書會資料（維持原本的排序）
-const response = await fetch(`${supabaseUrl}/rest/v1/${tableName}?select=*&order=sort_order.desc`, {
-  headers: {
-    'apikey': supabaseKey,
-    'Authorization': `Bearer ${supabaseKey}`
-  }
-});
+// 1. 取得網址帶過來的書名參數 (例如從 /reading/[title] 傳來)
+const { title } = Astro.params;
+const decodedTitle = title ? decodeURIComponent(title).trim() : '';
 
-if (!response.ok) {
-  throw new Error('無法取得資料庫資料');
+// 2. 從 Supabase 抓取資料
+const { data: allClubs, error } = await supabase
+  .from(tableName)
+  .select('*')
+  .order('sort_order', { ascending: false });
+
+if (error || !allClubs) {
+  console.error('無法取得資料庫資料:', error?.message);
+  return Astro.redirect('/404');
 }
 
-const allClubs = await response.json();
-
-// 4. 找出當前點擊的這一本書在陣列中的位置
+// 3. 找出當前點擊的這一本書
 const currentIndex = allClubs.findIndex(c => c.title && c.title.trim() === decodedTitle);
 const club = currentIndex !== -1 ? allClubs[currentIndex] : null;
 
-// 如果找不到這本書，可以導向 404 或首頁
+// 4. 找不到就導向 404
 if (!club) {
   return Astro.redirect('/404');
 }
 
+// 5. 處理換行符號
 const formattedContent = club.content ? club.content.replace(/\n/g, '<br>') : '';
 ---
 
