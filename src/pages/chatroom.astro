@@ -7,7 +7,7 @@ import LoginModal from '../components/LoginModal.astro';
     <Fragment slot="head">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>客舍萬事屋 | 鄰里人交流區</title>
+    <title>客舍萬事屋 | 鄰里人交流與私訊</title>
     
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -16,9 +16,6 @@ import LoginModal from '../components/LoginModal.astro';
     </Fragment>
 
     <style is:global>
-        /* ==========================================
-           0. 全域重置與基礎樣式 (文青自然風)
-           ========================================== */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         
         html, body { 
@@ -40,9 +37,6 @@ import LoginModal from '../components/LoginModal.astro';
         }
         .btn-blue:hover { background-color: #1d4ed8; }
 
-        /* ==========================================
-           1. 📱 手機 App 容器 (自動適應 100dvh)
-           ========================================== */
         .phone-app-wrapper {
             width: 100%;
             max-width: 420px;
@@ -67,9 +61,6 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
-        /* ==========================================
-           2. 頂部導航與標題列
-           ========================================== */
         .admin-nav { background-color: #0f172a; color: #ffffff; padding: 0.75rem 1rem; border-bottom: 2px solid #2563eb; flex-shrink: 0; }
         
         .phone-title-bar {
@@ -149,14 +140,10 @@ import LoginModal from '../components/LoginModal.astro';
         }
         .identity-badge:hover { background: #eff6ff; }
 
-        /* 分頁按鈕樣式 */
         .chat-mode-tabs { display: flex; background: #e2e8f0; padding: 4px; gap: 4px; flex-shrink: 0; }
         .tab-btn { flex: 1; background: transparent; border: none; padding: 6px; font-size: 0.75rem; font-weight: bold; color: #64748b; cursor: pointer; border-radius: 6px; text-align: center; }
         .tab-btn.active { background: #ffffff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
-        /* ==========================================
-           3. 數據統計與資訊卡片
-           ========================================== */
         .phone-sub-bar {
             flex-shrink: 0;
             background: #f8fafc;
@@ -189,9 +176,6 @@ import LoginModal from '../components/LoginModal.astro';
         .info-trigger-btn h5 { font-size: 0.8rem; font-weight: 800; color: #1e293b; }
         .info-trigger-btn span { font-size: 0.65rem; color: #64748b; }
 
-        /* ==========================================
-           4. 對話訊息捲動區
-           ========================================== */
         .phone-chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -223,9 +207,6 @@ import LoginModal from '../components/LoginModal.astro';
         .msg-sender-name { font-size: 0.7rem; font-weight: 700; color: #2563eb; margin-bottom: 0.15rem; display: block; }
         .msg-time-stamp { font-size: 0.6rem; color: #94a3b8; float: right; margin-left: 0.5rem; margin-top: 0.2rem; }
 
-        /* ==========================================
-           5. 底部打字輸入列
-           ========================================== */
         .phone-input-bar {
             flex-shrink: 0;
             padding: 0.6rem 0.75rem;
@@ -271,9 +252,6 @@ import LoginModal from '../components/LoginModal.astro';
         .input-field { width: 100%; padding: 0.625rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.875rem; outline: none; }
         .input-field:focus { border-color: #2563eb; }
 
-        /* ==========================================
-           6. 登入 / 訪客 Modal 樣式
-           ========================================== */
         .rpg-modal-overlay {
             position: fixed;
             inset: 0;
@@ -310,7 +288,7 @@ import LoginModal from '../components/LoginModal.astro';
 </head>
 <body>
 
-<!-- 1. 登入 / 訪客 Modal -->
+<!-- 1. 登入認證 Modal -->
 <div id="rpg-modal" class="rpg-modal-overlay">
   <div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
     <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -326,15 +304,10 @@ import LoginModal from '../components/LoginModal.astro';
     <div id="admin-navbar" class="hidden admin-nav">
         <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
-                <strong>主理人模式</strong>
+                <strong>主理人控制台</strong>
             </div>
-            <div id="admin-logged-out" style="display: flex; gap: 6px;">
-                <input type="password" id="admin-password-input" placeholder="密碼" class="input-field" style="padding: 2px 6px; width: 80px; font-size: 0.75rem;">
-                <button id="admin-login-btn" class="btn-blue" style="padding: 2px 8px; font-size: 0.75rem;">登入</button>
-            </div>
-            <div id="admin-logged-in" class="hidden" style="display: flex; gap: 6px; align-items: center;">
-                <span style="color: #4ade80; font-size: 0.75rem;">🟢 已登入</span>
-                <button id="admin-logout-btn" style="background:#64748b; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem;">登出</button>
+            <div id="admin-status-box" style="display: flex; gap: 6px; align-items: center;">
+                <span id="admin-status-text" style="color: #4ade80; font-size: 0.75rem;">🟢 主理人權限已解鎖</span>
             </div>
         </div>
     </div>
@@ -345,7 +318,7 @@ import LoginModal from '../components/LoginModal.astro';
         <!-- 頂部標題列 -->
         <div class="phone-title-bar">
             <div class="main-title-box">
-                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
+                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人面板">
                     <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
                 </span>
                 <span>鄰里人交流與私訊</span>
@@ -366,8 +339,6 @@ import LoginModal from '../components/LoginModal.astro';
                 <!-- 數據統計欄 -->
                 <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
                     <span>🟢 在線：<strong id="online-users-count-home">1</strong> 人</span>
-                    <span>|</span>
-                    <span>📜 鄰里人總數：<strong id="total-users-count-home">0</strong> 人</span>
                 </div>
 
                 <!-- 📖 資訊按鈕卡片 (源由 / 守則) -->
@@ -415,8 +386,6 @@ import LoginModal from '../components/LoginModal.astro';
 
                 <div class="phone-sub-bar">
                     <span>🟢 在線：<strong id="online-users-count-chat">1</strong> 人</span>
-                    <span>|</span>
-                    <span>📜 鄰里人總數：<strong id="total-users-count-chat">0</strong> 人</span>
                 </div>
 
                 <div id="topic-chat-messages" class="phone-chat-messages">
@@ -424,7 +393,7 @@ import LoginModal from '../components/LoginModal.astro';
                 </div>
 
                 <form id="chat-message-form" class="phone-input-bar">
-                    <input type="text" id="chat-input-content" placeholder="講啲嘢 (pgcrypto 加密)..." required class="phone-input-field" autocomplete="off">
+                    <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
                     <button type="submit" class="phone-send-btn">送出</button>
                 </form>
             </div>
@@ -440,7 +409,7 @@ import LoginModal from '../components/LoginModal.astro';
                 <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">請透過地圖點擊線上玩家來發起專屬私訊</p>
             </div>
             <form id="dm-message-form" class="phone-input-bar">
-                <input type="text" id="dm-input-content" placeholder="輸入加密私訊..." required class="phone-input-field" autocomplete="off">
+                <input type="text" id="dm-input-content" placeholder="輸入私訊..." required class="phone-input-field" autocomplete="off">
                 <button type="submit" class="phone-send-btn">傳送</button>
             </form>
         </div>
@@ -454,7 +423,7 @@ import LoginModal from '../components/LoginModal.astro';
                 <button class="modal-close-btn" data-target="modal-origin" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
             </div>
             <p style="font-size: 0.775rem; color: #475569; line-height: 1.6;">
-                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。除了任務委託之外，這裡提供了一個專屬於居民的自由對話角落。
+                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。
             </p>
             <button class="btn-blue modal-close-btn" data-target="modal-origin" style="padding:0.4rem; font-size:0.8rem;">了解</button>
         </div>
@@ -468,15 +437,14 @@ import LoginModal from '../components/LoginModal.astro';
                 <button class="modal-close-btn" data-target="modal-rules" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
             </div>
             <ul style="font-size: 0.775rem; color: #475569; line-height: 1.6; padding-left: 1.1rem; display:flex; flex-direction:column; gap:0.35rem;">
-                <li><strong>友善溫暖交流</strong>：請保持尊重與包容，嚴禁言語攻擊。</li>
-                <li><strong>維護資訊安全</strong>：請勿散播他人私隱或未授權廣告。</li>
-                <li><strong>私密主題密碼</strong>：有密碼保護的主題請勿擅自外流。</li>
+                <li><strong>友善溫暖交流</strong>：請保持尊重與包容。</li>
+                <li><strong>維護資訊安全</strong>：請勿散播他人私隱。</li>
             </ul>
             <button class="btn-blue modal-close-btn" data-target="modal-rules" style="padding:0.4rem; font-size:0.8rem;">我已瞭解</button>
         </div>
     </div>
 
-    <!-- 📌 彈窗：對話模式中的主題切換清單 -->
+    <!-- 📌 彈窗：主題切換清單 -->
     <div id="topic-switcher-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem;">
         <div style="background:#fafcfd; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:360px; max-height:80vh; display:flex; flex-direction:column; gap:0.75rem;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -507,7 +475,7 @@ import LoginModal from '../components/LoginModal.astro';
                 <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.25rem;">
                     <input type="checkbox" id="new-topic-anonymous" style="width:16px; height:16px; cursor:pointer;">
                     <label for="new-topic-anonymous" style="font-size:0.75rem; font-weight:bold; color:#1e293b; cursor:pointer;">
-                        🕵️ 發起匿名限時主題（對話將保留 24 小時）
+                        🕵️ 發起匿名限時主題（24小時）
                     </label>
                 </div>
                 <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
@@ -523,7 +491,6 @@ import LoginModal from '../components/LoginModal.astro';
         import { supabase } from '../lib/supabase';
         import { logoutAndCleanGuest } from '../utils/auth';
 
-        let allUserRecords = [];
         let topics = [];
         let activeTopicId = null;
         let chatSubscription = null;
@@ -534,19 +501,16 @@ import LoginModal from '../components/LoginModal.astro';
         
         let userId = null;
         let playerName = '訪客';
-        let playerAvatar = '/assets/player1.png';
         let dmTargetId = null;
         let dmTargetName = '';
 
         window.addEventListener('DOMContentLoaded', async () => {
             await initAuthCheck();
-            fetchAllUserRecordsFromSupabase();
             initPresenceTracker();
             if (window.lucide) lucide.createIcons();
             initEventListeners();
             initTabs();
 
-            // 解析網址參數（支援從地圖點擊直接進入單對單私訊）
             const urlParams = new URLSearchParams(window.location.search);
             dmTargetId = urlParams.get('dm');
             dmTargetName = urlParams.get('name');
@@ -564,7 +528,7 @@ import LoginModal from '../components/LoginModal.astro';
         });
 
         // ==========================================
-        // 區塊一：身分驗證、初始化與登入狀態管理
+        // 區塊一：身分驗證與 is_admin 檢查
         // ==========================================
         const modal = document.getElementById('rpg-modal');
 
@@ -574,8 +538,6 @@ import LoginModal from '../components/LoginModal.astro';
             if (guestId) {
                 userId = guestId;
                 playerName = sessionStorage.getItem('space_guest_name') || '訪客';
-                playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
-                
                 if (modal) modal.style.display = 'none';
                 updateUserUI(playerName);
                 await checkAdminStatus();
@@ -594,33 +556,32 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
-        // 檢查主理人身分
+        // 檢查 slowpace_members 的 is_admin 欄位 (TRUE / FALSE)
         async function checkAdminStatus() {
             if (!userId) { isAdmin = false; return; }
             try {
                 const { data, error } = await supabase
                     .from('slowpace_members')
-                    .select('*')
+                    .select('is_admin')
                     .eq('user_id', userId)
-                    .single();
+                    .maybeSingle();
 
                 if (error) throw error;
 
-                if (data && (data.role === '主理人' || data.role === 'admin')) {
+                // 判斷 is_admin 是否為 true
+                if (data && data.is_admin === true) {
                     isAdmin = true;
-                    document.getElementById('admin-logged-out')?.classList.add('hidden');
-                    document.getElementById('admin-logged-in')?.classList.remove('hidden');
                     document.getElementById('btn-add-topic')?.classList.remove('hidden');
                     renderTopicsList();
                 } else {
                     isAdmin = false;
                 }
             } catch (err) {
+                console.error("檢查管理員身分失敗:", err);
                 isAdmin = false;
             }
         }
 
-        // 監聽登入成功訊息（修正 Modal 自動關閉）
         window.addEventListener('message', async (event) => {
             const modalEl = document.getElementById('rpg-modal');
             if (modalEl) {
@@ -631,7 +592,6 @@ import LoginModal from '../components/LoginModal.astro';
             if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
                 userId = event.data.guestId;
                 playerName = event.data.name;
-                playerAvatar = event.data.avatar;
                 updateUserUI(playerName);
                 await checkAdminStatus();
                 await startAppSession();
@@ -687,9 +647,6 @@ import LoginModal from '../components/LoginModal.astro';
             fetchTopics();
         }
 
-        // ==========================================
-        // 區塊二：分頁切換 (公開大廳 vs 單對單私訊)
-        // ==========================================
         function initTabs() {
             document.getElementById('tab-public').addEventListener('click', () => {
                 document.getElementById('tab-public').classList.add('active');
@@ -706,19 +663,6 @@ import LoginModal from '../components/LoginModal.astro';
                     document.getElementById('dm-chat-messages').innerHTML = `<p style="font-size:0.75rem; color:#64748b; text-align:center; margin:auto;">請透過地圖點擊線上玩家來發起專屬私訊。</p>`;
                 }
             });
-        }
-
-        // ==========================================
-        // 區塊三：對話、即時追蹤與 pgcrypto 加密邏輯
-        // ==========================================
-        async function fetchAllUserRecordsFromSupabase() {
-            try {
-                const { data } = await supabase.from('alluser_record').select('*');
-                allUserRecords = data || [];
-                const totalCount = allUserRecords.length;
-                document.getElementById('total-users-count-home').textContent = totalCount;
-                document.getElementById('total-users-count-chat').textContent = totalCount;
-            } catch (err) { console.error("讀取用戶紀錄失敗:", err.message); }
         }
 
         function initPresenceTracker() {
@@ -909,7 +853,7 @@ import LoginModal from '../components/LoginModal.astro';
 
         function renderMessages(messages, container) {
             if (messages.length === 0) {
-                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">開始交流吧！ (content 已透過 pgcrypto 加密)</p>`;
+                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">開始交流吧！</p>`;
                 return;
             }
 
@@ -956,23 +900,15 @@ import LoginModal from '../components/LoginModal.astro';
                 .subscribe();
         }
 
-        // ==========================================
-        // 區塊四：事件監聽綁定
-        // ==========================================
         function initEventListeners() {
             document.getElementById('my-identity-badge-home').addEventListener('click', confirmSwitchIdentity);
             document.getElementById('my-identity-badge-chat').addEventListener('click', confirmSwitchIdentity);
             document.getElementById('my-identity-badge-dm').addEventListener('click', confirmSwitchIdentity);
 
-            document.getElementById('external-link-btn').addEventListener('click', () => {
-                window.open('https://studioslowpace.com/skillsupermarket.html', '_blank');
-            });
-
             document.getElementById('logo-toggle-btn').addEventListener('click', () => {
                 document.getElementById('admin-navbar').classList.toggle('hidden');
             });
 
-            // 資訊彈窗開關
             document.querySelectorAll('.info-trigger-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     document.getElementById(btn.getAttribute('data-modal')).classList.remove('hidden');
@@ -1019,7 +955,6 @@ import LoginModal from '../components/LoginModal.astro';
 
             document.getElementById('back-to-home-btn').addEventListener('click', backToHome);
 
-            // 發送公開主題訊息 (帶入 pgcrypto 加密或直接儲存)
             document.getElementById('chat-message-form').addEventListener('submit', async (event) => {
                 event.preventDefault();
                 if (!activeTopicId) return;
@@ -1038,7 +973,6 @@ import LoginModal from '../components/LoginModal.astro';
                 } catch (err) { alert("發送失敗: " + err.message); }
             });
 
-            // 發送單對單私訊 (DM)
             document.getElementById('dm-message-form').addEventListener('submit', async (event) => {
                 event.preventDefault();
                 if (!dmTargetId) return;
