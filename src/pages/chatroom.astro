@@ -16,13 +16,12 @@ import Layout from '../layouts/Layout.astro';
         
         html, body { 
             height: 100%; 
-            background-color: #f3f6f9; /* 霧藍灰質感背景 */
+            background-color: #f3f6f9; 
             color: #334155; 
-            overflow: hidden; /* 防止整個網頁上下滑動 */
+            overflow: hidden; 
         }
         .hidden { display: none !important; }
 
-        /* 自然藍按鈕樣式 */
         .btn-blue { 
             background-color: #2563eb; 
             color: #ffffff; 
@@ -35,13 +34,13 @@ import Layout from '../layouts/Layout.astro';
         .btn-blue:hover { background-color: #1d4ed8; }
 
         /* ==========================================
-           1. 📱 手機 App 容器 (自動適應 100dvh)
+           1. 📱 手機 App 容器
            ========================================== */
         .phone-app-wrapper {
             width: 100%;
             max-width: 420px;
             height: 100vh;
-            height: 100dvh; /* 動態適應真實手機可視高度 */
+            height: 100dvh; 
             margin: 0 auto;
             background: #fafcfd;
             display: flex;
@@ -68,7 +67,7 @@ import Layout from '../layouts/Layout.astro';
         
         .phone-title-bar {
             flex-shrink: 0;
-            background: #e2e8f0; /* 沉穩的紙藍灰色 */
+            background: #e2e8f0; 
             border-bottom: 1px solid #cbd5e1;
             padding: 0.6rem 0.85rem;
             display: flex;
@@ -105,7 +104,6 @@ import Layout from '../layouts/Layout.astro';
             text-decoration: none;
         }
 
-        /* 對話頂部 HeaderBar */
         .phone-header {
             flex-shrink: 0;
             background: #f1f5f9;
@@ -248,7 +246,6 @@ import Layout from '../layouts/Layout.astro';
         }
         .phone-send-btn:hover { background-color: #1d4ed8; }
 
-        /* 主題清單卡片與通用輸入框 */
         .topic-select-card {
             background: #ffffff;
             border: 1.5px solid #e2e8f0;
@@ -263,7 +260,7 @@ import Layout from '../layouts/Layout.astro';
         .input-field:focus { border-color: #2563eb; }
     </style>
 
-    <!-- 🏮 頂部管理選單 (點擊 Logo 展開) -->
+    <!-- 🏮 頂部管理選單 -->
     <div id="admin-navbar" class="hidden admin-nav">
         <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
@@ -287,12 +284,12 @@ import Layout from '../layouts/Layout.astro';
         <div class="phone-title-bar">
             <div class="main-title-box">
                 <span class="logo-btn" onclick="toggleAdminNavbar()" title="點擊切換主理人模式">
-                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img">
+                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
                 </span>
                 <span>鄰里人交流區</span>
             </div>
             <div style="display: flex; gap: 4px;">
-                <button onclick="openDirectMessageModal()" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🔒 私訊</button>
+                <button onclick="openDirectMessageModal()" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">💬 私訊</button>
                 <button onclick="window.open('https://studioslowpace.com/skillsupermarket.html', '_blank')" class="nav-link-btn">客舍萬事屋 ↗</button>
             </div>
         </div>
@@ -303,14 +300,12 @@ import Layout from '../layouts/Layout.astro';
             <!-- 🏠 PAGE 1: 交流區首頁 -->
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
-                <!-- 數據統計欄 -->
                 <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
                     <span>🟢 在線：<strong id="online-users-count-home">1</strong> 人</span>
                     <span>|</span>
                     <span>📜 鄰里人總數：<strong id="total-users-count-home">0</strong> 人</span>
                 </div>
 
-                <!-- 📖 資訊按鈕卡片 (源由 / 守則) -->
                 <div class="info-card-grid">
                     <div class="info-trigger-btn" onclick="openModal('modal-origin')">
                         <h5>🌱 社群源由</h5>
@@ -322,13 +317,11 @@ import Layout from '../layouts/Layout.astro';
                     </div>
                 </div>
 
-                <!-- 👤 身分切換列 -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.1rem;">
                     <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 請選擇討論主題</span>
                     <div id="my-identity-badge-home" class="identity-badge" onclick="promptChangeName()">👤 訪客</div>
                 </div>
 
-                <!-- 主題列表容器 -->
                 <div style="flex: 1; display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
                         <button id="btn-add-topic" onclick="openTopicModal()" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
@@ -337,10 +330,9 @@ import Layout from '../layouts/Layout.astro';
                 </div>
             </div>
 
-            <!-- 💬 PAGE 2: 手機群組對話模式 -->
+            <!-- 💬 PAGE 2: 群組對話模式 -->
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
-                <!-- 對話頂部 Header Bar -->
                 <div class="phone-header">
                     <button class="nav-link-btn" onclick="backToHome()">< 首頁</button>
                     
@@ -355,63 +347,56 @@ import Layout from '../layouts/Layout.astro';
                     <div id="my-identity-badge-chat" class="identity-badge" onclick="promptChangeName()">👤 訪客</div>
                 </div>
 
-                <!-- 次頂部數據統計欄 -->
                 <div class="phone-sub-bar">
                     <span>🟢 在線：<strong id="online-users-count-chat">1</strong> 人</span>
                     <span>|</span>
                     <span>📜 鄰里人總數：<strong id="total-users-count-chat">0</strong> 人</span>
                 </div>
 
-                <!-- 獨立滾動的訊息對話區 -->
                 <div id="topic-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
                 </div>
 
-                <!-- 底部打字發送欄 -->
                 <form onsubmit="handleSendTopicMessage(event)" class="phone-input-bar">
                     <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
                     <button type="submit" class="phone-send-btn">送出</button>
                 </form>
             </div>
 
-            <!-- 🔒 PAGE 3: 單對單私密聊天模式 -->
+            <!-- 💬 PAGE 3: 單對單私訊模式 -->
             <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
-                <!-- 私訊頂部 Header Bar -->
                 <div class="phone-header" style="background: #eff6ff;">
                     <button class="nav-link-btn" onclick="backToHome()">< 首頁</button>
                     <div class="phone-header-title">
-                        <span id="current-dm-title" style="color: #1e40af;">🔒 密碼私訊</span>
+                        <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
-                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">加密通訊</div>
+                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">私聊</div>
                 </div>
 
-                <!-- 獨立滾動的私訊訊息區 -->
                 <div id="dm-chat-messages" class="phone-chat-messages">
-                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入加密私訊中...</p>
+                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入私訊中...</p>
                 </div>
 
-                <!-- 底部私訊打字發送欄 -->
                 <form onsubmit="handleSendDmMessage(event)" class="phone-input-bar" style="background: #eff6ff;">
-                    <input type="text" id="dm-input-content" placeholder="輸入加密私訊..." required class="phone-input-field" autocomplete="off">
-                    <button type="submit" class="btn-blue" style="padding: 0.6rem 1.1rem; font-size: 0.85rem;">加密發送</button>
+                    <input type="text" id="dm-input-content" placeholder="輸入私訊內容..." required class="phone-input-field" autocomplete="off">
+                    <button type="submit" class="btn-blue" style="padding: 0.6rem 1.1rem; font-size: 0.85rem;">送出</button>
                 </form>
             </div>
 
         </div>
     </main>
 
-    <!-- 🔒 彈窗：發起或選擇單對單私訊對象 -->
+    <!-- 💬 彈窗：選擇私訊對象 -->
     <div id="dm-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1150; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">🔒 選擇私訊對象</h3>
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">💬 選擇私訊對象</h3>
                 <button onclick="closeDirectMessageModal()" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
             </div>
-            <p style="font-size:0.7rem; color:#64748b;">所有私訊內容皆透過資料庫 `pgcrypto` 安全加密。</p>
             
             <div>
-                <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">直接輸入對方 ID / 姓名</label>
+                <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">直接輸入對象名稱</label>
                 <div style="display:flex; gap:6px; margin-top:4px;">
                     <input type="text" id="dm-target-input" class="input-field" placeholder="例如：小明">
                     <button onclick="startDirectChatWithInput()" class="btn-blue" style="padding:0 12px; font-size:0.75rem;">開始</button>
@@ -435,7 +420,7 @@ import Layout from '../layouts/Layout.astro';
                 <button onclick="closeModal('modal-origin')" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
             </div>
             <p style="font-size: 0.775rem; color: #475569; line-height: 1.6;">
-                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。除了任務委託之外，這裡提供了一個專屬於居民的自由對話角落，讓大家能在此分享點滴、互相串聯。
+                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。
             </p>
             <button onclick="closeModal('modal-origin')" class="btn-blue" style="padding:0.4rem; font-size:0.8rem;">了解</button>
         </div>
@@ -451,13 +436,12 @@ import Layout from '../layouts/Layout.astro';
             <ul style="font-size: 0.775rem; color: #475569; line-height: 1.6; padding-left: 1.1rem; display:flex; flex-direction:column; gap:0.35rem;">
                 <li><strong>友善溫暖交流</strong>：請保持尊重與包容，嚴禁言語攻擊。</li>
                 <li><strong>維護資訊安全</strong>：請勿散播他人私隱或未授權廣告。</li>
-                <li><strong>私密主題密碼</strong>：有密碼保護的主題請勿擅自外流。</li>
             </ul>
             <button onclick="closeModal('modal-rules')" class="btn-blue" style="padding:0.4rem; font-size:0.8rem;">我已瞭解</button>
         </div>
     </div>
 
-    <!-- 📌 彈窗：對話模式中的主題切換清單 -->
+    <!-- 📌 彈窗：主題切換清單 -->
     <div id="topic-switcher-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem;">
         <div style="background:#fafcfd; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:360px; max-height:80vh; display:flex; flex-direction:column; gap:0.75rem;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -468,7 +452,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </div>
 
-    <!-- 📌 彈窗：主理人新增主題 -->
+    <!-- 📌 彈窗：新增主題 -->
     <div id="topic-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1100; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:320px; display:flex; flex-direction:column; gap:0.75rem;">
             <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📌 新增討論主題</h3>
@@ -488,7 +472,7 @@ import Layout from '../layouts/Layout.astro';
                 <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.25rem;">
                     <input type="checkbox" id="new-topic-anonymous" style="width:16px; height:16px; cursor:pointer;">
                     <label for="new-topic-anonymous" style="font-size:0.75rem; font-weight:bold; color:#1e293b; cursor:pointer;">
-                        🕵️ 發起匿名限時主題（對話將保留 24 小時）
+                        🕵️ 發起匿名限時主題（24小時）
                     </label>
                 </div>
                 <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
@@ -505,7 +489,6 @@ import Layout from '../layouts/Layout.astro';
         const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
         const client = supabase.createClient(supabaseUrl, supabaseKey);
         const defaultPassword = "slow2024";
-        const cryptoSecretKey = "slowpace-secure-secret-key-2026"; // 🔐 pgcrypto 加解密金鑰
 
         let allUserRecords = [];
         let topics = [];
@@ -576,7 +559,6 @@ import Layout from '../layouts/Layout.astro';
                     document.getElementById('online-users-count-home').textContent = onlineCount;
                     document.getElementById('online-users-count-chat').textContent = onlineCount;
 
-                    // 渲染私訊彈窗中的線上名單
                     renderOnlineUsersForDm(onlineUsers, savedName);
                 })
                 .subscribe(async (status) => {
@@ -620,7 +602,7 @@ import Layout from '../layouts/Layout.astro';
             activeDmReceiverId = targetName;
             closeDirectMessageModal();
 
-            document.getElementById('current-dm-title').textContent = `🔒 私訊對象: ${targetName}`;
+            document.getElementById('current-dm-title').textContent = `💬 私訊: ${targetName}`;
             document.getElementById('page-home').classList.add('hidden');
             document.getElementById('page-chat').classList.add('hidden');
             document.getElementById('page-dm').classList.remove('hidden');
@@ -634,31 +616,17 @@ import Layout from '../layouts/Layout.astro';
             if (!container) return;
 
             try {
-                // 讀取雙方互通的私訊，並透過 pgcrypto 解密 content
-                const { data, error } = await client.rpc('get_decrypted_direct_messages', {
-                    user_a: myName,
-                    user_b: targetName,
-                    secret_key: cryptoSecretKey
-                });
+                const { data, error } = await client
+                    .from('direct_messages')
+                    .select('*')
+                    .or(`and(sender_id.eq.${myName},receiver_id.eq.${targetName}),and(sender_id.eq.${targetName},receiver_id.eq.${myName})`)
+                    .order('created_at', { ascending: true });
 
-                // 若尚未建立 SQL RPC 函式，可改用下列原生查詢（會取得加密密文或配合前端處理）
-                if (error) {
-                    // Fallback 查詢
-                    const { data: fallbackData, error: fbErr } = await client
-                        .from('direct_messages')
-                        .select('*')
-                        .or(`and(sender_id.eq.${myName},receiver_id.eq.${targetName}),and(sender_id.eq.${targetName},receiver_id.eq.${myName})`)
-                        .order('created_at', { ascending: true });
-                    
-                    if (fbErr) throw fbErr;
-                    renderDm MessagesHelper(fallbackData || [], myName);
-                    return;
-                }
-
+                if (error) throw error;
                 renderDmMessagesHelper(data || [], myName);
             } catch (err) {
                 console.error("載入私訊失敗:", err.message);
-                container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">載入私訊失敗（請確認已建立 pgcrypto 解密函式或 RPC）</p>`;
+                container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">載入私訊失敗</p>`;
             }
         }
 
@@ -667,20 +635,19 @@ import Layout from '../layouts/Layout.astro';
             if (!container) return;
 
             if (messages.length === 0) {
-                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">這是一段透過 pgcrypto 加密的私密對話，開始交流吧！</p>`;
+                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">開始私訊對話吧！</p>`;
                 return;
             }
 
             container.innerHTML = messages.map(msg => {
                 const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const isSelf = (msg.sender_id === myName);
-                const displayContent = msg.content; // 若透過 RPC 會直接回傳解密明文
 
                 if (isSelf) {
                     return `
                         <div class="msg-row-self">
                             <div class="msg-bubble msg-bubble-self">
-                                <div>🔐 ${displayContent}</div>
+                                <div>${msg.content}</div>
                                 <span class="msg-time-stamp">${timeStr}</span>
                             </div>
                         </div>
@@ -689,8 +656,8 @@ import Layout from '../layouts/Layout.astro';
                     return `
                         <div class="msg-row-other">
                             <div class="msg-bubble msg-bubble-other">
-                                <span class="msg-sender-name">🔒 ${msg.sender_name || msg.sender_id}</span>
-                                <div>${displayContent}</div>
+                                <span class="msg-sender-name">${msg.sender_name || msg.sender_id}</span>
+                                <div>${msg.content}</div>
                                 <span class="msg-time-stamp">${timeStr}</span>
                             </div>
                         </div>
@@ -712,19 +679,17 @@ import Layout from '../layouts/Layout.astro';
             if (!rawContent) return;
 
             try {
-                // 透過 pgcrypto 加密寫入資料庫
-                // 方法 A: 若使用 SQL Function 插入加密內容
                 const { error } = await client.from('direct_messages').insert([{
                     sender_id: myName,
                     sender_name: myName,
                     receiver_id: activeDmReceiverId,
-                    content: rawContent // 實際專案可改用加密 SQL 函式加密
+                    content: rawContent
                 }]);
 
                 if (error) throw error;
                 contentInput.value = '';
                 loadDmMessages(myName, activeDmReceiverId);
-            } catch (err) { alert("加密私訊發送失敗: " + err.message); }
+            } catch (err) { alert("私訊發送失敗: " + err.message); }
         }
 
         function subscribeToDmChat(myName, targetName) {
@@ -792,7 +757,7 @@ import Layout from '../layouts/Layout.astro';
 
         async function deleteTopic(event, topicId, topicTitle) {
             event.stopPropagation();
-            if (!confirm(`⚠️ 確定要立即刪除主題「${topicTitle}」嗎？\n此動作會即時清空該主題內的所有對話，且無法復原！`)) return;
+            if (!confirm(`⚠️ 確定要立即刪除主題「${topicTitle}」嗎？`)) return;
 
             try {
                 const { error } = await client.from('chat_topics').delete().eq('id', topicId);
@@ -1081,7 +1046,7 @@ import Layout from '../layouts/Layout.astro';
                 document.getElementById('new-topic-anonymous').checked = false;
                 
                 fetchTopics();
-                alert(isAnon ? "⏳ 已成功發起匿名限時討論區（將於 24 小時後自動銷毀）！" : "📌 成功建立新討論主題！");
+                alert(isAnon ? "⏳ 已成功發起匿名限時討論區！" : "📌 成功建立新討論主題！");
             } catch (err) { alert("建立失敗: " + err.message); }
         }
 
