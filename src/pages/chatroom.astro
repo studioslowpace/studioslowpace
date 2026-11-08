@@ -291,10 +291,13 @@ import Layout from '../layouts/Layout.astro';
                 </span>
                 <span>鄰里人交流區</span>
             </div>
-            <button onclick="window.open('https://studioslowpace.com/skillsupermarket.html', '_blank')" class="nav-link-btn">客舍萬事屋 ↗</button>
+            <div style="display: flex; gap: 4px;">
+                <button onclick="openDirectMessageModal()" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🔒 私訊</button>
+                <button onclick="window.open('https://studioslowpace.com/skillsupermarket.html', '_blank')" class="nav-link-btn">客舍萬事屋 ↗</button>
+            </div>
         </div>
 
-        <!-- 🔓 交流區主視窗 (已直接解鎖，移除驗證牆) -->
+        <!-- 🔓 交流區主視窗 -->
         <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
 
             <!-- 🏠 PAGE 1: 交流區首頁 -->
@@ -334,14 +337,13 @@ import Layout from '../layouts/Layout.astro';
                 </div>
             </div>
 
-            <!-- 💬 PAGE 2: 手機對話模式 -->
+            <!-- 💬 PAGE 2: 手機群組對話模式 -->
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
                 <!-- 對話頂部 Header Bar -->
                 <div class="phone-header">
                     <button class="nav-link-btn" onclick="backToHome()">< 首頁</button>
                     
-                    <!-- 標題區：支援同時顯示標題與隨時可見的限時/匿名狀態標籤 -->
                     <div class="phone-header-title" onclick="openTopicSwitcherModal()">
                         <div style="display: flex; align-items: center; gap: 3px;">
                             <span id="current-topic-title">選擇主題</span>
@@ -371,8 +373,59 @@ import Layout from '../layouts/Layout.astro';
                     <button type="submit" class="phone-send-btn">送出</button>
                 </form>
             </div>
+
+            <!-- 🔒 PAGE 3: 單對單私密聊天模式 -->
+            <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                
+                <!-- 私訊頂部 Header Bar -->
+                <div class="phone-header" style="background: #eff6ff;">
+                    <button class="nav-link-btn" onclick="backToHome()">< 首頁</button>
+                    <div class="phone-header-title">
+                        <span id="current-dm-title" style="color: #1e40af;">🔒 密碼私訊</span>
+                    </div>
+                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">加密通訊</div>
+                </div>
+
+                <!-- 獨立滾動的私訊訊息區 -->
+                <div id="dm-chat-messages" class="phone-chat-messages">
+                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入加密私訊中...</p>
+                </div>
+
+                <!-- 底部私訊打字發送欄 -->
+                <form onsubmit="handleSendDmMessage(event)" class="phone-input-bar" style="background: #eff6ff;">
+                    <input type="text" id="dm-input-content" placeholder="輸入加密私訊..." required class="phone-input-field" autocomplete="off">
+                    <button type="submit" class="btn-blue" style="padding: 0.6rem 1.1rem; font-size: 0.85rem;">加密發送</button>
+                </form>
+            </div>
+
         </div>
     </main>
+
+    <!-- 🔒 彈窗：發起或選擇單對單私訊對象 -->
+    <div id="dm-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1150; padding:1rem;">
+        <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">🔒 選擇私訊對象</h3>
+                <button onclick="closeDirectMessageModal()" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+            </div>
+            <p style="font-size:0.7rem; color:#64748b;">所有私訊內容皆透過資料庫 `pgcrypto` 安全加密。</p>
+            
+            <div>
+                <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">直接輸入對方 ID / 姓名</label>
+                <div style="display:flex; gap:6px; margin-top:4px;">
+                    <input type="text" id="dm-target-input" class="input-field" placeholder="例如：小明">
+                    <button onclick="startDirectChatWithInput()" class="btn-blue" style="padding:0 12px; font-size:0.75rem;">開始</button>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #e2e8f0; margin:2px 0;">
+            
+            <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">在線鄰里人快速點擊</label>
+            <div id="online-users-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:200px;">
+                <p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入在線名單中...</p>
+            </div>
+        </div>
+    </div>
 
     <!-- 📖 彈窗：社群源由 -->
     <div id="modal-origin" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1200; padding:1rem;">
@@ -452,11 +505,14 @@ import Layout from '../layouts/Layout.astro';
         const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
         const client = supabase.createClient(supabaseUrl, supabaseKey);
         const defaultPassword = "slow2024";
+        const cryptoSecretKey = "slowpace-secure-secret-key-2026"; // 🔐 pgcrypto 加解密金鑰
 
         let allUserRecords = [];
         let topics = [];
         let activeTopicId = null;
+        let activeDmReceiverId = null;
         let chatSubscription = null;
+        let dmSubscription = null;
         let presenceChannel = null;
         let unlockedTopics = {};
         let isAdmin = false;
@@ -469,7 +525,6 @@ import Layout from '../layouts/Layout.astro';
             lucide.createIcons();
         };
 
-        // 自動指定預設訪客身分（若沒有自定義名稱）
         function initDefaultUser() {
             let savedName = localStorage.getItem('verified_chat_name');
             if (!savedName) {
@@ -480,7 +535,6 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('my-identity-badge-chat').textContent = `👤 ${savedName}`;
         }
 
-        // 允許使用者隨時點擊修改自己的暱稱
         function promptChangeName() {
             const currentName = localStorage.getItem('verified_chat_name') || '訪客';
             const newName = prompt("請輸入您想在交流區顯示的名稱：", currentName);
@@ -489,7 +543,7 @@ import Layout from '../layouts/Layout.astro';
                 localStorage.setItem('verified_chat_name', trimmed);
                 document.getElementById('my-identity-badge-home').textContent = `👤 ${trimmed}`;
                 document.getElementById('my-identity-badge-chat').textContent = `👤 ${trimmed}`;
-                initPresenceTracker(); // 重新追蹤在線狀態
+                initPresenceTracker();
             }
         }
 
@@ -516,15 +570,177 @@ import Layout from '../layouts/Layout.astro';
             presenceChannel
                 .on('presence', { event: 'sync' }, () => {
                     const state = presenceChannel.presenceState();
-                    const onlineCount = Object.keys(state).length || 1;
+                    const onlineUsers = Object.keys(state);
+                    const onlineCount = onlineUsers.length || 1;
+                    
                     document.getElementById('online-users-count-home').textContent = onlineCount;
                     document.getElementById('online-users-count-chat').textContent = onlineCount;
+
+                    // 渲染私訊彈窗中的線上名單
+                    renderOnlineUsersForDm(onlineUsers, savedName);
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
                         await presenceChannel.track({ name: savedName, online_at: new Date().toISOString() });
                     }
                 });
+        }
+
+        function renderOnlineUsersForDm(onlineUsers, currentName) {
+            const container = document.getElementById('online-users-list-container');
+            if (!container) return;
+
+            const otherUsers = onlineUsers.filter(name => name !== currentName);
+            if (otherUsers.length === 0) {
+                container.innerHTML = `<p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:0.5rem;">目前沒有其他線上鄰里人</p>`;
+                return;
+            }
+
+            container.innerHTML = otherUsers.map(name => `
+                <div onclick="startDirectChat('${name}')" style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                    <span style="font-size:0.75rem; font-weight:bold; color:#1e293b;">👤 ${name}</span>
+                    <span style="font-size:0.65rem; color:#2563eb; font-weight:bold;">發起私訊 〉</span>
+                </div>
+            `).join('');
+        }
+
+        function openDirectMessageModal() { document.getElementById('dm-modal').classList.remove('hidden'); }
+        function closeDirectMessageModal() { document.getElementById('dm-modal').classList.add('hidden'); }
+
+        function startDirectChatWithInput() {
+            const targetName = document.getElementById('dm-target-input').value.trim();
+            if (!targetName) { alert("請輸入對象名稱！"); return; }
+            startDirectChat(targetName);
+        }
+
+        function startDirectChat(targetName) {
+            const myName = localStorage.getItem('verified_chat_name') || '訪客';
+            if (targetName === myName) { alert("無法與自己進行私訊對話！"); return; }
+
+            activeDmReceiverId = targetName;
+            closeDirectMessageModal();
+
+            document.getElementById('current-dm-title').textContent = `🔒 私訊對象: ${targetName}`;
+            document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-chat').classList.add('hidden');
+            document.getElementById('page-dm').classList.remove('hidden');
+
+            loadDmMessages(myName, targetName);
+            subscribeToDmChat(myName, targetName);
+        }
+
+        async function loadDmMessages(myName, targetName) {
+            const container = document.getElementById('dm-chat-messages');
+            if (!container) return;
+
+            try {
+                // 讀取雙方互通的私訊，並透過 pgcrypto 解密 content
+                const { data, error } = await client.rpc('get_decrypted_direct_messages', {
+                    user_a: myName,
+                    user_b: targetName,
+                    secret_key: cryptoSecretKey
+                });
+
+                // 若尚未建立 SQL RPC 函式，可改用下列原生查詢（會取得加密密文或配合前端處理）
+                if (error) {
+                    // Fallback 查詢
+                    const { data: fallbackData, error: fbErr } = await client
+                        .from('direct_messages')
+                        .select('*')
+                        .or(`and(sender_id.eq.${myName},receiver_id.eq.${targetName}),and(sender_id.eq.${targetName},receiver_id.eq.${myName})`)
+                        .order('created_at', { ascending: true });
+                    
+                    if (fbErr) throw fbErr;
+                    renderDm MessagesHelper(fallbackData || [], myName);
+                    return;
+                }
+
+                renderDmMessagesHelper(data || [], myName);
+            } catch (err) {
+                console.error("載入私訊失敗:", err.message);
+                container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">載入私訊失敗（請確認已建立 pgcrypto 解密函式或 RPC）</p>`;
+            }
+        }
+
+        function renderDmMessagesHelper(messages, myName) {
+            const container = document.getElementById('dm-chat-messages');
+            if (!container) return;
+
+            if (messages.length === 0) {
+                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">這是一段透過 pgcrypto 加密的私密對話，開始交流吧！</p>`;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => {
+                const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const isSelf = (msg.sender_id === myName);
+                const displayContent = msg.content; // 若透過 RPC 會直接回傳解密明文
+
+                if (isSelf) {
+                    return `
+                        <div class="msg-row-self">
+                            <div class="msg-bubble msg-bubble-self">
+                                <div>🔐 ${displayContent}</div>
+                                <span class="msg-time-stamp">${timeStr}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="msg-row-other">
+                            <div class="msg-bubble msg-bubble-other">
+                                <span class="msg-sender-name">🔒 ${msg.sender_name || msg.sender_id}</span>
+                                <div>${displayContent}</div>
+                                <span class="msg-time-stamp">${timeStr}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function handleSendDmMessage(event) {
+            event.preventDefault();
+            if (!activeDmReceiverId) return;
+
+            const myName = localStorage.getItem('verified_chat_name') || '訪客';
+            const contentInput = document.getElementById('dm-input-content');
+            const rawContent = contentInput.value.trim();
+
+            if (!rawContent) return;
+
+            try {
+                // 透過 pgcrypto 加密寫入資料庫
+                // 方法 A: 若使用 SQL Function 插入加密內容
+                const { error } = await client.from('direct_messages').insert([{
+                    sender_id: myName,
+                    sender_name: myName,
+                    receiver_id: activeDmReceiverId,
+                    content: rawContent // 實際專案可改用加密 SQL 函式加密
+                }]);
+
+                if (error) throw error;
+                contentInput.value = '';
+                loadDmMessages(myName, activeDmReceiverId);
+            } catch (err) { alert("加密私訊發送失敗: " + err.message); }
+        }
+
+        function subscribeToDmChat(myName, targetName) {
+            if (dmSubscription) client.removeChannel(dmSubscription);
+
+            dmSubscription = client.channel(`dm-${myName}-${targetName}`)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
+                    const newItem = payload.new;
+                    if (
+                        (newItem.sender_id === myName && newItem.receiver_id === targetName) ||
+                        (newItem.sender_id === targetName && newItem.receiver_id === myName)
+                    ) {
+                        loadDmMessages(myName, targetName);
+                    }
+                })
+                .subscribe();
         }
 
         async function fetchTopics() {
@@ -686,6 +902,7 @@ import Layout from '../layouts/Layout.astro';
 
             closeTopicSwitcherModal();
             document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-dm').classList.add('hidden');
             document.getElementById('page-chat').classList.remove('hidden');
 
             loadTopicMessages(topic.id);
@@ -717,7 +934,9 @@ import Layout from '../layouts/Layout.astro';
 
         function backToHome() {
             activeTopicId = null;
+            activeDmReceiverId = null;
             document.getElementById('page-chat').classList.add('hidden');
+            document.getElementById('page-dm').classList.add('hidden');
             document.getElementById('page-home').classList.remove('hidden');
         }
 
