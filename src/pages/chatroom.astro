@@ -604,38 +604,30 @@ import LoginModal from '../components/LoginModal.astro';
         window.addEventListener('message', async (event) => {
             const modalEl = document.getElementById('rpg-modal');
 
-            // 處理訪客登入成功
-            if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-                userId = event.data.guestId;
-                playerName = event.data.name;
-                playerAvatar = event.data.avatar;
-                
-                // 💡 強制關閉彈窗
-                if (modalEl) {
-                    modalEl.style.display = 'none';
-                    modalEl.classList.add('hidden'); // 雙重保險，配合 hidden class
-                }
-
-                updateUserUI(playerName);
-                await startAppSession();
-            }
-            
-            // 處理一般會員登入成功
-            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-                // 💡 強制關閉彈窗
-                if (modalEl) {
-                    modalEl.style.display = 'none';
-                    modalEl.classList.add('hidden');
-                }
-
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session && session.user) {
-                    userId = session.user.id;
-                    await loadUserProfile(userId);
-                    await startAppSession();
-                }
-            }
-        });
+            // 處理訪客// 監聽來自 iframe (/login) 的登入成功訊息
+    window.addEventListener('message', async (event) => {
+      // 處理訪客登入成功
+      if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+        userId = event.data.guestId;
+        playerName = event.data.name;
+        playerAvatar = event.data.avatar;
+        if (modal) modal.style.display = 'none';
+        if (hudName) hudName.textContent = playerName;
+        if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
+        await startAppSession();
+      }
+      
+      // 處理一般會員登入成功
+      if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+        if (modal) modal.style.display = 'none';
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          userId = session.user.id;
+          await loadUserProfile(userId);
+          await startAppSession();
+        }
+      }
+    });
 
         supabase.auth.onAuthStateChange(async (event, session) => {
             const modalEl = document.getElementById('rpg-modal');
