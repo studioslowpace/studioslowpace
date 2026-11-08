@@ -985,6 +985,7 @@ import LoginModal from '../components/LoginModal.astro';
                 const { error } = await client.from('direct_messages').insert([{
                     sender_id: currentUserId,
                     receiver_id: activeDmReceiverId,
+                    sender_name: currentUserName, 
                     content: rawContent
                 }]);
 
