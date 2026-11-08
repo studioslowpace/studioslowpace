@@ -504,6 +504,11 @@ import LoginModal from '../components/LoginModal.astro';
         let dmTargetId = null;
         let dmTargetName = '';
 
+        // 取得 Modal 元素
+        const modal = document.getElementById('rpg-modal');
+        const hudName = document.getElementById('my-identity-badge-home');
+        const hudTierTag = document.getElementById('my-identity-badge-chat');
+
         window.addEventListener('DOMContentLoaded', async () => {
             await initAuthCheck();
             initPresenceTracker();
@@ -528,24 +533,15 @@ import LoginModal from '../components/LoginModal.astro';
         });
 
         // ==========================================
-        // 區塊一：身分驗證與 is_admin 檢查（已修正 Modal 自動關閉與狀態同步）
+        // 區塊一：身分驗證與 is_admin 檢查（對標 slowplace.astro 結構）
         // ==========================================
-        const modal = document.getElementById('rpg-modal');
-
-        function hideLoginModal() {
-            if (modal) {
-                modal.style.display = 'none';
-                modal.classList.add('hidden');
-            }
-        }
-
         async function initAuthCheck() {
             const guestId = sessionStorage.getItem('space_guest_id');
 
             if (guestId) {
                 userId = guestId;
                 playerName = sessionStorage.getItem('space_guest_name') || '訪客';
-                hideLoginModal();
+                if (modal) modal.style.display = 'none'; // 直接隱藏
                 updateUserUI(playerName);
                 await checkAdminStatus();
                 await startAppSession();
@@ -553,12 +549,11 @@ import LoginModal from '../components/LoginModal.astro';
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     userId = session.user.id;
-                    hideLoginModal();
+                    if (modal) modal.style.display = 'none'; // 直接隱藏
                     await loadUserProfile(userId);
-                    await checkAdminStatus();
                     await startAppSession();
                 } else {
-                    if (modal) modal.style.display = 'flex';
+                    if (modal) modal.style.display = 'flex'; // 未登入才顯示
                 }
             }
         }
@@ -567,7 +562,6 @@ import LoginModal from '../components/LoginModal.astro';
         async function checkAdminStatus() {
             if (!userId) { isAdmin = false; return; }
             try {
-                // 兼容 visitor 的 user_id 或 auth user id 查詢
                 const { data, error } = await supabase
                     .from('slowpace_members')
                     .select('is_admin')
@@ -589,24 +583,22 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
-        // 監聽來自 LoginModal 的 postMessage，確保登入成功時立刻關閉視窗並載入狀態
+        // 監聽來自 LoginModal 的登入成功訊息（對標 slowplace.astro）
         window.addEventListener('message', async (event) => {
-            hideLoginModal();
-
             if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
                 userId = event.data.guestId;
                 playerName = event.data.name;
+                if (modal) modal.style.display = 'none';
                 updateUserUI(playerName);
-                await checkAdminStatus();
                 await startAppSession();
             }
             
             if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+                if (modal) modal.style.display = 'none';
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     userId = session.user.id;
                     await loadUserProfile(userId);
-                    await checkAdminStatus();
                     await startAppSession();
                 }
             }
@@ -614,10 +606,9 @@ import LoginModal from '../components/LoginModal.astro';
 
         supabase.auth.onAuthStateChange(async (event, session) => {
             if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-                hideLoginModal();
+                if (modal) modal.style.display = 'none';
                 userId = session.user.id;
                 await loadUserProfile(userId);
-                await checkAdminStatus();
                 await startAppSession();
             }
         });
@@ -633,7 +624,6 @@ import LoginModal from '../components/LoginModal.astro';
 
         async function loadUserProfile(uid) {
             try {
-                // 先嘗試從 profiles 讀取，若無則從 slowpace_members 讀取名稱
                 const { data } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
                 if (data) {
                     playerName = data.name || data.full_name || '會員';
@@ -650,9 +640,13 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         async function startAppSession() {
+            await checkAdminStatus();
             fetchTopics();
         }
 
+        // ==========================================
+        // 區塊二：分頁切換與其他聊天互動功能
+        // ==========================================
         function initTabs() {
             document.getElementById('tab-public').addEventListener('click', () => {
                 document.getElementById('tab-public').classList.add('active');
