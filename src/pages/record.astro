@@ -6,11 +6,11 @@ import Layout from '../layouts/Layout.astro';
   <div class="reading-page-container">
     <header class="reading-top-bar">
       <a href="/" class="back-btn">〈 返回空間</a>
-      <h2>📖 個人閱讀清單與心得</h2>
+      <h2 id="page-title">📖 個人閱讀清單與心得</h2>
     </header>
 
-    <!-- 新增閱讀記錄區塊 -->
-    <div class="add-record-card">
+    <!-- 新增閱讀記錄區塊 (僅限本人登入時顯示) -->
+    <div class="add-record-card" id="add-record-section" style="display: none;">
       <h3>➕ 新增閱讀心得</h3>
       <input type="text" id="book-title-input" placeholder="書名（例：《希臘語課》）" />
       <input type="text" id="book-author-input" placeholder="作者" />
@@ -131,7 +131,6 @@ import Layout from '../layouts/Layout.astro';
       border-radius: 8px;
       cursor: pointer;
     }
-    /* Modal 樣式 */
     .rpg-modal-overlay {
       position: fixed;
       inset: 0;
@@ -171,37 +170,47 @@ import Layout from '../layouts/Layout.astro';
 
     const LOGS_TABLE = 'reading_record';
     let currentUserId: string | null = null;
+    let isOwner = false;
     let cachedLogs: any[] = [];
 
     const listContainer = document.getElementById('my-logs-list');
     const submitBtn = document.getElementById('submit-log-btn');
+    const addRecordSection = document.getElementById('add-record-section');
     const detailModal = document.getElementById('log-detail-modal');
     const detailCloseBtn = document.getElementById('detail-close-btn');
+    const pageTitle = document.getElementById('page-title');
 
-    // 1. 初始化檢查登入與載入清單
     async function initPage() {
       const { data: { session } } = await supabase.auth.getSession();
-      
-      // 檢查網址列是否有帶入要查看的對象 user_id（例如從地圖點擊別人傳來的）
+      const guestId = sessionStorage.getItem('space_guest_id');
+
+      // 檢查網址是否有指定要查閱的 user_id
       const urlParams = new URLSearchParams(window.location.search);
       const targetUserId = urlParams.get('user_id');
 
       if (targetUserId) {
         currentUserId = targetUserId;
-        // 如果是看別人的，把新增卡片藏起來
-        const addCard = document.querySelector('.add-record-card') as HTMLElement;
-        if (addCard) addCard.style.display = 'none';
-      } else if (session) {
+        isOwner = false;
+      } else if (session && session.user) {
         currentUserId = session.user.id;
+        isOwner = true;
+      } else if (guestId) {
+        currentUserId = guestId;
+        isOwner = true; // 訪客也可以記錄自己的操作（如果資料表允許訪客寫入，或純檢視）
       } else {
+        // 如果未登入且沒有指定查看對象，引導至登入頁
         window.location.href = '/login';
         return;
+      }
+
+      // 如果是本人，顯示新增記錄卡片
+      if (isOwner && addRecordSection) {
+        addRecordSection.style.display = 'flex';
       }
 
       await fetchAndRenderLogs();
     }
 
-    // 2. 從 Supabase 抓取記錄並渲染
     async function fetchAndRenderLogs() {
       if (!currentUserId || !listContainer) return;
       listContainer.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">載入記錄中...</div>';
@@ -238,7 +247,6 @@ import Layout from '../layouts/Layout.astro';
       });
       listContainer.innerHTML = html;
 
-      // 綁定點擊卡片開啟 Modal 詳情
       document.querySelectorAll('.log-item-card').forEach(card => {
         card.addEventListener('click', (e) => {
           const logId = (e.currentTarget as HTMLElement).dataset.id;
@@ -246,7 +254,6 @@ import Layout from '../layouts/Layout.astro';
           if (log) {
             const dateStr = new Date(log.created_at).toLocaleDateString();
             
-            // 安全填入資料，避免 Rollup 樣板編譯錯誤
             (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title}》`;
             (document.getElementById('modal-author') as HTMLElement).textContent = log.author;
             (document.getElementById('modal-current') as HTMLElement).textContent = log.current_page;
@@ -261,7 +268,6 @@ import Layout from '../layouts/Layout.astro';
       });
     }
 
-    // 3. 儲存新記錄按鈕事件
     submitBtn?.addEventListener('click', async () => {
       const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
       const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
@@ -293,7 +299,6 @@ import Layout from '../layouts/Layout.astro';
       if (error) {
         alert('儲存失敗：' + error.message);
       } else {
-        // 清空輸入框
         (document.getElementById('book-title-input') as HTMLInputElement).value = '';
         (document.getElementById('book-author-input') as HTMLInputElement).value = '';
         (document.getElementById('current-page-input') as HTMLInputElement).value = '';
@@ -301,12 +306,10 @@ import Layout from '../layouts/Layout.astro';
         (document.getElementById('quote-input') as HTMLTextAreaElement).value = '';
         (document.getElementById('review-input') as HTMLTextAreaElement).value = '';
 
-        // 重新整理列表
         await fetchAndRenderLogs();
       }
     });
 
-    // 關閉 Modal
     detailCloseBtn?.addEventListener('click', () => {
       if (detailModal) detailModal.style.display = 'none';
     });
