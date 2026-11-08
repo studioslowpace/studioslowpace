@@ -1,10 +1,13 @@
 ---
-import Layout from '../layouts/Layout.astro';
+// ==========================================
+// Astro Frontmatter 區塊 (伺服器端或靜態載入)
+// ==========================================
+// 若有需要預載的資料可以在此處理
 import LoginModal from '../components/LoginModal.astro';
 ---
 
-<Layout title="空間客舍 · 自由佈置空間">
-<Fragment slot="head">
+<html lang="zh-TW">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 <title>客舍萬事屋 | 鄰里人交流區</title>
@@ -13,7 +16,6 @@ import LoginModal from '../components/LoginModal.astro';
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
-</Fragment>
 
 <style is:global>
 /* ==========================================
@@ -310,16 +312,26 @@ border: none;
 </head>
 <body>
 
+    <!-- 1. 登入 / 訪客 Modal (內嵌 /login 頁面) -->
+    <div id="rpg-modal" class="rpg-modal-overlay">
+      <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
+        <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>◆ 空間客舍 · 身分認證 ◆</span>
+        </div>
+        <div class="embed-frame-wrapper" style="flex:1;">
+          <iframe id="auth-iframe" src="/login" class="embed-iframe"></iframe>
+        </div>
+      </div>
 <!-- 1. 登入 / 訪客 Modal (直接內嵌 LoginModal 元件，不需要 iframe) -->
 <div id="rpg-modal" class="rpg-modal-overlay">
-<div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
-<div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-<span>◆ 空間客舍 · 身分認證 ◆</span>
+  <div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
+    <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>◆ 空間客舍 · 身分認證 ◆</span>
+    </div>
+    <div class="embed-frame-wrapper" style="flex:1; overflow-y: auto;">
+      <LoginModal />
 </div>
-<div class="embed-frame-wrapper" style="flex:1; overflow-y: auto;">
-<LoginModal />
-</div>
-</div>
+  </div>
 </div>
 
 <!-- 🏮 頂部管理選單 (點擊 Logo 展開) -->
@@ -511,8 +523,7 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const defaultPassword = "slow2024";
-
+const defaultPassword = "slow2024";
 
 let allUserRecords = [];
 let topics = [];
@@ -553,7 +564,6 @@ playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.
 // 確保強制關閉
 if (modal) modal.style.display = 'none';
 updateUserUI(playerName);
-                await checkAdminStatus(); // 👈 檢查是否為主理人
 await startAppSession();
 } else {
 const { data: { session } } = await supabase.auth.getSession();
@@ -563,7 +573,6 @@ userId = session.user.id;
 // 確保強制關閉
 if (modal) modal.style.display = 'none';
 await loadUserProfile(userId);
-                    await checkAdminStatus(); // 👈 檢查是否為主理人
 await startAppSession();
 } else {
 // 只有在真的一點登入狀態都沒有時才顯示彈窗
@@ -572,39 +581,6 @@ if (modal) modal.style.display = 'flex';
 }
 }
 
-        // 檢查當前登入者是否為主理人
-    async function checkAdminStatus() {
-        if (!userId) {
-            isAdmin = false;
-            return;
-        }
-
-        try {
-            // 查詢 slowpace_members 裡該使用者的身分
-            const { data, error } = await supabase
-                .from('slowpace_members')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
-
-            if (error) throw error;
-
-            // 判斷條件：假設資料表中 role 等於 '主理人' 或者是指定管理員
-            if (data && (data.role === '主理人' || data.role === 'admin')) {
-                isAdmin = true;
-                document.getElementById('admin-logged-out')?.classList.add('hidden');
-                document.getElementById('admin-logged-in')?.classList.remove('hidden');
-                document.getElementById('btn-add-topic')?.classList.remove('hidden');
-                renderTopicsList();
-                alert("🟢 偵測到主理人身分，權限已自動解鎖！");
-            } else {
-                isAdmin = false;
-            }
-        } catch (err) {
-            console.error("檢查主理人權限失敗:", err.message);
-            isAdmin = false;
-        }
-    }
 // 監聽來自 iframe (/login) 的登入成功訊息
 window.addEventListener('message', async (event) => {
 const modalEl = document.getElementById('rpg-modal');
@@ -715,37 +691,18 @@ await presenceChannel.track({ name: playerName, online_at: new Date().toISOStrin
 });
 }
 
-        function confirmSwitchIdentity() {
-            if (confirm(`您目前的身分是「${playerName}」\n是否要登出並切換身分？`)) {
-                logoutChatUser();
-async function confirmSwitchIdentity() {
-            const currentName = playerName || '使用者';
-            if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
-                // 直接呼叫共用函式，會自動刪除 Supabase 訪客資料並登出重整
-                await logoutAndCleanGuest();
+function confirmSwitchIdentity() {
+if (confirm(`您目前的身分是「${playerName}」\n是否要登出並切換身分？`)) {
+logoutChatUser();
 }
 }
 
-        function logoutChatUser() {
-            sessionStorage.clear();
-            supabase.auth.signOut();
-            if (presenceChannel) supabase.removeChannel(presenceChannel);
-            location.reload();
-        }
-        import { logoutAndCleanGuest } from '../utils/auth';
-
-    // 當使用者點擊確認切換身分或登出時
-    async function confirmSwitchIdentity() {
-      const currentName = sessionStorage.getItem('space_guest_name') || '使用者';
-      if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
-        // 直接呼叫共用函式，自動刪除資料庫訪客並登出
-        await logoutAndCleanGuest();
-      }
-    }
-
-    document.getElementById('logout-btn')?.addEventListener('click', async () => {
-      await logoutAndCleanGuest();
-    });
+function logoutChatUser() {
+sessionStorage.clear();
+supabase.auth.signOut();
+if (presenceChannel) supabase.removeChannel(presenceChannel);
+location.reload();
+}
 
 async function fetchTopics() {
 try {
@@ -1144,3 +1101,4 @@ contentInput.value = '';
 });
 }
 </script>
+</body>
