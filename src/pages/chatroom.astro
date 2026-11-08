@@ -309,10 +309,9 @@ import LoginModal from '../components/LoginModal.astro';
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
                 <strong>主理人模式</strong>
             </div>
-            <div id="admin-logged-out" style="display: flex; gap: 6px;">
-                <input type="password" id="admin-password-input" placeholder="密碼" class="input-field" style="padding: 2px 6px; width: 80px; font-size: 0.75rem;">
-                <button onclick="handleAdminLogin()" class="btn-blue" style="padding: 2px 8px; font-size: 0.75rem;">登入</button>
-            </div>
+           <div id="admin-logged-out" style="display: flex; gap: 6px;">
+    <button onclick="handleAdminLogin()" class="btn-blue" style="padding: 4px 12px; font-size: 0.75rem;">檢查主理人身分</button>
+           </div>
             <div id="admin-logged-in" class="hidden" style="display: flex; gap: 6px; align-items: center;">
                 <span style="color: #4ade80; font-size: 0.75rem;">🟢 已登入</span>
                 <button onclick="handleAdminLogout()" style="background:#64748b; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem;">登出</button>
