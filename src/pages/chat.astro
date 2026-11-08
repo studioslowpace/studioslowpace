@@ -600,17 +600,22 @@ console.error("檢查主理人權限失敗:", err.message);
 isAdmin = false;
 }
 }
+        // 監聽來自 iframe (/login) 的登入成功訊息
+        window.addEventListener('message', async (event) => {
+            const modalEl = document.getElementById('rpg-modal');
+
+            // 處理訪客// 監聽來自 iframe (/login) 的登入成功訊息
 // 1. 監聽來自 iframe (/login) 的登入成功訊息
-// 1. 監聽來自 iframe 或內嵌元件的登入成功訊息
 window.addEventListener('message', async (event) => {
-const modalEl = document.getElementById('rpg-modal');
+      const modalEl = document.getElementById('rpg-modal');
 
 // 處理訪客登入成功
 if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
 userId = event.data.guestId;
 playerName = event.data.name;
 playerAvatar = event.data.avatar;
-if (modalEl) modalEl.style.display = 'none';
+        if (modal) modal.style.display = 'none';
+        if (modalEl) modalEl.style.display = 'none';
 if (hudName) hudName.textContent = playerName;
 if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
 await startAppSession();
@@ -618,13 +623,8 @@ await startAppSession();
 
 // 處理一般會員登入成功
 if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+        if (modal) modal.style.display = 'none';
         if (modalEl) modalEl.style.display = 'none';
-        // 👇【關鍵修正】在這裡加入將 Modal 隱藏的邏輯
-        if (modalEl) {
-          modalEl.style.display = 'none';
-          modalEl.classList.add('hidden');
-        }
-
 const { data: { session } } = await supabase.auth.getSession();
 if (session && session.user) {
 userId = session.user.id;
@@ -634,47 +634,80 @@ await startAppSession();
 }
 });
 
-// 2. 監聽 Supabase 驗證狀態變更
-supabase.auth.onAuthStateChange(async (event, session) => {
-const modalEl = document.getElementById('rpg-modal');
-if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-userId = session.user.id;
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            const modalEl = document.getElementById('rpg-modal');
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+                userId = session.user.id;
+                
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden');
+                }
+                
+                await loadUserProfile(userId);
+                await startAppSession();
+            }
+        });
 
-if (modalEl) {
-modalEl.style.display = 'none';
-modalEl.classList.add('hidden');
+        function updateUserUI(name) {
+            const homeBadge = document.getElementById('my-identity-badge-home');
+            const chatBadge = document.getElementById('my-identity-badge-chat');
+            if (homeBadge) homeBadge.textContent = `👤 ${name}`;
+            if (chatBadge) chatBadge.textContent = `👤 ${name}`;
+    // 2. 監聽 Supabase 驗證狀態變更
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      const modalEl = document.getElementById('rpg-modal');
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        userId = session.user.id;
+        
+        if (modalEl) {
+          modalEl.style.display = 'none';
+          modalEl.classList.add('hidden');
 }
+        
+        await loadUserProfile(userId);
+        await startAppSession();
+      }
+    });
 
-await loadUserProfile(userId);
-await startAppSession();
-}
-});
+        async function loadUserProfile(uid) {
+            try {
+                const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+                if (data) {
+                    playerName = data.name || data.full_name || '會員';
+                    updateUserUI(playerName);
+                }
+            } catch (err) {
+                console.error("載入使用者檔案失敗", err);
+            }
+        }
+    function updateUserUI(name) {
+      const homeBadge = document.getElementById('my-identity-badge-home');
+      const chatBadge = document.getElementById('my-identity-badge-chat');
+      if (homeBadge) homeBadge.textContent = `👤 ${name}`;
+      if (chatBadge) chatBadge.textContent = `👤 ${name}`;
+    }
 
-function updateUserUI(name) {
-const homeBadge = document.getElementById('my-identity-badge-home');
-const chatBadge = document.getElementById('my-identity-badge-chat');
-if (homeBadge) homeBadge.textContent = `👤 ${name}`;
-if (chatBadge) chatBadge.textContent = `👤 ${name}`;
+        async function startAppSession() {
+            fetchTopics();
+    async function loadUserProfile(uid) {
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+        if (data) {
+          playerName = data.name || data.full_name || '會員';
+          updateUserUI(playerName);
 }
+      } catch (err) {
+        console.error("載入使用者檔案失敗", err);
+      }
+    }
 
-async function loadUserProfile(uid) {
-try {
-const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-if (data) {
-playerName = data.name || data.full_name || '會員';
-updateUserUI(playerName);
-}
-} catch (err) {
-console.error("載入使用者檔案失敗", err);
-}
-}
-
-async function startAppSession() {
-// 確保你的專案中已定義此函式
-if (typeof fetchTopics === 'function') {
-fetchTopics();
-}
-}
+    async function startAppSession() {
+      // 確保你的專案中已定義此函式
+      if (typeof fetchTopics === 'function') {
+        fetchTopics();
+      }
+    }
 // ==========================================
 // 區塊二：其他聊天室與應用邏輯
 // ==========================================
@@ -1122,15 +1155,4 @@ contentInput.value = '';
 } catch (err) { alert("發送失敗: " + err.message); }
 });
 }
-        // 在 chat.astro 的 script 中加入
-const urlParams = new URLSearchParams(window.location.search);
-const dmTargetId = urlParams.get('dm');
-const dmTargetName = urlParams.get('name');
-
-if (dmTargetId && dmTargetName) {
-    // 如果有帶入 dm 參數，自動切換至與該玩家的私人對話模式
-    console.log(`準備與 ${decodeURIComponent(dmTargetName)} (${dmTargetId}) 進行私訊`);
-    // 可以在這裡初始化你的私訊專屬 UI 或篩選訊息
-}
 </script>
-</Layout>
