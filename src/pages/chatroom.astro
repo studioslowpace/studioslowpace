@@ -991,5 +991,12 @@ import LoginModal from '../components/LoginModal.astro';
                 } catch (err) { alert("私訊發送失敗: " + err.message); }
             });
         }
+        window.addEventListener('message', async (event) => {
+    console.log("收到 message 事件：", event.data); // 檢查有沒有成功接收到訊號
+    if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+        console.log("準備關閉 Modal，目前 modal 元素：", modal);
+        if (modal) modal.style.display = 'none';
+    }
+});
     </script>
 </Layout>
