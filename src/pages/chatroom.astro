@@ -506,8 +506,17 @@ import LoginModal from '../components/LoginModal.astro';
 
         // 取得 Modal 元素
         const modal = document.getElementById('rpg-modal');
-        const hudName = document.getElementById('my-identity-badge-home');
-        const hudTierTag = document.getElementById('my-identity-badge-chat');
+// 修正：對應頁面中真實存在的身分標籤 ID
+        const homeBadge = document.getElementById('my-identity-badge-home');
+        const chatBadge = document.getElementById('my-identity-badge-chat');
+        const dmBadge = document.getElementById('my-identity-badge-dm');
+
+        // 統一更新所有身分標籤的函式
+        function updateUserUI(name) {
+            if (homeBadge) homeBadge.textContent = `👤 ${name}`;
+            if (chatBadge) chatBadge.textContent = `👤 ${name}`;
+            if (dmBadge) dmBadge.textContent = `👤 ${name}`;
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             await initAuthCheck();
@@ -613,14 +622,7 @@ import LoginModal from '../components/LoginModal.astro';
             }
         });
 
-        function updateUserUI(name) {
-            const homeBadge = document.getElementById('my-identity-badge-home');
-            const chatBadge = document.getElementById('my-identity-badge-chat');
-            const dmBadge = document.getElementById('my-identity-badge-dm');
-            if (homeBadge) homeBadge.textContent = `👤 ${name}`;
-            if (chatBadge) chatBadge.textContent = `👤 ${name}`;
-            if (dmBadge) dmBadge.textContent = `👤 ${name}`;
-        }
+
 
         async function loadUserProfile(uid) {
             try {
