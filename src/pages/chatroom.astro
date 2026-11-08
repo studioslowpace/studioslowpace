@@ -258,7 +258,7 @@ import Layout from '../layouts/Layout.astro';
 </head>
 <body>
 
-    <!-- 🏮 頂部管理選單 (點擊 Logo 展開) -->
+    <!-- 🏮 頂部管理選單 -->
     <div id="admin-navbar" class="hidden admin-nav">
         <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
@@ -284,7 +284,7 @@ import Layout from '../layouts/Layout.astro';
             <a href="/slowplace" class="nav-link-btn">〈 返回空間地圖</a>
         </div>
 
-        <!-- 頂部切換分頁：公開大廳 vs 私訊 -->
+        <!-- 頂部切換分頁 -->
         <div class="chat-mode-tabs">
             <button id="tab-public" class="tab-btn active">📢 公開討論主題</button>
             <button id="tab-dm" class="tab-btn">🔒 單對單私訊 (DM)</button>
@@ -294,12 +294,10 @@ import Layout from '../layouts/Layout.astro';
         <div id="section-public" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
-                <!-- 數據統計欄 -->
                 <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
                     <span>🟢 在線：<strong id="online-users-count-home">1</strong> 人</span>
                 </div>
 
-                <!-- 📖 資訊按鈕卡片 (源由 / 守則) -->
                 <div class="info-card-grid">
                     <div class="info-trigger-btn" data-modal="modal-origin">
                         <h5>🌱 社群源由</h5>
@@ -311,13 +309,11 @@ import Layout from '../layouts/Layout.astro';
                     </div>
                 </div>
 
-                <!-- 👤 身分切換列 -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.1rem;">
                     <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 請選擇討論主題</span>
                     <div id="my-identity-badge-home" class="identity-badge">👤 訪客</div>
                 </div>
 
-                <!-- 主題列表容器 -->
                 <div style="flex: 1; display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
                         <button id="btn-add-topic" class="btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
@@ -336,7 +332,6 @@ import Layout from '../layouts/Layout.astro';
                             <span id="current-topic-title">選擇主題</span>
                             <span style="font-size: 0.6rem; color: #94a3b8;">▼</span>
                         </div>
-                        <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
                     </div>
 
                     <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
@@ -364,7 +359,7 @@ import Layout from '../layouts/Layout.astro';
                 <span class="identity-badge" id="my-identity-badge-dm">👤 訪客</span>
             </div>
             <div id="dm-chat-messages" class="phone-chat-messages">
-                <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">請透過地圖點擊線上玩家來發起專屬私訊</p>
+                <p style="font-size: 0.75rem; color: #64748b; text-align: center; margin: auto;">請透過地圖點擊線上玩家來發起專屬私訊</p>
             </div>
             <form id="dm-message-form" class="phone-input-bar">
                 <input type="text" id="dm-input-content" placeholder="輸入私訊..." required class="phone-input-field" autocomplete="off">
@@ -433,7 +428,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </div>
 
-    <!-- JavaScript 邏輯：全預設訪客模式 -->
+    <!-- JavaScript 邏輯：防呆與安全繫結 -->
     <script>
         import { supabase } from '../lib/supabase';
 
@@ -449,18 +444,14 @@ import Layout from '../layouts/Layout.astro';
         let dmTargetId = null;
         let dmTargetName = '';
 
-        const homeBadge = document.getElementById('my-identity-badge-home');
-        const chatBadge = document.getElementById('my-identity-badge-chat');
-        const dmBadge = document.getElementById('my-identity-badge-dm');
-
         function updateUserUI(name) {
-            if (homeBadge) homeBadge.textContent = `👤 ${name}`;
-            if (chatBadge) chatBadge.textContent = `👤 ${name}`;
-            if (dmBadge) dmBadge.textContent = `👤 ${name}`;
+            ['my-identity-badge-home', 'my-identity-badge-chat', 'my-identity-badge-dm'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = `👤 ${name}`;
+            });
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            // 直接初始化預設訪客身分
             initGuestIdentity();
             initPresenceTracker();
             if (window.lucide) lucide.createIcons();
@@ -472,9 +463,11 @@ import Layout from '../layouts/Layout.astro';
             dmTargetName = urlParams.get('name');
 
             if (dmTargetId) {
-                document.getElementById('tab-dm').click();
+                const tabDm = document.getElementById('tab-dm');
+                if (tabDm) tabDm.click();
                 if (dmTargetName) {
-                    document.getElementById('dm-partner-title').textContent = `🔒 與 ${decodeURIComponent(dmTargetName)} 的私訊`;
+                    const partnerTitle = document.getElementById('dm-partner-title');
+                    if (partnerTitle) partnerTitle.textContent = `🔒 與 ${decodeURIComponent(dmTargetName)} 的私訊`;
                 }
                 loadDirectMessages();
                 subscribeToDM();
@@ -500,19 +493,26 @@ import Layout from '../layouts/Layout.astro';
         }
 
         function initTabs() {
-            document.getElementById('tab-public').addEventListener('click', () => {
-                document.getElementById('tab-public').classList.add('active');
-                document.getElementById('tab-dm').classList.remove('active');
-                document.getElementById('section-public').classList.remove('hidden');
-                document.getElementById('section-dm').classList.add('hidden');
+            const tabPublic = document.getElementById('tab-public');
+            const tabDm = document.getElementById('tab-dm');
+            const sectionPublic = document.getElementById('section-public');
+            const sectionDm = document.getElementById('section-dm');
+
+            tabPublic?.addEventListener('click', () => {
+                tabPublic.classList.add('active');
+                tabDm?.classList.remove('active');
+                sectionPublic?.classList.remove('hidden');
+                sectionDm?.classList.add('hidden');
             });
-            document.getElementById('tab-dm').addEventListener('click', () => {
-                document.getElementById('tab-dm').classList.add('active');
-                document.getElementById('tab-public').classList.remove('active');
-                document.getElementById('section-dm').classList.remove('hidden');
-                document.getElementById('section-public').classList.add('hidden');
+
+            tabDm?.addEventListener('click', () => {
+                tabDm.classList.add('active');
+                tabPublic?.classList.remove('active');
+                sectionDm?.classList.remove('hidden');
+                sectionPublic?.classList.add('hidden');
                 if (!dmTargetId) {
-                    document.getElementById('dm-chat-messages').innerHTML = `<p style="font-size:0.75rem; color:#64748b; text-align:center; margin:auto;">請透過地圖點擊線上玩家來發起專屬私訊。</p>`;
+                    const dmMsg = document.getElementById('dm-chat-messages');
+                    if (dmMsg) dmMsg.innerHTML = `<p style="font-size:0.75rem; color:#64748b; text-align:center; margin:auto;">請透過地圖點擊線上玩家來發起專屬私訊。</p>`;
                 }
             });
         }
@@ -528,8 +528,10 @@ import Layout from '../layouts/Layout.astro';
                 .on('presence', { event: 'sync' }, () => {
                     const state = presenceChannel.presenceState();
                     const onlineCount = Object.keys(state).length || 1;
-                    document.getElementById('online-users-count-home').textContent = onlineCount;
-                    document.getElementById('online-users-count-chat').textContent = onlineCount;
+                    const countHome = document.getElementById('online-users-count-home');
+                    const countChat = document.getElementById('online-users-count-chat');
+                    if (countHome) countHome.textContent = onlineCount;
+                    if (countChat) countChat.textContent = onlineCount;
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
@@ -585,9 +587,9 @@ import Layout from '../layouts/Layout.astro';
 
         function renderTopicsList() {
             const container = document.getElementById('topics-list-container');
-            const switcherContainer = document.getElementById('topics-switcher-list-container');
+            if (!container) return;
             
-            const htmlContent = topics.length === 0 
+            container.innerHTML = topics.length === 0 
                 ? `<p style="font-size:0.75rem; color:#a09587; text-align:center; padding:1rem;">尚無討論主題</p>`
                 : topics.map((topic, index) => {
                     const hasPassword = topic.password && topic.password.trim() !== '';
@@ -613,9 +615,6 @@ import Layout from '../layouts/Layout.astro';
                         </div>
                     `;
                 }).join('');
-
-            if (container) container.innerHTML = htmlContent;
-            if (switcherContainer) switcherContainer.innerHTML = htmlContent;
         }
 
         window.trySelectTopic = function(topicId) {
@@ -743,51 +742,49 @@ import Layout from '../layouts/Layout.astro';
         }
 
         function initEventListeners() {
-            document.getElementById('my-identity-badge-home').addEventListener('click', () => {
-                const newName = prompt("請輸入您的訪客暱稱：", playerName);
-                if (newName && newName.trim()) {
-                    playerName = newName.trim();
-                    sessionStorage.setItem('space_guest_name', playerName);
-                    updateUserUI(playerName);
-                }
-            });
-            document.getElementById('my-identity-badge-chat').addEventListener('click', () => {
-                document.getElementById('my-identity-badge-home').click();
-            });
-            document.getElementById('my-identity-badge-dm').addEventListener('click', () => {
-                document.getElementById('my-identity-badge-home').click();
+            ['my-identity-badge-home', 'my-identity-badge-chat', 'my-identity-badge-dm'].forEach(id => {
+                document.getElementById(id)?.addEventListener('click', () => {
+                    const newName = prompt("請輸入您的訪客暱稱：", playerName);
+                    if (newName && newName.trim()) {
+                        playerName = newName.trim();
+                        sessionStorage.setItem('space_guest_name', playerName);
+                        updateUserUI(playerName);
+                    }
+                });
             });
 
-            document.getElementById('logo-toggle-btn').addEventListener('click', () => {
-                document.getElementById('admin-navbar').classList.toggle('hidden');
+            document.getElementById('logo-toggle-btn')?.addEventListener('click', () => {
+                document.getElementById('admin-navbar')?.classList.toggle('hidden');
             });
 
             document.querySelectorAll('.info-trigger-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    document.getElementById(btn.getAttribute('data-modal')).classList.remove('hidden');
+                    const targetModal = btn.getAttribute('data-modal');
+                    if (targetModal) document.getElementById(targetModal)?.classList.remove('hidden');
                 });
             });
 
             document.querySelectorAll('.modal-close-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    document.getElementById(btn.getAttribute('data-target')).classList.add('hidden');
+                    const targetModal = btn.getAttribute('data-target');
+                    if (targetModal) document.getElementById(targetModal)?.classList.add('hidden');
                 });
             });
 
-            document.getElementById('btn-add-topic').addEventListener('click', () => {
-                document.getElementById('topic-modal').classList.remove('hidden');
+            document.getElementById('btn-add-topic')?.addEventListener('click', () => {
+                document.getElementById('topic-modal')?.classList.remove('hidden');
             });
 
-            document.getElementById('cancel-topic-modal').addEventListener('click', () => {
-                document.getElementById('topic-modal').classList.add('hidden');
+            document.getElementById('cancel-topic-modal')?.addEventListener('click', () => {
+                document.getElementById('topic-modal')?.classList.add('hidden');
             });
 
-            document.getElementById('create-topic-form').addEventListener('submit', async (event) => {
+            document.getElementById('create-topic-form')?.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                const title = document.getElementById('new-topic-title').value.trim();
-                const desc = document.getElementById('new-topic-desc').value.trim();
-                const password = document.getElementById('new-topic-password').value.trim();
-                const isAnon = document.getElementById('new-topic-anonymous').checked;
+                const title = document.getElementById('new-topic-title')?.value.trim();
+                const desc = document.getElementById('new-topic-desc')?.value.trim();
+                const password = document.getElementById('new-topic-password')?.value.trim();
+                const isAnon = document.getElementById('new-topic-anonymous')?.checked;
 
                 if (!title) return;
                 let expiresAt = isAnon ? new Date(Date.now() + 86400000).toISOString() : null;
@@ -800,19 +797,19 @@ import Layout from '../layouts/Layout.astro';
                         is_anonymous: isAnon,
                         expires_at: expiresAt
                     }]);
-                    document.getElementById('topic-modal').classList.add('hidden');
-                    document.getElementById('create-topic-form').reset();
+                    document.getElementById('topic-modal')?.classList.add('hidden');
+                    document.getElementById('create-topic-form')?.reset();
                     fetchTopics();
                 } catch (err) { alert("建立失敗: " + err.message); }
             });
 
-            document.getElementById('back-to-home-btn').addEventListener('click', backToHome);
+            document.getElementById('back-to-home-btn')?.addEventListener('click', backToHome);
 
-            document.getElementById('chat-message-form').addEventListener('submit', async (event) => {
+            document.getElementById('chat-message-form')?.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 if (!activeTopicId) return;
                 const input = document.getElementById('chat-input-content');
-                if (!input.value.trim()) return;
+                if (!input || !input.value.trim()) return;
 
                 try {
                     await supabase.from('topic_messages').insert([{
@@ -826,11 +823,11 @@ import Layout from '../layouts/Layout.astro';
                 } catch (err) { alert("發送失敗: " + err.message); }
             });
 
-            document.getElementById('dm-message-form').addEventListener('submit', async (event) => {
+            document.getElementById('dm-message-form')?.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 if (!dmTargetId) return;
                 const input = document.getElementById('dm-input-content');
-                if (!input.value.trim()) return;
+                if (!input || !input.value.trim()) return;
 
                 try {
                     await supabase.from('direct_messages').insert([{
