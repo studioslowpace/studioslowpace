@@ -539,13 +539,27 @@ import Layout from '../layouts/Layout.astro';
         let isAdmin = false;
         let allDmRecords = [];
 
-        window.onload = function() {
+       window.onload = function() {
             initDefaultUser();
             fetchAllUserRecordsFromSupabase();
             initPresenceTracker();
             fetchTopics();
             fetchUserDmConversations();
             lucide.createIcons();
+
+            // 🔍 自動捕捉網址傳入的私訊對象 (例如: /chat.html?dm=用戶ID&name=小明)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetDmId = urlParams.get('dm');
+            const targetDmName = urlParams.get('name');
+
+            if (targetDmId) {
+                // 稍微延遲確保 Supabase 狀態與名單載入完畢後直接啟動私訊
+                setTimeout(() => {
+                    // 如果有傳入 name 就用 decodeURIComponent 解碼，否則用 id
+                    const displayName = targetDmName ? decodeURIComponent(targetDmName) : targetDmId;
+                    startDirectChat(displayName);
+                }, 400);
+            }
         };
 
         function initDefaultUser() {
