@@ -600,7 +600,7 @@ import LoginModal from '../components/LoginModal.astro';
             isAdmin = false;
         }
     }
-// 1. 監聽來自 iframe (/login) 的登入成功訊息
+// 1. 監聽來自 iframe 或內嵌元件的登入成功訊息
     window.addEventListener('message', async (event) => {
       const modalEl = document.getElementById('rpg-modal');
 
@@ -617,7 +617,12 @@ import LoginModal from '../components/LoginModal.astro';
       
       // 處理一般會員登入成功
       if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-        if (modalEl) modalEl.style.display = 'none';
+        // 👇【關鍵修正】在這裡加入將 Modal 隱藏的邏輯
+        if (modalEl) {
+          modalEl.style.display = 'none';
+          modalEl.classList.add('hidden');
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           userId = session.user.id;
@@ -1115,5 +1120,15 @@ import LoginModal from '../components/LoginModal.astro';
                 } catch (err) { alert("發送失敗: " + err.message); }
             });
         }
+        // 在 chat.astro 的 script 中加入
+const urlParams = new URLSearchParams(window.location.search);
+const dmTargetId = urlParams.get('dm');
+const dmTargetName = urlParams.get('name');
+
+if (dmTargetId && dmTargetName) {
+    // 如果有帶入 dm 參數，自動切換至與該玩家的私人對話模式
+    console.log(`準備與 ${decodeURIComponent(dmTargetName)} (${dmTargetId}) 進行私訊`);
+    // 可以在這裡初始化你的私訊專屬 UI 或篩選訊息
+}
     </script>
 </Layout>

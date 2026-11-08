@@ -992,7 +992,13 @@ import LoginModal from '../components/LoginModal.astro';
 
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
-
+// slowplace.astro 內的點擊事件
+pamChatBtn?.addEventListener('click', () => {
+  if (selectedPeer) {
+    // 帶入 target_user_id 讓 chat.astro 自動開啟與該玩家的私訊
+    window.location.href = `/chatroom?dm=${selectedPeer.user_id}&name=${encodeURIComponent(selectedPeer.name)}`;
+  }
+});
     // 初始化執行
     renderCustomToolsUI();
     initAuthCheck();
