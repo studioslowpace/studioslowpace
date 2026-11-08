@@ -7,42 +7,93 @@ import Layout from '../layouts/Layout.astro';
     <header class="reading-top-bar">
       <a href="/" class="back-btn">〈 返回空間</a>
       <h2 id="page-title">📖 個人閱讀清單與心得</h2>
+      <button id="open-add-modal-btn" class="rpg-btn" style="width: auto; padding: 6px 14px; font-size: 12px; display: none;">➕ 新增記錄</button>
     </header>
 
-    <!-- 新增閱讀記錄區塊 (僅限本人登入時顯示) -->
-    <div class="add-record-card" id="add-record-section" style="display: none;">
-      <h3>➕ 新增閱讀心得</h3>
-      <input type="text" id="book-title-input" placeholder="書名（例：《希臘語課》）" />
-      <input type="text" id="book-author-input" placeholder="作者" />
-      <div style="display:flex; gap:6px;">
-        <input type="number" id="current-page-input" placeholder="目前頁數" min="0" />
-        <input type="number" id="total-page-input" placeholder="總頁數" min="1" />
-      </div>
-      <textarea id="quote-input" placeholder="精選書摘..."></textarea>
-      <textarea id="review-input" placeholder="讀後心得..."></textarea>
-      <button id="submit-log-btn" class="rpg-btn">儲存記錄</button>
-    </div>
-
-    <!-- 閱讀清單列表 -->
+    <!-- 閱讀清單列表 (直列只顯示書名與作者) -->
     <div class="logs-container" id="my-logs-list">
       <div style="text-align:center; color:#94a3b8; padding:20px;">載入記錄中...</div>
     </div>
   </div>
 
-  <!-- 記錄詳情彈窗 (Modal) -->
-  <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 360px;">
+  <!-- 新增記錄彈窗 (Modal) -->
+  <div id="add-record-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window" style="max-width: 440px; max-height: 90vh; display: flex; flex-direction: column;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>📖 記錄詳情</span>
+        <span>✍️ 新增閱讀記錄</span>
+        <button id="close-add-modal-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+      </div>
+      <div class="rpg-content" style="padding: 16px; overflow-y: auto; flex: 1;">
+        <div class="form-grid">
+          <div class="form-row"><label>書名</label><input type="text" id="book-title-input" placeholder="例：《白》" /></div>
+          <div class="form-row-2">
+            <div><label>作者</label><input type="text" id="book-author-input" placeholder="韓江" /></div>
+            <div><label>譯者</label><input type="text" id="book-translator-input" placeholder="張雅眉" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>閱讀日期</label><input type="date" id="start-date-input" /></div>
+            <div><label>完成日期</label><input type="date" id="finish-date-input" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>出版社</label><input type="text" id="publisher-input" placeholder="漫遊者文化" /></div>
+            <div>
+              <label>喜愛程度 (1-5星)</label>
+              <select id="rating-input" style="width:100%; background:var(--bg-main); color:#fff; border:1px solid var(--border-color); padding:8px; border-radius:6px;">
+                <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+                <option value="4">⭐⭐⭐⭐ (4星)</option>
+                <option value="3">⭐⭐⭐ (3星)</option>
+                <option value="2">⭐⭐ (2星)</option>
+                <option value="1">⭐ (1星)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row"><label>記一些字句：</label><textarea id="quote-input" placeholder="摘錄喜歡的句子..."></textarea></div>
+          <div class="form-row"><label>記一些疑問：</label><textarea id="questions-input" placeholder="閱讀時產生的疑問..."></textarea></div>
+          <div class="form-row"><label>記一些感受：</label><textarea id="review-input" placeholder="讀後心得與感受..."></textarea></div>
+        </div>
+        <button id="submit-log-btn" class="rpg-btn" style="margin-top: 12px;">儲存記錄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 記錄詳細檢視彈窗 (Modal - 依據相片格式) -->
+  <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window" style="max-width: 500px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📖 閱讀筆記詳情</span>
         <button id="detail-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
       </div>
-      <div class="rpg-content" style="padding: 16px;">
-        <p style="font-size:14px;"><strong>書名：</strong><span id="modal-book"></span></p>
-        <p style="font-size:13px;"><strong>作者：</strong><span id="modal-author"></span></p>
-        <p style="font-size:13px;"><strong>閱讀進度：</strong>第 <span id="modal-current"></span> / <span id="modal-total"></span> 頁</p>
-        <p style="font-size:13px;"><strong>書摘：</strong><br><span id="modal-quote" style="color:#38bdf8;"></span></p>
-        <p style="font-size:13px;"><strong>讀後感：</strong><br><span id="modal-review"></span></p>
-        <p style="font-size:11px; color:#64748b; text-align:right; margin-top:10px;">記錄日期：<span id="modal-date"></span></p>
+      <div class="rpg-content paper-sheet" style="padding: 20px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.6;">
+        <div class="detail-grid">
+          <div class="detail-line"><strong>書名</strong> <span id="modal-book" class="line-content"></span></div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>作者</strong> <span id="modal-author" class="line-content"></span></div>
+            <div class="detail-line"><strong>譯者</strong> <span id="modal-translator" class="line-content"></span></div>
+          </div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>閱讀日期</strong> <span id="modal-start-date" class="line-content"></span></div>
+            <div class="detail-line"><strong>出版社</strong> <span id="modal-publisher" class="line-content"></span></div>
+          </div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>完成日期</strong> <span id="modal-finish-date" class="line-content"></span></div>
+            <div class="detail-line"><strong>喜愛程度</strong> <span id="modal-rating" class="line-content" style="color: #f59e0b;"></span></div>
+          </div>
+        </div>
+
+        <div class="detail-section" style="margin-top: 16px;">
+          <div class="section-title">記一些字句：</div>
+          <div id="modal-quote" class="section-content-box"></div>
+        </div>
+
+        <div class="detail-section">
+          <div class="section-title">記一些疑問：</div>
+          <div id="modal-questions" class="section-content-box"></div>
+        </div>
+
+        <div class="detail-section">
+          <div class="section-title">記一些感受：</div>
+          <div id="modal-review" class="section-content-box"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -71,7 +122,7 @@ import Layout from '../layouts/Layout.astro';
     .reading-top-bar {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
       margin-bottom: 16px;
     }
     .back-btn {
@@ -79,22 +130,33 @@ import Layout from '../layouts/Layout.astro';
       text-decoration: none;
       font-size: 13px;
     }
-    .add-record-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      padding: 16px;
-      border-radius: 12px;
+    .logs-container {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-bottom: 20px;
     }
-    .add-record-card h3 {
-      margin: 0 0 4px 0;
-      font-size: 14px;
-      color: var(--accent-color);
+    .log-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 14px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s;
     }
-    .add-record-card input, .add-record-card textarea {
+    .log-item-card:hover {
+      border-color: var(--accent-color);
+    }
+    
+    /* 表單排版 */
+    .form-grid { display: flex; flex-direction: column; gap: 10px; }
+    .form-row { display: flex; flex-direction: column; gap: 4px; }
+    .form-row-2 { display: flex; gap: 10px; }
+    .form-row-2 > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 11px; color: #94a3b8; }
+    input, textarea, select {
       background: var(--bg-main);
       border: 1px solid var(--border-color);
       color: #fff;
@@ -105,10 +167,8 @@ import Layout from '../layouts/Layout.astro';
       box-sizing: border-box;
       width: 100%;
     }
-    .add-record-card textarea {
-      height: 60px;
-      resize: none;
-    }
+    textarea { height: 50px; resize: none; }
+
     .rpg-btn {
       background: var(--accent-hover);
       color: #fff;
@@ -119,50 +179,30 @@ import Layout from '../layouts/Layout.astro';
       font-weight: bold;
       width: 100%;
     }
-    .logs-container {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .log-item-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    
+    /* 詳情紙張格式 (對應相片) */
+    .paper-sheet { background: #111827; color: #e5e7eb; }
+    .detail-grid { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+    .detail-row-2 { display: flex; gap: 16px; }
+    .detail-line { flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #374151; padding-bottom: 4px; font-size: 12px; }
+    .detail-line strong { width: 65px; color: #94a3b8; flex-shrink: 0; }
+    .line-content { color: #f9fafb; font-weight: 500; }
+    
+    .detail-section { margin-top: 12px; }
+    .section-title { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; font-size: 12px; }
+    .section-content-box { background: rgba(30, 41, 59, 0.5); border-left: 2px solid var(--accent-color); padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #cbd5e1; }
+
+    /* Modal 共同樣式 */
     .rpg-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
     }
     .rpg-window {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      width: 90%;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-      overflow: hidden;
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5); overflow: hidden;
     }
-    .rpg-title-bar {
-      background: var(--bg-main);
-      color: var(--accent-color);
-      padding: 10px 16px;
-      font-size: 13px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .rpg-btn-sm {
-      background: var(--bg-main);
-      color: #cbd5e1;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      cursor: pointer;
-    }
+    .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 10px 16px; font-size: 13px; border-bottom: 1px solid var(--border-color); }
+    .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
   </style>
 
   <script>
@@ -175,16 +215,17 @@ import Layout from '../layouts/Layout.astro';
 
     const listContainer = document.getElementById('my-logs-list');
     const submitBtn = document.getElementById('submit-log-btn');
-    const addRecordSection = document.getElementById('add-record-section');
+    const openAddModalBtn = document.getElementById('open-add-modal-btn');
+    const addRecordModal = document.getElementById('add-record-modal');
+    const closeAddModalBtn = document.getElementById('close-add-modal-btn');
+
     const detailModal = document.getElementById('log-detail-modal');
     const detailCloseBtn = document.getElementById('detail-close-btn');
-    const pageTitle = document.getElementById('page-title');
 
     async function initPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const guestId = sessionStorage.getItem('space_guest_id');
 
-      // 檢查網址是否有指定要查閱的 user_id
       const urlParams = new URLSearchParams(window.location.search);
       const targetUserId = urlParams.get('user_id');
 
@@ -196,16 +237,15 @@ import Layout from '../layouts/Layout.astro';
         isOwner = true;
       } else if (guestId) {
         currentUserId = guestId;
-        isOwner = true; // 訪客也可以記錄自己的操作（如果資料表允許訪客寫入，或純檢視）
+        isOwner = true;
       } else {
-        // 如果未登入且沒有指定查看對象，引導至登入頁
         window.location.href = '/login';
         return;
       }
 
-      // 如果是本人，顯示新增記錄卡片
-      if (isOwner && addRecordSection) {
-        addRecordSection.style.display = 'flex';
+      // 如果是本人，顯示「新增記錄」按鈕
+      if (isOwner && openAddModalBtn) {
+        openAddModalBtn.style.display = 'block';
       }
 
       await fetchAndRenderLogs();
@@ -237,30 +277,32 @@ import Layout from '../layouts/Layout.astro';
       cachedLogs.forEach((item) => {
         html += `
           <div class="log-item-card" data-id="${item.id}">
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-              <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book_title}》</span>
-              <span style="font-size:11px; color:#94a3b8;">進度：${item.current_page}/${item.total_pages}頁</span>
-            </div>
-            <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">作者：${item.author}</div>
+            <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book_title || '無題'}》</span>
+            <span style="font-size:12px; color:#94a3b8;">作者：${item.author || '佚名'}</span>
           </div>
         `;
       });
       listContainer.innerHTML = html;
 
+      // 點擊直列卡片，彈出詳細筆記 Modal
       document.querySelectorAll('.log-item-card').forEach(card => {
         card.addEventListener('click', (e) => {
           const logId = (e.currentTarget as HTMLElement).dataset.id;
           const log = cachedLogs.find(l => l.id === logId);
           if (log) {
-            const dateStr = new Date(log.created_at).toLocaleDateString();
+            (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title || ''}》`;
+            (document.getElementById('modal-author') as HTMLElement).textContent = log.author || '佚名';
+            (document.getElementById('modal-translator') as HTMLElement).textContent = log.translator || '無';
+            (document.getElementById('modal-start-date') as HTMLElement).textContent = log.start_date || '未填寫';
+            (document.getElementById('modal-finish-date') as HTMLElement).textContent = log.finish_date || '未填寫';
+            (document.getElementById('modal-publisher') as HTMLElement).textContent = log.publisher || '未填寫';
             
-            (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title}》`;
-            (document.getElementById('modal-author') as HTMLElement).textContent = log.author;
-            (document.getElementById('modal-current') as HTMLElement).textContent = log.current_page;
-            (document.getElementById('modal-total') as HTMLElement).textContent = log.total_pages;
-            (document.getElementById('modal-quote') as HTMLElement).textContent = log.quote ? `“ ${log.quote} ”` : '無';
-            (document.getElementById('modal-review') as HTMLElement).textContent = log.review || '無心得';
-            (document.getElementById('modal-date') as HTMLElement).textContent = dateStr;
+            const ratingNum = log.rating || 5;
+            (document.getElementById('modal-rating') as HTMLElement).textContent = '⭐'.repeat(ratingNum);
+
+            (document.getElementById('modal-quote') as HTMLElement).textContent = log.quote || '無記錄字句';
+            (document.getElementById('modal-questions') as HTMLElement).textContent = log.questions || '無記錄疑問';
+            (document.getElementById('modal-review') as HTMLElement).textContent = log.review || '無記錄感受';
 
             if (detailModal) detailModal.style.display = 'flex';
           }
@@ -268,16 +310,26 @@ import Layout from '../layouts/Layout.astro';
       });
     }
 
+    // 按鈕控制彈窗開關
+    openAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'flex'; });
+    closeAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'none'; });
+    detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
+
+    // 儲存新記錄
     submitBtn?.addEventListener('click', async () => {
       const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
       const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
-      const currentPage = parseInt((document.getElementById('current-page-input') as HTMLInputElement).value) || 0;
-      const totalPages = parseInt((document.getElementById('total-page-input') as HTMLInputElement).value) || 1;
+      const translator = (document.getElementById('book-translator-input') as HTMLInputElement).value.trim();
+      const startDate = (document.getElementById('start-date-input') as HTMLInputElement).value;
+      const finishDate = (document.getElementById('finish-date-input') as HTMLInputElement).value;
+      const publisher = (document.getElementById('publisher-input') as HTMLInputElement).value.trim();
+      const rating = parseInt((document.getElementById('rating-input') as HTMLSelectElement).value) || 5;
       const quote = (document.getElementById('quote-input') as HTMLTextAreaElement).value.trim();
+      const questions = (document.getElementById('questions-input') as HTMLTextAreaElement).value.trim();
       const review = (document.getElementById('review-input') as HTMLTextAreaElement).value.trim();
 
       if (!bookTitle) {
-        alert('請至少填寫書名！');
+        alert('請填寫書名！');
         return;
       }
 
@@ -288,9 +340,13 @@ import Layout from '../layouts/Layout.astro';
         user_id: currentUserId,
         book_title: bookTitle,
         author: author,
-        current_page: currentPage,
-        total_pages: totalPages,
+        translator: translator,
+        start_date: startDate,
+        finish_date: finishDate,
+        publisher: publisher,
+        rating: rating,
         quote: quote,
+        questions: questions,
         review: review
       });
 
@@ -299,19 +355,20 @@ import Layout from '../layouts/Layout.astro';
       if (error) {
         alert('儲存失敗：' + error.message);
       } else {
+        // 清空輸入欄位
         (document.getElementById('book-title-input') as HTMLInputElement).value = '';
         (document.getElementById('book-author-input') as HTMLInputElement).value = '';
-        (document.getElementById('current-page-input') as HTMLInputElement).value = '';
-        (document.getElementById('total-page-input') as HTMLInputElement).value = '';
+        (document.getElementById('book-translator-input') as HTMLInputElement).value = '';
+        (document.getElementById('start-date-input') as HTMLInputElement).value = '';
+        (document.getElementById('finish-date-input') as HTMLInputElement).value = '';
+        (document.getElementById('publisher-input') as HTMLInputElement).value = '';
         (document.getElementById('quote-input') as HTMLTextAreaElement).value = '';
+        (document.getElementById('questions-input') as HTMLTextAreaElement).value = '';
         (document.getElementById('review-input') as HTMLTextAreaElement).value = '';
 
+        if (addRecordModal) addRecordModal.style.display = 'none';
         await fetchAndRenderLogs();
       }
-    });
-
-    detailCloseBtn?.addEventListener('click', () => {
-      if (detailModal) detailModal.style.display = 'none';
     });
 
     initPage();
