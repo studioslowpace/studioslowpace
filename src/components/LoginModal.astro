@@ -28,9 +28,9 @@
     <button id="register-submit-btn" style="width:100%; padding:10px; background:#059669; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">註冊新帳號</button>
   </div>
 
-  <!-- 訪客快速進入表單區塊（不需輸入名字，自動指派編號） -->
+  <!-- 訪客快速進入表單區塊 -->
   <div id="guest-form-container" style="display: none;">
-    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">訪客身分無需註冊，系統將自動指派專屬代號，離開後資料將自動清除。</p>
+    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">訪客將依序自動指派編號（如 訪客 #1），離開空間後資料將自動清除。</p>
     
     <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">選擇分身造型：</div>
     <div style="display: flex; gap: 10px; margin-bottom: 16px;">
@@ -51,11 +51,10 @@
 </div>
 
 <script>
-  import { logoutAndCleanGuest } from '../utils/auth';
   import { supabase } from '../lib/supabase';
   const TABLE_NAME = 'slowpace_members';
 
-  // 分頁切換按鈕
+  // 分頁切換按鈕邏輯
   const tabLoginMode = document.getElementById('tab-login-mode');
   const tabRegisterMode = document.getElementById('tab-register-mode');
   const tabGuestMode = document.getElementById('tab-guest-mode');
@@ -64,97 +63,72 @@
   const registerFormContainer = document.getElementById('register-form-container');
   const guestFormContainer = document.getElementById('guest-form-container');
 
-  // 切換至登入分頁
   tabLoginMode?.addEventListener('click', () => {
     tabLoginMode.style.background = '#0284c7'; tabLoginMode.style.color = '#fff'; tabLoginMode.style.border = 'none';
     if (tabRegisterMode) { tabRegisterMode.style.background = '#0f172a'; tabRegisterMode.style.color = '#94a3b8'; tabRegisterMode.style.border = '1px solid #334155'; }
     if (tabGuestMode) { tabGuestMode.style.background = '#0f172a'; tabGuestMode.style.color = '#94a3b8'; tabGuestMode.style.border = '1px solid #334155'; }
-    
     if (loginFormContainer) loginFormContainer.style.display = 'block';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
   });
 
-  // 切換至註冊分頁
   tabRegisterMode?.addEventListener('click', () => {
     tabRegisterMode.style.background = '#059669'; tabRegisterMode.style.color = '#fff'; tabRegisterMode.style.border = 'none';
     if (tabLoginMode) { tabLoginMode.style.background = '#0f172a'; tabLoginMode.style.color = '#94a3b8'; tabLoginMode.style.border = '1px solid #334155'; }
     if (tabGuestMode) { tabGuestMode.style.background = '#0f172a'; tabGuestMode.style.color = '#94a3b8'; tabGuestMode.style.border = '1px solid #334155'; }
-    
     if (registerFormContainer) registerFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
   });
 
-  // 切換至訪客分頁
   tabGuestMode?.addEventListener('click', () => {
     tabGuestMode.style.background = '#10b981'; tabGuestMode.style.color = '#fff'; tabGuestMode.style.border = 'none';
     if (tabLoginMode) { tabLoginMode.style.background = '#0f172a'; tabLoginMode.style.color = '#94a3b8'; tabLoginMode.style.border = '1px solid #334155'; }
     if (tabRegisterMode) { tabRegisterMode.style.background = '#0f172a'; tabRegisterMode.style.color = '#94a3b8'; tabRegisterMode.style.border = '1px solid #334155'; }
-    
     if (guestFormContainer) guestFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
   });
 
-  // 會員登入按鈕事件
+  // 會員登入
   document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
-
-    if (!email || !password) {
-      alert('請完整填寫 Email 與密碼');
-      return;
-    }
+    if (!email || !password) { alert('請完整填寫 Email 與密碼'); return; }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      alert('登入失敗：' + error.message);
-    } else {
-      // 透過 postMessage 通知外層跳轉或關閉 Modal
-      window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
-    }
+    if (error) { alert('登入失敗：' + error.message); } 
+    else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-  // 會員註冊按鈕事件
+  // 會員註冊
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value.trim();
     const passwordConfirm = document.getElementById('register-password-confirm').value.trim();
-
-    if (!email || !password || !passwordConfirm) {
-      alert('請完整填寫所有欄位');
-      return;
-    }
-
-    if (password !== passwordConfirm) {
-      alert('兩次輸入的密碼不相符');
-      return;
-    }
-
-    if (password.length < 6) {
-      alert('密碼長度至少需要 6 個字元');
-      return;
-    }
+    if (!email || !password || !passwordConfirm) { alert('請完整填寫所有欄位'); return; }
+    if (password !== passwordConfirm) { alert('兩次輸入的密碼不相符'); return; }
+    if (password.length < 6) { alert('密碼長度至少需要 6 個字元'); return; }
 
     const { error } = await supabase.auth.signUp({ email, password });
-    
-    if (error) {
-      alert('註冊失敗：' + error.message);
-    } else {
-      window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
-    }
+    if (error) { alert('註冊失敗：' + error.message); } 
+    else { window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*'); }
   });
 
-  // 訪客模式進入按鈕事件（自動指派數字代號）
+  // 訪客模式：遞增編號與離開自動刪除
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
 
-    // 自動產生隨機 4 位數數字代號（例如：訪客 #4829）
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    // 1. 計算目前的訪客數量來決定流水號（抓取 role 為 '☁️ 訪客' 的數量）
+    const { count, error: countError } = await supabase
+      .from(TABLE_NAME)
+      .select('*', { count: 'exact', head: true })
+      .eq('role', '☁️ 訪客');
+
+    const nextIndex = (count || 0) + 1;
     const guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
-    const guestName = `訪客 #${randomNum}`;
+    const guestName = `訪客 #${nextIndex}`;
     
     const guestData = {
       user_id: guestId,
@@ -176,11 +150,10 @@
       return;
     }
 
+    // 儲存於 sessionStorage 供離開時辨識刪除
     sessionStorage.setItem('space_guest_id', guestId);
-    sessionStorage.setItem('space_guest_name', guestName);
-    sessionStorage.setItem('space_guest_avatar', avatarVal);
 
-    // 通知外層處理訪客登入成功
+    // 通知外層進入
     window.parent.postMessage({
       type: 'GUEST_LOGIN_SUCCESS',
       guestId: guestId,
@@ -189,22 +162,14 @@
     }, '*');
   });
 
-  // 忘記密碼按鈕事件
+  // 忘記密碼
   document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
-    if (!email) {
-      alert('請先在上方欄位輸入您的電子信箱 (Email)');
-      return;
-    }
-
+    if (!email) { alert('請先在上方欄位輸入您的電子信箱 (Email)'); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/profile`,
     });
-
-    if (error) {
-      alert('發送重設密碼信失敗：' + error.message);
-    } else {
-      alert('重設密碼信已發送！請檢查您的電子信箱。');
-    }
+    if (error) { alert('發送重設密碼信失敗：' + error.message); } 
+    else { alert('重設密碼信已發送！'); }
   });
 </script>
