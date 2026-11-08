@@ -156,7 +156,8 @@ import Layout from '../layouts/Layout.astro';
             justify-content: space-around;
             text-align: center;
         }
-        .phone-sub-bar strong { color: #2563eb; }
+        .phone-sub-bar strong { color: #2563eb; cursor: pointer; }
+        .phone-sub-bar strong:hover { text-decoration: underline; }
 
         .info-card-grid {
             display: grid;
@@ -258,6 +259,32 @@ import Layout from '../layouts/Layout.astro';
         .topic-select-card:hover { border-color: #2563eb; background: #fafcfd; }
         .input-field { width: 100%; padding: 0.625rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.875rem; outline: none; }
         .input-field:focus { border-color: #2563eb; }
+
+        /* 切換分頁按鈕群組 */
+        .tab-switch-group {
+            display: flex;
+            background: #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #64748b;
+            border-radius: 0.6rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #ffffff;
+            color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
     </style>
 
     <!-- 🏮 頂部管理選單 -->
@@ -288,10 +315,7 @@ import Layout from '../layouts/Layout.astro';
                 </span>
                 <span>鄰里人交流區</span>
             </div>
-            <div style="display: flex; gap: 4px;">
-                <button onclick="openDirectMessageModal()" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">💬 私訊</button>
-                <button onclick="window.open('https://studioslowpace.com/skillsupermarket.html', '_blank')" class="nav-link-btn">客舍萬事屋 ↗</button>
-            </div>
+            <button onclick="window.open('https://studioslowpace.com/skillsupermarket.html', '_blank')" class="nav-link-btn">客舍萬事屋 ↗</button>
         </div>
 
         <!-- 🔓 交流區主視窗 -->
@@ -301,9 +325,9 @@ import Layout from '../layouts/Layout.astro';
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
                 <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
-                    <span>🟢 在線：<strong id="online-users-count-home">1</strong> 人</span>
+                    <span>🟢 在線：<strong onclick="openUserListModal('online')"><span id="online-users-count-home">1</span> 人</strong></span>
                     <span>|</span>
-                    <span>📜 鄰里人總數：<strong id="total-users-count-home">0</strong> 人</span>
+                    <span>📜 鄰里人總數：<strong onclick="openUserListModal('total')"><span id="total-users-count-home">0</span> 人</strong></span>
                 </div>
 
                 <div class="info-card-grid">
@@ -318,16 +342,32 @@ import Layout from '../layouts/Layout.astro';
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 請選擇討論主題</span>
+                    <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 導覽切換</span>
                     <div id="my-identity-badge-home" class="identity-badge" onclick="promptChangeName()">👤 訪客</div>
                 </div>
 
-                <div style="flex: 1; display: flex; flex-direction: column;">
+                <!-- 🔀 分頁切換群組 (討論主題 / 私訊列表) -->
+                <div class="tab-switch-group">
+                    <button id="tab-btn-topics" onclick="switchHomeTab('topics')" class="tab-btn active">💬 討論主題</button>
+                    <button id="tab-btn-dms" onclick="switchHomeTab('dms')" class="tab-btn">🔒 私訊對話</button>
+                </div>
+
+                <!-- 📦 內容版面 A：討論主題列表 -->
+                <div id="home-section-topics" style="flex: 1; display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
                         <button id="btn-add-topic" onclick="openTopicModal()" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
                     </div>
                     <div id="topics-list-container"></div>
                 </div>
+
+                <!-- 📦 內容版面 B：私訊對話列表 (依私訊對象排列) -->
+                <div id="home-section-dms" class="hidden" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <input type="text" id="dm-search-input" placeholder="🔍 搜尋私訊對象..." class="input-field" oninput="filterDmList()" style="padding: 0.5rem; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                    <div id="dm-conversations-list-container" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.35rem;">
+                        <p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">載入私訊紀錄中...</p>
+                    </div>
+                </div>
+
             </div>
 
             <!-- 💬 PAGE 2: 群組對話模式 -->
@@ -348,9 +388,9 @@ import Layout from '../layouts/Layout.astro';
                 </div>
 
                 <div class="phone-sub-bar">
-                    <span>🟢 在線：<strong id="online-users-count-chat">1</strong> 人</span>
+                    <span>🟢 在線：<strong onclick="openUserListModal('online')"><span id="online-users-count-chat">1</span> 人</strong></span>
                     <span>|</span>
-                    <span>📜 鄰里人總數：<strong id="total-users-count-chat">0</strong> 人</span>
+                    <span>📜 鄰里人總數：<strong onclick="openUserListModal('total')"><span id="total-users-count-chat">0</span> 人</strong></span>
                 </div>
 
                 <div id="topic-chat-messages" class="phone-chat-messages">
@@ -363,7 +403,7 @@ import Layout from '../layouts/Layout.astro';
                 </form>
             </div>
 
-            <!-- 💬 PAGE 3: 單對單私訊模式 -->
+            <!-- 💬 PAGE 3: 單對單私訊對話模式 -->
             <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
                 <div class="phone-header" style="background: #eff6ff;">
@@ -371,7 +411,13 @@ import Layout from '../layouts/Layout.astro';
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
-                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">私聊</div>
+                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;" onclick="promptChangeName()">👤 訪客</div>
+                </div>
+
+                <div class="phone-sub-bar">
+                    <span>🟢 在線：<strong onclick="openUserListModal('online')"><span id="online-users-count-dm">1</span> 人</strong></span>
+                    <span>|</span>
+                    <span>📜 鄰里人總數：<strong onclick="openUserListModal('total')"><span id="total-users-count-dm">0</span> 人</strong></span>
                 </div>
 
                 <div id="dm-chat-messages" class="phone-chat-messages">
@@ -387,27 +433,18 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </main>
 
-    <!-- 💬 彈窗：選擇私訊對象 -->
-    <div id="dm-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1150; padding:1rem;">
+    <!-- 👥 彈窗：在線名單 / 鄰里人總數名單 (含搜尋與一鍵私訊) -->
+    <div id="user-list-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1250; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">💬 選擇私訊對象</h3>
-                <button onclick="closeDirectMessageModal()" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+                <h3 id="user-list-modal-title" style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">👥 成員列表</h3>
+                <button onclick="closeUserListModal()" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
             </div>
             
-            <div>
-                <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">直接輸入對象名稱</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="dm-target-input" class="input-field" placeholder="例如：小明">
-                    <button onclick="startDirectChatWithInput()" class="btn-blue" style="padding:0 12px; font-size:0.75rem;">開始</button>
-                </div>
-            </div>
-
-            <hr style="border:0; border-top:1px solid #e2e8f0; margin:2px 0;">
+            <input type="text" id="user-search-input" placeholder="🔍 搜尋鄰里人名字..." class="input-field" oninput="filterUserList()" style="padding: 0.5rem; font-size: 0.75rem;">
             
-            <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">在線鄰里人快速點擊</label>
-            <div id="online-users-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:200px;">
-                <p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入在線名單中...</p>
+            <div id="user-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:240px;">
+                <p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入中...</p>
             </div>
         </div>
     </div>
@@ -491,6 +528,7 @@ import Layout from '../layouts/Layout.astro';
         const defaultPassword = "slow2024";
 
         let allUserRecords = [];
+        let onlineUsersMap = {};
         let topics = [];
         let activeTopicId = null;
         let activeDmReceiverId = null;
@@ -499,12 +537,14 @@ import Layout from '../layouts/Layout.astro';
         let presenceChannel = null;
         let unlockedTopics = {};
         let isAdmin = false;
+        let allDmRecords = [];
 
         window.onload = function() {
             initDefaultUser();
             fetchAllUserRecordsFromSupabase();
             initPresenceTracker();
             fetchTopics();
+            fetchUserDmConversations();
             lucide.createIcons();
         };
 
@@ -527,6 +567,7 @@ import Layout from '../layouts/Layout.astro';
                 document.getElementById('my-identity-badge-home').textContent = `👤 ${trimmed}`;
                 document.getElementById('my-identity-badge-chat').textContent = `👤 ${trimmed}`;
                 initPresenceTracker();
+                fetchUserDmConversations();
             }
         }
 
@@ -538,6 +579,7 @@ import Layout from '../layouts/Layout.astro';
                 const totalCount = allUserRecords.length;
                 document.getElementById('total-users-count-home').textContent = totalCount;
                 document.getElementById('total-users-count-chat').textContent = totalCount;
+                document.getElementById('total-users-count-dm').textContent = totalCount;
             } catch (err) { console.error("讀取用戶紀錄失敗:", err.message); }
         }
 
@@ -553,13 +595,15 @@ import Layout from '../layouts/Layout.astro';
             presenceChannel
                 .on('presence', { event: 'sync' }, () => {
                     const state = presenceChannel.presenceState();
-                    const onlineUsers = Object.keys(state);
-                    const onlineCount = onlineUsers.length || 1;
+                    onlineUsersMap = {};
+                    Object.keys(state).forEach(key => {
+                        onlineUsersMap[key] = true;
+                    });
+                    const onlineCount = Object.keys(state).length || 1;
                     
                     document.getElementById('online-users-count-home').textContent = onlineCount;
                     document.getElementById('online-users-count-chat').textContent = onlineCount;
-
-                    renderOnlineUsersForDm(onlineUsers, savedName);
+                    document.getElementById('online-users-count-dm').textContent = onlineCount;
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
@@ -568,30 +612,169 @@ import Layout from '../layouts/Layout.astro';
                 });
         }
 
-        function renderOnlineUsersForDm(onlineUsers, currentName) {
-            const container = document.getElementById('online-users-list-container');
+        // 🔀 切換首頁分頁 (討論主題 vs 私訊對話)
+        function switchHomeTab(tab) {
+            const btnTopics = document.getElementById('tab-btn-topics');
+            const btnDms = document.getElementById('tab-btn-dms');
+            const secTopics = document.getElementById('home-section-topics');
+            const secDms = document.getElementById('home-section-dms');
+
+            if (tab === 'topics') {
+                btnTopics.classList.add('active');
+                btnDms.classList.remove('active');
+                secTopics.classList.remove('hidden');
+                secDms.classList.add('hidden');
+            } else {
+                btnDms.classList.add('active');
+                btnTopics.classList.remove('active');
+                secDms.classList.remove('hidden');
+                secTopics.classList.add('hidden');
+                fetchUserDmConversations(); // 切換過來時刷新私訊清單
+            }
+        }
+
+        // 📥 抓取並整理使用者的所有私訊對象 (依對象分類與排序)
+        async function fetchUserDmConversations() {
+            const myName = localStorage.getItem('verified_chat_name') || '訪客';
+            const container = document.getElementById('dm-conversations-list-container');
             if (!container) return;
 
-            const otherUsers = onlineUsers.filter(name => name !== currentName);
-            if (otherUsers.length === 0) {
-                container.innerHTML = `<p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:0.5rem;">目前沒有其他線上鄰里人</p>`;
+            try {
+                const { data, error } = await client
+                    .from('direct_messages')
+                    .select('*')
+                    .or(`sender_id.eq.${myName},receiver_id.eq.${myName}`)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                allDmRecords = data || [];
+                renderDmConversationsList(allDmRecords, myName);
+            } catch (err) {
+                console.error("載入私訊清單失敗:", err.message);
+                container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center; padding:1rem;">載入私訊清單失敗</p>`;
+            }
+        }
+
+        function renderDmConversationsList(messages, myName, filterText = '') {
+            const container = document.getElementById('dm-conversations-list-container');
+            if (!container) return;
+
+            // 整理出所有私訊對象及其最後一則訊息
+            const map = {};
+            messages.forEach(msg => {
+                const partner = (msg.sender_id === myName) ? msg.receiver_id : msg.sender_id;
+                if (!map[partner] || new Date(msg.created_at) > new Date(map[partner].created_at)) {
+                    map[partner] = msg;
+                }
+            });
+
+            let partners = Object.keys(map).map(partner => ({
+                partner,
+                lastMsg: map[partner].content,
+                time: map[partner].created_at
+            }));
+
+            // 依最新訊息時間排序
+            partners.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            if (filterText) {
+                partners = partners.filter(p => p.partner.toLowerCase().includes(filterText.toLowerCase()));
+            }
+
+            if (partners.length === 0) {
+                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; padding: 1rem;">尚無私訊對話，可從「在線人數」或「鄰里人總數」點擊成員發起私訊</p>`;
                 return;
             }
 
-            container.innerHTML = otherUsers.map(name => `
-                <div onclick="startDirectChat('${name}')" style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                    <span style="font-size:0.75rem; font-weight:bold; color:#1e293b;">👤 ${name}</span>
-                    <span style="font-size:0.65rem; color:#2563eb; font-weight:bold;">發起私訊 〉</span>
-                </div>
-            `).join('');
+            container.innerHTML = partners.map(item => {
+                const isOnline = onlineUsersMap[item.partner] ? '🟢' : '⚪';
+                const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div onclick="startDirectChat('${item.partner}')" class="topic-select-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; padding: 0.6rem 0.75rem;">
+                        <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
+                            <h4 style="font-size: 0.825rem; font-weight: 800; color: #1e293b;">${isOnline} ${item.partner}</h4>
+                            <p style="font-size: 0.7rem; color: #64748b; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">${item.lastMsg}</p>
+                        </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+                            <span style="font-size:0.6rem; color:#94a3b8;">${timeStr}</span>
+                            <span style="font-size:0.7rem; color:#2563eb; font-weight:bold;">對話 〉</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        function openDirectMessageModal() { document.getElementById('dm-modal').classList.remove('hidden'); }
-        function closeDirectMessageModal() { document.getElementById('dm-modal').classList.add('hidden'); }
+        function filterDmList() {
+            const query = document.getElementById('dm-search-input').value.trim();
+            const myName = localStorage.getItem('verified_chat_name') || '访客';
+            renderDmConversationsList(allDmRecords, myName, query);
+        }
 
-        function startDirectChatWithInput() {
-            const targetName = document.getElementById('dm-target-input').value.trim();
-            if (!targetName) { alert("請輸入對象名稱！"); return; }
+        // 👥 成員列表彈窗 (在線人數 / 鄰里人總數點擊觸發)
+        let currentUserListMode = 'online';
+        function openUserListModal(mode) {
+            currentUserListMode = mode;
+            const modal = document.getElementById('user-list-modal');
+            const title = document.getElementById('user-list-modal-title');
+            
+            if (mode === 'online') {
+                title.textContent = "🟢 在線鄰里人名單";
+            } else {
+                title.textContent = "📜 全部鄰里人名單";
+            }
+            
+            document.getElementById('user-search-input').value = '';
+            renderUserListModalContent('');
+            modal.classList.remove('hidden');
+        }
+
+        function closeUserListModal() {
+            document.getElementById('user-list-modal').classList.add('hidden');
+        }
+
+        function renderUserListModalContent(filter = '') {
+            const container = document.getElementById('user-list-container');
+            const myName = localStorage.getItem('verified_chat_name') || '訪客';
+            
+            let list = [];
+            if (currentUserListMode === 'online') {
+                list = Object.keys(onlineUsersMap);
+            } else {
+                // 從 alluser_record 抓取名字
+                list = allUserRecords.map(u => u.name).filter(Boolean);
+                if (list.length === 0) list = Object.keys(onlineUsersMap); // Fallback
+            }
+
+            if (filter) {
+                list = list.filter(name => name.toLowerCase().includes(filter.toLowerCase()));
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">沒有找到符合的成員</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(name => {
+                const isSelf = (name === myName);
+                const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
+                const actionBtn = isSelf ? '' : `<button onclick="startDirectChatFromModal('${name}')" class="btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
+                
+                return `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; font-weight:bold; color:#1e293b; display:flex; align-items:center; gap:5px;">👤 ${name} ${badge}</span>
+                        ${actionBtn}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterUserList() {
+            const query = document.getElementById('user-search-input').value.trim();
+            renderUserListModalContent(query);
+        }
+
+        function startDirectChatFromModal(targetName) {
+            closeUserListModal();
             startDirectChat(targetName);
         }
 
@@ -600,7 +783,6 @@ import Layout from '../layouts/Layout.astro';
             if (targetName === myName) { alert("無法與自己進行私訊對話！"); return; }
 
             activeDmReceiverId = targetName;
-            closeDirectMessageModal();
 
             document.getElementById('current-dm-title').textContent = `💬 私訊: ${targetName}`;
             document.getElementById('page-home').classList.add('hidden');
@@ -689,6 +871,7 @@ import Layout from '../layouts/Layout.astro';
                 if (error) throw error;
                 contentInput.value = '';
                 loadDmMessages(myName, activeDmReceiverId);
+                fetchUserDmConversations();
             } catch (err) { alert("私訊發送失敗: " + err.message); }
         }
 
@@ -703,6 +886,7 @@ import Layout from '../layouts/Layout.astro';
                         (newItem.sender_id === targetName && newItem.receiver_id === myName)
                     ) {
                         loadDmMessages(myName, targetName);
+                        fetchUserDmConversations();
                     }
                 })
                 .subscribe();
@@ -903,6 +1087,7 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('page-chat').classList.add('hidden');
             document.getElementById('page-dm').classList.add('hidden');
             document.getElementById('page-home').classList.remove('hidden');
+            fetchUserDmConversations();
         }
 
         async function loadTopicMessages(topicId) {
