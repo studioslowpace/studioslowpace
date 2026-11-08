@@ -139,9 +139,7 @@ import LoginModal from '../components/LoginModal.astro';
             border: 1px solid #bfdbfe;
             padding: 0.2rem 0.55rem;
             border-radius: 9999px;
-            cursor: pointer;
         }
-        .identity-badge:hover { background: #eff6ff; }
 
         /* ==========================================
            3. 數據統計與資訊卡片
@@ -335,6 +333,7 @@ import LoginModal from '../components/LoginModal.astro';
             </div>
             <div style="display: flex; gap: 4px; align-items: center;">
                 <a href="/slowplace" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🏠 回空間</a>
+                <div id="my-identity-badge-top" class="identity-badge" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">👤 載入中</div>
                 <button onclick="handleLogout()" id="logout-btn" class="nav-link-btn" style="background:#ef4444; color:#fff; border-color:#dc2626;">🚪 登出</button>
             </div>
         </div>
@@ -360,11 +359,6 @@ import LoginModal from '../components/LoginModal.astro';
                         <h5>📜 交流區守則</h5>
                         <span>點擊查看公約</span>
                     </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.1rem;">
-                    <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 導覽切換</span>
-                    <div id="my-identity-badge-home" class="identity-badge" onclick="promptChangeName()">👤 載入中</div>
                 </div>
 
                 <!-- 🔀 分頁切換群組 -->
@@ -405,7 +399,7 @@ import LoginModal from '../components/LoginModal.astro';
                         <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
                     </div>
 
-                    <div id="my-identity-badge-chat" class="identity-badge" onclick="promptChangeName()">👤 訪客</div>
+                    <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
                 </div>
 
                 <div class="phone-sub-bar">
@@ -432,7 +426,7 @@ import LoginModal from '../components/LoginModal.astro';
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
-                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;" onclick="promptChangeName()">👤 訪客</div>
+                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">👤 訪客</div>
                 </div>
 
                 <div class="phone-sub-bar">
@@ -626,7 +620,7 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         function finishAuthSetup(name) {
-            document.getElementById('my-identity-badge-home').textContent = `👤 ${name}`;
+            document.getElementById('my-identity-badge-top').textContent = `👤 ${name}`;
             document.getElementById('my-identity-badge-chat').textContent = `👤 ${name}`;
             
             fetchAllUserRecordsFromSupabase();
@@ -656,19 +650,6 @@ import LoginModal from '../components/LoginModal.astro';
             await client.auth.signOut();
             localStorage.clear();
             window.location.reload();
-        }
-
-        function promptChangeName() {
-            const currentName = localStorage.getItem('verified_chat_name') || '訪客';
-            const newName = prompt("請輸入您想在交流區顯示的名稱：", currentName);
-            if (newName && newName.trim() !== '') {
-                const trimmed = newName.trim();
-                localStorage.setItem('verified_chat_name', trimmed);
-                document.getElementById('my-identity-badge-home').textContent = `👤 ${trimmed}`;
-                document.getElementById('my-identity-badge-chat').textContent = `👤 ${trimmed}`;
-                initPresenceTracker();
-                fetchUserDmConversations();
-            }
         }
 
         // 從 slowpace_members 讀取鄰里人總數與名單
