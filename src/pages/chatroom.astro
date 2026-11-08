@@ -4,12 +4,7 @@ import LoginModal from '../components/LoginModal.astro';
 ---
 
 <Layout title="客舍萬事屋 | 鄰里人交流區">
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" is:inline></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest" is:inline></script>
-
-<style is:global>
+    <style>
         /* ==========================================
            0. 全域重置與基礎樣式 (文青自然風)
            ========================================== */
@@ -35,7 +30,7 @@ import LoginModal from '../components/LoginModal.astro';
         .btn-blue:hover { background-color: #1d4ed8; }
 
         /* ==========================================
-           1. 📱 手機 App 容器
+           1. 📱 手機 App 容器版面
            ========================================== */
         .phone-app-wrapper {
             width: 100%;
@@ -212,7 +207,7 @@ import LoginModal from '../components/LoginModal.astro';
         .msg-time-stamp { font-size: 0.6rem; color: #94a3b8; float: right; margin-left: 0.5rem; margin-top: 0.2rem; }
 
         /* ==========================================
-           5. 底部打字輸入列
+           5. 底部打字輸入列與通用元件
            ========================================== */
         .phone-input-bar {
             flex-shrink: 0;
@@ -259,7 +254,7 @@ import LoginModal from '../components/LoginModal.astro';
         .input-field { width: 100%; padding: 0.625rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.875rem; outline: none; }
         .input-field:focus { border-color: #2563eb; }
 
-        /* 切換分頁按鈕群組 */
+        /* 分頁切換按鈕群組 */
         .tab-switch-group {
             display: flex;
             background: #e2e8f0;
@@ -303,18 +298,19 @@ import LoginModal from '../components/LoginModal.astro';
         </div>
     </div>
 
-    <!-- 🏮 頂部管理選單 -->
+    <!-- 🏮 頂部管理員/主理人選單 -->
     <div id="admin-navbar" class="hidden admin-nav">
         <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
                 <strong>主理人模式</strong>
             </div>
-           <div id="admin-logged-out" style="display: flex; gap: 6px;">
-    <button onclick="handleAdminLogin()" class="btn-blue" style="padding: 4px 12px; font-size: 0.75rem;">檢查主理人身分</button>
-           </div>
+            <div id="admin-logged-out" style="display: flex; gap: 6px;">
+                <!-- 透過資料庫 is_admin 欄位進行身分驗證，不需輸入密碼 -->
+                <button id="admin-login-btn" class="btn-blue" style="padding: 4px 12px; font-size: 0.75rem;">檢查主理人身分</button>
+            </div>
             <div id="admin-logged-in" class="hidden" style="display: flex; gap: 6px; align-items: center;">
                 <span style="color: #4ade80; font-size: 0.75rem;">🟢 已登入</span>
-                <button onclick="handleAdminLogout()" style="background:#64748b; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem;">登出</button>
+                <button id="admin-logout-btn" style="background:#64748b; color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem;">登出</button>
             </div>
         </div>
     </div>
@@ -325,7 +321,7 @@ import LoginModal from '../components/LoginModal.astro';
         <!-- 頂部標題列 -->
         <div class="phone-title-bar">
             <div class="main-title-box">
-                <span class="logo-btn" onclick="toggleAdminNavbar()" title="點擊切換主理人模式">
+                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
                     <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
                 </span>
                 <span>鄰里人交流區</span>
@@ -333,50 +329,50 @@ import LoginModal from '../components/LoginModal.astro';
             <div style="display: flex; gap: 4px; align-items: center;">
                 <a href="/slowplace" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🏠 回空間</a>
                 <div id="my-identity-badge-top" class="identity-badge" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">👤 載入中</div>
-                <button onclick="handleLogout()" id="logout-btn" class="nav-link-btn" style="background:#ef4444; color:#fff; border-color:#dc2626;">🚪 登出</button>
+                <button id="logout-btn" class="nav-link-btn" style="background:#ef4444; color:#fff; border-color:#dc2626;">🚪 登出</button>
             </div>
         </div>
 
         <!-- 🔓 交流區主視窗 -->
         <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
 
-            <!-- 🏠 PAGE 1: 交流區首頁 -->
+            <!-- 🏠 PAGE 1: 交流區首頁 (主題與私訊列表) -->
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
                 <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
-                    <span>🟢 在線：<strong onclick="openUserListModal('online')"><span id="online-users-count-home">1</span> 人</strong></span>
+                    <span>🟢 在線：<strong id="online-count-trigger-home"><span id="online-users-count-home">1</span> 人</strong></span>
                     <span>|</span>
-                    <span>📜 鄰里人總數：<strong onclick="openUserListModal('total')"><span id="total-users-count-home">0</span> 人</strong></span>
+                    <span>📜 鄰里人總數：<strong id="total-count-trigger-home"><span id="total-users-count-home">0</span> 人</strong></span>
                 </div>
 
                 <div class="info-card-grid">
-                    <div class="info-trigger-btn" onclick="openModal('modal-origin')">
+                    <div class="info-trigger-btn" id="modal-origin-btn">
                         <h5>🌱 社群源由</h5>
                         <span>點擊查看詳情</span>
                     </div>
-                    <div class="info-trigger-btn" onclick="openModal('modal-rules')">
+                    <div class="info-trigger-btn" id="modal-rules-btn">
                         <h5>📜 交流區守則</h5>
                         <span>點擊查看公約</span>
                     </div>
                 </div>
 
-                <!-- 🔀 分頁切換群組 -->
+                <!-- 分頁切換群組 -->
                 <div class="tab-switch-group">
-                    <button id="tab-btn-topics" onclick="switchHomeTab('topics')" class="tab-btn active">💬 討論主題</button>
-                    <button id="tab-btn-dms" onclick="switchHomeTab('dms')" class="tab-btn">🔒 私訊對話</button>
+                    <button id="tab-btn-topics" class="tab-btn active">💬 討論主題</button>
+                    <button id="tab-btn-dms" class="tab-btn">🔒 私訊對話</button>
                 </div>
 
-                <!-- 📦 內容版面 A：討論主題列表 -->
+                <!-- 討論主題列表 -->
                 <div id="home-section-topics" style="flex: 1; display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
-                        <button id="btn-add-topic" onclick="openTopicModal()" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
+                        <button id="btn-add-topic" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
                     </div>
                     <div id="topics-list-container"></div>
                 </div>
 
-                <!-- 📦 內容版面 B：私訊對話列表 -->
+                <!-- 私訊對話列表 -->
                 <div id="home-section-dms" class="hidden" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
-                    <input type="text" id="dm-search-input" placeholder="🔍 搜尋私訊對象..." class="input-field" oninput="filterDmList()" style="padding: 0.5rem; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                    <input type="text" id="dm-search-input" placeholder="🔍 搜尋私訊對象..." class="input-field" style="padding: 0.5rem; font-size: 0.75rem; margin-bottom: 0.25rem;">
                     <div id="dm-conversations-list-container" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.35rem;">
                         <p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">載入私訊紀錄中...</p>
                     </div>
@@ -388,9 +384,9 @@ import LoginModal from '../components/LoginModal.astro';
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
                 <div class="phone-header">
-                    <button class="nav-link-btn" onclick="backToHome()">< 首頁</button>
+                    <button id="chat-back-btn" class="nav-link-btn">< 首頁</button>
                     
-                    <div class="phone-header-title" onclick="openTopicSwitcherModal()">
+                    <div class="phone-header-title" id="topic-switcher-trigger">
                         <div style="display: flex; align-items: center; gap: 3px;">
                             <span id="current-topic-title">選擇主題</span>
                             <span style="font-size: 0.6rem; color: #94a3b8;">▼</span>
@@ -402,16 +398,16 @@ import LoginModal from '../components/LoginModal.astro';
                 </div>
 
                 <div class="phone-sub-bar">
-                    <span>🟢 在線：<strong onclick="openUserListModal('online')"><span id="online-users-count-chat">1</span> 人</strong></span>
+                    <span>🟢 在線：<strong id="online-count-trigger-chat"><span id="online-users-count-chat">1</span> 人</strong></span>
                     <span>|</span>
-                    <span>📜 鄰里人總數：<strong onclick="openUserListModal('total')"><span id="total-users-count-chat">0</span> 人</strong></span>
+                    <span>📜 鄰里人總數：<strong id="total-count-trigger-chat"><span id="total-users-count-chat">0</span> 人</strong></span>
                 </div>
 
                 <div id="topic-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
                 </div>
 
-                <form onsubmit="handleSendTopicMessage(event)" class="phone-input-bar">
+                <form id="topic-chat-form" class="phone-input-bar">
                     <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
                     <button type="submit" class="phone-send-btn">送出</button>
                 </form>
@@ -421,7 +417,7 @@ import LoginModal from '../components/LoginModal.astro';
             <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
                 <div class="phone-header" style="background: #eff6ff;">
-                    <button class="nav-link-btn" onclick="backToHome()">< 首頁</button>
+                    <button id="dm-back-btn" class="nav-link-btn">< 首頁</button>
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
@@ -429,16 +425,16 @@ import LoginModal from '../components/LoginModal.astro';
                 </div>
 
                 <div class="phone-sub-bar">
-                    <span>🟢 在線：<strong onclick="openUserListModal('online')"><span id="online-users-count-dm">1</span> 人</strong></span>
+                    <span>🟢 在線：<strong id="online-count-trigger-dm"><span id="online-users-count-dm">1</span> 人</strong></span>
                     <span>|</span>
-                    <span>📜 鄰里人總數：<strong onclick="openUserListModal('total')"><span id="total-users-count-dm">0</span> 人</strong></span>
+                    <span>📜 鄰里人總數：<strong id="total-count-trigger-dm"><span id="total-users-count-dm">0</span> 人</strong></span>
                 </div>
 
                 <div id="dm-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入私訊中...</p>
                 </div>
 
-                <form onsubmit="handleSendDmMessage(event)" class="phone-input-bar" style="background: #eff6ff;">
+                <form id="dm-chat-form" class="phone-input-bar" style="background: #eff6ff;">
                     <input type="text" id="dm-input-content" placeholder="輸入私訊內容..." required class="phone-input-field" autocomplete="off">
                     <button type="submit" class="btn-blue" style="padding: 0.6rem 1.1rem; font-size: 0.85rem;">送出</button>
                 </form>
@@ -447,15 +443,15 @@ import LoginModal from '../components/LoginModal.astro';
         </div>
     </main>
 
-    <!-- 👥 彈窗：在線名單 / 鄰里人總數名單 (含搜尋與一鍵私訊) -->
+    <!-- 👥 彈窗：在線名單 / 鄰里人總數名單 (含搜尋與會員私訊攔截) -->
     <div id="user-list-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1250; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 id="user-list-modal-title" style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">👥 成員列表</h3>
-                <button onclick="closeUserListModal()" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+                <button id="user-list-close-btn" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
             </div>
             
-            <input type="text" id="user-search-input" placeholder="🔍 搜尋鄰里人名字..." class="input-field" oninput="filterUserList()" style="padding: 0.5rem; font-size: 0.75rem;">
+            <input type="text" id="user-search-input" placeholder="🔍 搜尋鄰里人名字..." class="input-field" style="padding: 0.5rem; font-size: 0.75rem;">
             
             <div id="user-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:240px;">
                 <p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入中...</p>
@@ -468,12 +464,12 @@ import LoginModal from '../components/LoginModal.astro';
         <div style="background:#fafcfd; border:1.5px solid #cbd5e1; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.4rem;">
                 <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">🌱 「客舍萬事屋」源由</h3>
-                <button onclick="closeModal('modal-origin')" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
+                <button id="modal-origin-close" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
             </div>
             <p style="font-size: 0.775rem; color: #475569; line-height: 1.6;">
                 「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。
             </p>
-            <button onclick="closeModal('modal-origin')" class="btn-blue" style="padding:0.4rem; font-size:0.8rem;">了解</button>
+            <button id="modal-origin-ok" class="btn-blue" style="padding:0.4rem; font-size:0.8rem;">了解</button>
         </div>
     </div>
 
@@ -482,13 +478,13 @@ import LoginModal from '../components/LoginModal.astro';
         <div style="background:#fafcfd; border:1.5px solid #cbd5e1; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.4rem;">
                 <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📜 鄰里公約 (使用守則)</h3>
-                <button onclick="closeModal('modal-rules')" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
+                <button id="modal-rules-close" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
             </div>
             <ul style="font-size: 0.775rem; color: #475569; line-height: 1.6; padding-left: 1.1rem; display:flex; flex-direction:column; gap:0.35rem;">
                 <li><strong>友善溫暖交流</strong>：請保持尊重與包容，嚴禁言語攻擊。</li>
                 <li><strong>維護資訊安全</strong>：請勿散播他人私隱或未授權廣告。</li>
             </ul>
-            <button onclick="closeModal('modal-rules')" class="btn-blue" style="padding:0.4rem; font-size:0.8rem;">我已瞭解</button>
+            <button id="modal-rules-ok" class="btn-blue" style="padding:0.4rem; font-size:0.8rem;">我已瞭解</button>
         </div>
     </div>
 
@@ -497,7 +493,7 @@ import LoginModal from '../components/LoginModal.astro';
         <div style="background:#fafcfd; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:360px; max-height:80vh; display:flex; flex-direction:column; gap:0.75rem;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="font-size: 0.95rem; font-weight: 800; color: #334155;">📌 切換討論主題</h3>
-                <button onclick="closeTopicSwitcherModal()" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+                <button id="topic-switcher-close" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
             </div>
             <div id="topics-switcher-list-container" style="overflow-y:auto; flex:1;"></div>
         </div>
@@ -507,7 +503,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div id="topic-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1100; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:320px; display:flex; flex-direction:column; gap:0.75rem;">
             <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📌 新增討論主題</h3>
-            <form onsubmit="handleCreateTopic(event)" style="display:flex; flex-direction:column; gap:0.6rem;">
+            <form id="create-topic-form" style="display:flex; flex-direction:column; gap:0.6rem;">
                 <div>
                     <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">主題名稱</label>
                     <input type="text" id="new-topic-title" required class="input-field" placeholder="例如: 🔒 核心幹部基地">
@@ -527,15 +523,15 @@ import LoginModal from '../components/LoginModal.astro';
                     </label>
                 </div>
                 <div style="display:flex; gap:0.5rem; margin-top:0.4rem;">
-                    <button type="button" onclick="closeTopicModal()" style="flex:1; padding:0.4rem; background:#f1f5f9; border:none; border-radius:0.6rem; font-weight:bold; cursor:pointer; font-size:0.8rem;">取消</button>
+                    <button type="button" id="topic-modal-cancel" style="flex:1; padding:0.4rem; background:#f1f5f9; border:none; border-radius:0.6rem; font-weight:bold; cursor:pointer; font-size:0.8rem;">取消</button>
                     <button type="submit" class="btn-blue" style="flex:1; padding:0.4rem; font-size:0.8rem;">確認建立</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript 邏輯 -->
-    <script is:inline>
+    <!-- JavaScript 核心邏輯 (使用標準 ES 模組，不加 is:inline) -->
+    <script>
         import { supabase } from '../lib/supabase';
 
         const TABLE_NAME = 'slowpace_members';
@@ -555,17 +551,22 @@ import LoginModal from '../components/LoginModal.astro';
         let currentUserName = '訪客';
         let isGuest = false;
 
+        // 當網頁載入完成時執行初始化
         window.onload = function() {
             initAuthCheck();
-            lucide.createIcons();
+            initEventListeners();
         };
 
+        /* ==========================================
+           1. 身分認證與初始化流程
+           ========================================== */
         const modal = document.getElementById('rpg-modal');
 
         async function initAuthCheck() {
             const guestId = sessionStorage.getItem('space_guest_id');
 
             if (guestId) {
+                // 訪客身分處理
                 isGuest = true;
                 currentUserId = guestId;
                 currentUserName = sessionStorage.getItem('space_guest_name') || '訪客';
@@ -574,7 +575,8 @@ import LoginModal from '../components/LoginModal.astro';
                 if (modal) modal.style.display = 'none';
                 finishAuthSetup(currentUserName);
             } else {
-                const { data: { session } } = await client.auth.getSession();
+                // 正式會員身分處理 (透過 Supabase Auth Session)
+                const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     isGuest = false;
                     currentUserId = session.user.id;
@@ -596,6 +598,7 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
+        // 監聽來自登入視窗 Modal 的跨視窗訊息
         window.addEventListener('message', async (event) => {
             if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
                 isGuest = true;
@@ -611,7 +614,7 @@ import LoginModal from '../components/LoginModal.astro';
             
             if (event.data && event.data.type === 'LOGIN_SUCCESS') {
                 if (modal) modal.style.display = 'none';
-                const { data: { session } } = await client.auth.getSession();
+                const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     isGuest = false;
                     currentUserId = session.user.id;
@@ -620,8 +623,9 @@ import LoginModal from '../components/LoginModal.astro';
             }
         });
 
+        // 載入會員詳細資料
         async function loadUserProfile(uId) {
-            const { data } = await client.from(TABLE_NAME).select('*').eq('user_id', uId).single();
+            const { data } = await supabase.from(TABLE_NAME).select('*').eq('user_id', uId).single();
             if (data && data.name) {
                 currentUserName = data.name;
                 currentUserId = data.user_id;
@@ -637,6 +641,7 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
+        // 驗證完成後初始化各項服務
         function finishAuthSetup(name) {
             document.getElementById('my-identity-badge-top').textContent = `👤 ${name}`;
             document.getElementById('my-identity-badge-chat').textContent = `👤 ${name}`;
@@ -646,6 +651,7 @@ import LoginModal from '../components/LoginModal.astro';
             fetchTopics();
             fetchUserDmConversations();
 
+            // 檢查網址是否有帶入 dm 參數 (支援深層連結私訊)
             const urlParams = new URLSearchParams(window.location.search);
             const targetDmId = urlParams.get('dm');
             const targetDmName = urlParams.get('name');
@@ -658,20 +664,24 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
+        // 登出功能
         async function handleLogout() {
             const currentGuestId = sessionStorage.getItem('space_guest_id');
             if (currentGuestId) {
-                await client.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+                await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
                 sessionStorage.clear();
             }
-            await client.auth.signOut();
+            await supabase.auth.signOut();
             localStorage.clear();
             window.location.reload();
         }
 
+        /* ==========================================
+           2. 成員與在線狀態管理
+           ========================================== */
         async function fetchAllUserRecordsFromSupabase() {
             try {
-                const { data, error, count } = await client.from(TABLE_NAME).select('*', { count: 'exact' });
+                const { data, error, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
                 if (error) throw error;
                 allUserRecords = data || [];
                 const totalCount = count !== null ? count : allUserRecords.length;
@@ -681,12 +691,13 @@ import LoginModal from '../components/LoginModal.astro';
             } catch (err) { console.error("讀取用戶紀錄失敗:", err.message); }
         }
 
+        // 初始化 Supabase 頻道在線人數追蹤
         function initPresenceTracker() {
             const trackName = currentUserName || '訪客';
 
-            if (presenceChannel) client.removeChannel(presenceChannel);
+            if (presenceChannel) supabase.removeChannel(presenceChannel);
 
-            presenceChannel = client.channel('community-online-room', {
+            presenceChannel = supabase.channel('community-online-room', {
                 config: { presence: { key: currentUserId || trackName } }
             });
 
@@ -710,6 +721,9 @@ import LoginModal from '../components/LoginModal.astro';
                 });
         }
 
+        /* ==========================================
+           3. 分頁與導航切換
+           ========================================== */
         function switchHomeTab(tab) {
             const btnTopics = document.getElementById('tab-btn-topics');
             const btnDms = document.getElementById('tab-btn-dms');
@@ -735,13 +749,25 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
+        function backToHome() {
+            activeTopicId = null;
+            activeDmReceiverId = null;
+            document.getElementById('page-chat').classList.add('hidden');
+            document.getElementById('page-dm').classList.add('hidden');
+            document.getElementById('page-home').classList.remove('hidden');
+            fetchUserDmConversations();
+        }
+
+        /* ==========================================
+           4. 私訊 (Direct Message) 功能
+           ========================================== */
         async function fetchUserDmConversations() {
             if (isGuest) return;
             const container = document.getElementById('dm-conversations-list-container');
             if (!container) return;
 
             try {
-                const { data, error } = await client
+                const { data, error } = await supabase
                     .from('direct_messages')
                     .select('*')
                     .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
@@ -794,7 +820,7 @@ import LoginModal from '../components/LoginModal.astro';
                 const isOnline = onlineUsersMap[item.partnerId] ? '🟢' : '⚪';
                 const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 return `
-                    <div onclick="startDirectChat('${item.partnerId}', '${item.partnerName}')" class="topic-select-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; padding: 0.6rem 0.75rem;">
+                    <div data-partner-id="${item.partnerId}" data-partner-name="${item.partnerName}" class="dm-convo-item topic-select-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; padding: 0.6rem 0.75rem;">
                         <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
                             <h4 style="font-size: 0.825rem; font-weight: 800; color: #1e293b;">${isOnline} ${item.partnerName}</h4>
                             <p style="font-size: 0.7rem; color: #64748b; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">${item.lastMsg}</p>
@@ -808,87 +834,7 @@ import LoginModal from '../components/LoginModal.astro';
             }).join('');
         }
 
-        function filterDmList() {
-            const query = document.getElementById('dm-search-input').value.trim();
-            renderDmConversationsList(allDmRecords, query);
-        }
-
-        let currentUserListMode = 'online';
-        function openUserListModal(mode) {
-            currentUserListMode = mode;
-            const modalBox = document.getElementById('user-list-modal');
-            const title = document.getElementById('user-list-modal-title');
-            
-            if (mode === 'online') {
-                title.textContent = "🟢 在線鄰里人名單";
-            } else {
-                title.textContent = "📜 全部鄰里人名單";
-            }
-            
-            document.getElementById('user-search-input').value = '';
-            renderUserListModalContent('');
-            modalBox.classList.remove('hidden');
-        }
-
-        function closeUserListModal() {
-            document.getElementById('user-list-modal').classList.add('hidden');
-        }
-
-        function renderUserListModalContent(filter = '') {
-            const container = document.getElementById('user-list-container');
-            
-            let list = [];
-            if (currentUserListMode === 'online') {
-                list = Object.keys(onlineUsersMap).map(key => {
-                    const record = allUserRecords.find(u => u.user_id === key || u.name === key);
-                    return {
-                        id: record ? record.user_id : key,
-                        name: record ? record.name : key,
-                        isGuestUser: !record // 如果在 slowpace_members 找不到對應紀錄，即判定為訪客
-                    };
-                });
-            } else {
-                list = allUserRecords.map(u => ({ id: u.user_id, name: u.name, isGuestUser: false })).filter(u => u.name);
-            }
-
-            if (filter) {
-                list = list.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()));
-            }
-
-            if (list.length === 0) {
-                container.innerHTML = `<p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">沒有找到符合的成員</p>`;
-                return;
-            }
-
-            container.innerHTML = list.map(item => {
-                const isSelf = (item.id === currentUserId || item.name === currentUserName);
-                const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
-                
-                // 🛑 核心修改：如果是自己、或者是訪客身分，則不顯示私訊按鈕
-                let actionBtn = '';
-                if (!isSelf && !item.isGuestUser && !isGuest) {
-                    actionBtn = `<button onclick="startDirectChatFromModal('${item.id}', '${item.name}')" class="btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
-                }
-                
-                return `
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.75rem; font-weight:bold; color:#1e293b; display:flex; align-items:center; gap:5px;">👤 ${item.name} ${badge}</span>
-                        ${actionBtn}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function filterUserList() {
-            const query = document.getElementById('user-search-input').value.trim();
-            renderUserListModalContent(query);
-        }
-
-        function startDirectChatFromModal(targetId, targetName) {
-            closeUserListModal();
-            startDirectChat(targetId, targetName);
-        }
-
+        // 啟動單對單私訊
         function startDirectChat(targetId, targetName) {
             if (isGuest) {
                 alert("🔒 訪客身分無法使用私訊功能，請先完成正式會員登入！");
@@ -915,7 +861,7 @@ import LoginModal from '../components/LoginModal.astro';
             if (!container) return;
 
             try {
-                const { data, error } = await client
+                const { data, error } = await supabase
                     .from('direct_messages')
                     .select('*')
                     .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${currentUserId})`)
@@ -969,6 +915,7 @@ import LoginModal from '../components/LoginModal.astro';
             container.scrollTop = container.scrollHeight;
         }
 
+        // 發送私訊 (包含 sender_name 與 sender_id 確保資料完整性)
         async function handleSendDmMessage(event) {
             event.preventDefault();
             if (isGuest || !activeDmReceiverId) return;
@@ -978,10 +925,10 @@ import LoginModal from '../components/LoginModal.astro';
             if (!rawContent) return;
 
             try {
-                const { error } = await client.from('direct_messages').insert([{
+                const { error } = await supabase.from('direct_messages').insert([{
                     sender_id: currentUserId,
                     receiver_id: activeDmReceiverId,
-                    sender_name: currentUserName, 
+                    sender_name: currentUserName,
                     content: rawContent
                 }]);
 
@@ -993,9 +940,9 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         function subscribeToDmChat(targetId) {
-            if (dmSubscription) client.removeChannel(dmSubscription);
+            if (dmSubscription) supabase.removeChannel(dmSubscription);
 
-            dmSubscription = client.channel(`dm-${currentUserId}-${targetId}`)
+            dmSubscription = supabase.channel(`dm-${currentUserId}-${targetId}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
                     const newItem = payload.new;
                     if (
@@ -1009,9 +956,82 @@ import LoginModal from '../components/LoginModal.astro';
                 .subscribe();
         }
 
+        /* ==========================================
+           5. 成員列表 Modal 彈窗與訪客按鈕過濾
+           ========================================== */
+        let currentUserListMode = 'online';
+
+        function openUserListModal(mode) {
+            currentUserListMode = mode;
+            const modalBox = document.getElementById('user-list-modal');
+            const title = document.getElementById('user-list-modal-title');
+            
+            if (mode === 'online') {
+                title.textContent = "🟢 在線鄰里人名單";
+            } else {
+                title.textContent = "📜 全部鄰里人名單";
+            }
+            
+            document.getElementById('user-search-input').value = '';
+            renderUserListModalContent('');
+            modalBox.classList.remove('hidden');
+        }
+
+        function closeUserListModal() {
+            document.getElementById('user-list-modal').classList.add('hidden');
+        }
+
+        function renderUserListModalContent(filter = '') {
+            const container = document.getElementById('user-list-container');
+            
+            let list = [];
+            if (currentUserListMode === 'online') {
+                list = Object.keys(onlineUsersMap).map(key => {
+                    const record = allUserRecords.find(u => u.user_id === key || u.name === key);
+                    return {
+                        id: record ? record.user_id : key,
+                        name: record ? record.name : key,
+                        isGuestUser: !record // 判斷是否為訪客
+                    };
+                });
+            } else {
+                list = allUserRecords.map(u => ({ id: u.user_id, name: u.name, isGuestUser: false })).filter(u => u.name);
+            }
+
+            if (filter) {
+                list = list.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()));
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">沒有找到符合的成員</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(item => {
+                const isSelf = (item.id === currentUserId || item.name === currentUserName);
+                const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
+                
+                // 🛑 核心過濾：訪客身分或自己，絕對不顯示私訊按鈕
+                let actionBtn = '';
+                if (!isSelf && !item.isGuestUser && !isGuest) {
+                    actionBtn = `<button data-target-id="${item.id}" data-target-name="${item.name}" class="dm-action-btn btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
+                }
+                
+                return `
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; font-weight:bold; color:#1e293b; display:flex; align-items:center; gap:5px;">👤 ${item.name} ${badge}</span>
+                        ${actionBtn}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* ==========================================
+           6. 討論主題 (Topics) 管理與聊天
+           ========================================== */
         async function fetchTopics() {
             try {
-                const { data, error } = await client
+                const { data, error } = await supabase
                     .from('chat_topics')
                     .select('*')
                     .order('sort_order', { ascending: true })
@@ -1024,8 +1044,7 @@ import LoginModal from '../components/LoginModal.astro';
             } catch (err) { console.error("讀取主題失敗:", err.message); }
         }
 
-        async function moveTopicOrder(event, topicId, direction) {
-            event.stopPropagation();
+        async function moveTopicOrder(topicId, direction) {
             const index = topics.findIndex(t => String(t.id) === String(topicId));
             if (index === -1) return;
 
@@ -1046,8 +1065,8 @@ import LoginModal from '../components/LoginModal.astro';
             }
 
             try {
-                const { error: err1 } = await client.from('chat_topics').update({ sort_order: newCurrentOrder }).eq('id', currentTopic.id);
-                const { error: err2 } = await client.from('chat_topics').update({ sort_order: newTargetOrder }).eq('id', targetTopic.id);
+                const { error: err1 } = await supabase.from('chat_topics').update({ sort_order: newCurrentOrder }).eq('id', currentTopic.id);
+                const { error: err2 } = await supabase.from('chat_topics').update({ sort_order: newTargetOrder }).eq('id', targetTopic.id);
 
                 if (err1 || err2) throw (err1 || err2);
                 fetchTopics();
@@ -1056,12 +1075,11 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
-        async function deleteTopic(event, topicId, topicTitle) {
-            event.stopPropagation();
+        async function deleteTopic(topicId, topicTitle) {
             if (!confirm(`⚠️ 確定要立即刪除主題「${topicTitle}」嗎？`)) return;
 
             try {
-                const { error } = await client.from('chat_topics').delete().eq('id', topicId);
+                const { error } = await supabase.from('chat_topics').delete().eq('id', topicId);
                 if (error) throw error;
 
                 alert("🗑️ 主題與對話紀錄已成功刪除！");
@@ -1091,15 +1109,15 @@ import LoginModal from '../components/LoginModal.astro';
                     
                     let adminControls = '';
                     if (isAdmin) {
-                        const upBtn = index > 0 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'up')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
-                        const downBtn = index < topics.length - 1 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'down')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬇️</button>` : '';
-                        const deleteBtn = `<button onclick="deleteTopic(event, '${topic.id}', '${topic.title}')" style="background:#ef4444; color:white; border:none; padding:1px 5px; border-radius:3px; font-size:0.6rem; cursor:pointer;">刪除</button>`;
+                        const upBtn = index > 0 ? `<button data-topic-id="${topic.id}" data-direction="up" class="topic-up-btn" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
+                        const downBtn = index < topics.length - 1 ? `<button data-topic-id="${topic.id}" data-direction="down" class="topic-down-btn" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬇️</button>` : '';
+                        const deleteBtn = `<button data-topic-id="${topic.id}" data-topic-title="${topic.title}" class="topic-del-btn" style="background:#ef4444; color:white; border:none; padding:1px 5px; border-radius:3px; font-size:0.6rem; cursor:pointer;">刪除</button>`;
                         
-                        adminControls = `<div style="display:flex; gap:3px; align-items:center;" onclick="event.stopPropagation();">${upBtn}${downBtn}${deleteBtn}</div>`;
+                        adminControls = `<div style="display:flex; gap:3px; align-items:center;" class="admin-controls-group">${upBtn}${downBtn}${deleteBtn}</div>`;
                     }
 
                     return `
-                        <div onclick="trySelectTopic('${topic.id}')" class="topic-select-card" style="display:flex; flex-direction:column; gap:4px;">
+                        <div data-topic-id="${topic.id}" class="topic-card-item topic-select-card" style="display:flex; flex-direction:column; gap:4px;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <h4 style="font-size: 0.85rem; font-weight: 800; color: #574332; display:flex; align-items:center; gap:4px;">
                                     ${lockIcon}${topic.title}${timeRemainingText}
@@ -1116,13 +1134,10 @@ import LoginModal from '../components/LoginModal.astro';
 
             if (container) container.innerHTML = htmlContent;
             if (switcherContainer) switcherContainer.innerHTML = htmlContent;
+            
+            // 綁定動態生成的按鈕事件
+            bindDynamicTopicEvents();
         }
-
-        function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
-        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
-
-        function openTopicSwitcherModal() { document.getElementById('topic-switcher-modal').classList.remove('hidden'); }
-        function closeTopicSwitcherModal() { document.getElementById('topic-switcher-modal').classList.add('hidden'); }
 
         function trySelectTopic(topicId) {
             const topic = topics.find(t => String(t.id) === String(topicId));
@@ -1166,7 +1181,7 @@ import LoginModal from '../components/LoginModal.astro';
                 }
             }
 
-            closeTopicSwitcherModal();
+            document.getElementById('topic-switcher-modal').classList.add('hidden');
             document.getElementById('page-home').classList.add('hidden');
             document.getElementById('page-dm').classList.add('hidden');
             document.getElementById('page-chat').classList.remove('hidden');
@@ -1198,21 +1213,12 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
-        function backToHome() {
-            activeTopicId = null;
-            activeDmReceiverId = null;
-            document.getElementById('page-chat').classList.add('hidden');
-            document.getElementById('page-dm').classList.add('hidden');
-            document.getElementById('page-home').classList.remove('hidden');
-            fetchUserDmConversations();
-        }
-
         async function loadTopicMessages(topicId) {
             const container = document.getElementById('topic-chat-messages');
             if (!container) return;
 
             try {
-                const { data, error } = await client
+                const { data, error } = await supabase
                     .from('topic_messages')
                     .select('*')
                     .eq('topic_id', topicId)
@@ -1288,7 +1294,7 @@ import LoginModal from '../components/LoginModal.astro';
             if (!contentInput.value.trim()) return;
 
             try {
-                const { error } = await client.from('topic_messages').insert([{
+                const { error } = await supabase.from('topic_messages').insert([{
                     topic_id: activeTopicId,
                     sender_name: currentUserName,
                     content: contentInput.value.trim()
@@ -1300,17 +1306,14 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         function subscribeToTopicChat(topicId) {
-            if (chatSubscription) client.removeChannel(chatSubscription);
+            if (chatSubscription) supabase.removeChannel(chatSubscription);
 
-            chatSubscription = client.channel(`topic-${topicId}`)
+            chatSubscription = supabase.channel(`topic-${topicId}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'topic_messages', filter: `topic_id=eq.${topicId}` }, () => {
                     loadTopicMessages(topicId);
                 })
                 .subscribe();
         }
-
-        function openTopicModal() { document.getElementById('topic-modal').classList.remove('hidden'); }
-        function closeTopicModal() { document.getElementById('topic-modal').classList.add('hidden'); }
 
         async function handleCreateTopic(event) {
             event.preventDefault();
@@ -1329,7 +1332,7 @@ import LoginModal from '../components/LoginModal.astro';
             }
 
             try {
-                const { error } = await client.from('chat_topics').insert([{ 
+                const { error } = await supabase.from('chat_topics').insert([{ 
                     title: isAnon ? `⏳ [限時] ${title}` : title, 
                     description: desc, 
                     password: password,
@@ -1338,7 +1341,7 @@ import LoginModal from '../components/LoginModal.astro';
                 }]);
                 if (error) throw error;
 
-                closeTopicModal();
+                document.getElementById('topic-modal').classList.add('hidden');
                 document.getElementById('new-topic-title').value = '';
                 document.getElementById('new-topic-desc').value = '';
                 document.getElementById('new-topic-password').value = '';
@@ -1349,17 +1352,37 @@ import LoginModal from '../components/LoginModal.astro';
             } catch (err) { alert("建立失敗: " + err.message); }
         }
 
-        function toggleAdminNavbar() { document.getElementById('admin-navbar').classList.toggle('hidden'); }
-        
-        function handleAdminLogin() {
-            if (document.getElementById('admin-password-input').value === defaultPassword) {
+        /* ==========================================
+           7. 主理人身分驗證 (改由資料庫 is_admin 欄位判斷)
+           ========================================== */
+        async function handleAdminLogin() {
+            if (isGuest || !currentUserId) {
+                alert("❌ 訪客無法使用主理人權限！");
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from(TABLE_NAME)
+                    .select('is_admin')
+                    .eq('user_id', currentUserId)
+                    .single();
+
+                if (error || !data || data.is_admin !== true) {
+                    alert("❌ 此帳號沒有主理人權限！");
+                    return;
+                }
+
+                // 驗證成功，解鎖主理人模式
                 isAdmin = true;
                 document.getElementById('admin-logged-out').classList.add('hidden');
                 document.getElementById('admin-logged-in').classList.remove('hidden');
                 document.getElementById('btn-add-topic').classList.remove('hidden');
                 renderTopicsList();
                 alert("🟢 主理人權限已解鎖！");
-            } else { alert("密碼錯誤"); }
+            } catch (err) {
+                alert("驗證權限時發生錯誤: " + err.message);
+            }
         }
 
         function handleAdminLogout() {
@@ -1368,6 +1391,127 @@ import LoginModal from '../components/LoginModal.astro';
             document.getElementById('admin-logged-in').classList.add('hidden');
             document.getElementById('btn-add-topic').classList.add('hidden');
             renderTopicsList();
+            alert("🔒 已登出主理人模式");
+        }
+
+        /* ==========================================
+           8. 事件監聽器集中綁定 (取代 onclick，確保模組化安全)
+           ========================================== */
+        function initEventListeners() {
+            // 主理人面板切換
+            document.getElementById('logo-toggle-btn').addEventListener('click', () => {
+                document.getElementById('admin-navbar').classList.toggle('hidden');
+            });
+
+            // 主理人登入與登出按鈕
+            document.getElementById('admin-login-btn').addEventListener('click', handleAdminLogin);
+            document.getElementById('admin-logout-btn').addEventListener('click', handleAdminLogout);
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+            // 首頁線上與縂人數點擊彈窗
+            document.getElementById('online-count-trigger-home').addEventListener('click', () => openUserListModal('online'));
+            document.getElementById('total-count-trigger-home').addEventListener('click', () => openUserListModal('total'));
+            document.getElementById('online-count-trigger-chat').addEventListener('click', () => openUserListModal('online'));
+            document.getElementById('total-count-trigger-chat').addEventListener('click', () => openUserListModal('total'));
+            document.getElementById('online-count-trigger-dm').addEventListener('click', () => openUserListModal('online'));
+            document.getElementById('total-count-trigger-dm').addEventListener('click', () => openUserListModal('total'));
+
+            // 社群源由與守則 Modal
+            document.getElementById('modal-origin-btn').addEventListener('click', () => document.getElementById('modal-origin').classList.remove('hidden'));
+            document.getElementById('modal-origin-close').addEventListener('click', () => document.getElementById('modal-origin').classList.add('hidden'));
+            document.getElementById('modal-origin-ok').addEventListener('click', () => document.getElementById('modal-origin').classList.add('hidden'));
+
+            document.getElementById('modal-rules-btn').addEventListener('click', () => document.getElementById('modal-rules').classList.remove('hidden'));
+            document.getElementById('modal-rules-close').addEventListener('click', () => document.getElementById('modal-rules').classList.add('hidden'));
+            document.getElementById('modal-rules-ok').addEventListener('click', () => document.getElementById('modal-rules').classList.add('hidden'));
+
+            // 分頁切換
+            document.getElementById('tab-btn-topics').addEventListener('click', () => switchHomeTab('topics'));
+            document.getElementById('tab-btn-dms').addEventListener('click', () => switchHomeTab('dms'));
+
+            // 新增主題 Modal
+            document.getElementById('btn-add-topic').addEventListener('click', () => document.getElementById('topic-modal').classList.remove('hidden'));
+            document.getElementById('topic-modal-cancel').addEventListener('click', () => document.getElementById('topic-modal').classList.add('hidden'));
+            document.getElementById('create-topic-form').addEventListener('submit', handleCreateTopic);
+
+            // 主題切換清單 Modal
+            document.getElementById('topic-switcher-trigger').addEventListener('click', () => document.getElementById('topic-switcher-modal').classList.remove('hidden'));
+            document.getElementById('topic-switcher-close').addEventListener('click', () => document.getElementById('topic-switcher-modal').classList.add('hidden'));
+
+            // 用戶名單 Modal 關閉
+            document.getElementById('user-list-close-btn').addEventListener('click', closeUserListModal);
+            document.getElementById('user-search-input').addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                renderUserListModalContent(query);
+            });
+
+            // 私訊搜尋過濾
+            document.getElementById('dm-search-input').addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                renderDmConversationsList(allDmRecords, query);
+            });
+
+            // 對話頁面返回首頁按鈕
+            document.getElementById('chat-back-btn').addEventListener('click', backToHome);
+            document.getElementById('dm-back-btn').addEventListener('click', backToHome);
+
+            // 發送群組訊息與私訊表單
+            document.getElementById('topic-chat-form').addEventListener('submit', handleSendTopicMessage);
+            document.getElementById('dm-chat-form').addEventListener('submit', handleSendDmMessage);
+
+            // 委派監聽：點擊用戶清單中的私訊按鈕
+            document.getElementById('user-list-container').addEventListener('click', (e) => {
+                const btn = e.target.closest('.dm-action-btn');
+                if (btn) {
+                    const targetId = btn.getAttribute('data-target-id');
+                    const targetName = btn.getAttribute('data-target-name');
+                    closeUserListModal();
+                    startDirectChat(targetId, targetName);
+                }
+            });
+
+            // 委派監聽：點擊私訊對話清單項目
+            document.getElementById('dm-conversations-list-container').addEventListener('click', (e) => {
+                const card = e.target.closest('.dm-convo-item');
+                if (card) {
+                    const partnerId = card.getAttribute('data-partner-id');
+                    const partnerName = card.getAttribute('data-partner-name');
+                    startDirectChat(partnerId, partnerName);
+                }
+            });
+        }
+
+        // 綁定動態生成的討論主題相關按鈕事件
+        function bindDynamicTopicEvents() {
+            // 點擊主題卡片進入聊天
+            document.querySelectorAll('.topic-card-item').forEach(card => {
+                card.addEventListener('click', () => {
+                    const topicId = card.getAttribute('data-topic-id');
+                    trySelectTopic(topicId);
+                });
+            });
+
+            // 主理人排序與刪除按鈕
+            if (isAdmin) {
+                document.querySelectorAll('.topic-up-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        moveTopicOrder(btn.getAttribute('data-topic-id'), 'up');
+                    });
+                });
+                document.querySelectorAll('.topic-down-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        moveTopicOrder(btn.getAttribute('data-topic-id'), 'down');
+                    });
+                });
+                document.querySelectorAll('.topic-del-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteTopic(btn.getAttribute('data-topic-id'), btn.getAttribute('data-topic-title'));
+                    });
+                });
+            }
         }
     </script>
 </Layout>
