@@ -1335,5 +1335,34 @@ function startDirectChat(targetName) {
             document.getElementById('btn-add-topic').classList.add('hidden');
             renderTopicsList();
         }
+
+        // 將要在 HTML onclick 中呼叫的函式掛載到 window 全域
+        window.startDirectChatFromModal = function(targetName) {
+            closeUserListModal();
+            startDirectChat(targetName);
+        };
+
+        window.openUserListModal = openUserListModal;
+        window.closeUserListModal = closeUserListModal;
+        window.filterUserList = filterUserList;
+        window.switchHomeTab = switchHomeTab;
+        window.filterDmList = filterDmList;
+        window.backToHome = backToHome;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+        window.openTopicSwitcherModal = openTopicSwitcherModal;
+        window.closeTopicSwitcherModal = closeTopicSwitcherModal;
+        window.trySelectTopic = trySelectTopic;
+        window.openTopicModal = openTopicModal;
+        window.closeTopicModal = closeTopicModal;
+        window.handleCreateTopic = handleCreateTopic;
+        window.handleSendTopicMessage = handleSendTopicMessage;
+        window.handleSendDmMessage = handleSendDmMessage;
+        window.toggleAdminNavbar = toggleAdminNavbar;
+        window.handleAdminLogin = handleAdminLogin;
+        window.handleAdminLogout = handleAdminLogout;
+        window.handleLogout = handleLogout;
+        window.promptChangeName = promptChangeName;
+        
     </script>
 </Layout>
