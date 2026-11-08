@@ -1,0 +1,242 @@
+---
+// src/pages/reading.astro
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="個人書櫃與閱讀記錄 · 空間客舍">
+  <div class="reading-page-container">
+    <header class="reading-top-bar">
+      <a href="/" class="back-btn">〈 返回空間</a>
+      <h2>📖 個人閱讀清單與心得</h2>
+    </header>
+
+    <!-- 新增閱讀記錄區塊 -->
+    <div class="add-record-card">
+      <h3>➕ 新增閱讀心得</h3>
+      <input type="text" id="book-title-input" placeholder="書名（例：《希臘語課》）" />
+      <input type="text" id="book-author-input" placeholder="作者" />
+      <div style="display:flex; gap:6px;">
+        <input type="number" id="current-page-input" placeholder="目前頁數" />
+        <input type="number" id="total-page-input" placeholder="總頁數" />
+      </div>
+      <textarea id="quote-input" placeholder="精選書摘..."></textarea>
+      <textarea id="review-input" placeholder="讀後心得..."></textarea>
+      <button id="submit-log-btn" class="rpg-btn">儲存記錄</button>
+    </div>
+
+    <!-- 閱讀清單列表 -->
+    <div class="logs-container" id="my-logs-list">
+      <div style="text-align:center; color:#94a3b8; padding:20px;">載入記錄中...</div>
+    </div>
+  </div>
+
+  <style>
+    .reading-page-container {
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg-main, #0f172a);
+      color: #f8fafc;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .reading-top-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .back-btn {
+      color: var(--accent-color, #38bdf8);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .add-record-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 16px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .add-record-card input, .add-record-card textarea {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .add-record-card textarea {
+      height: 60px;
+      resize: none;
+    }
+    .rpg-btn {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .logs-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  </style>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+// src/utils/logsManager.js
+import { supabase } from '../lib/supabase';
+
+const LOGS_TABLE = 'reading_record';
+
+/**
+ * 從 Supabase 取得指定使用者的閱讀記錄
+ * @param {string} targetUserId - 目標玩家的 user_id
+ */
+export async function fetchUserReadingLogs(targetUserId) {
+  if (!targetUserId) return [];
+  
+  const { data, error } = await supabase
+    .from(LOGS_TABLE)
+    .select('*')
+    .eq('user_id', targetUserId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('抓取閱讀記錄失敗:', error.message);
+    return [];
+  }
+  return data || [];
+}
+
+/**
+ * 新增一筆閱讀記錄到 Supabase
+ * @param {string} userId - 當前登入者的 user_id
+ * @param {Object} logData - 包含 book_title, author, current_page, total_pages, quote, review
+ */
+export async function addReadingLog(userId, logData) {
+  if (!userId) return { success: false, error: '未登入使用者' };
+
+  const { data, error } = await supabase
+    .from(LOGS_TABLE)
+    .insert({
+      user_id: userId,
+      book_title: logData.book_title,
+      author: logData.author || '佚名',
+      current_page: logData.current_page || 0,
+      total_pages: logData.total_pages || 1,
+      quote: logData.quote || '',
+      review: logData.review || ''
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('新增閱讀記錄失敗:', error.message);
+    return { success: false, error: error.message };
+  }
+  return { success: true, data };
+}
+
+/**
+ * 渲染「個人」的閱讀記錄清單
+ */
+export async function renderMyLogs(userId, logListContainer, detailContent, detailModal) {
+  if (!logListContainer) return;
+  logListContainer.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:15px;">載入記錄中...</div>';
+
+  const myLogs = await fetchUserReadingLogs(userId);
+
+  if (myLogs.length === 0) {
+    logListContainer.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:15px;">目前尚無閱讀記錄</div>';
+    return;
+  }
+
+  let html = '';
+  myLogs.forEach((item) => {
+    html += `
+      <div class="log-item-card" data-id="${item.id}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
+        <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;">
+          <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book_title}》</span>
+          <span style="font-size:12px; color:#cbd5e1;">作者：${item.author}</span>
+        </div>
+      </div>
+    `;
+  });
+  logListContainer.innerHTML = html;
+
+  // 點擊紀錄查看詳情
+  logListContainer.querySelectorAll('.log-item-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      const logId = e.currentTarget.dataset.id;
+      const log = myLogs.find(l => l.id === logId);
+      if (log && detailContent) {
+        const dateStr = new Date(log.created_at).toLocaleDateString();
+        detailContent.innerHTML = `
+          <p style="font-size:14px;"><strong>書名：</strong>《${log.book_title}》</p>
+          <p style="font-size:13px;"><strong>作者：</strong>${log.author}</p>
+          <p style="font-size:13px;"><strong>閱讀進度：</strong>第 ${log.current_page} / ${log.total_pages} 頁</p>
+          <p style="font-size:13px;"><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
+          <p style="font-size:13px;"><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
+          <p style="font-size:11px; color:#64748b; text-align:right;">記錄日期：${dateStr}</p>
+        `;
+        if (detailModal) detailModal.style.display = 'flex';
+      }
+    });
+  });
+}
+
+/**
+ * 彈窗查看「其他書友 (Peer)」的專屬閱讀記錄
+ */
+export async function openPeerLogs(peerUserId, peerName, peerRole, peerModalTitle, peerContentBox, peerModal) {
+  if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
+  if (peerContentBox) {
+    peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">載入記錄中...</div>';
+  }
+  if (peerModal) peerModal.style.display = 'flex';
+
+  const peerLogs = await fetchUserReadingLogs(peerUserId);
+
+  if (peerContentBox) {
+    if (!peerLogs || peerLogs.length === 0) {
+      peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">這位書友目前還沒有新增閱讀記錄。</div>';
+      return;
+    }
+
+    let html = '';
+    peerLogs.forEach((item) => {
+      html += `
+        <div style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
+          <div style="font-weight:bold; color:var(--accent-color);">《${item.book_title}》 / ${item.author}</div>
+          <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current_page}/${item.total_pages} 頁</div>
+          ${item.quote ? `<div style="font-size:11px; color:#38bdf8; margin-top:4px;">“ ${item.quote} ”</div>` : ''}
+        </div>
+      `;
+    });
+    peerContentBox.innerHTML = html;
+  }
+}
+
+    // 取得當前登入者並載入記錄
+    async function initReadingPage() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+      const userId = session.user.id;
+      const listContainer = document.getElementById('my-logs-list');
+
+      // 渲染列表邏輯...
+    }
+    initReadingPage();
+  </script>
+</Layout>
