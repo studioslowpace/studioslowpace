@@ -129,7 +129,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window" style="max-width: 280px; text-align: center;">
       <div class="rpg-title-bar"><span id="pam-title">👤 玩家選單</span></div>
       <div class="rpg-content" style="display: flex; flex-direction: column; gap: 8px;">
-        <a href="/chat" id="pam-chat-btn" class="rpg-btn" style="background: var(--accent-hover); text-decoration: none; box-sizing: border-box; line-height: normal;">💬 進入大廳聊天室</a>
+        <button id="pam-dm-btn" class="rpg-btn" style="background: var(--accent-hover); text-decoration: none; box-sizing: border-box; line-height: normal;">💬 進入大廳聊天室</a>
         <button id="pam-logs-btn" class="rpg-btn" style="background: #10b981;">📚 查看閱讀記錄</button>
         <button id="pam-cancel-btn" class="rpg-btn-ghost">取消</button>
       </div>
@@ -682,6 +682,7 @@ import LoginModal from '../components/LoginModal.astro';
     const playerActionModal = document.getElementById('player-action-modal');
     const pamTitle = document.getElementById('pam-title');
     const pamLogsBtn = document.getElementById('pam-logs-btn');
+    const pamDmBtn = document.getElementById('pam-dm-btn');
     const pamCancelBtn = document.getElementById('pam-cancel-btn');
     let selectedPeer: any = null;
 
@@ -894,6 +895,13 @@ import LoginModal from '../components/LoginModal.astro';
       }
     });
 
+      pamDmBtn?.addEventListener('click', () => {
+      if (selectedPeer) {
+        if (playerActionModal) playerActionModal.style.display = 'none';
+        window.location.href = `/chatroom?dm=${selectedPeer.user_id}&name=${encodeURIComponent(selectedPeer.name)}`;
+      }
+    });
+
     themeSelect?.addEventListener('change', (e) => {
       const selected = (e.target as HTMLSelectElement).value;
       document.documentElement.setAttribute('data-theme', selected);
@@ -992,13 +1000,7 @@ import LoginModal from '../components/LoginModal.astro';
 
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
-// slowplace.astro 內的點擊事件
-pamChatBtn?.addEventListener('click', () => {
-  if (selectedPeer) {
-    // 帶入 target_user_id 讓 chat.astro 自動開啟與該玩家的私訊
-    window.location.href = `/chatroom?dm=${selectedPeer.user_id}&name=${encodeURIComponent(selectedPeer.name)}`;
-  }
-});
+
     // 初始化執行
     renderCustomToolsUI();
     initAuthCheck();

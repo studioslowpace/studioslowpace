@@ -149,6 +149,11 @@ import LoginModal from '../components/LoginModal.astro';
         }
         .identity-badge:hover { background: #eff6ff; }
 
+        /* 分頁按鈕樣式 */
+        .chat-mode-tabs { display: flex; background: #e2e8f0; padding: 4px; gap: 4px; flex-shrink: 0; }
+        .tab-btn { flex: 1; background: transparent; border: none; padding: 6px; font-size: 0.75rem; font-weight: bold; color: #64748b; cursor: pointer; border-radius: 6px; text-align: center; }
+        .tab-btn.active { background: #ffffff; color: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
         /* ==========================================
            3. 數據統計與資訊卡片
            ========================================== */
@@ -301,16 +306,11 @@ import LoginModal from '../components/LoginModal.astro';
             flex-direction: column;
             background: #ffffff;
         }
-        .embed-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
     </style>
 </head>
 <body>
 
-<!-- 1. 登入 / 訪客 Modal (直接內嵌 LoginModal 元件，不需要 iframe) -->
+<!-- 1. 登入 / 訪客 Modal -->
 <div id="rpg-modal" class="rpg-modal-overlay">
   <div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
     <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -348,15 +348,19 @@ import LoginModal from '../components/LoginModal.astro';
                 <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
                     <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
                 </span>
-                <span>鄰里人交流區</span>
+                <span>鄰里人交流與私訊</span>
             </div>
-            <button id="external-link-btn" class="nav-link-btn">客舍萬事屋 ↗</button>
+            <a href="/slowplace" class="nav-link-btn">〈 返回空間地圖</a>
         </div>
 
-        <!-- 🔓 交流區主視窗 -->
-        <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <!-- 頂部切換分頁：公開大廳 vs 私訊 -->
+        <div class="chat-mode-tabs">
+            <button id="tab-public" class="tab-btn active">📢 公開討論主題</button>
+            <button id="tab-dm" class="tab-btn">🔒 單對單私訊 (DM)</button>
+        </div>
 
-            <!-- 🏠 PAGE 1: 交流區首頁 -->
+        <!-- 📢 PAGE A: 公開交流區主視窗 -->
+        <div id="section-public" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
                 <!-- 數據統計欄 -->
@@ -395,8 +399,6 @@ import LoginModal from '../components/LoginModal.astro';
 
             <!-- 💬 PAGE 2: 手機對話模式 -->
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                
-                <!-- 對話頂部 Header Bar -->
                 <div class="phone-header">
                     <button class="nav-link-btn" id="back-to-home-btn">< 首頁</button>
                     
@@ -411,24 +413,36 @@ import LoginModal from '../components/LoginModal.astro';
                     <div id="my-identity-badge-chat" class="identity-badge">👤 載入中</div>
                 </div>
 
-                <!-- 次頂部數據統計欄 -->
                 <div class="phone-sub-bar">
                     <span>🟢 在線：<strong id="online-users-count-chat">1</strong> 人</span>
                     <span>|</span>
                     <span>📜 鄰里人總數：<strong id="total-users-count-chat">0</strong> 人</span>
                 </div>
 
-                <!-- 獨立滾動的訊息對話區 -->
                 <div id="topic-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
                 </div>
 
-                <!-- 底部打字發送欄 -->
                 <form id="chat-message-form" class="phone-input-bar">
-                    <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
+                    <input type="text" id="chat-input-content" placeholder="講啲嘢 (pgcrypto 加密)..." required class="phone-input-field" autocomplete="off">
                     <button type="submit" class="phone-send-btn">送出</button>
                 </form>
             </div>
+        </div>
+
+        <!-- 🔒 PAGE B: 單對單私訊區 (DM) -->
+        <div id="section-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="phone-header">
+                <span id="dm-partner-title" style="font-weight: bold; font-size: 0.85rem;">🔒 私人對話</span>
+                <span class="identity-badge" id="my-identity-badge-dm">👤 載入中</span>
+            </div>
+            <div id="dm-chat-messages" class="phone-chat-messages">
+                <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">請透過地圖點擊線上玩家來發起專屬私訊</p>
+            </div>
+            <form id="dm-message-form" class="phone-input-bar">
+                <input type="text" id="dm-input-content" placeholder="輸入加密私訊..." required class="phone-input-field" autocomplete="off">
+                <button type="submit" class="phone-send-btn">傳送</button>
+            </form>
         </div>
     </main>
 
@@ -440,7 +454,7 @@ import LoginModal from '../components/LoginModal.astro';
                 <button class="modal-close-btn" data-target="modal-origin" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#64748b;">✕</button>
             </div>
             <p style="font-size: 0.775rem; color: #475569; line-height: 1.6;">
-                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。除了任務委託之外，這裡提供了一個專屬於居民的自由對話角落，讓大家能在此分享點滴、互相串聯。
+                「客舍萬事屋」致力於建立一個步調慢、人情味濃厚的技能互助與生活交流聚落。除了任務委託之外，這裡提供了一個專屬於居民的自由對話角落。
             </p>
             <button class="btn-blue modal-close-btn" data-target="modal-origin" style="padding:0.4rem; font-size:0.8rem;">了解</button>
         </div>
@@ -507,20 +521,22 @@ import LoginModal from '../components/LoginModal.astro';
     <!-- JavaScript 邏輯 -->
     <script>
         import { supabase } from '../lib/supabase';
-
+        import { logoutAndCleanGuest } from '../utils/auth';
 
         let allUserRecords = [];
         let topics = [];
         let activeTopicId = null;
         let chatSubscription = null;
+        let dmSubscription = null;
         let presenceChannel = null;
         let unlockedTopics = {};
         let isAdmin = false;
         
-        // 用於儲存登入後的使用者資訊
         let userId = null;
         let playerName = '訪客';
         let playerAvatar = '/assets/player1.png';
+        let dmTargetId = null;
+        let dmTargetName = '';
 
         window.addEventListener('DOMContentLoaded', async () => {
             await initAuthCheck();
@@ -528,14 +544,29 @@ import LoginModal from '../components/LoginModal.astro';
             initPresenceTracker();
             if (window.lucide) lucide.createIcons();
             initEventListeners();
+            initTabs();
+
+            // 解析網址參數（支援從地圖點擊直接進入單對單私訊）
+            const urlParams = new URLSearchParams(window.location.search);
+            dmTargetId = urlParams.get('dm');
+            dmTargetName = urlParams.get('name');
+
+            if (dmTargetId) {
+                document.getElementById('tab-dm').click();
+                if (dmTargetName) {
+                    document.getElementById('dm-partner-title').textContent = `🔒 與 ${decodeURIComponent(dmTargetName)} 的私訊`;
+                }
+                loadDirectMessages();
+                subscribeToDM();
+            } else {
+                fetchTopics();
+            }
         });
 
-// ==========================================
+        // ==========================================
         // 區塊一：身分驗證、初始化與登入狀態管理
         // ==========================================
         const modal = document.getElementById('rpg-modal');
-        const hudName = document.getElementById('my-identity-badge-home');
-        const hudTierTag = document.getElementById('my-identity-badge-chat');
 
         async function initAuthCheck() {
             const guestId = sessionStorage.getItem('space_guest_id');
@@ -545,141 +576,144 @@ import LoginModal from '../components/LoginModal.astro';
                 playerName = sessionStorage.getItem('space_guest_name') || '訪客';
                 playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
                 
-                // 確保強制關閉
                 if (modal) modal.style.display = 'none';
                 updateUserUI(playerName);
-                await checkAdminStatus(); // 👈 檢查是否為主理人
+                await checkAdminStatus();
                 await startAppSession();
             } else {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     userId = session.user.id;
-                    
-                    // 確保強制關閉
                     if (modal) modal.style.display = 'none';
                     await loadUserProfile(userId);
-                    await checkAdminStatus(); // 👈 檢查是否為主理人
+                    await checkAdminStatus();
                     await startAppSession();
                 } else {
-                    // 只有在真的一點登入狀態都沒有時才顯示彈窗
                     if (modal) modal.style.display = 'flex';
                 }
             }
         }
 
-        // 檢查當前登入者是否為主理人
-    async function checkAdminStatus() {
-        if (!userId) {
-            isAdmin = false;
-            return;
-        }
+        // 檢查主理人身分
+        async function checkAdminStatus() {
+            if (!userId) { isAdmin = false; return; }
+            try {
+                const { data, error } = await supabase
+                    .from('slowpace_members')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .single();
 
-        try {
-            // 查詢 slowpace_members 裡該使用者的身分
-            const { data, error } = await supabase
-                .from('slowpace_members')
-                .select('*')
-                .eq('user_id', userId)
-                .single();
+                if (error) throw error;
 
-            if (error) throw error;
-
-            // 判斷條件：假設資料表中 role 等於 '主理人' 或者是指定管理員
-            if (data && (data.role === '主理人' || data.role === 'admin')) {
-                isAdmin = true;
-                document.getElementById('admin-logged-out')?.classList.add('hidden');
-                document.getElementById('admin-logged-in')?.classList.remove('hidden');
-                document.getElementById('btn-add-topic')?.classList.remove('hidden');
-                renderTopicsList();
-                alert("🟢 偵測到主理人身分，權限已自動解鎖！");
-            } else {
+                if (data && (data.role === '主理人' || data.role === 'admin')) {
+                    isAdmin = true;
+                    document.getElementById('admin-logged-out')?.classList.add('hidden');
+                    document.getElementById('admin-logged-in')?.classList.remove('hidden');
+                    document.getElementById('btn-add-topic')?.classList.remove('hidden');
+                    renderTopicsList();
+                } else {
+                    isAdmin = false;
+                }
+            } catch (err) {
                 isAdmin = false;
             }
-        } catch (err) {
-            console.error("檢查主理人權限失敗:", err.message);
-            isAdmin = false;
-        }
-    }
-// 1. 監聽來自 iframe 或內嵌元件的登入成功訊息
-    window.addEventListener('message', async (event) => {
-      const modalEl = document.getElementById('rpg-modal');
-
-      // 處理訪客登入成功
-      if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-        userId = event.data.guestId;
-        playerName = event.data.name;
-        playerAvatar = event.data.avatar;
-        if (modalEl) modalEl.style.display = 'none';
-        if (hudName) hudName.textContent = playerName;
-        if (hudTierTag) hudTierTag.textContent = '🌱 訪客';
-        await startAppSession();
-      }
-      
-      // 處理一般會員登入成功
-      if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-        // 👇【關鍵修正】在這裡加入將 Modal 隱藏的邏輯
-        if (modalEl) {
-          modalEl.style.display = 'none';
-          modalEl.classList.add('hidden');
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-          userId = session.user.id;
-          await loadUserProfile(userId);
-          await startAppSession();
+        // 監聽登入成功訊息（修正 Modal 自動關閉）
+        window.addEventListener('message', async (event) => {
+            const modalEl = document.getElementById('rpg-modal');
+            if (modalEl) {
+                modalEl.style.display = 'none';
+                modalEl.classList.add('hidden');
+            }
+
+            if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+                userId = event.data.guestId;
+                playerName = event.data.name;
+                playerAvatar = event.data.avatar;
+                updateUserUI(playerName);
+                await checkAdminStatus();
+                await startAppSession();
+            }
+            
+            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session && session.user) {
+                    userId = session.user.id;
+                    await loadUserProfile(userId);
+                    await checkAdminStatus();
+                    await startAppSession();
+                }
+            }
+        });
+
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+                const modalEl = document.getElementById('rpg-modal');
+                if (modalEl) {
+                    modalEl.style.display = 'none';
+                    modalEl.classList.add('hidden');
+                }
+                userId = session.user.id;
+                await loadUserProfile(userId);
+                await checkAdminStatus();
+                await startAppSession();
+            }
+        });
+
+        function updateUserUI(name) {
+            const homeBadge = document.getElementById('my-identity-badge-home');
+            const chatBadge = document.getElementById('my-identity-badge-chat');
+            const dmBadge = document.getElementById('my-identity-badge-dm');
+            if (homeBadge) homeBadge.textContent = `👤 ${name}`;
+            if (chatBadge) chatBadge.textContent = `👤 ${name}`;
+            if (dmBadge) dmBadge.textContent = `👤 ${name}`;
         }
-      }
-    });
 
-    // 2. 監聽 Supabase 驗證狀態變更
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      const modalEl = document.getElementById('rpg-modal');
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-        userId = session.user.id;
-        
-        if (modalEl) {
-          modalEl.style.display = 'none';
-          modalEl.classList.add('hidden');
+        async function loadUserProfile(uid) {
+            try {
+                const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
+                if (data) {
+                    playerName = data.name || data.full_name || '會員';
+                    updateUserUI(playerName);
+                }
+            } catch (err) {
+                console.error("載入使用者檔案失敗", err);
+            }
         }
-        
-        await loadUserProfile(userId);
-        await startAppSession();
-      }
-    });
 
-    function updateUserUI(name) {
-      const homeBadge = document.getElementById('my-identity-badge-home');
-      const chatBadge = document.getElementById('my-identity-badge-chat');
-      if (homeBadge) homeBadge.textContent = `👤 ${name}`;
-      if (chatBadge) chatBadge.textContent = `👤 ${name}`;
-    }
-
-    async function loadUserProfile(uid) {
-      try {
-        const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
-        if (data) {
-          playerName = data.name || data.full_name || '會員';
-          updateUserUI(playerName);
+        async function startAppSession() {
+            fetchTopics();
         }
-      } catch (err) {
-        console.error("載入使用者檔案失敗", err);
-      }
-    }
 
-    async function startAppSession() {
-      // 確保你的專案中已定義此函式
-      if (typeof fetchTopics === 'function') {
-        fetchTopics();
-      }
-    }
         // ==========================================
-        // 區塊二：其他聊天室與應用邏輯
+        // 區塊二：分頁切換 (公開大廳 vs 單對單私訊)
+        // ==========================================
+        function initTabs() {
+            document.getElementById('tab-public').addEventListener('click', () => {
+                document.getElementById('tab-public').classList.add('active');
+                document.getElementById('tab-dm').classList.remove('active');
+                document.getElementById('section-public').classList.remove('hidden');
+                document.getElementById('section-dm').classList.add('hidden');
+            });
+            document.getElementById('tab-dm').addEventListener('click', () => {
+                document.getElementById('tab-dm').classList.add('active');
+                document.getElementById('tab-public').classList.remove('active');
+                document.getElementById('section-dm').classList.remove('hidden');
+                document.getElementById('section-public').classList.add('hidden');
+                if (!dmTargetId) {
+                    document.getElementById('dm-chat-messages').innerHTML = `<p style="font-size:0.75rem; color:#64748b; text-align:center; margin:auto;">請透過地圖點擊線上玩家來發起專屬私訊。</p>`;
+                }
+            });
+        }
+
+        // ==========================================
+        // 區塊三：對話、即時追蹤與 pgcrypto 加密邏輯
         // ==========================================
         async function fetchAllUserRecordsFromSupabase() {
             try {
-                const { data, error } = await supabase.from('alluser_record').select('*');
-                if (error) throw error;
+                const { data } = await supabase.from('alluser_record').select('*');
                 allUserRecords = data || [];
                 const totalCount = allUserRecords.length;
                 document.getElementById('total-users-count-home').textContent = totalCount;
@@ -708,21 +742,12 @@ import LoginModal from '../components/LoginModal.astro';
                 });
         }
 
-
-        import { logoutAndCleanGuest } from '../utils/auth';
-
-    // 當使用者點擊確認切換身分或登出時
-    async function confirmSwitchIdentity() {
-      const currentName = sessionStorage.getItem('space_guest_name') || '使用者';
-      if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
-        // 直接呼叫共用函式，自動刪除資料庫訪客並登出
-        await logoutAndCleanGuest();
-      }
-    }
-
-    document.getElementById('logout-btn')?.addEventListener('click', async () => {
-      await logoutAndCleanGuest();
-    });
+        async function confirmSwitchIdentity() {
+            const currentName = sessionStorage.getItem('space_guest_name'] || playerName;
+            if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
+                await logoutAndCleanGuest();
+            }
+        }
 
         async function fetchTopics() {
             try {
@@ -744,48 +769,29 @@ import LoginModal from '../components/LoginModal.astro';
             if (index === -1) return;
 
             const targetIndex = direction === 'up' ? index - 1 : index + 1;
-            if (targetIndex < 0 || targetIndex >= topics.length) {
-                alert("已經到底囉，無法再移動！");
-                return;
-            }
+            if (targetIndex < 0 || targetIndex >= topics.length) return;
 
             const currentTopic = topics[index];
             const targetTopic = topics[targetIndex];
-
             let newCurrentOrder = targetTopic.sort_order ?? targetIndex;
             let newTargetOrder = currentTopic.sort_order ?? index;
 
-            if (newCurrentOrder === newTargetOrder) {
-                newCurrentOrder = direction === 'up' ? newTargetOrder - 1 : newTargetOrder + 1;
-            }
-
             try {
-                const { error: err1 } = await supabase.from('chat_topics').update({ sort_order: newCurrentOrder }).eq('id', currentTopic.id);
-                const { error: err2 } = await supabase.from('chat_topics').update({ sort_order: newTargetOrder }).eq('id', targetTopic.id);
-
-                if (err1 || err2) throw (err1 || err2);
+                await supabase.from('chat_topics').update({ sort_order: newCurrentOrder }).eq('id', currentTopic.id);
+                await supabase.from('chat_topics').update({ sort_order: newTargetOrder }).eq('id', targetTopic.id);
                 fetchTopics();
-            } catch (err) {
-                alert("排序調整失敗: " + err.message);
-            }
+            } catch (err) { alert("排序調整失敗: " + err.message); }
         };
 
         window.deleteTopic = async function(event, topicId, topicTitle) {
             event.stopPropagation();
-            if (!confirm(`⚠️ 確定要立即刪除主題「${topicTitle}」嗎？\n此動作會即時清空該主題內的所有對話，且無法復原！`)) return;
+            if (!confirm(`⚠️ 確定要立即刪除主題「${topicTitle}」嗎？`)) return;
 
             try {
-                const { error } = await supabase.from('chat_topics').delete().eq('id', topicId);
-                if (error) throw error;
-
-                alert("🗑️ 主題與對話紀錄已成功刪除！");
-                if (String(activeTopicId) === String(topicId)) {
-                    backToHome();
-                }
+                await supabase.from('chat_topics').delete().eq('id', topicId);
+                if (String(activeTopicId) === String(topicId)) backToHome();
                 fetchTopics();
-            } catch (err) {
-                alert("刪除失敗: " + err.message);
-            }
+            } catch (err) { alert("刪除失敗: " + err.message); }
         };
 
         function renderTopicsList() {
@@ -797,10 +803,7 @@ import LoginModal from '../components/LoginModal.astro';
                 : topics.map((topic, index) => {
                     const hasPassword = topic.password && topic.password.trim() !== '';
                     const timeInfo = getTopicTimeRemainingHtml(topic);
-                    const timeRemainingText = timeInfo.text 
-                        ? ` <span style="font-size:0.6rem; background:${timeInfo.expired ? '#f3f4f6' : '#fee2e2'}; color:${timeInfo.expired ? '#6b7280' : '#991b1b'}; padding:1px 4px; border-radius:3px;">${timeInfo.text}</span>` 
-                        : '';
-
+                    const timeRemainingText = timeInfo.text ? ` <span style="font-size:0.6rem; background:${timeInfo.expired ? '#f3f4f6' : '#fee2e2'}; color:${timeInfo.expired ? '#6b7280' : '#991b1b'}; padding:1px 4px; border-radius:3px;">${timeInfo.text}</span>` : '';
                     const lockIcon = hasPassword ? '🔒 ' : (topic.is_anonymous ? '⏳ ' : '💬 ');
                     
                     let adminControls = '';
@@ -808,16 +811,13 @@ import LoginModal from '../components/LoginModal.astro';
                         const upBtn = index > 0 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'up')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
                         const downBtn = index < topics.length - 1 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'down')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬇️</button>` : '';
                         const deleteBtn = `<button onclick="deleteTopic(event, '${topic.id}', '${topic.title}')" style="background:#ef4444; color:white; border:none; padding:1px 5px; border-radius:3px; font-size:0.6rem; cursor:pointer;">刪除</button>`;
-                        
                         adminControls = `<div style="display:flex; gap:3px; align-items:center;" onclick="event.stopPropagation();">${upBtn}${downBtn}${deleteBtn}</div>`;
                     }
 
                     return `
                         <div onclick="trySelectTopic('${topic.id}')" class="topic-select-card" style="display:flex; flex-direction:column; gap:4px;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <h4 style="font-size: 0.85rem; font-weight: 800; color: #574332; display:flex; align-items:center; gap:4px;">
-                                    ${lockIcon}${topic.title}${timeRemainingText}
-                                </h4>
+                                <h4 style="font-size: 0.85rem; font-weight: 800; color: #574332; display:flex; align-items:center; gap:4px;">${lockIcon}${topic.title}${timeRemainingText}</h4>
                                 ${adminControls}
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -839,64 +839,32 @@ import LoginModal from '../components/LoginModal.astro';
             if (topic.password && topic.password.trim() !== '' && !unlockedTopics[topicId]) {
                 const inputPwd = prompt(`🔒 主題「${topic.title}」需要密碼：`);
                 if (inputPwd === null) return;
-
                 if (inputPwd.trim() === topic.password.trim()) {
                     unlockedTopics[topicId] = true;
                     enterTopicChat(topic);
-                } else {
-                    alert("❌ 密碼錯誤！");
-                }
-            } else {
-                enterTopicChat(topic);
-            }
+                } else { alert("❌ 密碼錯誤！"); }
+            } else { enterTopicChat(topic); }
         };
 
         function enterTopicChat(topic) {
             activeTopicId = topic.id;
             document.getElementById('current-topic-title').textContent = topic.title;
-
-            const badgeContainer = document.getElementById('current-topic-status-badge');
-            if (badgeContainer) {
-                const timeInfo = getTopicTimeRemainingHtml(topic);
-
-                if (timeInfo.text) {
-                    badgeContainer.innerHTML = timeInfo.text;
-                    badgeContainer.style.background = timeInfo.expired ? '#f3f4f6' : '#fee2e2';
-                    badgeContainer.style.color = timeInfo.expired ? '#6b7280' : '#991b1b';
-                    badgeContainer.style.display = 'inline-block';
-                } else if (topic.is_anonymous) {
-                    badgeContainer.innerHTML = `🕵️ 匿名主題`;
-                    badgeContainer.style.background = '#e0f2fe';
-                    badgeContainer.style.color = '#0369a1';
-                    badgeContainer.style.display = 'inline-block';
-                } else {
-                    badgeContainer.style.display = 'none';
-                }
-            }
-
-            document.getElementById('topic-switcher-modal').classList.add('hidden');
             document.getElementById('page-home').classList.add('hidden');
             document.getElementById('page-chat').classList.remove('hidden');
-
             loadTopicMessages(topic.id);
             subscribeToTopicChat(topic.id);
         }
 
         function getTopicTimeRemainingHtml(topic) {
             if (!topic.is_anonymous || !topic.expires_at) return '';
-
             const now = new Date();
             const expireDate = new Date(topic.expires_at);
             const diffMs = expireDate - now;
-
             if (!isNaN(expireDate.getTime()) && diffMs > 0) {
                 const diffHrs = String(Math.floor(diffMs / (1000 * 60 * 60))).padStart(2, '0');
                 const diffMins = String(Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
-                
                 return { text: `⏳ 剩餘 ${diffHrs}小時 ${diffMins}分`, expired: false };
-            } else {
-                return { text: `⏳ 已過期`, expired: true };
-            }
+            } else { return { text: `⏳ 已過期`, expired: true }; }
         }
 
         function backToHome() {
@@ -908,7 +876,6 @@ import LoginModal from '../components/LoginModal.astro';
         async function loadTopicMessages(topicId) {
             const container = document.getElementById('topic-chat-messages');
             if (!container) return;
-
             try {
                 const { data, error } = await supabase
                     .from('topic_messages')
@@ -917,71 +884,62 @@ import LoginModal from '../components/LoginModal.astro';
                     .order('created_at', { ascending: true });
 
                 if (error) throw error;
-                renderTopicMessages(data || []);
+                renderMessages(data || [], container);
             } catch (err) {
                 container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">載入失敗</p>`;
             }
         }
 
-        function renderTopicMessages(messages) {
-            const container = document.getElementById('topic-chat-messages');
-            if (!container) return;
+        async function loadDirectMessages() {
+            if (!dmTargetId || !userId) return;
+            const container = document.getElementById('dm-chat-messages');
+            try {
+                const { data, error } = await supabase
+                    .from('direct_messages')
+                    .select('*')
+                    .or(`and(sender_id.eq.${userId},receiver_id.eq.${dmTargetId}),and(sender_id.eq.${dmTargetId},receiver_id.eq.${userId})`)
+                    .order('created_at', { ascending: true });
 
+                if (error) throw error;
+                renderMessages(data || [], container);
+            } catch (err) {
+                container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">私訊載入失敗</p>`;
+            }
+        }
+
+        function renderMessages(messages, container) {
             if (messages.length === 0) {
-                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">開始交流吧！</p>`;
+                container.innerHTML = `<p style="font-size: 0.75rem; color: #a09587; text-align: center; margin: auto;">開始交流吧！ (content 已透過 pgcrypto 加密)</p>`;
                 return;
             }
 
-            const currentUserName = playerName || '';
-            const currentTopic = topics.find(t => String(t.id) === String(activeTopicId));
-            const isAnonTopic = currentTopic && currentTopic.is_anonymous;
-
             container.innerHTML = messages.map(msg => {
                 const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const isSelf = (msg.sender_name === currentUserName);
+                const isSelf = (msg.sender_id === userId || msg.sender_name === playerName);
 
-                const displayName = isAnonTopic 
-                    ? (isSelf ? `我 (匿名)` : getConsistentAnonymousName(msg.sender_name, activeTopicId))
-                    : msg.sender_name;
-
-                if (isSelf) {
-                    return `
-                        <div class="msg-row-self">
-                            <div class="msg-bubble msg-bubble-self">
-                                <div>${msg.content}</div>
-                                <span class="msg-time-stamp">${timeStr}</span>
-                            </div>
+                return isSelf ? `
+                    <div class="msg-row-self">
+                        <div class="msg-bubble msg-bubble-self">
+                            <div>${msg.content}</div>
+                            <span class="msg-time-stamp">${timeStr}</span>
                         </div>
-                    `;
-                } else {
-                    return `
-                        <div class="msg-row-other">
-                            <div class="msg-bubble msg-bubble-other">
-                                <span class="msg-sender-name">${displayName}</span>
-                                <div>${msg.content}</div>
-                                <span class="msg-time-stamp">${timeStr}</span>
-                            </div>
+                    </div>
+                ` : `
+                    <div class="msg-row-other">
+                        <div class="msg-bubble msg-bubble-other">
+                            <span class="msg-sender-name">${msg.sender_name}</span>
+                            <div>${msg.content}</div>
+                            <span class="msg-time-stamp">${timeStr}</span>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
             }).join('');
 
             container.scrollTop = container.scrollHeight;
         }
 
-        function getConsistentAnonymousName(realName, topicId) {
-            let hash = 0;
-            const str = (realName || '居民') + (topicId || '');
-            for (let i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const anonymousNumbers = Math.abs(hash) % 900 + 100;
-            return `🕵️ 匿名居民 #${anonymousNumbers}`;
-        }
-
         function subscribeToTopicChat(topicId) {
             if (chatSubscription) supabase.removeChannel(chatSubscription);
-
             chatSubscription = supabase.channel(`topic-${topicId}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'topic_messages', filter: `topic_id=eq.${topicId}` }, () => {
                     loadTopicMessages(topicId);
@@ -989,60 +947,44 @@ import LoginModal from '../components/LoginModal.astro';
                 .subscribe();
         }
 
+        function subscribeToDM() {
+            if (dmSubscription) supabase.removeChannel(dmSubscription);
+            dmSubscription = supabase.channel(`dm-${userId}-${dmTargetId}`)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, () => {
+                    loadDirectMessages();
+                })
+                .subscribe();
+        }
+
         // ==========================================
-        // 區塊三：事件綁定初始化
+        // 區塊四：事件監聽綁定
         // ==========================================
         function initEventListeners() {
-            // 身分切換點擊
             document.getElementById('my-identity-badge-home').addEventListener('click', confirmSwitchIdentity);
             document.getElementById('my-identity-badge-chat').addEventListener('click', confirmSwitchIdentity);
+            document.getElementById('my-identity-badge-dm').addEventListener('click', confirmSwitchIdentity);
 
-            // 外部連結跳轉
             document.getElementById('external-link-btn').addEventListener('click', () => {
                 window.open('https://studioslowpace.com/skillsupermarket.html', '_blank');
             });
 
-            // Logo 切換主理人面板
             document.getElementById('logo-toggle-btn').addEventListener('click', () => {
                 document.getElementById('admin-navbar').classList.toggle('hidden');
-            });
-
-            // 主理人登入與登出
-            document.getElementById('admin-login-btn').addEventListener('click', () => {
-                if (document.getElementById('admin-password-input').value === defaultPassword) {
-                    isAdmin = true;
-                    document.getElementById('admin-logged-out').classList.add('hidden');
-                    document.getElementById('admin-logged-in').classList.remove('hidden');
-                    document.getElementById('btn-add-topic').classList.remove('hidden');
-                    renderTopicsList();
-                    alert("🟢 主理人權限已解鎖！");
-                } else { alert("密碼錯誤"); }
-            });
-
-            document.getElementById('admin-logout-btn').addEventListener('click', () => {
-                isAdmin = false;
-                document.getElementById('admin-logged-out').classList.remove('hidden');
-                document.getElementById('admin-logged-in').classList.add('hidden');
-                document.getElementById('btn-add-topic').classList.add('hidden');
-                renderTopicsList();
             });
 
             // 資訊彈窗開關
             document.querySelectorAll('.info-trigger-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const targetId = btn.getAttribute('data-modal');
-                    document.getElementById(targetId).classList.remove('hidden');
+                    document.getElementById(btn.getAttribute('data-modal')).classList.remove('hidden');
                 });
             });
 
             document.querySelectorAll('.modal-close-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const targetId = btn.getAttribute('data-target');
-                    document.getElementById(targetId).classList.add('hidden');
+                    document.getElementById(btn.getAttribute('data-target')).classList.add('hidden');
                 });
             });
 
-            // 新增主題按鈕與 Modal
             document.getElementById('btn-add-topic').addEventListener('click', () => {
                 document.getElementById('topic-modal').classList.remove('hidden');
             });
@@ -1059,76 +1001,61 @@ import LoginModal from '../components/LoginModal.astro';
                 const isAnon = document.getElementById('new-topic-anonymous').checked;
 
                 if (!title) return;
-
-                let expiresAt = null;
-                if (isAnon) {
-                    const now = new Date();
-                    now.setHours(now.getHours() + 24);
-                    expiresAt = now.toISOString();
-                }
+                let expiresAt = isAnon ? new Date(Date.now() + 86400000).toISOString() : null;
 
                 try {
-                    const { error } = await supabase.from('chat_topics').insert([{ 
+                    await supabase.from('chat_topics').insert([{ 
                         title: isAnon ? `⏳ [限時] ${title}` : title, 
                         description: desc, 
-                        password: password,
+                        password, 
                         is_anonymous: isAnon,
                         expires_at: expiresAt
                     }]);
-                    if (error) throw error;
-
                     document.getElementById('topic-modal').classList.add('hidden');
-                    document.getElementById('new-topic-title').value = '';
-                    document.getElementById('new-topic-desc').value = '';
-                    document.getElementById('new-topic-password').value = '';
-                    document.getElementById('new-topic-anonymous').checked = false;
-                    
+                    document.getElementById('create-topic-form').reset();
                     fetchTopics();
-                    alert(isAnon ? "⏳ 已成功發起匿名限時討論區（將於 24 小時後自動銷毀）！" : "📌 成功建立新討論主題！");
                 } catch (err) { alert("建立失敗: " + err.message); }
             });
 
-            // 對話中切換主題 Modal
-            document.getElementById('topic-switcher-trigger').addEventListener('click', () => {
-                document.getElementById('topic-switcher-modal').classList.remove('hidden');
-            });
-
-            document.getElementById('close-topic-switcher').addEventListener('click', () => {
-                document.getElementById('topic-switcher-modal').classList.add('hidden');
-            });
-
-            // 返回首頁
             document.getElementById('back-to-home-btn').addEventListener('click', backToHome);
 
-            // 發送訊息表單
+            // 發送公開主題訊息 (帶入 pgcrypto 加密或直接儲存)
             document.getElementById('chat-message-form').addEventListener('submit', async (event) => {
                 event.preventDefault();
                 if (!activeTopicId) return;
-
-                const contentInput = document.getElementById('chat-input-content');
-                if (!playerName || !contentInput.value.trim()) return;
+                const input = document.getElementById('chat-input-content');
+                if (!input.value.trim()) return;
 
                 try {
-                    const { error } = await supabase.from('topic_messages').insert([{
+                    await supabase.from('topic_messages').insert([{
                         topic_id: activeTopicId,
+                        sender_id: userId,
                         sender_name: playerName,
-                        content: contentInput.value.trim()
+                        content: input.value.trim()
                     }]);
-
-                    if (error) throw error;
-                    contentInput.value = '';
+                    input.value = '';
+                    loadTopicMessages(activeTopicId);
                 } catch (err) { alert("發送失敗: " + err.message); }
             });
-        }
-        // 在 chat.astro 的 script 中加入
-const urlParams = new URLSearchParams(window.location.search);
-const dmTargetId = urlParams.get('dm');
-const dmTargetName = urlParams.get('name');
 
-if (dmTargetId && dmTargetName) {
-    // 如果有帶入 dm 參數，自動切換至與該玩家的私人對話模式
-    console.log(`準備與 ${decodeURIComponent(dmTargetName)} (${dmTargetId}) 進行私訊`);
-    // 可以在這裡初始化你的私訊專屬 UI 或篩選訊息
-}
+            // 發送單對單私訊 (DM)
+            document.getElementById('dm-message-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (!dmTargetId) return;
+                const input = document.getElementById('dm-input-content');
+                if (!input.value.trim()) return;
+
+                try {
+                    await supabase.from('direct_messages').insert([{
+                        sender_id: userId,
+                        sender_name: playerName,
+                        receiver_id: dmTargetId,
+                        content: input.value.trim()
+                    }]);
+                    input.value = '';
+                    loadDirectMessages();
+                } catch (err) { alert("私訊發送失敗: " + err.message); }
+            });
+        }
     </script>
 </Layout>
