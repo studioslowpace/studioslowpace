@@ -890,7 +890,7 @@ import LoginModal from '../components/LoginModal.astro';
     pamLogsBtn?.addEventListener('click', () => {
       if (selectedPeer) {
         if (playerActionModal) playerActionModal.style.display = 'none';
-        window.location.href = `/reading?user_id=${selectedPeer.user_id}`;
+        window.location.href = `/record?user_id=${selectedPeer.user_id}`;
       }
     });
 
