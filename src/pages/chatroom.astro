@@ -333,9 +333,9 @@ import LoginModal from '../components/LoginModal.astro';
                 </span>
                 <span>鄰里人交流區</span>
             </div>
-            <div style="display: flex; gap: 4px;">
+            <div style="display: flex; gap: 4px; align-items: center;">
                 <a href="/slowplace" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🏠 回空間</a>
-                <button onclick="window.open('https://studioslowpace.com/skillsupermarket.html', '_blank')" class="nav-link-btn">客舍萬事屋 ↗</button>
+                <button onclick="handleLogout()" id="logout-btn" class="nav-link-btn" style="background:#ef4444; color:#fff; border-color:#dc2626;">🚪 登出</button>
             </div>
         </div>
 
@@ -571,7 +571,6 @@ import LoginModal from '../components/LoginModal.astro';
 
         async function initAuthCheck() {
             const guestId = sessionStorage.getItem('space_guest_id');
-            const savedName = localStorage.getItem('verified_chat_name');
 
             if (guestId) {
                 const guestName = sessionStorage.getItem('space_guest_name') || '訪客';
@@ -583,11 +582,14 @@ import LoginModal from '../components/LoginModal.astro';
                 if (session && session.user) {
                     if (modal) modal.style.display = 'none';
                     await loadUserProfile(session.user.id);
-                } else if (savedName) {
-                    if (modal) modal.style.display = 'none';
-                    finishAuthSetup(savedName);
                 } else {
-                    if (modal) modal.style.display = 'flex';
+                    const savedName = localStorage.getItem('verified_chat_name');
+                    if (savedName) {
+                        if (modal) modal.style.display = 'none';
+                        finishAuthSetup(savedName);
+                    } else {
+                        if (modal) modal.style.display = 'flex';
+                    }
                 }
             }
         }
@@ -595,6 +597,8 @@ import LoginModal from '../components/LoginModal.astro';
         window.addEventListener('message', async (event) => {
             if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
                 const guestName = event.data.name || '訪客';
+                sessionStorage.setItem('space_guest_id', event.data.guestId);
+                sessionStorage.setItem('space_guest_name', guestName);
                 localStorage.setItem('verified_chat_name', guestName);
                 if (modal) modal.style.display = 'none';
                 finishAuthSetup(guestName);
@@ -641,6 +645,17 @@ import LoginModal from '../components/LoginModal.astro';
                     startDirectChat(displayName);
                 }, 400);
             }
+        }
+
+        async function handleLogout() {
+            const currentGuestId = sessionStorage.getItem('space_guest_id');
+            if (currentGuestId) {
+                await client.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+                sessionStorage.clear();
+            }
+            await client.auth.signOut();
+            localStorage.clear();
+            window.location.reload();
         }
 
         function promptChangeName() {
