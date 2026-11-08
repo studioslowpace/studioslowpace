@@ -743,7 +743,7 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         async function confirmSwitchIdentity() {
-            const currentName = sessionStorage.getItem('space_guest_name'] || playerName;
+            const currentName = sessionStorage.getItem('space_guest_name') || playerName;
             if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
                 await logoutAndCleanGuest();
             }
