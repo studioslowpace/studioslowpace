@@ -536,10 +536,7 @@ import LoginModal from '../components/LoginModal.astro';
 
     <!-- JavaScript 邏輯 -->
     <script is:inline>
-        const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-        const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-        const client = supabase.createClient(supabaseUrl, supabaseKey);
-        const defaultPassword = "slow2024";
+        import { supabase } from '../lib/supabase';
 
         const TABLE_NAME = 'slowpace_members';
         let allUserRecords = [];
