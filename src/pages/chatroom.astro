@@ -849,10 +849,14 @@ import LoginModal from '../components/LoginModal.astro';
             renderUserListModalContent(query);
         }
 
-        function startDirectChatFromModal(targetName) {
-            closeUserListModal();
-            startDirectChat(targetName);
-        }
+function startDirectChat(targetName) {
+    const currentGuestId = sessionStorage.getItem('space_guest_id');
+    if (currentGuestId) {
+        alert("🔒 訪客帳號無法使用私訊功能，請先完成正式會員登入以保障私隱！");
+        return;
+    }
+    // 正常會員的私訊邏輯...
+}
 
         function startDirectChat(targetName) {
             const myName = localStorage.getItem('verified_chat_name') || '訪客';
