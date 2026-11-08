@@ -110,21 +110,13 @@
       return;
     }
 
-   const { error } = await supabase.auth.signInWithPassword({ email, password });
-if (error) {
-    alert('登入失敗：' + error.message);
-} else {
-    alert('登入成功！');
-    // 👇 直接抓取外層頁面的 modal 關閉
-    const parentModal = window.parent.document.getElementById('rpg-modal') || document.getElementById('rpg-modal');
-    if (parentModal) {
-        parentModal.style.display = 'none';
-        parentModal.classList.add('hidden');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert('登入失敗：' + error.message);
+    } else {
+      alert('登入成功！');
+      window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
     }
-    // 同時保留 postMessage 以防萬一
-    window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
-    window.location.reload(); // 重新整理頁面以載入會員狀態
-}
   });
 
   // 會員註冊按鈕事件
@@ -185,29 +177,22 @@ if (error) {
     };
 
     const { error } = await supabase.from(TABLE_NAME).insert([guestData]);
-if (error) {
-    alert('進入空間失敗：' + error.message);
-    return;
-}
+    if (error) {
+      console.error('Supabase 寫入錯誤:', error);
+      alert('進入空間失敗：' + error.message);
+      return;
+    }
 
-sessionStorage.setItem('space_guest_id', guestId);
-sessionStorage.setItem('space_guest_name', nameVal);
-sessionStorage.setItem('space_guest_avatar', avatarVal);
+    sessionStorage.setItem('space_guest_id', guestId);
+    sessionStorage.setItem('space_guest_name', nameVal);
+    sessionStorage.setItem('space_guest_avatar', avatarVal);
 
-// 👇 直接抓取外層頁面的 modal 關閉
-const parentModal = window.parent.document.getElementById('rpg-modal') || document.getElementById('rpg-modal');
-if (parentModal) {
-    parentModal.style.display = 'none';
-    parentModal.classList.add('hidden');
-}
-
-window.parent.postMessage({
-    type: 'GUEST_LOGIN_SUCCESS',
-    guestId: guestId,
-    name: nameVal,
-    avatar: avatarVal
-}, '*');
-window.location.reload(); // 重新整理讓聊天室以訪客身分初始化
+    window.parent.postMessage({
+      type: 'GUEST_LOGIN_SUCCESS',
+      guestId: guestId,
+      name: nameVal,
+      avatar: avatarVal
+    }, '*');
   });
 
   // 忘記密碼按鈕事件
