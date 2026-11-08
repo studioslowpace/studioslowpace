@@ -1,5 +1,5 @@
 ---
-// src/pages/reading.astro
+// src/pages/record.astro
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="個人書櫃與閱讀記錄 · 空間客舍">
@@ -15,8 +15,8 @@ import Layout from '../layouts/Layout.astro';
       <input type="text" id="book-title-input" placeholder="書名（例：《希臘語課》）" />
       <input type="text" id="book-author-input" placeholder="作者" />
       <div style="display:flex; gap:6px;">
-        <input type="number" id="current-page-input" placeholder="目前頁數" />
-        <input type="number" id="total-page-input" placeholder="總頁數" />
+        <input type="number" id="current-page-input" placeholder="目前頁數" min="0" />
+        <input type="number" id="total-page-input" placeholder="總頁數" min="1" />
       </div>
       <textarea id="quote-input" placeholder="精選書摘..."></textarea>
       <textarea id="review-input" placeholder="讀後心得..."></textarea>
@@ -29,13 +29,42 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
+  <!-- 記錄詳情彈窗 (Modal) -->
+  <div id="log-detail-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window" style="max-width: 360px;">
+      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>📖 記錄詳情</span>
+        <button id="detail-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+      </div>
+      <div class="rpg-content" style="padding: 16px;">
+        <p style="font-size:14px;"><strong>書名：</strong><span id="modal-book"></span></p>
+        <p style="font-size:13px;"><strong>作者：</strong><span id="modal-author"></span></p>
+        <p style="font-size:13px;"><strong>閱讀進度：</strong>第 <span id="modal-current"></span> / <span id="modal-total"></span> 頁</p>
+        <p style="font-size:13px;"><strong>書摘：</strong><br><span id="modal-quote" style="color:#38bdf8;"></span></p>
+        <p style="font-size:13px;"><strong>讀後感：</strong><br><span id="modal-review"></span></p>
+        <p style="font-size:11px; color:#64748b; text-align:right; margin-top:10px;">記錄日期：<span id="modal-date"></span></p>
+      </div>
+    </div>
+  </div>
+
   <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --border-color: #334155;
+      --accent-color: #38bdf8;
+      --accent-hover: #0284c7;
+    }
+    body {
+      background: var(--bg-main);
+      color: #f8fafc;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
     .reading-page-container {
       max-width: 600px;
       margin: 0 auto;
       min-height: 100vh;
-      background: var(--bg-main, #0f172a);
-      color: #f8fafc;
       padding: 16px;
       box-sizing: border-box;
     }
@@ -46,13 +75,13 @@ import Layout from '../layouts/Layout.astro';
       margin-bottom: 16px;
     }
     .back-btn {
-      color: var(--accent-color, #38bdf8);
+      color: var(--accent-color);
       text-decoration: none;
       font-size: 13px;
     }
     .add-record-card {
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       padding: 16px;
       border-radius: 12px;
       display: flex;
@@ -60,183 +89,228 @@ import Layout from '../layouts/Layout.astro';
       gap: 8px;
       margin-bottom: 20px;
     }
+    .add-record-card h3 {
+      margin: 0 0 4px 0;
+      font-size: 14px;
+      color: var(--accent-color);
+    }
     .add-record-card input, .add-record-card textarea {
-      background: #0f172a;
-      border: 1px solid #334155;
+      background: var(--bg-main);
+      border: 1px solid var(--border-color);
       color: #fff;
       padding: 8px;
       border-radius: 6px;
       font-size: 13px;
       outline: none;
+      box-sizing: border-box;
+      width: 100%;
     }
     .add-record-card textarea {
       height: 60px;
       resize: none;
     }
     .rpg-btn {
-      background: #0284c7;
+      background: var(--accent-hover);
       color: #fff;
       border: none;
       padding: 10px;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      width: 100%;
     }
     .logs-container {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
+    .log-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    /* Modal 樣式 */
+    .rpg-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .rpg-window {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 90%;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .rpg-title-bar {
+      background: var(--bg-main);
+      color: var(--accent-color);
+      padding: 10px 16px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .rpg-btn-sm {
+      background: var(--bg-main);
+      color: #cbd5e1;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 
   <script>
     import { supabase } from '../lib/supabase';
-// src/utils/logsManager.js
-import { supabase } from '../lib/supabase';
 
-const LOGS_TABLE = 'reading_record';
+    const LOGS_TABLE = 'reading_record';
+    let currentUserId: string | null = null;
+    let cachedLogs: any[] = [];
 
-/**
- * 從 Supabase 取得指定使用者的閱讀記錄
- * @param {string} targetUserId - 目標玩家的 user_id
- */
-export async function fetchUserReadingLogs(targetUserId) {
-  if (!targetUserId) return [];
-  
-  const { data, error } = await supabase
-    .from(LOGS_TABLE)
-    .select('*')
-    .eq('user_id', targetUserId)
-    .order('created_at', { ascending: false });
+    const listContainer = document.getElementById('my-logs-list');
+    const submitBtn = document.getElementById('submit-log-btn');
+    const detailModal = document.getElementById('log-detail-modal');
+    const detailCloseBtn = document.getElementById('detail-close-btn');
 
-  if (error) {
-    console.error('抓取閱讀記錄失敗:', error.message);
-    return [];
-  }
-  return data || [];
-}
-
-/**
- * 新增一筆閱讀記錄到 Supabase
- * @param {string} userId - 當前登入者的 user_id
- * @param {Object} logData - 包含 book_title, author, current_page, total_pages, quote, review
- */
-export async function addReadingLog(userId, logData) {
-  if (!userId) return { success: false, error: '未登入使用者' };
-
-  const { data, error } = await supabase
-    .from(LOGS_TABLE)
-    .insert({
-      user_id: userId,
-      book_title: logData.book_title,
-      author: logData.author || '佚名',
-      current_page: logData.current_page || 0,
-      total_pages: logData.total_pages || 1,
-      quote: logData.quote || '',
-      review: logData.review || ''
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('新增閱讀記錄失敗:', error.message);
-    return { success: false, error: error.message };
-  }
-  return { success: true, data };
-}
-
-/**
- * 渲染「個人」的閱讀記錄清單
- */
-export async function renderMyLogs(userId, logListContainer, detailContent, detailModal) {
-  if (!logListContainer) return;
-  logListContainer.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:15px;">載入記錄中...</div>';
-
-  const myLogs = await fetchUserReadingLogs(userId);
-
-  if (myLogs.length === 0) {
-    logListContainer.innerHTML = '<div style="color:#64748b; font-size:12px; text-align:center; padding:15px;">目前尚無閱讀記錄</div>';
-    return;
-  }
-
-  let html = '';
-  myLogs.forEach((item) => {
-    html += `
-      <div class="log-item-card" data-id="${item.id}" style="background:var(--bg-main); border:1px solid var(--border-color); padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px;">
-        <div style="display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;">
-          <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book_title}》</span>
-          <span style="font-size:12px; color:#cbd5e1;">作者：${item.author}</span>
-        </div>
-      </div>
-    `;
-  });
-  logListContainer.innerHTML = html;
-
-  // 點擊紀錄查看詳情
-  logListContainer.querySelectorAll('.log-item-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      const logId = e.currentTarget.dataset.id;
-      const log = myLogs.find(l => l.id === logId);
-      if (log && detailContent) {
-        const dateStr = new Date(log.created_at).toLocaleDateString();
-        detailContent.innerHTML = `
-          <p style="font-size:14px;"><strong>書名：</strong>《${log.book_title}》</p>
-          <p style="font-size:13px;"><strong>作者：</strong>${log.author}</p>
-          <p style="font-size:13px;"><strong>閱讀進度：</strong>第 ${log.current_page} / ${log.total_pages} 頁</p>
-          <p style="font-size:13px;"><strong>書摘：</strong><br><span style="color:#38bdf8;">“ ${log.quote || '無'} ”</span></p>
-          <p style="font-size:13px;"><strong>讀後感：</strong><br>${log.review || '無心得'}</p>
-          <p style="font-size:11px; color:#64748b; text-align:right;">記錄日期：${dateStr}</p>
-        `;
-        if (detailModal) detailModal.style.display = 'flex';
-      }
-    });
-  });
-}
-
-/**
- * 彈窗查看「其他書友 (Peer)」的專屬閱讀記錄
- */
-export async function openPeerLogs(peerUserId, peerName, peerRole, peerModalTitle, peerContentBox, peerModal) {
-  if (peerModalTitle) peerModalTitle.textContent = `📖 ${peerName} (${peerRole}) 的閱讀記錄`;
-  if (peerContentBox) {
-    peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">載入記錄中...</div>';
-  }
-  if (peerModal) peerModal.style.display = 'flex';
-
-  const peerLogs = await fetchUserReadingLogs(peerUserId);
-
-  if (peerContentBox) {
-    if (!peerLogs || peerLogs.length === 0) {
-      peerContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">這位書友目前還沒有新增閱讀記錄。</div>';
-      return;
-    }
-
-    let html = '';
-    peerLogs.forEach((item) => {
-      html += `
-        <div style="background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-          <div style="font-weight:bold; color:var(--accent-color);">《${item.book_title}》 / ${item.author}</div>
-          <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">進度：第 ${item.current_page}/${item.total_pages} 頁</div>
-          ${item.quote ? `<div style="font-size:11px; color:#38bdf8; margin-top:4px;">“ ${item.quote} ”</div>` : ''}
-        </div>
-      `;
-    });
-    peerContentBox.innerHTML = html;
-  }
-}
-
-    // 取得當前登入者並載入記錄
-    async function initReadingPage() {
+    // 1. 初始化檢查登入與載入清單
+    async function initPage() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      
+      // 檢查網址列是否有帶入要查看的對象 user_id（例如從地圖點擊別人傳來的）
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetUserId = urlParams.get('user_id');
+
+      if (targetUserId) {
+        currentUserId = targetUserId;
+        // 如果是看別人的，把新增卡片藏起來
+        const addCard = document.querySelector('.add-record-card') as HTMLElement;
+        if (addCard) addCard.style.display = 'none';
+      } else if (session) {
+        currentUserId = session.user.id;
+      } else {
         window.location.href = '/login';
         return;
       }
-      const userId = session.user.id;
-      const listContainer = document.getElementById('my-logs-list');
 
-      // 渲染列表邏輯...
+      await fetchAndRenderLogs();
     }
-    initReadingPage();
+
+    // 2. 從 Supabase 抓取記錄並渲染
+    async function fetchAndRenderLogs() {
+      if (!currentUserId || !listContainer) return;
+      listContainer.innerHTML = '<div style="text-align:center; color:#94a3b8; padding:20px;">載入記錄中...</div>';
+
+      const { data, error } = await supabase
+        .from(LOGS_TABLE)
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        listContainer.innerHTML = '<div style="text-align:center; color:#ef4444; padding:20px;">載入記錄失敗</div>';
+        return;
+      }
+
+      cachedLogs = data || [];
+
+      if (cachedLogs.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center; color:#64748b; padding:20px;">目前尚無閱讀記錄</div>';
+        return;
+      }
+
+      let html = '';
+      cachedLogs.forEach((item) => {
+        html += `
+          <div class="log-item-card" data-id="${item.id}">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-weight:bold; color:var(--accent-color); font-size:14px;">《${item.book_title}》</span>
+              <span style="font-size:11px; color:#94a3b8;">進度：${item.current_page}/${item.total_pages}頁</span>
+            </div>
+            <div style="font-size:12px; color:#cbd5e1; margin-top:4px;">作者：${item.author}</div>
+          </div>
+        `;
+      });
+      listContainer.innerHTML = html;
+
+      // 綁定點擊卡片開啟 Modal 詳情
+      document.querySelectorAll('.log-item-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const logId = (e.currentTarget as HTMLElement).dataset.id;
+          const log = cachedLogs.find(l => l.id === logId);
+          if (log) {
+            const dateStr = new Date(log.created_at).toLocaleDateString();
+            
+            // 安全填入資料，避免 Rollup 樣板編譯錯誤
+            (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title}》`;
+            (document.getElementById('modal-author') as HTMLElement).textContent = log.author;
+            (document.getElementById('modal-current') as HTMLElement).textContent = log.current_page;
+            (document.getElementById('modal-total') as HTMLElement).textContent = log.total_pages;
+            (document.getElementById('modal-quote') as HTMLElement).textContent = log.quote ? `“ ${log.quote} ”` : '無';
+            (document.getElementById('modal-review') as HTMLElement).textContent = log.review || '無心得';
+            (document.getElementById('modal-date') as HTMLElement).textContent = dateStr;
+
+            if (detailModal) detailModal.style.display = 'flex';
+          }
+        });
+      });
+    }
+
+    // 3. 儲存新記錄按鈕事件
+    submitBtn?.addEventListener('click', async () => {
+      const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
+      const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
+      const currentPage = parseInt((document.getElementById('current-page-input') as HTMLInputElement).value) || 0;
+      const totalPages = parseInt((document.getElementById('total-page-input') as HTMLInputElement).value) || 1;
+      const quote = (document.getElementById('quote-input') as HTMLTextAreaElement).value.trim();
+      const review = (document.getElementById('review-input') as HTMLTextAreaElement).value.trim();
+
+      if (!bookTitle) {
+        alert('請至少填寫書名！');
+        return;
+      }
+
+      if (!currentUserId) return;
+
+      submitBtn.textContent = '儲存中...';
+      const { error } = await supabase.from(LOGS_TABLE).insert({
+        user_id: currentUserId,
+        book_title: bookTitle,
+        author: author,
+        current_page: currentPage,
+        total_pages: totalPages,
+        quote: quote,
+        review: review
+      });
+
+      submitBtn.textContent = '儲存記錄';
+
+      if (error) {
+        alert('儲存失敗：' + error.message);
+      } else {
+        // 清空輸入框
+        (document.getElementById('book-title-input') as HTMLInputElement).value = '';
+        (document.getElementById('book-author-input') as HTMLInputElement).value = '';
+        (document.getElementById('current-page-input') as HTMLInputElement).value = '';
+        (document.getElementById('total-page-input') as HTMLInputElement).value = '';
+        (document.getElementById('quote-input') as HTMLTextAreaElement).value = '';
+        (document.getElementById('review-input') as HTMLTextAreaElement).value = '';
+
+        // 重新整理列表
+        await fetchAndRenderLogs();
+      }
+    });
+
+    // 關閉 Modal
+    detailCloseBtn?.addEventListener('click', () => {
+      if (detailModal) detailModal.style.display = 'none';
+    });
+
+    initPage();
   </script>
 </Layout>
