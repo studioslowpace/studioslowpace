@@ -528,9 +528,16 @@ import LoginModal from '../components/LoginModal.astro';
         });
 
         // ==========================================
-        // 區塊一：身分驗證與 is_admin 檢查
+        // 區塊一：身分驗證與 is_admin 檢查（已修正 Modal 自動關閉與狀態同步）
         // ==========================================
         const modal = document.getElementById('rpg-modal');
+
+        function hideLoginModal() {
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.add('hidden');
+            }
+        }
 
         async function initAuthCheck() {
             const guestId = sessionStorage.getItem('space_guest_id');
@@ -538,7 +545,7 @@ import LoginModal from '../components/LoginModal.astro';
             if (guestId) {
                 userId = guestId;
                 playerName = sessionStorage.getItem('space_guest_name') || '訪客';
-                if (modal) modal.style.display = 'none';
+                hideLoginModal();
                 updateUserUI(playerName);
                 await checkAdminStatus();
                 await startAppSession();
@@ -546,7 +553,7 @@ import LoginModal from '../components/LoginModal.astro';
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session && session.user) {
                     userId = session.user.id;
-                    if (modal) modal.style.display = 'none';
+                    hideLoginModal();
                     await loadUserProfile(userId);
                     await checkAdminStatus();
                     await startAppSession();
@@ -560,6 +567,7 @@ import LoginModal from '../components/LoginModal.astro';
         async function checkAdminStatus() {
             if (!userId) { isAdmin = false; return; }
             try {
+                // 兼容 visitor 的 user_id 或 auth user id 查詢
                 const { data, error } = await supabase
                     .from('slowpace_members')
                     .select('is_admin')
@@ -568,7 +576,6 @@ import LoginModal from '../components/LoginModal.astro';
 
                 if (error) throw error;
 
-                // 判斷 is_admin 是否為 true
                 if (data && data.is_admin === true) {
                     isAdmin = true;
                     document.getElementById('btn-add-topic')?.classList.remove('hidden');
@@ -582,12 +589,9 @@ import LoginModal from '../components/LoginModal.astro';
             }
         }
 
+        // 監聽來自 LoginModal 的 postMessage，確保登入成功時立刻關閉視窗並載入狀態
         window.addEventListener('message', async (event) => {
-            const modalEl = document.getElementById('rpg-modal');
-            if (modalEl) {
-                modalEl.style.display = 'none';
-                modalEl.classList.add('hidden');
-            }
+            hideLoginModal();
 
             if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
                 userId = event.data.guestId;
@@ -610,11 +614,7 @@ import LoginModal from '../components/LoginModal.astro';
 
         supabase.auth.onAuthStateChange(async (event, session) => {
             if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-                const modalEl = document.getElementById('rpg-modal');
-                if (modalEl) {
-                    modalEl.style.display = 'none';
-                    modalEl.classList.add('hidden');
-                }
+                hideLoginModal();
                 userId = session.user.id;
                 await loadUserProfile(userId);
                 await checkAdminStatus();
@@ -633,11 +633,17 @@ import LoginModal from '../components/LoginModal.astro';
 
         async function loadUserProfile(uid) {
             try {
-                const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
+                // 先嘗試從 profiles 讀取，若無則從 slowpace_members 讀取名稱
+                const { data } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
                 if (data) {
                     playerName = data.name || data.full_name || '會員';
-                    updateUserUI(playerName);
+                } else {
+                    const { data: memberData } = await supabase.from('slowpace_members').select('name').eq('user_id', uid).maybeSingle();
+                    if (memberData && memberData.name) {
+                        playerName = memberData.name;
+                    }
                 }
+                updateUserUI(playerName);
             } catch (err) {
                 console.error("載入使用者檔案失敗", err);
             }
