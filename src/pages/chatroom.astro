@@ -9,7 +9,7 @@ import LoginModal from '../components/LoginModal.astro';
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest" is:inline></script>
 
-<style>
+<style is:global>
         /* ==========================================
            0. 全域重置與基礎樣式 (文青自然風)
            ========================================== */
@@ -650,7 +650,6 @@ import LoginModal from '../components/LoginModal.astro';
             fetchTopics();
             fetchUserDmConversations();
 
-            // 檢查網址是否有帶入 dm 參數 (支援 ID 或 Name)
             const urlParams = new URLSearchParams(window.location.search);
             const targetDmId = urlParams.get('dm');
             const targetDmName = urlParams.get('name');
@@ -844,16 +843,16 @@ import LoginModal from '../components/LoginModal.astro';
             
             let list = [];
             if (currentUserListMode === 'online') {
-                // 從 onlineUsersMap 抓取線上對象
                 list = Object.keys(onlineUsersMap).map(key => {
                     const record = allUserRecords.find(u => u.user_id === key || u.name === key);
                     return {
                         id: record ? record.user_id : key,
-                        name: record ? record.name : key
+                        name: record ? record.name : key,
+                        isGuestUser: !record // 如果在 slowpace_members 找不到對應紀錄，即判定為訪客
                     };
                 });
             } else {
-                list = allUserRecords.map(u => ({ id: u.user_id, name: u.name })).filter(u => u.name);
+                list = allUserRecords.map(u => ({ id: u.user_id, name: u.name, isGuestUser: false })).filter(u => u.name);
             }
 
             if (filter) {
@@ -868,7 +867,12 @@ import LoginModal from '../components/LoginModal.astro';
             container.innerHTML = list.map(item => {
                 const isSelf = (item.id === currentUserId || item.name === currentUserName);
                 const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
-                const actionBtn = isSelf ? '' : `<button onclick="startDirectChatFromModal('${item.id}', '${item.name}')" class="btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
+                
+                // 🛑 核心修改：如果是自己、或者是訪客身分，則不顯示私訊按鈕
+                let actionBtn = '';
+                if (!isSelf && !item.isGuestUser && !isGuest) {
+                    actionBtn = `<button onclick="startDirectChatFromModal('${item.id}', '${item.name}')" class="btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
+                }
                 
                 return `
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
@@ -978,7 +982,6 @@ import LoginModal from '../components/LoginModal.astro';
             if (!rawContent) return;
 
             try {
-                // 使用唯一的 sender_id 與 receiver_id 寫入資料庫
                 const { error } = await client.from('direct_messages').insert([{
                     sender_id: currentUserId,
                     receiver_id: activeDmReceiverId,
