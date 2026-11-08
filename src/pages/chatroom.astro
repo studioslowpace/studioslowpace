@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import LoginModal from '../components/LoginModal.astro';
 ---
 
 <Layout title="空間客舍 · 自由佈置空間">
@@ -19,10 +18,14 @@ import LoginModal from '../components/LoginModal.astro';
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         
         html, body { 
+            width: 100%;
             height: 100%; 
+            height: 100dvh;
             background-color: #f3f6f9; 
             color: #334155; 
             overflow: hidden; 
+            margin: 0;
+            padding: 0;
         }
         .hidden { display: none !important; }
 
@@ -251,63 +254,18 @@ import LoginModal from '../components/LoginModal.astro';
         .topic-select-card:hover { border-color: #2563eb; background: #fafcfd; }
         .input-field { width: 100%; padding: 0.625rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.875rem; outline: none; }
         .input-field:focus { border-color: #2563eb; }
-
-        .rpg-modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 1rem;
-        }
-        .rpg-window {
-            background: #fafcfd;
-            border: 2px solid #cbd5e1;
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            width: 100%;
-        }
-        .rpg-title-bar {
-            background: #0f172a;
-            color: #ffffff;
-            padding: 0.75rem 1rem;
-            font-size: 0.85rem;
-            font-weight: 800;
-        }
-        .embed-frame-wrapper {
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-        }
     </style>
 </head>
 <body>
-
-<!-- 1. 登入認證 Modal -->
-<div id="rpg-modal" class="rpg-modal-overlay">
-  <div class="rpg-window embed-window" style="max-width: 420px; height: auto;">
-    <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>◆ 空間客舍 · 身分認證 ◆</span>
-    </div>
-    <div class="embed-frame-wrapper" style="flex:1; overflow-y: auto;">
-      <LoginModal />
-    </div>
-  </div>
-</div>
 
     <!-- 🏮 頂部管理選單 (點擊 Logo 展開) -->
     <div id="admin-navbar" class="hidden admin-nav">
         <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
-                <strong>主理人控制台</strong>
+                <strong>訪客模式控制台</strong>
             </div>
             <div id="admin-status-box" style="display: flex; gap: 6px; align-items: center;">
-                <span id="admin-status-text" style="color: #4ade80; font-size: 0.75rem;">🟢 主理人權限已解鎖</span>
+                <span id="admin-status-text" style="color: #4ade80; font-size: 0.75rem;">🟢 自由交流中</span>
             </div>
         </div>
     </div>
@@ -318,7 +276,7 @@ import LoginModal from '../components/LoginModal.astro';
         <!-- 頂部標題列 -->
         <div class="phone-title-bar">
             <div class="main-title-box">
-                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人面板">
+                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換控制台">
                     <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
                 </span>
                 <span>鄰里人交流與私訊</span>
@@ -356,13 +314,13 @@ import LoginModal from '../components/LoginModal.astro';
                 <!-- 👤 身分切換列 -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.1rem;">
                     <span style="font-size: 0.8rem; font-weight: 800; color: #334155;">📌 請選擇討論主題</span>
-                    <div id="my-identity-badge-home" class="identity-badge">👤 載入中</div>
+                    <div id="my-identity-badge-home" class="identity-badge">👤 訪客</div>
                 </div>
 
                 <!-- 主題列表容器 -->
                 <div style="flex: 1; display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
-                        <button id="btn-add-topic" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
+                        <button id="btn-add-topic" class="btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
                     </div>
                     <div id="topics-list-container"></div>
                 </div>
@@ -381,7 +339,7 @@ import LoginModal from '../components/LoginModal.astro';
                         <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
                     </div>
 
-                    <div id="my-identity-badge-chat" class="identity-badge">👤 載入中</div>
+                    <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
                 </div>
 
                 <div class="phone-sub-bar">
@@ -403,7 +361,7 @@ import LoginModal from '../components/LoginModal.astro';
         <div id="section-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
             <div class="phone-header">
                 <span id="dm-partner-title" style="font-weight: bold; font-size: 0.85rem;">🔒 私人對話</span>
-                <span class="identity-badge" id="my-identity-badge-dm">👤 載入中</span>
+                <span class="identity-badge" id="my-identity-badge-dm">👤 訪客</span>
             </div>
             <div id="dm-chat-messages" class="phone-chat-messages">
                 <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">請透過地圖點擊線上玩家來發起專屬私訊</p>
@@ -444,18 +402,7 @@ import LoginModal from '../components/LoginModal.astro';
         </div>
     </div>
 
-    <!-- 📌 彈窗：主題切換清單 -->
-    <div id="topic-switcher-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem;">
-        <div style="background:#fafcfd; padding:1.25rem; border-radius:1.25rem; width:100%; max-width:360px; max-height:80vh; display:flex; flex-direction:column; gap:0.75rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: #334155;">📌 切換討論主題</h3>
-                <button id="close-topic-switcher" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
-            </div>
-            <div id="topics-switcher-list-container" style="overflow-y:auto; flex:1;"></div>
-        </div>
-    </div>
-
-    <!-- 📌 彈窗：主理人新增主題 -->
+    <!-- 📌 彈窗：新增主題 -->
     <div id="topic-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1100; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:320px; display:flex; flex-direction:column; gap:0.75rem;">
             <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📌 新增討論主題</h3>
@@ -486,10 +433,9 @@ import LoginModal from '../components/LoginModal.astro';
         </div>
     </div>
 
-    <!-- JavaScript 邏輯 -->
+    <!-- JavaScript 邏輯：全預設訪客模式 -->
     <script>
         import { supabase } from '../lib/supabase';
-        import { logoutAndCleanGuest } from '../utils/auth';
 
         let topics = [];
         let activeTopicId = null;
@@ -497,21 +443,16 @@ import LoginModal from '../components/LoginModal.astro';
         let dmSubscription = null;
         let presenceChannel = null;
         let unlockedTopics = {};
-        let isAdmin = false;
         
         let userId = null;
         let playerName = '訪客';
         let dmTargetId = null;
         let dmTargetName = '';
 
-        // 取得 Modal 元素
-        const modal = document.getElementById('rpg-modal');
-// 修正：對應頁面中真實存在的身分標籤 ID
         const homeBadge = document.getElementById('my-identity-badge-home');
         const chatBadge = document.getElementById('my-identity-badge-chat');
         const dmBadge = document.getElementById('my-identity-badge-dm');
 
-        // 統一更新所有身分標籤的函式
         function updateUserUI(name) {
             if (homeBadge) homeBadge.textContent = `👤 ${name}`;
             if (chatBadge) chatBadge.textContent = `👤 ${name}`;
@@ -519,7 +460,8 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
-            await initAuthCheck();
+            // 直接初始化預設訪客身分
+            initGuestIdentity();
             initPresenceTracker();
             if (window.lucide) lucide.createIcons();
             initEventListeners();
@@ -541,114 +483,22 @@ import LoginModal from '../components/LoginModal.astro';
             }
         });
 
-        // ==========================================
-        // 區塊一：身分驗證與 is_admin 檢查（對標 slowplace.astro 結構）
-        // ==========================================
-        async function initAuthCheck() {
-            const guestId = sessionStorage.getItem('space_guest_id');
+        function initGuestIdentity() {
+            let gId = sessionStorage.getItem('space_guest_id');
+            let gName = sessionStorage.getItem('space_guest_name');
 
-            if (guestId) {
-                userId = guestId;
-                playerName = sessionStorage.getItem('space_guest_name') || '訪客';
-                if (modal) modal.style.display = 'none'; // 直接隱藏
-                updateUserUI(playerName);
-                await checkAdminStatus();
-                await startAppSession();
-            } else {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session && session.user) {
-                    userId = session.user.id;
-                    if (modal) modal.style.display = 'none'; // 直接隱藏
-                    await loadUserProfile(userId);
-                    await startAppSession();
-                } else {
-                    if (modal) modal.style.display = 'flex'; // 未登入才顯示
-                }
+            if (!gId) {
+                gId = 'guest_' + Math.random().toString(36).substring(2, 10);
+                gName = '訪客_' + Math.floor(Math.random() * 900 + 100);
+                sessionStorage.setItem('space_guest_id', gId);
+                sessionStorage.setItem('space_guest_name', gName);
             }
+
+            userId = gId;
+            playerName = gName;
+            updateUserUI(playerName);
         }
 
-        // 檢查 slowpace_members 的 is_admin 欄位 (TRUE / FALSE)
-        async function checkAdminStatus() {
-            if (!userId) { isAdmin = false; return; }
-            try {
-                const { data, error } = await supabase
-                    .from('slowpace_members')
-                    .select('is_admin')
-                    .eq('user_id', userId)
-                    .maybeSingle();
-
-                if (error) throw error;
-
-                if (data && data.is_admin === true) {
-                    isAdmin = true;
-                    document.getElementById('btn-add-topic')?.classList.remove('hidden');
-                    renderTopicsList();
-                } else {
-                    isAdmin = false;
-                }
-            } catch (err) {
-                console.error("檢查管理員身分失敗:", err);
-                isAdmin = false;
-            }
-        }
-
-        // 監聽來自 LoginModal 的登入成功訊息（對標 slowplace.astro）
-        window.addEventListener('message', async (event) => {
-            if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-                userId = event.data.guestId;
-                playerName = event.data.name;
-                if (modal) modal.style.display = 'none';
-                updateUserUI(playerName);
-                await startAppSession();
-            }
-            
-            if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-                if (modal) modal.style.display = 'none';
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session && session.user) {
-                    userId = session.user.id;
-                    await loadUserProfile(userId);
-                    await startAppSession();
-                }
-            }
-        });
-
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-                if (modal) modal.style.display = 'none';
-                userId = session.user.id;
-                await loadUserProfile(userId);
-                await startAppSession();
-            }
-        });
-
-
-
-        async function loadUserProfile(uid) {
-            try {
-                const { data } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
-                if (data) {
-                    playerName = data.name || data.full_name || '會員';
-                } else {
-                    const { data: memberData } = await supabase.from('slowpace_members').select('name').eq('user_id', uid).maybeSingle();
-                    if (memberData && memberData.name) {
-                        playerName = memberData.name;
-                    }
-                }
-                updateUserUI(playerName);
-            } catch (err) {
-                console.error("載入使用者檔案失敗", err);
-            }
-        }
-
-        async function startAppSession() {
-            await checkAdminStatus();
-            fetchTopics();
-        }
-
-        // ==========================================
-        // 區塊二：分頁切換與其他聊天互動功能
-        // ==========================================
         function initTabs() {
             document.getElementById('tab-public').addEventListener('click', () => {
                 document.getElementById('tab-public').classList.add('active');
@@ -686,13 +536,6 @@ import LoginModal from '../components/LoginModal.astro';
                         await presenceChannel.track({ name: playerName, online_at: new Date().toISOString() });
                     }
                 });
-        }
-
-        async function confirmSwitchIdentity() {
-            const currentName = sessionStorage.getItem('space_guest_name') || playerName;
-            if (confirm(`您目前的身分是「${currentName}」\n是否要登出並切換身分？`)) {
-                await logoutAndCleanGuest();
-            }
         }
 
         async function fetchTopics() {
@@ -752,13 +595,10 @@ import LoginModal from '../components/LoginModal.astro';
                     const timeRemainingText = timeInfo.text ? ` <span style="font-size:0.6rem; background:${timeInfo.expired ? '#f3f4f6' : '#fee2e2'}; color:${timeInfo.expired ? '#6b7280' : '#991b1b'}; padding:1px 4px; border-radius:3px;">${timeInfo.text}</span>` : '';
                     const lockIcon = hasPassword ? '🔒 ' : (topic.is_anonymous ? '⏳ ' : '💬 ');
                     
-                    let adminControls = '';
-                    if (isAdmin) {
-                        const upBtn = index > 0 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'up')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
-                        const downBtn = index < topics.length - 1 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'down')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬇️</button>` : '';
-                        const deleteBtn = `<button onclick="deleteTopic(event, '${topic.id}', '${topic.title}')" style="background:#ef4444; color:white; border:none; padding:1px 5px; border-radius:3px; font-size:0.6rem; cursor:pointer;">刪除</button>`;
-                        adminControls = `<div style="display:flex; gap:3px; align-items:center;" onclick="event.stopPropagation();">${upBtn}${downBtn}${deleteBtn}</div>`;
-                    }
+                    const upBtn = index > 0 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'up')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
+                    const downBtn = index < topics.length - 1 ? `<button onclick="moveTopicOrder(event, '${topic.id}', 'down')" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬇️</button>` : '';
+                    const deleteBtn = `<button onclick="deleteTopic(event, '${topic.id}', '${topic.title}')" style="background:#ef4444; color:white; border:none; padding:1px 5px; border-radius:3px; font-size:0.6rem; cursor:pointer;">刪除</button>`;
+                    const adminControls = `<div style="display:flex; gap:3px; align-items:center;" onclick="event.stopPropagation();">${upBtn}${downBtn}${deleteBtn}</div>`;
 
                     return `
                         <div onclick="trySelectTopic('${topic.id}')" class="topic-select-card" style="display:flex; flex-direction:column; gap:4px;">
@@ -903,9 +743,20 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         function initEventListeners() {
-            document.getElementById('my-identity-badge-home').addEventListener('click', confirmSwitchIdentity);
-            document.getElementById('my-identity-badge-chat').addEventListener('click', confirmSwitchIdentity);
-            document.getElementById('my-identity-badge-dm').addEventListener('click', confirmSwitchIdentity);
+            document.getElementById('my-identity-badge-home').addEventListener('click', () => {
+                const newName = prompt("請輸入您的訪客暱稱：", playerName);
+                if (newName && newName.trim()) {
+                    playerName = newName.trim();
+                    sessionStorage.setItem('space_guest_name', playerName);
+                    updateUserUI(playerName);
+                }
+            });
+            document.getElementById('my-identity-badge-chat').addEventListener('click', () => {
+                document.getElementById('my-identity-badge-home').click();
+            });
+            document.getElementById('my-identity-badge-dm').addEventListener('click', () => {
+                document.getElementById('my-identity-badge-home').click();
+            });
 
             document.getElementById('logo-toggle-btn').addEventListener('click', () => {
                 document.getElementById('admin-navbar').classList.toggle('hidden');
@@ -993,12 +844,5 @@ import LoginModal from '../components/LoginModal.astro';
                 } catch (err) { alert("私訊發送失敗: " + err.message); }
             });
         }
-        window.addEventListener('message', async (event) => {
-    console.log("收到 message 事件：", event.data); // 檢查有沒有成功接收到訊號
-    if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-        console.log("準備關閉 Modal，目前 modal 元素：", modal);
-        if (modal) modal.style.display = 'none';
-    }
-});
     </script>
 </Layout>
