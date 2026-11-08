@@ -28,12 +28,12 @@
     <button id="register-submit-btn" style="width:100%; padding:10px; background:#059669; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">註冊新帳號</button>
   </div>
 
-  <!-- 訪客快速進入表單區塊 -->
+  <!-- 訪客快速進入表單區塊（不需輸入名字，自動指派編號） -->
   <div id="guest-form-container" style="display: none;">
-    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">訪客身分無需註冊密碼，離開空間後資料將自動清除。</p>
+    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">訪客身分無需註冊，系統將自動指派專屬代號，離開後資料將自動清除。</p>
     
     <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">選擇分身造型：</div>
-    <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
       <label style="flex:1; background:#0f172a; border:1px solid #334155; padding:8px; text-align:center; border-radius:6px; cursor:pointer;">
         <input type="radio" name="guest-avatar" value="/assets/player1.png" checked style="display:none;" />
         <img src="/assets/player1.png" alt="P1" style="width:32px; height:32px;" />
@@ -46,15 +46,12 @@
       </label>
     </div>
 
-    <input type="text" id="guest-name-input" placeholder="輸入您的訪客稱號 (例: 訪客小明)" maxlength="12" style="width:100%; padding:10px; margin-bottom:12px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
-
-    <button id="guest-submit-btn" style="width:100%; padding:10px; background:#10b981; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">🚀 進入客舍空間</button>
+    <button id="guest-submit-btn" style="width:100%; padding:10px; background:#10b981; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">🚀 快速進入客舍空間</button>
   </div>
 </div>
 
 <script>
   import { logoutAndCleanGuest } from '../utils/auth';
-
   import { supabase } from '../lib/supabase';
   const TABLE_NAME = 'slowpace_members';
 
@@ -114,7 +111,7 @@
     if (error) {
       alert('登入失敗：' + error.message);
     } else {
-      alert('登入成功！');
+      // 透過 postMessage 通知外層跳轉或關閉 Modal
       window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*');
     }
   });
@@ -145,27 +142,23 @@
     if (error) {
       alert('註冊失敗：' + error.message);
     } else {
-      alert('註冊成功！請檢查您的 Email 以進行驗證（若 Supabase 有開啟信箱驗證）。');
       window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
     }
   });
 
-  // 訪客模式進入按鈕事件
+  // 訪客模式進入按鈕事件（自動指派數字代號）
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
-    const nameVal = document.getElementById('guest-name-input').value.trim();
-    if (!nameVal) {
-      alert('請輸入您的訪客稱號');
-      return;
-    }
-
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
 
+    // 自動產生隨機 4 位數數字代號（例如：訪客 #4829）
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
     const guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
+    const guestName = `訪客 #${randomNum}`;
     
     const guestData = {
       user_id: guestId,
-      name: nameVal,
+      name: guestName,
       role: '☁️ 訪客',
       tier: '鄰里人',
       avatar: avatarVal,
@@ -184,13 +177,14 @@
     }
 
     sessionStorage.setItem('space_guest_id', guestId);
-    sessionStorage.setItem('space_guest_name', nameVal);
+    sessionStorage.setItem('space_guest_name', guestName);
     sessionStorage.setItem('space_guest_avatar', avatarVal);
 
+    // 通知外層處理訪客登入成功
     window.parent.postMessage({
       type: 'GUEST_LOGIN_SUCCESS',
       guestId: guestId,
-      name: nameVal,
+      name: guestName,
       avatar: avatarVal
     }, '*');
   });
@@ -210,11 +204,7 @@
     if (error) {
       alert('發送重設密碼信失敗：' + error.message);
     } else {
-      alert('重設密碼信已發送！請檢查您的電子信箱（包含垃圾郵件匣）。');
+      alert('重設密碼信已發送！請檢查您的電子信箱。');
     }
-  });
-
-  document.getElementById('global-logout-btn')?.addEventListener('click', async () => {
-    await logoutAndCleanGuest();
   });
 </script>
