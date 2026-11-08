@@ -9,7 +9,7 @@ import LoginModal from '../components/LoginModal.astro';
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest" is:inline></script>
 
-<style is:global>
+<style>
         /* ==========================================
            0. 全域重置與基礎樣式 (文青自然風)
            ========================================== */
@@ -554,33 +554,45 @@ import LoginModal from '../components/LoginModal.astro';
         let unlockedTopics = {};
         let isAdmin = false;
         let allDmRecords = [];
+        
+        let currentUserId = null;
+        let currentUserName = '訪客';
+        let isGuest = false;
 
         window.onload = function() {
             initAuthCheck();
             lucide.createIcons();
         };
 
-        // 身分驗證檢查邏輯
         const modal = document.getElementById('rpg-modal');
 
         async function initAuthCheck() {
             const guestId = sessionStorage.getItem('space_guest_id');
 
             if (guestId) {
-                const guestName = sessionStorage.getItem('space_guest_name') || '訪客';
-                localStorage.setItem('verified_chat_name', guestName);
+                isGuest = true;
+                currentUserId = guestId;
+                currentUserName = sessionStorage.getItem('space_guest_name') || '訪客';
+                localStorage.setItem('verified_chat_name', currentUserName);
+                localStorage.setItem('verified_chat_id', currentUserId);
                 if (modal) modal.style.display = 'none';
-                finishAuthSetup(guestName);
+                finishAuthSetup(currentUserName);
             } else {
                 const { data: { session } } = await client.auth.getSession();
                 if (session && session.user) {
+                    isGuest = false;
+                    currentUserId = session.user.id;
                     if (modal) modal.style.display = 'none';
                     await loadUserProfile(session.user.id);
                 } else {
+                    const savedId = localStorage.getItem('verified_chat_id');
                     const savedName = localStorage.getItem('verified_chat_name');
-                    if (savedName) {
+                    if (savedId && savedName) {
+                        isGuest = false;
+                        currentUserId = savedId;
+                        currentUserName = savedName;
                         if (modal) modal.style.display = 'none';
-                        finishAuthSetup(savedName);
+                        finishAuthSetup(currentUserName);
                     } else {
                         if (modal) modal.style.display = 'flex';
                     }
@@ -590,18 +602,23 @@ import LoginModal from '../components/LoginModal.astro';
 
         window.addEventListener('message', async (event) => {
             if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-                const guestName = event.data.name || '訪客';
-                sessionStorage.setItem('space_guest_id', event.data.guestId);
-                sessionStorage.setItem('space_guest_name', guestName);
-                localStorage.setItem('verified_chat_name', guestName);
+                isGuest = true;
+                currentUserId = event.data.guestId;
+                currentUserName = event.data.name || '訪客';
+                sessionStorage.setItem('space_guest_id', currentUserId);
+                sessionStorage.setItem('space_guest_name', currentUserName);
+                localStorage.setItem('verified_chat_name', currentUserName);
+                localStorage.setItem('verified_chat_id', currentUserId);
                 if (modal) modal.style.display = 'none';
-                finishAuthSetup(guestName);
+                finishAuthSetup(currentUserName);
             }
             
             if (event.data && event.data.type === 'LOGIN_SUCCESS') {
                 if (modal) modal.style.display = 'none';
                 const { data: { session } } = await client.auth.getSession();
                 if (session && session.user) {
+                    isGuest = false;
+                    currentUserId = session.user.id;
                     await loadUserProfile(session.user.id);
                 }
             }
@@ -610,12 +627,17 @@ import LoginModal from '../components/LoginModal.astro';
         async function loadUserProfile(uId) {
             const { data } = await client.from(TABLE_NAME).select('*').eq('user_id', uId).single();
             if (data && data.name) {
-                localStorage.setItem('verified_chat_name', data.name);
-                finishAuthSetup(data.name);
+                currentUserName = data.name;
+                currentUserId = data.user_id;
+                localStorage.setItem('verified_chat_name', currentUserName);
+                localStorage.setItem('verified_chat_id', currentUserId);
+                finishAuthSetup(currentUserName);
             } else {
-                const fallbackName = '會員_' + uId.substring(0, 4);
-                localStorage.setItem('verified_chat_name', fallbackName);
-                finishAuthSetup(fallbackName);
+                currentUserName = '會員_' + uId.substring(0, 4);
+                currentUserId = uId;
+                localStorage.setItem('verified_chat_name', currentUserName);
+                localStorage.setItem('verified_chat_id', currentUserId);
+                finishAuthSetup(currentUserName);
             }
         }
 
@@ -628,7 +650,7 @@ import LoginModal from '../components/LoginModal.astro';
             fetchTopics();
             fetchUserDmConversations();
 
-            // 檢查網址是否有帶入 dm 參數
+            // 檢查網址是否有帶入 dm 參數 (支援 ID 或 Name)
             const urlParams = new URLSearchParams(window.location.search);
             const targetDmId = urlParams.get('dm');
             const targetDmName = urlParams.get('name');
@@ -636,7 +658,7 @@ import LoginModal from '../components/LoginModal.astro';
             if (targetDmId) {
                 setTimeout(() => {
                     const displayName = targetDmName ? decodeURIComponent(targetDmName) : targetDmId;
-                    startDirectChat(displayName);
+                    startDirectChat(targetDmId, displayName);
                 }, 400);
             }
         }
@@ -652,7 +674,6 @@ import LoginModal from '../components/LoginModal.astro';
             window.location.reload();
         }
 
-        // 從 slowpace_members 讀取鄰里人總數與名單
         async function fetchAllUserRecordsFromSupabase() {
             try {
                 const { data, error, count } = await client.from(TABLE_NAME).select('*', { count: 'exact' });
@@ -666,12 +687,12 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         function initPresenceTracker() {
-            const savedName = localStorage.getItem('verified_chat_name') || '訪客';
+            const trackName = currentUserName || '訪客';
 
             if (presenceChannel) client.removeChannel(presenceChannel);
 
             presenceChannel = client.channel('community-online-room', {
-                config: { presence: { key: savedName } }
+                config: { presence: { key: currentUserId || trackName } }
             });
 
             presenceChannel
@@ -689,7 +710,7 @@ import LoginModal from '../components/LoginModal.astro';
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        await presenceChannel.track({ name: savedName, online_at: new Date().toISOString() });
+                        await presenceChannel.track({ name: trackName, online_at: new Date().toISOString() });
                     }
                 });
         }
@@ -706,6 +727,11 @@ import LoginModal from '../components/LoginModal.astro';
                 secTopics.classList.remove('hidden');
                 secDms.classList.add('hidden');
             } else {
+                if (isGuest) {
+                    alert("🔒 訪客身分無法使用私訊功能，請先完成正式會員登入！");
+                    btnTopics.click();
+                    return;
+                }
                 btnDms.classList.add('active');
                 btnTopics.classList.remove('active');
                 secDms.classList.remove('hidden');
@@ -715,7 +741,7 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         async function fetchUserDmConversations() {
-            const myName = localStorage.getItem('verified_chat_name') || '訪客';
+            if (isGuest) return;
             const container = document.getElementById('dm-conversations-list-container');
             if (!container) return;
 
@@ -723,40 +749,45 @@ import LoginModal from '../components/LoginModal.astro';
                 const { data, error } = await client
                     .from('direct_messages')
                     .select('*')
-                    .or(`sender_id.eq.${myName},receiver_id.eq.${myName}`)
+                    .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
                 allDmRecords = data || [];
-                renderDmConversationsList(allDmRecords, myName);
+                renderDmConversationsList(allDmRecords);
             } catch (err) {
                 console.error("載入私訊清單失敗:", err.message);
                 container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center; padding:1rem;">載入私訊清單失敗</p>`;
             }
         }
 
-        function renderDmConversationsList(messages, myName, filterText = '') {
+        function renderDmConversationsList(messages, filterText = '') {
             const container = document.getElementById('dm-conversations-list-container');
             if (!container) return;
 
             const map = {};
             messages.forEach(msg => {
-                const partner = (msg.sender_id === myName) ? msg.receiver_id : msg.sender_id;
-                if (!map[partner] || new Date(msg.created_at) > new Date(map[partner].created_at)) {
-                    map[partner] = msg;
+                const partnerId = (msg.sender_id === currentUserId) ? msg.receiver_id : msg.sender_id;
+                if (!map[partnerId] || new Date(msg.created_at) > new Date(map[partnerId].created_at)) {
+                    map[partnerId] = msg;
                 }
             });
 
-            let partners = Object.keys(map).map(partner => ({
-                partner,
-                lastMsg: map[partner].content,
-                time: map[partner].created_at
-            }));
+            let partners = Object.keys(map).map(partnerId => {
+                const record = allUserRecords.find(u => u.user_id === partnerId);
+                const partnerName = record ? record.name : partnerId;
+                return {
+                    partnerId,
+                    partnerName,
+                    lastMsg: map[partnerId].content,
+                    time: map[partnerId].created_at
+                };
+            });
 
             partners.sort((a, b) => new Date(b.time) - new Date(a.time));
 
             if (filterText) {
-                partners = partners.filter(p => p.partner.toLowerCase().includes(filterText.toLowerCase()));
+                partners = partners.filter(p => p.partnerName.toLowerCase().includes(filterText.toLowerCase()));
             }
 
             if (partners.length === 0) {
@@ -765,12 +796,12 @@ import LoginModal from '../components/LoginModal.astro';
             }
 
             container.innerHTML = partners.map(item => {
-                const isOnline = onlineUsersMap[item.partner] ? '🟢' : '⚪';
+                const isOnline = onlineUsersMap[item.partnerId] ? '🟢' : '⚪';
                 const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 return `
-                    <div onclick="startDirectChat('${item.partner}')" class="topic-select-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; padding: 0.6rem 0.75rem;">
+                    <div onclick="startDirectChat('${item.partnerId}', '${item.partnerName}')" class="topic-select-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; padding: 0.6rem 0.75rem;">
                         <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
-                            <h4 style="font-size: 0.825rem; font-weight: 800; color: #1e293b;">${isOnline} ${item.partner}</h4>
+                            <h4 style="font-size: 0.825rem; font-weight: 800; color: #1e293b;">${isOnline} ${item.partnerName}</h4>
                             <p style="font-size: 0.7rem; color: #64748b; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">${item.lastMsg}</p>
                         </div>
                         <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
@@ -784,8 +815,7 @@ import LoginModal from '../components/LoginModal.astro';
 
         function filterDmList() {
             const query = document.getElementById('dm-search-input').value.trim();
-            const myName = localStorage.getItem('verified_chat_name') || '訪客';
-            renderDmConversationsList(allDmRecords, myName, query);
+            renderDmConversationsList(allDmRecords, query);
         }
 
         let currentUserListMode = 'online';
@@ -811,18 +841,23 @@ import LoginModal from '../components/LoginModal.astro';
 
         function renderUserListModalContent(filter = '') {
             const container = document.getElementById('user-list-container');
-            const myName = localStorage.getItem('verified_chat_name') || '訪客';
             
             let list = [];
             if (currentUserListMode === 'online') {
-                list = Object.keys(onlineUsersMap);
+                // 從 onlineUsersMap 抓取線上對象
+                list = Object.keys(onlineUsersMap).map(key => {
+                    const record = allUserRecords.find(u => u.user_id === key || u.name === key);
+                    return {
+                        id: record ? record.user_id : key,
+                        name: record ? record.name : key
+                    };
+                });
             } else {
-                list = allUserRecords.map(u => u.name).filter(Boolean);
-                if (list.length === 0) list = Object.keys(onlineUsersMap);
+                list = allUserRecords.map(u => ({ id: u.user_id, name: u.name })).filter(u => u.name);
             }
 
             if (filter) {
-                list = list.filter(name => name.toLowerCase().includes(filter.toLowerCase()));
+                list = list.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()));
             }
 
             if (list.length === 0) {
@@ -830,14 +865,14 @@ import LoginModal from '../components/LoginModal.astro';
                 return;
             }
 
-            container.innerHTML = list.map(name => {
-                const isSelf = (name === myName);
+            container.innerHTML = list.map(item => {
+                const isSelf = (item.id === currentUserId || item.name === currentUserName);
                 const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
-                const actionBtn = isSelf ? '' : `<button onclick="startDirectChatFromModal('${name}')" class="btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
+                const actionBtn = isSelf ? '' : `<button onclick="startDirectChatFromModal('${item.id}', '${item.name}')" class="btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
                 
                 return `
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.75rem; font-weight:bold; color:#1e293b; display:flex; align-items:center; gap:5px;">👤 ${name} ${badge}</span>
+                        <span style="font-size:0.75rem; font-weight:bold; color:#1e293b; display:flex; align-items:center; gap:5px;">👤 ${item.name} ${badge}</span>
                         ${actionBtn}
                     </div>
                 `;
@@ -849,31 +884,33 @@ import LoginModal from '../components/LoginModal.astro';
             renderUserListModalContent(query);
         }
 
-function startDirectChat(targetName) {
-    const currentGuestId = sessionStorage.getItem('space_guest_id');
-    if (currentGuestId) {
-        alert("🔒 訪客帳號無法使用私訊功能，請先完成正式會員登入以保障私隱！");
-        return;
-    }
-    // 正常會員的私訊邏輯...
-}
+        function startDirectChatFromModal(targetId, targetName) {
+            closeUserListModal();
+            startDirectChat(targetId, targetName);
+        }
 
-        function startDirectChat(targetName) {
-            const myName = localStorage.getItem('verified_chat_name') || '訪客';
-            if (targetName === myName) { alert("無法與自己進行私訊對話！"); return; }
+        function startDirectChat(targetId, targetName) {
+            if (isGuest) {
+                alert("🔒 訪客身分無法使用私訊功能，請先完成正式會員登入！");
+                return;
+            }
+            if (targetId === currentUserId || targetName === currentUserName) {
+                alert("無法與自己進行私訊對話！");
+                return;
+            }
 
-            activeDmReceiverId = targetName;
+            activeDmReceiverId = targetId;
 
             document.getElementById('current-dm-title').textContent = `💬 私訊: ${targetName}`;
             document.getElementById('page-home').classList.add('hidden');
             document.getElementById('page-chat').classList.add('hidden');
             document.getElementById('page-dm').classList.remove('hidden');
 
-            loadDmMessages(myName, targetName);
-            subscribeToDmChat(myName, targetName);
+            loadDmMessages(targetId);
+            subscribeToDmChat(targetId);
         }
 
-        async function loadDmMessages(myName, targetName) {
+        async function loadDmMessages(targetId) {
             const container = document.getElementById('dm-chat-messages');
             if (!container) return;
 
@@ -881,18 +918,18 @@ function startDirectChat(targetName) {
                 const { data, error } = await client
                     .from('direct_messages')
                     .select('*')
-                    .or(`and(sender_id.eq.${myName},receiver_id.eq.${targetName}),and(sender_id.eq.${targetName},receiver_id.eq.${myName})`)
+                    .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${targetId}),and(sender_id.eq.${targetId},receiver_id.eq.${currentUserId})`)
                     .order('created_at', { ascending: true });
 
                 if (error) throw error;
-                renderDmMessagesHelper(data || [], myName);
+                renderDmMessagesHelper(data || []);
             } catch (err) {
                 console.error("載入私訊失敗:", err.message);
                 container.innerHTML = `<p style="font-size:0.75rem; color:#ef4444; text-align:center;">載入私訊失敗</p>`;
             }
         }
 
-        function renderDmMessagesHelper(messages, myName) {
+        function renderDmMessagesHelper(messages) {
             const container = document.getElementById('dm-chat-messages');
             if (!container) return;
 
@@ -903,7 +940,9 @@ function startDirectChat(targetName) {
 
             container.innerHTML = messages.map(msg => {
                 const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const isSelf = (msg.sender_id === myName);
+                const isSelf = (msg.sender_id === currentUserId);
+                const senderRecord = allUserRecords.find(u => u.user_id === msg.sender_id);
+                const senderDisplayName = senderRecord ? senderRecord.name : msg.sender_id;
 
                 if (isSelf) {
                     return `
@@ -918,7 +957,7 @@ function startDirectChat(targetName) {
                     return `
                         <div class="msg-row-other">
                             <div class="msg-bubble msg-bubble-other">
-                                <span class="msg-sender-name">${msg.sender_name || msg.sender_id}</span>
+                                <span class="msg-sender-name">${senderDisplayName}</span>
                                 <div>${msg.content}</div>
                                 <span class="msg-time-stamp">${timeStr}</span>
                             </div>
@@ -932,40 +971,38 @@ function startDirectChat(targetName) {
 
         async function handleSendDmMessage(event) {
             event.preventDefault();
-            if (!activeDmReceiverId) return;
+            if (isGuest || !activeDmReceiverId) return;
 
-            const myName = localStorage.getItem('verified_chat_name') || '訪客';
             const contentInput = document.getElementById('dm-input-content');
             const rawContent = contentInput.value.trim();
-
             if (!rawContent) return;
 
             try {
+                // 使用唯一的 sender_id 與 receiver_id 寫入資料庫
                 const { error } = await client.from('direct_messages').insert([{
-                    sender_id: myName,
-                    sender_name: myName,
+                    sender_id: currentUserId,
                     receiver_id: activeDmReceiverId,
                     content: rawContent
                 }]);
 
                 if (error) throw error;
                 contentInput.value = '';
-                loadDmMessages(myName, activeDmReceiverId);
+                loadDmMessages(activeDmReceiverId);
                 fetchUserDmConversations();
             } catch (err) { alert("私訊發送失敗: " + err.message); }
         }
 
-        function subscribeToDmChat(myName, targetName) {
+        function subscribeToDmChat(targetId) {
             if (dmSubscription) client.removeChannel(dmSubscription);
 
-            dmSubscription = client.channel(`dm-${myName}-${targetName}`)
+            dmSubscription = client.channel(`dm-${currentUserId}-${targetId}`)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'direct_messages' }, (payload) => {
                     const newItem = payload.new;
                     if (
-                        (newItem.sender_id === myName && newItem.receiver_id === targetName) ||
-                        (newItem.sender_id === targetName && newItem.receiver_id === myName)
+                        (newItem.sender_id === currentUserId && newItem.receiver_id === targetId) ||
+                        (newItem.sender_id === targetId && newItem.receiver_id === currentUserId)
                     ) {
-                        loadDmMessages(myName, targetName);
+                        loadDmMessages(targetId);
                         fetchUserDmConversations();
                     }
                 })
@@ -1197,7 +1234,6 @@ function startDirectChat(targetName) {
                 return;
             }
 
-            const currentUserName = localStorage.getItem('verified_chat_name') || '';
             const currentTopic = topics.find(t => String(t.id) === String(activeTopicId));
             const isAnonTopic = currentTopic && currentTopic.is_anonymous;
 
@@ -1248,15 +1284,13 @@ function startDirectChat(targetName) {
             event.preventDefault();
             if (!activeTopicId) return;
 
-            const senderName = localStorage.getItem('verified_chat_name') || '訪客';
             const contentInput = document.getElementById('chat-input-content');
-
             if (!contentInput.value.trim()) return;
 
             try {
                 const { error } = await client.from('topic_messages').insert([{
                     topic_id: activeTopicId,
-                    sender_name: senderName,
+                    sender_name: currentUserName,
                     content: contentInput.value.trim()
                 }]);
 
@@ -1335,34 +1369,5 @@ function startDirectChat(targetName) {
             document.getElementById('btn-add-topic').classList.add('hidden');
             renderTopicsList();
         }
-
-        // 將要在 HTML onclick 中呼叫的函式掛載到 window 全域
-        window.startDirectChatFromModal = function(targetName) {
-            closeUserListModal();
-            startDirectChat(targetName);
-        };
-
-        window.openUserListModal = openUserListModal;
-        window.closeUserListModal = closeUserListModal;
-        window.filterUserList = filterUserList;
-        window.switchHomeTab = switchHomeTab;
-        window.filterDmList = filterDmList;
-        window.backToHome = backToHome;
-        window.openModal = openModal;
-        window.closeModal = closeModal;
-        window.openTopicSwitcherModal = openTopicSwitcherModal;
-        window.closeTopicSwitcherModal = closeTopicSwitcherModal;
-        window.trySelectTopic = trySelectTopic;
-        window.openTopicModal = openTopicModal;
-        window.closeTopicModal = closeTopicModal;
-        window.handleCreateTopic = handleCreateTopic;
-        window.handleSendTopicMessage = handleSendTopicMessage;
-        window.handleSendDmMessage = handleSendDmMessage;
-        window.toggleAdminNavbar = toggleAdminNavbar;
-        window.handleAdminLogin = handleAdminLogin;
-        window.handleAdminLogout = handleAdminLogout;
-        window.handleLogout = handleLogout;
-        window.promptChangeName = promptChangeName;
-        
     </script>
 </Layout>
