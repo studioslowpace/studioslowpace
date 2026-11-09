@@ -185,16 +185,16 @@ import LoginModal from '../components/LoginModal.astro';
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
-      <!-- 底部 Footer 導航列與向上展開的指南面板 -->
+      <!-- 底部 Footer 導航列與向上展開的指南抽屜 -->
       <footer class="rpg-footer-nav">
-        <!-- 指南展開內容區塊 (向上展開) -->
+        <!-- 向上展開的指南面板 -->
         <div id="guide-drawer" class="guide-drawer-content" style="display: none;">
           <div class="drawer-header">
             <span>📖 空間物件與放置指南</span>
             <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:2px 6px;">✕ 收起</button>
           </div>
           
-          <!-- 店主專屬放置工具：移動按鈕與新增物件按鈕放入指南內 -->
+          <!-- 店主專屬操作：移動模式與新增物件按鈕放入指南內 -->
           <div id="shopkeeper-drawer-tools" class="shopkeeper-tools-bar" style="display: none;">
             <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
             <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:11px;">➕ 新增物件/NPC</button>
@@ -213,7 +213,7 @@ import LoginModal from '../components/LoginModal.astro';
     </main>
   </div>
 
-  <!-- 聊天與書櫃共用檢視 Modal (同一頁開分頁) -->
+  <!-- 聊天與書櫃共用 Modal (同一頁開分頁切換) -->
   <div id="app-drawer-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window" style="height: 85vh;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -281,7 +281,7 @@ import LoginModal from '../components/LoginModal.astro';
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
-    /* 底部 Footer 導航與向上展開指南 */
+    /* 底部 Footer 導航與向上展開指南抽屜 */
     .rpg-footer-nav {
       background: var(--bg-card);
       border-top: 2px solid var(--accent-hover);
@@ -833,7 +833,6 @@ import LoginModal from '../components/LoginModal.astro';
         shopkeeperDrawerTools.style.display = 'flex';
       }
 
-      // 預設內建標準物件與自訂物件合併去重
       const baseStandardItems = [
         { type: 'seat', label: '木椅', imgSrc: '/assets/seat.png', description: '供旅人安坐專心的木椅', w: 1, h: 1 },
         { type: 'shelf', label: '書架', imgSrc: '/assets/shelf.png', description: '收藏客舍館藏書單的書架', w: 1, h: 1 },
@@ -865,7 +864,6 @@ import LoginModal from '../components/LoginModal.astro';
       });
       guideContentBox.innerHTML = html;
 
-      // 綁定店主點擊指南 + 符號快速放置的事件
       document.querySelectorAll('.guide-add-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const targetBtn = e.currentTarget as HTMLElement;
@@ -885,7 +883,6 @@ import LoginModal from '../components/LoginModal.astro';
       });
     }
 
-    // 移動工具切換按鈕事件
     document.querySelectorAll('.tool-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
@@ -928,7 +925,6 @@ import LoginModal from '../components/LoginModal.astro';
 
     let pendingTableItem: any = null;
 
-    // 房間儲存與讀取自 slowsplace_rooms (利用 room_key & room_name)
     async function fetchRooms() {
       const { data } = await supabase.from(ROOMS_TABLE).select('*');
       if (data && data.length > 0) {
@@ -1080,9 +1076,6 @@ import LoginModal from '../components/LoginModal.astro';
 
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
-    // ==========================================
-    // 畫布點擊事件（含店主佈置、連結開啟方式實作、共讀桌互動）
-    // ==========================================
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -1094,7 +1087,6 @@ import LoginModal from '../components/LoginModal.astro';
       const targetGx = Math.floor(clickX / tileSize);
       const targetGy = Math.floor(clickY / tileSize);
 
-      // 1. 店主佈置模式：點擊畫布放置物件
       if (currentTool !== 'move') {
         if (!isAdmin) {
           alert('只有店主（具備管理員權限）才能進行空間佈置！');
@@ -1170,7 +1162,6 @@ import LoginModal from '../components/LoginModal.astro';
         return;
       }
 
-      // 2. 一般移動模式下的點擊互動
       if (currentTool === 'move') {
         const hitItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
         
@@ -1295,7 +1286,6 @@ import LoginModal from '../components/LoginModal.astro';
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
-    // 初始化執行
     initAuthCheck();
   </script>
 </Layout>
