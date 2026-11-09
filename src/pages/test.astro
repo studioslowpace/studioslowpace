@@ -926,7 +926,8 @@ import LoginModal from '../components/LoginModal.astro';
     let pendingTableItem: any = null;
 
     async function fetchRooms() {
-      const { data } = await supabase.from(ROOMS_TABLE).select('*');
+      const { data } = await supabase.from(ROOMS_TABLE).select('*').not('room_key', 'is', null)
+        .not('room_name', 'is', null);
       if (data && data.length > 0) {
         customRooms = data.map((r: any) => ({
           room_key: r.room_key,
