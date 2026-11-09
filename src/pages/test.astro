@@ -116,14 +116,14 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 5. 編輯/修改空間物件 Modal -->
+  <!-- 5. 新增/修改自訂物件 Modal (支援店主新增物件/NPC) -->
   <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span id="cf-modal-title">✏️ 修改空間物件</span></div>
+      <div class="rpg-title-bar"><span id="cf-modal-title">🛠️ 新增/修改空間物件</span></div>
       <div class="rpg-content">
         <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
         <input type="hidden" id="cf-edit-id" value="" />
-        <input type="text" id="cf-name" placeholder="名稱（例：書架）" maxlength="15" style="margin-bottom:6px;" />
+        <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/shelf.png）" style="margin-bottom:6px;" />
         <input type="text" id="cf-link" placeholder="連結網址（無則留空）" style="margin-bottom:6px;" />
         
@@ -136,6 +136,11 @@ import LoginModal from '../components/LoginModal.astro';
 
         <textarea id="cf-desc" placeholder="物件說明文字..." style="width:100%; height:50px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
         
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
+          <input type="number" id="cf-h" placeholder="高度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
+        </div>
+
         <div class="rpg-btn-group" style="margin-top:10px;">
           <button id="cf-cancel-btn" class="rpg-btn-ghost">取消</button>
           <button id="cf-confirm-btn" class="rpg-btn">✨ 儲存變更</button>
@@ -159,18 +164,6 @@ import LoginModal from '../components/LoginModal.astro';
           <button id="rs-cancel-btn" class="rpg-btn-ghost">取消</button>
           <button id="rs-confirm-btn" class="rpg-btn">✨ 建立並儲存房間</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 7. 玩家互動選單 Modal -->
-  <div id="player-action-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 280px; text-align: center;">
-      <div class="rpg-title-bar"><span id="pam-title">👤 玩家選單</span></div>
-      <div class="rpg-content" style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="pam-dm-btn" class="rpg-btn" style="background: var(--accent-hover);">💬 進入聊天室</button>
-        <button id="pam-logs-btn" class="rpg-btn" style="background: #10b981;">📚 查看閱讀記錄</button>
-        <button id="pam-cancel-btn" class="rpg-btn-ghost">取消</button>
       </div>
     </div>
   </div>
@@ -222,15 +215,18 @@ import LoginModal from '../components/LoginModal.astro';
             <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:2px 6px;">✕ 收起</button>
           </div>
           
-          <div id="shopkeeper-drawer-tools" class="shopkeeper-tools-bar" style="display: none;">
-            <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
-            <button class="tool-btn" data-tool="delete" style="color:#ef4444; border-color:#ef4444;">🗑️ 刪除模式</button>
+          <div id="shopkeeper-drawer-tools" class="shopkeeper-tools-bar" style="display: none; justify-content: space-between; align-items: center;">
+            <div style="display:flex; gap:6px;">
+              <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
+              <button class="tool-btn" data-tool="delete" style="color:#ef4444; border-color:#ef4444;">🗑️ 刪除模式</button>
+            </div>
+            <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:11px;">➕ 新增物件/NPC</button>
           </div>
 
           <div id="guide-content-box" class="guide-list-box"></div>
         </div>
 
-        <!-- 底部主導航列與起立按鈕（改用 <a> 標籤直接轉頁） -->
+        <!-- 底部主導航列與起立按鈕 -->
         <div style="display:flex; align-items:center; background:var(--bg-main);">
           <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex;">
             <a href="/chatroom" class="footer-tab-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">💬 聊天</a>
@@ -429,11 +425,10 @@ import LoginModal from '../components/LoginModal.astro';
     let moveTimer = 0;
     let onlinePlayers: Record<string, any> = {};
     let roomItems: any[] = [];
-    let activeTableData: any = null;
     let activeSeatData: any = null;
     let userReadingRecords: any[] = [];
     let currentReadingRecordId: string | null = null;
-    let syncInterval: any = null; // 用來控制坐下時暫停同步
+    let syncInterval: any = null;
 
     let customRooms: { room_key: string; room_name: string; bg_img: string; grid_size: number }[] = [];
     let currentGridSize = 12;
@@ -640,6 +635,15 @@ import LoginModal from '../components/LoginModal.astro';
     async function fetchRoomItems() {
       const { data } = await supabase.from(ITEMS_TABLE).select('*').eq('room', currentRoom);
       roomItems = data || [];
+      
+      // 保持坐下狀態時，玩家座標始終與坐著的椅子座標同步
+      if (isDND && userId) {
+        const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
+        if (seatedSeat) {
+          playerGx = seatedSeat.gx;
+          playerGy = seatedSeat.gy;
+        }
+      }
     }
 
     function initDatabaseRealtime() {
@@ -656,7 +660,7 @@ import LoginModal from '../components/LoginModal.astro';
       }).subscribe();
 
       syncInterval = setInterval(() => { 
-        syncMyStateToDB(); 
+        if (!isDND) syncMyStateToDB(); // 坐下時不重複發送同步請求
         fetchOnlinePlayers(); 
         fetchRoomItems(); 
       }, 5000);
@@ -750,7 +754,6 @@ import LoginModal from '../components/LoginModal.astro';
       for (let x = 0; x < canvas.width; x += tileSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
       for (let y = 0; y < canvas.height; y += tileSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
 
-      // 坐下時（isDND 為 true）不處理移動佇列，保持靜止
       if (!isDND) {
         moveTimer++;
         if (moveQueue.length > 0 && moveTimer % 8 === 0) {
@@ -861,7 +864,7 @@ import LoginModal from '../components/LoginModal.astro';
       if (guideDrawer) guideDrawer.style.display = 'none';
     });
 
-    // 指南物件去重複名稱並支援修改
+    // 渲染指南物件（去重複並支援新增/修改）
     function renderGuideContent() {
       if (!guideContentBox) return;
       if (isAdmin && shopkeeperDrawerTools) { shopkeeperDrawerTools.style.display = 'flex'; }
@@ -935,6 +938,8 @@ import LoginModal from '../components/LoginModal.astro';
             const cfLink = document.getElementById('cf-link') as HTMLInputElement;
             const cfOpenType = document.getElementById('cf-open-type') as HTMLSelectElement;
             const cfDesc = document.getElementById('cf-desc') as HTMLTextAreaElement;
+            const cfW = document.getElementById('cf-w') as HTMLInputElement;
+            const cfH = document.getElementById('cf-h') as HTMLInputElement;
 
             if (cfModalTitle) cfModalTitle.textContent = '✏️ 修改空間物件';
             if (cfEditId) cfEditId.value = targetItem.id;
@@ -943,6 +948,8 @@ import LoginModal from '../components/LoginModal.astro';
             if (cfLink) cfLink.value = targetItem.link || '';
             if (cfOpenType) cfOpenType.value = targetItem.open_type || 'current';
             if (cfDesc) cfDesc.value = targetItem.description || '';
+            if (cfW) cfW.value = String(targetItem.w || 1);
+            if (cfH) cfH.value = String(targetItem.h || 1);
             if (cfModal) cfModal.style.display = 'flex';
           }
         });
@@ -1007,6 +1014,7 @@ import LoginModal from '../components/LoginModal.astro';
     });
 
     const cfModal = document.getElementById('custom-furniture-modal');
+    const openCfModalBtn = document.getElementById('open-cf-modal-btn');
     const cfCancelBtn = document.getElementById('cf-cancel-btn');
     const cfConfirmBtn = document.getElementById('cf-confirm-btn');
     const cfEditId = document.getElementById('cf-edit-id') as HTMLInputElement;
@@ -1015,9 +1023,24 @@ import LoginModal from '../components/LoginModal.astro';
     const cfLinkInput = document.getElementById('cf-link') as HTMLInputElement;
     const cfOpenTypeSelect = document.getElementById('cf-open-type') as HTMLSelectElement;
     const cfDescInput = document.getElementById('cf-desc') as HTMLTextAreaElement;
+    const cfWInput = document.getElementById('cf-w') as HTMLInputElement;
+    const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
     const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
 
     let pendingTableItem: any = null;
+
+    openCfModalBtn?.addEventListener('click', () => {
+      const cfModalTitle = document.getElementById('cf-modal-title');
+      if (cfModalTitle) cfModalTitle.textContent = '🛠️ 新增物件/NPC';
+      if (cfEditId) cfEditId.value = '';
+      cfNameInput.value = ''; 
+      cfImgInput.value = ''; 
+      cfLinkInput.value = ''; 
+      cfDescInput.value = ''; 
+      if (cfWInput) cfWInput.value = '1';
+      if (cfHInput) cfHInput.value = '1';
+      if (cfModal) cfModal.style.display = 'flex';
+    });
 
     function renderRoomDropdown() {
       if (!roomSelectDropdown) return;
@@ -1105,6 +1128,8 @@ import LoginModal from '../components/LoginModal.astro';
       const link = cfLinkInput?.value.trim() || '';
       const openType = cfOpenTypeSelect?.value || 'current';
       const description = cfDescInput?.value.trim() || '無詳細說明';
+      const w = parseInt(cfWInput?.value) || 1;
+      const h = parseInt(cfHInput?.value) || 1;
       const editId = cfEditId?.value;
 
       if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
@@ -1115,8 +1140,30 @@ import LoginModal from '../components/LoginModal.astro';
           img_src: img,
           link: link,
           open_type: openType,
-          description: description
+          description: description,
+          w: w,
+          h: h
         }).eq('id', editId);
+      } else {
+        // 新增自訂物件/NPC 至當前房間
+        const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
+        const { error } = await supabase.from(ITEMS_TABLE).insert([{
+          room: currentRoom,
+          type: typeKey,
+          label: name,
+          img_src: img,
+          link: link,
+          open_type: openType,
+          description: description,
+          gx: 1, // 預設放在 (1,1)，店主可以透過放置工具或修改位置
+          gy: 1,
+          w: w,
+          h: h
+        }]);
+        if (error) {
+          alert('新增物件失敗');
+          return;
+        }
       }
 
       if (cfModal) cfModal.style.display = 'none';
@@ -1191,6 +1238,17 @@ import LoginModal from '../components/LoginModal.astro';
           imgSrc = '/assets/table.png';
           description = '供多人共讀交流的共讀桌';
           w = 2; h = 2;
+        } else {
+          const customItem = roomItems.find(ri => ri.type === currentTool);
+          if (customItem) {
+            itemLabel = customItem.label;
+            imgSrc = customItem.img_src;
+            link = customItem.link;
+            openType = customItem.open_type;
+            description = customItem.description;
+            w = customItem.w || 1;
+            h = customItem.h || 1;
+          }
         }
 
         const { error } = await supabase.from(ITEMS_TABLE).insert([{
@@ -1335,13 +1393,12 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (activeSeatData && userId) {
         isDND = true;
+        // 🔴 關鍵修復：坐下時強制將玩家座標與椅子的座標完全對齊重合
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
 
-        // 坐下時停止定時同步，防止其他人畫面重複更新
-        if (syncInterval) clearInterval(syncInterval);
-
+        // 立即將對齊後的座標與坐下狀態寫入資料庫
         await syncMyStateToDB();
 
         await supabase.from(ITEMS_TABLE).update({
@@ -1409,14 +1466,6 @@ import LoginModal from '../components/LoginModal.astro';
       await syncMyStateToDB();
       await fetchRoomItems();
       await fetchUserReadingRecords();
-
-      // 起立後重新啟動定時同步
-      if (syncInterval) clearInterval(syncInterval);
-      syncInterval = setInterval(() => { 
-        syncMyStateToDB(); 
-        fetchOnlinePlayers(); 
-        fetchRoomItems(); 
-      }, 5000);
     });
 
     initAuthCheck();
