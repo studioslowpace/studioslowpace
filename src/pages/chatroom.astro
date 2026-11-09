@@ -1018,8 +1018,12 @@ import LoginModal from '../components/LoginModal.astro';
                 
                 
                // 🟢 修改後：如果是訪客身分，直接不產生私訊按鈕
+
+// 判斷目標是否為訪客：只要 user_id 包含 'guest_' 或 role 是 '☁️ 訪客'
+const isTargetGuest = (item.id && item.id.includes('guest_')) || item.role === '☁️ 訪客';
+
 let actionBtn = '';
-if (!isSelf && !isGuest && !item.isGuestUser) {
+if (!isSelf && !isGuest && !isTargetGuest) {
     actionBtn = `<button data-target-id="${item.id}" data-target-name="${item.name}" class="dm-action-btn btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
 }
                 
