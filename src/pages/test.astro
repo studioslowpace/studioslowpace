@@ -466,7 +466,7 @@ import LoginModal from '../components/LoginModal.astro';
     let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string; openType: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
     // ==========================================
-    // 區塊一：身分驗證與初始化
+    // 區塊一：身分驗證與初始化 (正確載入註冊名)
     // ==========================================
     const modal = document.getElementById('rpg-modal');
     const logoutBtn = document.getElementById('logout-btn');
@@ -531,9 +531,9 @@ import LoginModal from '../components/LoginModal.astro';
     });
 
     async function loadUserProfile(uId: string) {
-      const { data } = await supabase.from(TABLE_NAME).select('*').eq('user_id', uId).single();
+      const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('user_id', uId).maybeSingle();
       if (data) {
-        playerName = data.name || '冒險者';
+        playerName = data.name || data.username || '冒險者';
         playerRole = data.role || '☁️ 讀者';
         playerAvatar = data.avatar || '/assets/player1.png';
         playerTier = data.tier || '鄰里人';
@@ -646,7 +646,7 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     // ==========================================
-    // 區塊三：獨立讀取 slowspace_rooms 並過濾 NULL 與繪製
+    // 區塊三：獨立讀取 slowsplace_rooms 並繪製
     // ==========================================
     async function fetchRooms() {
       const { data } = await supabase
@@ -896,7 +896,7 @@ import LoginModal from '../components/LoginModal.astro';
       if (appDrawerIframe) appDrawerIframe.src = '/record';
     });
 
-    // 支援指南與刪除 item 功能、快速放置
+    // 支援指南與刪除已加在畫布上的 item 功能
     function renderGuideContent() {
       if (!guideContentBox) return;
       
@@ -913,6 +913,7 @@ import LoginModal from '../components/LoginModal.astro';
       const allItemsMap = new Map();
       baseStandardItems.forEach(item => allItemsMap.set(item.label, item));
       customFurnitureTypes.forEach(cf => allItemsMap.set(cf.label, { type: cf.type, label: cf.label, imgSrc: cf.imgSrc, description: cf.description, w: cf.w, h: cf.h }));
+      
       roomItems.forEach(item => {
         if (!allItemsMap.has(item.label)) {
           allItemsMap.set(item.label, item);
@@ -920,11 +921,10 @@ import LoginModal from '../components/LoginModal.astro';
       });
 
       let html = '';
+      
+      // 1. 先列出所有範本與清單項目（可快速放置）
       allItemsMap.forEach((item, label) => {
         const isTable = item.type === 'table';
-        const foundInRoom = roomItems.find(ri => ri.label === label);
-        const itemId = foundInRoom ? foundInRoom.id : null;
-
         html += `
           <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
             <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
@@ -932,13 +932,26 @@ import LoginModal from '../components/LoginModal.astro';
               <div style="font-weight:bold; color:var(--accent-color);">${label} ${isTable ? '(🪵共讀桌)' : ''}</div>
               <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
             </div>
-            <div style="display:flex; gap:4px;">
-              ${isAdmin ? `<button class="guide-add-btn rpg-btn-sm" data-type="${item.type}" data-label="${label}" style="background:var(--accent-hover); color:#fff; font-weight:bold; padding:4px 8px;" title="快速放置">＋</button>` : ''}
-              ${isAdmin && itemId ? `<button class="guide-del-btn rpg-btn-sm" data-id="${itemId}" style="background:#ef4444; color:#fff; font-weight:bold; padding:4px 8px;" title="從房間刪除此物件">🗑️</button>` : ''}
-            </div>
+            ${isAdmin ? `<button class="guide-add-btn rpg-btn-sm" data-type="${item.type}" data-label="${label}" style="background:var(--accent-hover); color:#fff; font-weight:bold; padding:4px 8px;" title="快速放置">＋</button>` : ''}
           </div>
         `;
       });
+
+      // 2. 如果當前房間內有已放置的物件，列出專屬的「已放置物件清單」供隨時刪除
+      if (roomItems.length > 0) {
+        html += `<div style="font-size:11px; color:#94a3b8; font-weight:bold; margin: 12px 0 4px 2px;">🗑️ 當前房間已放置物件管理 (${roomItems.length})：</div>`;
+        roomItems.forEach(ri => {
+          html += `
+            <div style="display:flex; gap:10px; align-items:center; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:6px 8px; border-radius:6px; margin-bottom:4px;">
+              <div style="flex:1; font-size:12px; color:#f8fafc;">
+                📍 <strong>${ri.label}</strong> <span style="font-size:10px; color:#94a3b8;">(座標: ${ri.gx}, ${ri.gy})</span>
+              </div>
+              ${isAdmin ? `<button class="guide-del-btn rpg-btn-sm" data-id="${ri.id}" style="background:#ef4444; color:#fff; font-weight:bold; padding:3px 8px;">刪除</button>` : ''}
+            </div>
+          `;
+        });
+      }
+
       guideContentBox.innerHTML = html;
 
       // 綁定放置按鈕
@@ -960,12 +973,12 @@ import LoginModal from '../components/LoginModal.astro';
         });
       });
 
-      // 綁定刪除物件按鈕 (delete item)
+      // 綁定刪除已加在畫布上的物件按鈕
       document.querySelectorAll('.guide-del-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const targetBtn = e.currentTarget as HTMLElement;
           const itemId = targetBtn.dataset.id;
-          if (itemId && confirm('確定要在房間中刪除此物件嗎？')) {
+          if (itemId && confirm('確定要從畫布與資料庫中刪除此物件嗎？')) {
             await supabase.from(ITEMS_TABLE).delete().eq('id', itemId);
             await fetchRoomItems();
             renderGuideContent();
@@ -1154,15 +1167,16 @@ import LoginModal from '../components/LoginModal.astro';
 
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
-    // 從個人閱讀記錄選擇書本彈出視窗（支援跳轉或讀取）
     pickFromRecordBtn?.addEventListener('click', () => {
       if (seatModal) seatModal.style.display = 'none';
-      // 在同頁分頁開啟書櫃供選擇
       modalTabRecord?.click();
       if (appDrawerModal) appDrawerModal.style.display = 'flex';
     });
 
     canvas?.addEventListener('click', async (e) => {
+      // 坐下時封鎖走動功能
+      if (isDND) return;
+
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
@@ -1256,14 +1270,12 @@ import LoginModal from '../components/LoginModal.astro';
           if (hitItem.type === 'seat') {
             activeSeatData = hitItem;
             if (!hitItem.host_id || hitItem.host_id === '') {
-              // 空椅：可坐下輸入書本
               if (seatBookInput) seatBookInput.value = '';
               if (seatFormView) seatFormView.style.display = 'block';
               if (seatInfoView) seatInfoView.style.display = 'none';
               if (seatModal) seatModal.style.display = 'flex';
               return;
             } else {
-              // 已有人坐：顯示閱讀者人名與書名
               if (seatFormView) seatFormView.style.display = 'none';
               if (seatInfoView) seatInfoView.style.display = 'block';
               if (seatDetails) {
@@ -1343,17 +1355,18 @@ import LoginModal from '../components/LoginModal.astro';
           let currX = playerGx; let currY = playerGy;
           while (currX !== targetGx) { currX += currX < targetGx ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
           while (currY !== targetGy) { currY += currY < targetGy ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-          if (isDND) { isDND = false; if (leaveSeatBtn) leaveSeatBtn.style.display = 'none'; }
         }
       }
     });
 
-    // 坐下閱讀確認
+    // 坐下閱讀確認（玩家重疊至椅子位置，且鎖定走動）
     seatSitBtn?.addEventListener('click', async () => {
       const bookTitle = seatBookInput?.value.trim();
       if (!bookTitle) { alert('請輸入你想閱讀的書名！'); return; }
       if (activeSeatData) {
         isDND = true;
+        playerGx = activeSeatData.gx; // 與椅子重疊
+        playerGy = activeSeatData.gy;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         await supabase.from(ITEMS_TABLE).update({
           host_id: userId,
@@ -1369,12 +1382,11 @@ import LoginModal from '../components/LoginModal.astro';
     seatCancelBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
     seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
 
-    // 起立離開木椅
+    // 起立離開木椅（解除走動鎖定）
     leaveSeatBtn?.addEventListener('click', async () => {
       isDND = false;
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
       
-      // 清除當前用戶坐著的木椅狀態
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
         await supabase.from(ITEMS_TABLE).update({
@@ -1384,7 +1396,9 @@ import LoginModal from '../components/LoginModal.astro';
         }).eq('id', seatedSeat.id);
       }
 
-      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) playerGy += 1;
+      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) {
+        playerGy += 1;
+      }
       await syncMyStateToDB();
       await fetchRoomItems();
     });
