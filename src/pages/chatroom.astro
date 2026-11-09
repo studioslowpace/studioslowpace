@@ -835,22 +835,25 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         // 啟動單對單私訊
-        function startDirectChat(targetId, targetName) {
-            if (isGuest) {
-                alert("🔒 訪客身分無法使用私訊功能，請先完成正式會員登入！");
-                return;
-            }
-            // 2. 攔截：如果聊天對象是訪客（ID以 guest_ 開頭或名字包含訪客），禁止私訊
-    if (targetId.startsWith('guest_') || targetName.includes('訪客')) {
+function startDirectChat(targetId, targetName) {
+    // 1. 檢查自己是不是訪客
+    if (isGuest || (currentUserId && currentUserId.startsWith('guest_'))) {
+        alert("🔒 訪客身分無法使用私訊功能，請先完成正式會員登入！");
+        return;
+    }
+
+    // 2. 檢查對象是不是訪客 (🔥 提示在這裡)
+    if ((targetId && targetId.includes('guest_')) || (targetName && targetName.includes('訪客'))) {
         alert("🔒 系統提示：無法與訪客進行私訊對話。");
         return;
     }
-            if (targetId === currentUserId || targetName === currentUserName) {
-                alert("無法與自己進行私訊對話！");
-                return;
-            }
 
-            activeDmReceiverId = targetId;
+    if (targetId === currentUserId || targetName === currentUserName) {
+        alert("無法與自己進行私訊對話！");
+        return;
+    }
+
+    activeDmReceiverId = targetId;
 
             document.getElementById('current-dm-title').textContent = `💬 私訊: ${targetName}`;
             document.getElementById('page-home').classList.add('hidden');
@@ -1019,11 +1022,13 @@ import LoginModal from '../components/LoginModal.astro';
                 
                // 🟢 修改後：如果是訪客身分，直接不產生私訊按鈕
 
-// 判斷目標是否為訪客：只要 user_id 包含 'guest_' 或 role 是 '☁️ 訪客'
-const isTargetGuest = (item.id && item.id.includes('guest_')) || item.role === '☁️ 訪客';
-
+// 成員名單渲染邏輯
 let actionBtn = '';
-if (!isSelf && !isGuest && !isTargetGuest) {
+const isTargetGuest = (item.id && item.id.includes('guest_')) || item.role === '☁️ 訪客';
+const isSelfGuest = !currentUserId || currentUserId.startsWith('guest_');
+
+// 檢查點：自己不是訪客、不是自己、且對方也不是訪客才給私訊按鈕
+if (!isSelf && !isGuest && !isSelfGuest && !isTargetGuest) {
     actionBtn = `<button data-target-id="${item.id}" data-target-name="${item.name}" class="dm-action-btn btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
 }
                 
