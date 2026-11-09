@@ -176,7 +176,20 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <style>
+     <footer class="rpg-footer-nav">
+   
+        <!-- 底部主導航列與起立按鈕 -->
+        <div style="display:flex; align-items:center; background:var(--bg-main);">
+          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
+            <a href="/chatroom" class="footer-tab-btn">💬 聊天</a>
+            <a href="/record" class="footer-tab-btn">📚 書櫃</a>
+            <a href="/skillsupermarker" class="footer-tab-btn">萬事屋</a>
+          </div>
+    
+        </div>
+      </footer>
+
+  <style is:global>
     :root {
       --bg-main: #fcfaf7;
       --bg-card: #ffffff;
