@@ -840,6 +840,11 @@ import LoginModal from '../components/LoginModal.astro';
                 alert("🔒 訪客身分無法使用私訊功能，請先完成正式會員登入！");
                 return;
             }
+            // 2. 攔截：如果聊天對象是訪客（ID以 guest_ 開頭或名字包含訪客），禁止私訊
+    if (targetId.startsWith('guest_') || targetName.includes('訪客')) {
+        alert("🔒 系統提示：無法與訪客進行私訊對話。");
+        return;
+    }
             if (targetId === currentUserId || targetName === currentUserName) {
                 alert("無法與自己進行私訊對話！");
                 return;
