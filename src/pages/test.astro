@@ -62,12 +62,11 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 3.5 木椅坐下閱讀 Modal (支援入座與起立頁數更新) -->
+  <!-- 3.5 木椅坐下閱讀 Modal -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span id="seat-modal-title">🪑 木椅閱讀角</span></div>
       <div class="rpg-content">
-        <!-- 坐下表單 -->
         <div id="seat-form-view" style="display:none;">
           <p class="rpg-text">請選擇您的閱讀記錄或手動輸入新書：</p>
           
@@ -96,13 +95,11 @@ import LoginModal from '../components/LoginModal.astro';
           </div>
         </div>
 
-        <!-- 已有人坐：檢視資訊 -->
         <div id="seat-info-view" style="display:none;">
           <div id="seat-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
           <button id="seat-info-close" class="rpg-btn-ghost">關閉</button>
         </div>
 
-        <!-- 起立時：更新頁數表單 -->
         <div id="seat-update-view" style="display:none;">
           <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
           <div style="display:flex; gap:6px; margin-bottom:12px;">
@@ -123,7 +120,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 4. 彈出網頁視窗 (Modal 預覽用) -->
+  <!-- 4. 彈出網頁視窗 -->
   <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -136,7 +133,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 5. 編輯/修改空間物件 Modal -->
+  <!-- 5. 編輯/新增空間物件 Modal -->
   <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span id="cf-modal-title">✏️ 修改空間物件</span></div>
@@ -642,7 +639,10 @@ import LoginModal from '../components/LoginModal.astro';
         onlinePlayers = {};
         let count = 0;
         data.forEach((p: any) => {
-          if (p.user_id !== userId) onlinePlayers[p.user_id] = p;
+          // 💡 關鍵修復：絕對不要把自己的本地座標覆蓋成雲端的舊座標，防止抖動！
+          if (p.user_id !== userId) {
+            onlinePlayers[p.user_id] = p;
+          }
           count++;
         });
         if (onlineCountSpan) onlineCountSpan.textContent = String(count);
@@ -670,8 +670,8 @@ import LoginModal from '../components/LoginModal.astro';
         fetchRooms();
       }).subscribe();
 
+      // 定期更新房間物件與在線人數（不定期強制覆蓋自己座標）
       syncInterval = setInterval(() => { 
-        if (!isDND) syncMyStateToDB(); 
         fetchOnlinePlayers(); 
         fetchRoomItems(); 
       }, 5000);
@@ -772,6 +772,7 @@ import LoginModal from '../components/LoginModal.astro';
           if (!isCellSolidBlocked(nextStep.gx, nextStep.gy)) {
             playerGx = nextStep.gx;
             playerGy = nextStep.gy;
+            // 💡 走到新格子時立刻同步一次資料庫
             syncMyStateToDB();
           } else { moveQueue = []; }
         }
@@ -1298,8 +1299,6 @@ import LoginModal from '../components/LoginModal.astro';
         if (hitItem) {
           if (hitItem.type === 'seat') {
             activeSeatData = hitItem;
-            
-            // 💡 核心改良：點擊木椅後，先把玩家移動到椅子的座標
             playerGx = hitItem.gx;
             playerGy = hitItem.gy;
             await syncMyStateToDB();
@@ -1419,9 +1418,6 @@ import LoginModal from '../components/LoginModal.astro';
         isDND = true;
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
-        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
-
-        if (syncInterval) clearInterval(syncInterval);
         await syncMyStateToDB();
 
         await supabase.from(ITEMS_TABLE).update({
@@ -1459,7 +1455,6 @@ import LoginModal from '../components/LoginModal.astro';
     seatCancelBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
     seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
 
-    // 💡 點擊起立按鈕：彈出視窗讓旅人更新目前頁數
     leaveSeatBtn?.addEventListener('click', () => {
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
@@ -1474,7 +1469,6 @@ import LoginModal from '../components/LoginModal.astro';
       if (seatModal) seatModal.style.display = 'flex';
     });
 
-    // 💡 確認並起立：儲存更新後的頁數，清空椅子並重新啟動同步
     leaveConfirmBtn?.addEventListener('click', async () => {
       const curPage = parseInt(leaveCurrentPage?.value) || 1;
       const totPage = parseInt(leaveTotalPage?.value) || 100;
@@ -1485,7 +1479,6 @@ import LoginModal from '../components/LoginModal.astro';
       
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
-        // 同步更新 reading_record 與椅子上的頁數
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
             current_page: curPage,
@@ -1511,13 +1504,6 @@ import LoginModal from '../components/LoginModal.astro';
       await syncMyStateToDB();
       await fetchRoomItems();
       await fetchUserReadingRecords();
-
-      if (syncInterval) clearInterval(syncInterval);
-      syncInterval = setInterval(() => { 
-        syncMyStateToDB(); 
-        fetchOnlinePlayers(); 
-        fetchRoomItems(); 
-      }, 5000);
     });
 
     initAuthCheck();
