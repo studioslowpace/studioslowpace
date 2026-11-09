@@ -955,6 +955,46 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
 
             <div class="layout-action-row">
+                <!-- 📖 使用說明摺疊選單 -->
+                <details style="background: #ffffff; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.75rem; cursor: pointer; position: relative;">
+                    <summary style="font-weight: 700; color: #78350f; outline: none; list-style: none; display: flex; align-items: center; gap: 0.25rem;">
+                        📖 萬事屋使用與規則說明
+                    </summary>
+                    <div style="position: absolute; right: 0; top: calc(100% + 8px); width: 22rem; max-height: 24rem; overflow-y: auto; background: #ffffff; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 50; color: #78350f; line-height: 1.6; text-align: left;">
+                        <h4 style="font-weight: 700; color: #92400e; margin-bottom: 0.25rem;">1. 萬事分的點數上限與安全機制</h4>
+                        <p style="margin-bottom: 0.75rem;">每人最多可負 2 點萬事分。當點數低於負 2 分時將無法發布新委託，必須透過協助他人或登記技能來賺取積分[cite: 1]。</p>
+                        
+                        <h4 style="font-weight: 700; color: #92400e; margin-bottom: 0.25rem;">2. 點數的扣除與獲取機制</h4>
+                        <ul style="margin-left: 1rem; list-style-type: disc; margin-bottom: 0.75rem;">
+                            <li><strong>發布委託 (-1 點)</strong>：每發布一個委託扣 1 點萬事分[cite: 1]。</li>
+                            <li><strong>完成委託 (+1 點)</strong>：圓滿完成委託並經確認後獲得 1 點萬事分[cite: 1]。</li>
+                        </ul>
+
+                        <h4 style="font-weight: 700; color: #92400e; margin-bottom: 0.25rem;">3. 鄰里人名冊與認證規範</h4>
+                        <ul style="margin-left: 1rem; list-style-type: disc;">
+                            <li><strong>登記技能加分 (+1 點)</strong>：填寫並登記技能表，獲批後加 1 點萬事分[cite: 1]。</li>
+                            <li><strong>信賴與刪除機制</strong>：鄰里人名冊為客舍認證人員；違規者主理人將刪除其資格[cite: 1]。</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <!-- ⚖️ 免責聲明摺疊選單 -->
+                <details style="background: #ffffff; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.75rem; cursor: pointer; position: relative;">
+                    <summary style="font-weight: 700; color: #78350f; outline: none; list-style: none; display: flex; align-items: center; gap: 0.25rem;">
+                        ⚖️ 免責聲明
+                    </summary>
+                    <div style="position: absolute; right: 0; top: calc(100% + 8px); width: 22rem; max-height: 24rem; overflow-y: auto; background: #ffffff; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 50; color: #57534e; line-height: 1.6; text-align: left;">
+                        <h4 style="font-weight: 700; color: #78350f; margin-bottom: 0.25rem;">客舍萬事屋｜免責聲明</h4>
+                        <p style="margin-bottom: 0.5rem; font-size: 0.7rem;">歡迎使用本平台。參與前請詳閱以下聲明：</p>
+                        <ul style="margin-left: 1rem; list-style-type: disc; margin-bottom: 0.5rem; font-size: 0.7rem;">
+                            <li><strong>平台定位</strong>：僅提供互助媒合空間與萬事分信賴憑證[cite: 1]，客舍非僱主或代理人。</li>
+                            <li><strong>責任歸屬</strong>：雙方私下聯繫與交易屬自主行為，衍生糾紛客舍不負連帶賠償責任。</li>
+                            <li><strong>資訊真實性</strong>：各項資料由使用者自行維護[cite: 1]，隱私風險由當事人自行評估。</li>
+                            <li><strong>點數權利</strong>：萬事分不具法定貨幣價值，主理人保留資格調整與刪除權利[cite: 1]。</li>
+                        </ul>
+                        <p style="font-style: italic; font-size: 0.65rem; color: #78716c;">使用本平台即視為同意本聲明。</p>
+                    </div>
+                </details>
                 <button id="header-chatroom-btn" class="btn-base btn-blue" style="background-color: #55a9d3; color: #ffffff; border: none;">鄰里人交流區 💬</button>
                 <button id="header-skill-btn" class="hidden btn-base btn-stone">+ 新增鄰里人技能</button>
                 <button id="header-upload-btn" class="btn-base btn-orange">+ 發布新委託</button>
