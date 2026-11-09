@@ -18,30 +18,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 2. 入座與詳細閱讀設定 Modal -->
-  <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window">
-      <div class="rpg-title-bar"><span>◆ 閱讀與專心設定 ◆</span></div>
-      <div class="rpg-content">
-        <p class="rpg-text">你在此處安坐。請輸入詳細的閱讀進度與筆記：[cite: 2]</p>
-        <input type="text" id="rpg-book-input" placeholder="書名（例：《希臘語課》）" maxlength="25" style="margin-bottom:6px;" />
-        <input type="text" id="rpg-author-input" placeholder="作者名" maxlength="20" style="margin-bottom:6px;" />
-        <div style="display:flex; gap:6px; margin-bottom:6px;">
-          <input type="number" id="rpg-current-page" placeholder="目前頁數" min="0" max="9999" style="flex:1; margin-bottom:0;" />
-          <input type="number" id="rpg-total-page" placeholder="總頁數" min="1" max="9999" style="flex:1; margin-bottom:0;" />
-        </div>
-        <textarea id="rpg-quote-input" placeholder="書摘句子..." style="width:100%; height:45px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
-        <textarea id="rpg-review-input" placeholder="讀後感與心得..." style="width:100%; height:55px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:10px;"></textarea>
-        
-        <div class="rpg-btn-group">
-          <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
-          <button id="seat-confirm-btn" class="rpg-btn">☁️ 開啟專心 (DND)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. 圖書館藏 Modal -->
+  <!-- 2. 圖書館藏 Modal -->
   <div id="library-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -54,13 +31,13 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 4. 共讀桌活動 Modal -->
+  <!-- 3. 共讀桌活動 Modal -->
   <div id="table-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span id="table-modal-title">📖 共讀桌活動</span></div>
       <div class="rpg-content">
         <div id="table-form-view" style="display:none;">
-          <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：[cite: 2]</p>
+          <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：</p>
           <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:6px;" />
           <input type="text" id="table-author" placeholder="作者" style="margin-bottom:6px;" />
           <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">限制參加人數：</div>
@@ -85,7 +62,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 5. 彈出網頁視窗 (Modal 預覽用) -->
+  <!-- 4. 彈出網頁視窗 (Modal 預覽用 - 連結開啟方式為 modal 時使用) -->
   <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -98,12 +75,12 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 6. 新增自訂物件 Modal (店主專用) -->
+  <!-- 5. 新增自訂物件 Modal (店主專用) -->
   <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>🛠️ 新增空間物件/NPC/傳送門</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：[cite: 2]</p>
+        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
         <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/npc_mi.png）" style="margin-bottom:6px;" />
         <input type="text" id="cf-link" placeholder="連結網址（例：/ 或外部網址，無則留空）" style="margin-bottom:6px;" />
@@ -128,12 +105,12 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 7. 店主新增房間/設定背景 Modal -->
+  <!-- 6. 店主新增房間/設定背景 Modal -->
   <div id="room-settings-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>🏠 房間與背景設定 (店主專用)</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">新增房間代碼、房間名稱、背景圖網址及格子數量：[cite: 2]</p>
+        <p class="rpg-text">新增房間代碼、房間名稱、背景圖網址及格子數量：</p>
         <input type="text" id="rs-room-key" placeholder="房間代碼（例：reading_room）" style="margin-bottom:6px;" />
         <input type="text" id="rs-room-name" placeholder="房間顯示名稱（例：📖 靜心閱覽室）" style="margin-bottom:6px;" />
         <input type="text" id="rs-bg-img" placeholder="背景圖片網址（留空則使用純色背景）" style="margin-bottom:6px;" />
@@ -141,13 +118,13 @@ import LoginModal from '../components/LoginModal.astro';
         <input type="number" id="rs-grid-size" placeholder="格子數 (預設 12)" value="12" min="6" max="30" style="margin-bottom:12px;" />
         <div class="rpg-btn-group">
           <button id="rs-cancel-btn" class="rpg-btn-ghost">取消</button>
-          <button id="rs-confirm-btn" class="rpg-btn">✨ 建立並切換房間</button>
+          <button id="rs-confirm-btn" class="rpg-btn">✨ 建立並儲存房間</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 8. 玩家互動選單 Modal -->
+  <!-- 7. 玩家互動選單 Modal -->
   <div id="player-action-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 280px; text-align: center;">
       <div class="rpg-title-bar"><span id="pam-title">👤 玩家選單</span></div>
@@ -159,7 +136,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 9. 查看其他玩家閱讀記錄 Modal -->
+  <!-- 8. 查看其他玩家閱讀記錄 Modal -->
   <div id="peer-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window" style="max-width: 360px; max-height: 80vh; display: flex; flex-direction: column;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -188,8 +165,6 @@ import LoginModal from '../components/LoginModal.astro';
           <div class="room-selector-wrapper">
             <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:4px 8px; font-weight:bold;">
               <option value="study">📖 自修室</option>
-              <option value="chat">☕ 書話間</option>
-              <option value="salon">🏛️ 沙龍</option>
             </select>
           </div>
 
@@ -210,7 +185,7 @@ import LoginModal from '../components/LoginModal.astro';
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
-      <!-- 下方獨立頁面導航列與佈置/指南面板 -->
+      <!-- 下方導航列與佈置/指南面板 -->
       <section class="split-panel">
         <div class="panel-tabs-bar">
           <a href="/chatroom" class="panel-tab-link">💬 聊天大廳</a>
@@ -232,7 +207,7 @@ import LoginModal from '../components/LoginModal.astro';
           </div>
         </div>
 
-        <!-- 2. 圖示指南面板 -->
+        <!-- 2. 圖示指南面板 (含去重與店主專屬 + 符號快速放置) -->
         <div id="pane-guide" class="pane-content active">
           <div class="logs-header-sub"><span>📖 空間物件與圖示指南</span></div>
           <div id="guide-content-box" class="logs-list-box" style="overflow-y:auto; flex:1;"></div>
@@ -240,7 +215,7 @@ import LoginModal from '../components/LoginModal.astro';
       </section>
 
       <footer class="rpg-footer">
-        <div style="font-size:11px; color:#94a3b8;">空間客舍 SLOW PACE STUDIO[cite: 3]</div>
+        <div style="font-size:11px; color:#94a3b8;">空間客舍 SLOW PACE STUDIO</div>
         <div class="action-dock">
           <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background: var(--accent-color, #38bdf8); color:#0f172a; font-weight:bold;">🚶 起立</button>
         </div>
@@ -375,31 +350,26 @@ import LoginModal from '../components/LoginModal.astro';
     let roomItems: any[] = [];
     let activeTableData: any = null;
 
-    let customRooms: { key: string; name: string; bgImg: string; gridSize: number }[] = [
-      { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
-      { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
-      { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
-    ];
+    let customRooms: { room_key: string; room_name: string; bg_img: string; grid_size: number }[] = [];
 
     let currentGridSize = 12;
     let currentBgImg = '';
 
     function updateCurrentRoomConfig() {
-      const r = customRooms.find(rc => rc.key === currentRoom);
+      const r = customRooms.find(rc => rc.room_key === currentRoom);
       if (r) {
-        currentGridSize = r.gridSize || 12;
-        currentBgImg = r.bgImg || '';
+        currentGridSize = r.grid_size || 12;
+        currentBgImg = r.bg_img || '';
       } else {
         currentGridSize = 12;
         currentBgImg = '';
       }
     }
-    updateCurrentRoomConfig();
 
     let customFurnitureTypes: { type: string; label: string; w: number; h: number; imgSrc: string; description: string; link: string; openType: string }[] = JSON.parse(localStorage.getItem('rpg_custom_furnitures') || '[]');
 
     // ==========================================
-    // 區塊一：身分驗證與初始化（改以 slowpace_members 中的 is_admin 判定）
+    // 區塊一：身分驗證與初始化
     // ==========================================
     const modal = document.getElementById('rpg-modal');
     const logoutBtn = document.getElementById('logout-btn');
@@ -470,7 +440,7 @@ import LoginModal from '../components/LoginModal.astro';
         playerRole = data.role || '☁️ 讀者';
         playerAvatar = data.avatar || '/assets/player1.png';
         playerTier = data.tier || '鄰里人';
-        isAdmin = Boolean(data.is_admin); // 嚴格依據 slowpace_members 表內的 is_admin 欄位判斷
+        isAdmin = Boolean(data.is_admin);
         
         if (hudName) hudName.textContent = playerName;
         if (hudTierTag) hudTierTag.textContent = isAdmin ? '👑 店主' : '🌱 鄰里人';
@@ -726,6 +696,8 @@ import LoginModal from '../components/LoginModal.astro';
 
     const customModalFrame = document.getElementById('custom-modal-frame');
     const customModalClose = document.getElementById('custom-modal-close');
+    const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
+    const customModalTitle = document.getElementById('custom-modal-title');
 
     const panelTabBtns = document.querySelectorAll('.panel-tab-btn');
     const paneBuild = document.getElementById('pane-build');
@@ -750,26 +722,63 @@ import LoginModal from '../components/LoginModal.astro';
       });
     });
 
+    // 指南與佈置結合：去重渲染物件，店主旁顯示 + 符號可直接放置
     function renderGuideContent() {
       if (!guideContentBox) return;
       if (roomItems.length === 0) {
         guideContentBox.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">目前此空間尚無任何擺設物件。</div>';
         return;
       }
-      let html = '';
+
+      // 相同名稱去重
+      const uniqueItemsMap = new Map();
       roomItems.forEach(item => {
+        if (!uniqueItemsMap.has(item.label)) {
+          uniqueItemsMap.set(item.label, item);
+        }
+      });
+
+      let html = '';
+      uniqueItemsMap.forEach((item, label) => {
         const isTable = item.type === 'table';
         html += `
           <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
             <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
             <div style="flex:1;">
-              <div style="font-weight:bold; color:var(--accent-color);">${item.label} ${isTable ? '(🪵共讀桌)' : ''}</div>
+              <div style="font-weight:bold; color:var(--accent-color);">${label} ${isTable ? '(🪵共讀桌)' : ''}</div>
               <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
             </div>
+            ${isAdmin ? `<button class="guide-add-btn rpg-btn-sm" data-type="${item.type}" data-label="${label}" style="background:var(--accent-hover); color:#fff; font-weight:bold; padding:4px 8px;">＋</button>` : ''}
           </div>
         `;
       });
       guideContentBox.innerHTML = html;
+
+      // 綁定店主點擊指南 + 符號快速放置的事件
+      document.querySelectorAll('.guide-add-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const targetBtn = e.currentTarget as HTMLElement;
+          const tType = targetBtn.dataset.type;
+          currentTool = tType || 'move';
+          
+          // 切換工具列選取狀態
+          document.querySelectorAll('.tool-btn').forEach(tb => {
+            if ((tb as HTMLElement).dataset.tool === currentTool) {
+              tb.classList.add('active');
+            } else {
+              tb.classList.remove('active');
+            }
+          });
+
+          // 切換至佈置面板
+          panelTabBtns.forEach(b => b.classList.remove('active'));
+          document.querySelector('[data-tab="build"]')?.classList.add('active');
+          if (paneGuide) paneGuide.style.display = 'none';
+          if (paneBuild) paneBuild.style.display = 'flex';
+          
+          alert(`已選擇「${targetBtn.dataset.label}」，請點擊畫布空白處放置！`);
+        });
+      });
     }
 
     const peerModal = document.getElementById('peer-modal');
@@ -806,28 +815,24 @@ import LoginModal from '../components/LoginModal.astro';
 
     let pendingTableItem: any = null;
 
+    // 房間儲存與讀取自 slowspace_items (利用 room_key & room_name)
     async function fetchRooms() {
       const { data } = await supabase.from(ROOMS_TABLE).select('*');
       if (data && data.length > 0) {
         customRooms = data.map((r: any) => ({
-          key: r.room_key,
-          name: r.room_name,
-          bgImg: r.bg_img || '',
-          gridSize: r.grid_size || 12
+          room_key: r.room_key,
+          room_name: r.room_name,
+          bg_img: r.bg_img || '',
+          grid_size: r.grid_size || 12
         }));
       } else {
         const defaults = [
-          { key: 'study', name: '📖 自修室', bgImg: '', gridSize: 12 },
-          { key: 'chat', name: '☕ 書話間', bgImg: '', gridSize: 12 },
-          { key: 'salon', name: '🏛️ 沙龍', bgImg: '', gridSize: 12 }
+          { room_key: 'study', room_name: '📖 自修室', bg_img: '', grid_size: 12 },
+          { room_key: 'chat', room_name: '☕ 書話間', bg_img: '', grid_size: 12 },
+          { room_key: 'salon', room_name: '🏛️ 沙龍', bg_img: '', grid_size: 12 }
         ];
         for (const dr of defaults) {
-          await supabase.from(ROOMS_TABLE).upsert({
-            room_key: dr.key,
-            room_name: dr.name,
-            bg_img: dr.bgImg,
-            grid_size: dr.gridSize
-          }, { onConflict: 'room_key' });
+          await supabase.from(ROOMS_TABLE).upsert(dr, { onConflict: 'room_key' });
         }
         customRooms = defaults;
       }
@@ -839,12 +844,12 @@ import LoginModal from '../components/LoginModal.astro';
       if (!roomSelectDropdown) return;
       let html = '';
       customRooms.forEach(rc => {
-        const selected = rc.key === currentRoom ? 'selected' : '';
-        html += `<option value="${rc.key}" ${selected}>${rc.name}</option>`;
+        const selected = rc.room_key === currentRoom ? 'selected' : '';
+        html += `<option value="${rc.room_key}" ${selected}>${rc.room_name}</option>`;
       });
       roomSelectDropdown.innerHTML = html;
 
-      if (isAdmin && currentRoom !== 'study' && currentRoom !== 'chat' && currentRoom !== 'salon') {
+      if (isAdmin && !['study', 'chat', 'salon'].includes(currentRoom)) {
         if (deleteRoomBtn) deleteRoomBtn.style.display = 'inline-block';
       } else {
         if (deleteRoomBtn) deleteRoomBtn.style.display = 'none';
@@ -891,6 +896,7 @@ import LoginModal from '../components/LoginModal.astro';
       await syncMyStateToDB();
       await fetchOnlinePlayers();
       await fetchRoomItems();
+      alert(`成功建立並切換至「${name}」！`);
     });
 
     deleteRoomBtn?.addEventListener('click', async () => {
@@ -956,7 +962,7 @@ import LoginModal from '../components/LoginModal.astro';
 
       renderCustomToolsUI();
       if (cfModal) cfModal.style.display = 'none';
-      cfNameInput.value = ''; cfImgInput.value = ''; cfLinkInput.value = ''; cfDescInput.value = '';
+      cfNameInput.value = ''; cfImgInput.value = ''; cfLinkInput.value = ''; cfDescInput.value = ''; cfWInput.value = '1'; cfHInput.value = '1';
     });
 
     peerCloseBtn?.addEventListener('click', () => { if (peerModal) peerModal.style.display = 'none'; });
@@ -986,7 +992,7 @@ import LoginModal from '../components/LoginModal.astro';
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
     // ==========================================
-    // 畫布點擊事件（含店主 is_admin 驗證與放置物件邏輯）
+    // 畫布點擊事件（含店主佈置、連結開啟方式實作、共讀桌互動）
     // ==========================================
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -999,7 +1005,7 @@ import LoginModal from '../components/LoginModal.astro';
       const targetGx = Math.floor(clickX / tileSize);
       const targetGy = Math.floor(clickY / tileSize);
 
-      // 1. 店主佈置放置物件邏輯 (使用 is_admin 驗證)
+      // 1. 店主佈置模式：點擊畫布放置物件
       if (currentTool !== 'move') {
         if (!isAdmin) {
           alert('只有店主（具備管理員權限）才能進行空間佈置！');
@@ -1014,24 +1020,35 @@ import LoginModal from '../components/LoginModal.astro';
         let itemType = currentTool;
         let itemLabel = currentTool;
         let imgSrc = '';
+        let link = '';
+        let openType = 'current';
+        let description = '';
         let w = 1;
         let h = 1;
 
         if (currentTool === 'seat') {
           itemLabel = '木椅';
           imgSrc = '/assets/seat.png';
+          description = '供旅人安坐專心的木椅';
         } else if (currentTool === 'shelf') {
           itemLabel = '書架';
           imgSrc = '/assets/shelf.png';
+          description = '收藏客舍館藏書單的書架';
+          link = '/library';
+          openType = 'modal';
         } else if (currentTool === 'table') {
           itemLabel = '共讀桌';
           imgSrc = '/assets/table.png';
+          description = '供多人共讀交流的共讀桌';
           w = 2; h = 2;
         } else {
           const customObj = customFurnitureTypes.find(cf => cf.type === currentTool);
           if (customObj) {
             itemLabel = customObj.label;
             imgSrc = customObj.imgSrc;
+            link = customObj.link;
+            openType = customObj.openType;
+            description = customObj.description;
             w = customObj.w;
             h = customObj.h;
           }
@@ -1042,6 +1059,9 @@ import LoginModal from '../components/LoginModal.astro';
           type: itemType,
           label: itemLabel,
           img_src: imgSrc,
+          link: link,
+          open_type: openType,
+          description: description,
           gx: targetGx,
           gy: targetGy,
           w: w,
@@ -1061,40 +1081,64 @@ import LoginModal from '../components/LoginModal.astro';
         return;
       }
 
-      // 2. 一般移動與互動邏輯 (共讀桌、書架、木椅座位、玩家、移動)
+      // 2. 一般移動模式下的點擊互動（共讀桌、書架、自訂物件連結、玩家、移動）
       if (currentTool === 'move') {
-        const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
-        if (hitTable) {
-          activeTableData = hitTable;
-          pendingTableItem = hitTable;
-          if (!hitTable.book_title || hitTable.book_title === '') {
-            if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
-            if (tableFormView) tableFormView.style.display = 'block';
-            if (tableInfoView) tableInfoView.style.display = 'none';
+        // 檢查是否點擊自訂物件（含連結與開啟方式實作）
+        const hitItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
+        
+        if (hitItem) {
+          if (hitItem.type === 'table') {
+            activeTableData = hitItem;
+            pendingTableItem = hitItem;
+            if (!hitItem.book_title || hitItem.book_title === '') {
+              if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
+              if (tableFormView) tableFormView.style.display = 'block';
+              if (tableInfoView) tableInfoView.style.display = 'none';
+              if (tableModal) tableModal.style.display = 'flex';
+              return;
+            }
+            if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitItem.book_title}》`;
+            if (tableFormView) tableFormView.style.display = 'none';
+            if (tableInfoView) tableInfoView.style.display = 'block';
+            
+            if (tableDetails) {
+              let membersList = (hitItem.members || []).map((m: any) => m.name).join('、');
+              tableDetails.innerHTML = `
+                <p><strong>書名：</strong>《${hitItem.book_title}》</p>
+                <p><strong>作者：</strong>${hitItem.author || '佚名'}</p>
+                <p><strong>發起人：</strong>${hitItem.host_name || '未知'}</p>
+                <p><strong>預定完讀：</strong>${hitItem.finish_date || '未設定'}</p>
+                <p><strong>成員 (${(hitItem.members || []).length}/${hitItem.max_members})：</strong>${membersList}</p>
+              `;
+              if (hitItem.host_id === userId || isAdmin) {
+                if (tableEndBtn) tableEndBtn.style.display = 'block';
+              } else {
+                if (tableEndBtn) tableEndBtn.style.display = 'none';
+              }
+            }
             if (tableModal) tableModal.style.display = 'flex';
             return;
           }
-          if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
-          if (tableFormView) tableFormView.style.display = 'none';
-          if (tableInfoView) tableInfoView.style.display = 'block';
-          
-          if (tableDetails) {
-            let membersList = (hitTable.members || []).map((m: any) => m.name).join('、');
-            tableDetails.innerHTML = `
-              <p><strong>書名：</strong>《${hitTable.book_title}》</p>
-              <p><strong>作者：</strong>${hitTable.author || '佚名'}</p>
-              <p><strong>發起人：</strong>${hitTable.host_name || '未知'}</p>
-              <p><strong>預定完讀：</strong>${hitTable.finish_date || '未設定'}</p>
-              <p><strong>成員 (${(hitTable.members || []).length}/${hitTable.max_members})：</strong>${membersList}</p>
-            `;
-            if (hitTable.host_id === userId || isAdmin) {
-              if (tableEndBtn) tableEndBtn.style.display = 'block';
-            } else {
-              if (tableEndBtn) tableEndBtn.style.display = 'none';
-            }
+
+          if (hitItem.type === 'shelf') {
+            if (libraryModal) libraryModal.style.display = 'flex';
+            return;
           }
-          if (tableModal) tableModal.style.display = 'flex';
-          return;
+
+          // 確實實作連結開啟方式功能 (openType)
+          if (hitItem.link && hitItem.link.trim() !== '') {
+            const oType = hitItem.open_type || 'current';
+            if (oType === 'blank') {
+              window.open(hitItem.link, '_blank');
+            } else if (oType === 'modal') {
+              if (customModalTitle) customModalTitle.textContent = `📄 ${hitItem.label || '內容預覽'}`;
+              if (customModalIframe) customModalIframe.src = hitItem.link;
+              if (customModalFrame) customModalFrame.style.display = 'flex';
+            } else {
+              window.location.href = hitItem.link;
+            }
+            return;
+          }
         }
 
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
@@ -1105,10 +1149,7 @@ import LoginModal from '../components/LoginModal.astro';
           return;
         }
 
-        const hitShelf = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1) && item.type === 'shelf');
-        if (hitShelf) { if (libraryModal) libraryModal.style.display = 'flex'; return; }
-
-        // 點擊木椅入座設定 (seatModal)
+        // 點擊木椅入座設定 (DND)
         const hitSeat = roomItems.find(item => item.type === 'seat' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
         if (hitSeat) {
           isDND = true;
