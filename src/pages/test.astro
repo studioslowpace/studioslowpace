@@ -62,13 +62,14 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 3.5 木椅坐下閱讀 Modal -->
+  <!-- 3.5 木椅坐下閱讀 Modal (支援入座與起立頁數更新) -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span>🪑 木椅閱讀角</span></div>
+      <div class="rpg-title-bar"><span id="seat-modal-title">🪑 木椅閱讀角</span></div>
       <div class="rpg-content">
+        <!-- 坐下表單 -->
         <div id="seat-form-view" style="display:none;">
-          <p class="rpg-text">這張木椅目前空著，請選擇您的閱讀記錄或手動輸入新書：</p>
+          <p class="rpg-text">請選擇您的閱讀記錄或手動輸入新書：</p>
           
           <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">從個人閱讀記錄選擇：</div>
           <select id="seat-record-select" style="width:100%; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:10px;">
@@ -95,9 +96,28 @@ import LoginModal from '../components/LoginModal.astro';
           </div>
         </div>
 
+        <!-- 已有人坐：檢視資訊 -->
         <div id="seat-info-view" style="display:none;">
           <div id="seat-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
           <button id="seat-info-close" class="rpg-btn-ghost">關閉</button>
+        </div>
+
+        <!-- 起立時：更新頁數表單 -->
+        <div id="seat-update-view" style="display:none;">
+          <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
+          <div style="display:flex; gap:6px; margin-bottom:12px;">
+            <div style="flex:1;">
+              <div style="font-size:10px; color:#94a3b8; margin-bottom:2px;">目前頁數</div>
+              <input type="number" id="leave-current-page" value="1" min="0" style="margin-bottom:0;" />
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:10px; color:#94a3b8; margin-bottom:2px;">總頁數</div>
+              <input type="number" id="leave-total-page" value="100" min="1" style="margin-bottom:0;" />
+            </div>
+          </div>
+          <div class="rpg-btn-group">
+            <button id="leave-confirm-btn" class="rpg-btn" style="background:#10b981;">✅ 確認並起立</button>
+          </div>
         </div>
       </div>
     </div>
@@ -116,14 +136,14 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 5. 新增/修改自訂物件 Modal (支援店主新增物件/NPC) -->
+  <!-- 5. 編輯/修改空間物件 Modal -->
   <div id="custom-furniture-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
-      <div class="rpg-title-bar"><span id="cf-modal-title">🛠️ 新增/修改空間物件</span></div>
+      <div class="rpg-title-bar"><span id="cf-modal-title">✏️ 修改空間物件</span></div>
       <div class="rpg-content">
         <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
         <input type="hidden" id="cf-edit-id" value="" />
-        <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
+        <input type="text" id="cf-name" placeholder="名稱（例：書架）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/shelf.png）" style="margin-bottom:6px;" />
         <input type="text" id="cf-link" placeholder="連結網址（無則留空）" style="margin-bottom:6px;" />
         
@@ -635,15 +655,6 @@ import LoginModal from '../components/LoginModal.astro';
     async function fetchRoomItems() {
       const { data } = await supabase.from(ITEMS_TABLE).select('*').eq('room', currentRoom);
       roomItems = data || [];
-      
-      // 保持坐下狀態時，玩家座標始終與坐著的椅子座標同步
-      if (isDND && userId) {
-        const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
-        if (seatedSeat) {
-          playerGx = seatedSeat.gx;
-          playerGy = seatedSeat.gy;
-        }
-      }
     }
 
     function initDatabaseRealtime() {
@@ -660,7 +671,7 @@ import LoginModal from '../components/LoginModal.astro';
       }).subscribe();
 
       syncInterval = setInterval(() => { 
-        if (!isDND) syncMyStateToDB(); // 坐下時不重複發送同步請求
+        if (!isDND) syncMyStateToDB(); 
         fetchOnlinePlayers(); 
         fetchRoomItems(); 
       }, 5000);
@@ -864,7 +875,6 @@ import LoginModal from '../components/LoginModal.astro';
       if (guideDrawer) guideDrawer.style.display = 'none';
     });
 
-    // 渲染指南物件（去重複並支援新增/修改）
     function renderGuideContent() {
       if (!guideContentBox) return;
       if (isAdmin && shopkeeperDrawerTools) { shopkeeperDrawerTools.style.display = 'flex'; }
@@ -981,16 +991,21 @@ import LoginModal from '../components/LoginModal.astro';
     const tableDetails = document.getElementById('table-details');
 
     const seatModal = document.getElementById('seat-modal');
+    const seatModalTitle = document.getElementById('seat-modal-title');
     const seatFormView = document.getElementById('seat-form-view');
     const seatInfoView = document.getElementById('seat-info-view');
+    const seatUpdateView = document.getElementById('seat-update-view');
     const seatRecordSelect = document.getElementById('seat-record-select') as HTMLSelectElement;
     const seatBookInput = document.getElementById('seat-book-input') as HTMLInputElement;
     const seatAuthorInput = document.getElementById('seat-author-input') as HTMLInputElement;
     const seatCurrentPage = document.getElementById('seat-current-page') as HTMLInputElement;
     const seatTotalPage = document.getElementById('seat-total-page') as HTMLInputElement;
+    const leaveCurrentPage = document.getElementById('leave-current-page') as HTMLInputElement;
+    const leaveTotalPage = document.getElementById('leave-total-page') as HTMLInputElement;
     const seatSitBtn = document.getElementById('seat-sit-btn');
     const seatCancelBtn = document.getElementById('seat-cancel-btn');
     const seatInfoClose = document.getElementById('seat-info-close');
+    const leaveConfirmBtn = document.getElementById('leave-confirm-btn');
     const seatDetails = document.getElementById('seat-details');
 
     seatRecordSelect?.addEventListener('change', (e) => {
@@ -1145,7 +1160,6 @@ import LoginModal from '../components/LoginModal.astro';
           h: h
         }).eq('id', editId);
       } else {
-        // 新增自訂物件/NPC 至當前房間
         const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
         const { error } = await supabase.from(ITEMS_TABLE).insert([{
           room: currentRoom,
@@ -1155,7 +1169,7 @@ import LoginModal from '../components/LoginModal.astro';
           link: link,
           open_type: openType,
           description: description,
-          gx: 1, // 預設放在 (1,1)，店主可以透過放置工具或修改位置
+          gx: 1,
           gy: 1,
           w: w,
           h: h
@@ -1284,6 +1298,12 @@ import LoginModal from '../components/LoginModal.astro';
         if (hitItem) {
           if (hitItem.type === 'seat') {
             activeSeatData = hitItem;
+            
+            // 💡 核心改良：點擊木椅後，先把玩家移動到椅子的座標
+            playerGx = hitItem.gx;
+            playerGy = hitItem.gy;
+            await syncMyStateToDB();
+
             if (!hitItem.host_id || hitItem.host_id === '') {
               await fetchUserReadingRecords();
               currentReadingRecordId = null;
@@ -1293,13 +1313,17 @@ import LoginModal from '../components/LoginModal.astro';
               if (seatCurrentPage) seatCurrentPage.value = '1';
               if (seatTotalPage) seatTotalPage.value = '100';
 
+              if (seatModalTitle) seatModalTitle.textContent = '🪑 木椅閱讀角';
               if (seatFormView) seatFormView.style.display = 'block';
               if (seatInfoView) seatInfoView.style.display = 'none';
+              if (seatUpdateView) seatUpdateView.style.display = 'none';
               if (seatModal) seatModal.style.display = 'flex';
               return;
             } else {
+              if (seatModalTitle) seatModalTitle.textContent = '🪑 木椅閱讀角';
               if (seatFormView) seatFormView.style.display = 'none';
               if (seatInfoView) seatInfoView.style.display = 'block';
+              if (seatUpdateView) seatUpdateView.style.display = 'none';
               if (seatDetails) {
                 const cur = hitItem.current_page || 1;
                 const tot = hitItem.total_pages || 100;
@@ -1393,12 +1417,11 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (activeSeatData && userId) {
         isDND = true;
-        // 🔴 關鍵修復：坐下時強制將玩家座標與椅子的座標完全對齊重合
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
 
-        // 立即將對齊後的座標與坐下狀態寫入資料庫
+        if (syncInterval) clearInterval(syncInterval);
         await syncMyStateToDB();
 
         await supabase.from(ITEMS_TABLE).update({
@@ -1436,15 +1459,37 @@ import LoginModal from '../components/LoginModal.astro';
     seatCancelBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
     seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
 
-    leaveSeatBtn?.addEventListener('click', async () => {
+    // 💡 點擊起立按鈕：彈出視窗讓旅人更新目前頁數
+    leaveSeatBtn?.addEventListener('click', () => {
+      const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
+      if (seatedSeat) {
+        if (leaveCurrentPage) leaveCurrentPage.value = seatedSeat.current_page || 1;
+        if (leaveTotalPage) leaveTotalPage.value = seatedSeat.total_pages || 100;
+      }
+
+      if (seatModalTitle) seatModalTitle.textContent = '🚶 準備起立';
+      if (seatFormView) seatFormView.style.display = 'none';
+      if (seatInfoView) seatInfoView.style.display = 'none';
+      if (seatUpdateView) seatUpdateView.style.display = 'block';
+      if (seatModal) seatModal.style.display = 'flex';
+    });
+
+    // 💡 確認並起立：儲存更新後的頁數，清空椅子並重新啟動同步
+    leaveConfirmBtn?.addEventListener('click', async () => {
+      const curPage = parseInt(leaveCurrentPage?.value) || 1;
+      const totPage = parseInt(leaveTotalPage?.value) || 100;
+
       isDND = false;
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      if (seatModal) seatModal.style.display = 'none';
       
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
+        // 同步更新 reading_record 與椅子上的頁數
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
-            current_page: seatedSeat.current_page || 1
+            current_page: curPage,
+            total_pages: totPage
           }).eq('id', currentReadingRecordId);
         }
 
@@ -1466,6 +1511,13 @@ import LoginModal from '../components/LoginModal.astro';
       await syncMyStateToDB();
       await fetchRoomItems();
       await fetchUserReadingRecords();
+
+      if (syncInterval) clearInterval(syncInterval);
+      syncInterval = setInterval(() => { 
+        syncMyStateToDB(); 
+        fetchOnlinePlayers(); 
+        fetchRoomItems(); 
+      }, 5000);
     });
 
     initAuthCheck();
