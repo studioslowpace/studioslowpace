@@ -1016,11 +1016,12 @@ import LoginModal from '../components/LoginModal.astro';
                 const isSelf = (item.id === currentUserId || item.name === currentUserName);
                 const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
                 
-                // 🛑 核心過濾：訪客身分或自己，絕對不顯示私訊按鈕
-                let actionBtn = '';
-                if (!isSelf && !item.isGuestUser && !isGuest) {
-                    actionBtn = `<button data-target-id="${item.id}" data-target-name="${item.name}" class="dm-action-btn btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
-                }
+                
+               // 🟢 修改後：如果是訪客身分，直接不產生私訊按鈕
+let actionBtn = '';
+if (!isSelf && !isGuest && !item.isGuestUser) {
+    actionBtn = `<button data-target-id="${item.id}" data-target-name="${item.name}" class="dm-action-btn btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>`;
+}
                 
                 return `
                     <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
