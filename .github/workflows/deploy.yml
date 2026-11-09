@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   
-  # 🌟 暴力改法：不指定 types！這樣一來，不論外面的 event_type 叫什麼名字，GitHub 都會強制亮燈打包！
+  # 保留您的 repository_dispatch 觸發設定
   repository_dispatch: {}
   
 permissions:
@@ -50,7 +50,10 @@ jobs:
         with:
           node-version: 22
           cache: ${{ steps.detect-package-manager.outputs.manager }}
-          cache-dependency-path: ${{ env.BUILD_PATH }}/package-lock.json
+          # 修正快取依賴檔案的指向，確保路徑正確解析
+          cache-dependency-path: |
+            package-lock.json
+            yarn.lock
 
       - name: Setup Pages
         id: pages
