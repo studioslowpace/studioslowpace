@@ -62,6 +62,33 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
+  <!-- 3.5 木椅坐下閱讀 Modal -->
+  <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window">
+      <div class="rpg-title-bar"><span>🪑 木椅閱讀角</span></div>
+      <div class="rpg-content">
+        <!-- 空位：坐下輸入書本 -->
+        <div id="seat-form-view" style="display:none;">
+          <p class="rpg-text">這張木椅目前空著，請輸入你想在此沉浸閱讀的書名：</p>
+          <div style="display:flex; gap:6px; margin-bottom:6px;">
+            <input type="text" id="seat-book-input" placeholder="輸入書名（例：少女核）" style="flex:1; margin-bottom:0;" />
+            <button id="pick-from-record-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; white-space:nowrap;">📚 從書櫃選</button>
+          </div>
+          <div class="rpg-btn-group" style="margin-top:12px;">
+            <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
+            <button id="seat-sit-btn" class="rpg-btn" style="background:#10b981;">✨ 坐下閱讀</button>
+          </div>
+        </div>
+
+        <!-- 已有人坐：查看讀者與書名 -->
+        <div id="seat-info-view" style="display:none;">
+          <div id="seat-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
+          <button id="seat-info-close" class="rpg-btn-ghost">關閉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 4. 彈出網頁視窗 (Modal 預覽用) -->
   <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
@@ -203,17 +230,20 @@ import LoginModal from '../components/LoginModal.astro';
           <div id="guide-content-box" class="guide-list-box"></div>
         </div>
 
-        <!-- 底部主導航列 -->
-        <div class="footer-tabs-bar">
-          <button class="footer-tab-btn" data-target="chat">💬 聊天</button>
-          <button class="footer-tab-btn" data-target="record">📚 書櫃</button>
-          <button class="footer-tab-btn" data-target="guide">📖 指南</button>
+        <!-- 底部主導航列與起立按鈕 -->
+        <div style="display:flex; align-items:center; background:var(--bg-main);">
+          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
+            <button class="footer-tab-btn" data-target="chat">💬 聊天</button>
+            <button class="footer-tab-btn" data-target="record">📚 書櫃</button>
+            <button class="footer-tab-btn" data-target="guide">📖 指南</button>
+          </div>
+          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-weight:bold; margin-right:8px; padding:6px 12px;">🚶 起立</button>
         </div>
       </footer>
     </main>
   </div>
 
-  <!-- 聊天與書櫃共用 Modal (同一頁開分頁切換) -->
+  <!-- 聊天與書櫃共用 Modal (同一頁開分頁) -->
   <div id="app-drawer-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window" style="height: 85vh;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -393,7 +423,7 @@ import LoginModal from '../components/LoginModal.astro';
   <script>
     import { supabase } from '../lib/supabase';
 
-    const TABLE_NAME = 'slowpace_members';
+    const TABLE_NAME = 'slowspace_members';
     const ITEMS_TABLE = 'slowplace_items';
     const ROOMS_TABLE = 'slowplace_rooms';
 
@@ -415,6 +445,7 @@ import LoginModal from '../components/LoginModal.astro';
     let onlinePlayers: Record<string, any> = {};
     let roomItems: any[] = [];
     let activeTableData: any = null;
+    let activeSeatData: any = null;
 
     let customRooms: { room_key: string; room_name: string; bg_img: string; grid_size: number }[] = [];
 
@@ -615,8 +646,39 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     // ==========================================
-    // 區塊三：畫布渲染
+    // 區塊三：獨立讀取 slowspace_rooms 並過濾 NULL 與繪製
     // ==========================================
+    async function fetchRooms() {
+      const { data } = await supabase
+        .from(ROOMS_TABLE)
+        .select('*')
+        .not('room_key', 'is', null)
+        .not('room_name', 'is', null);
+
+      if (data && data.length > 0) {
+        customRooms = data
+          .filter((r: any) => r.room_key && r.room_name)
+          .map((r: any) => ({
+            room_key: r.room_key,
+            room_name: r.room_name,
+            bg_img: r.bg_img || '',
+            grid_size: r.grid_size || 12
+          }));
+      } else {
+        const defaults = [
+          { room_key: 'study', room_name: '📖 自修室', bg_img: '', grid_size: 12 },
+          { room_key: 'chat', room_name: '☕ 書話間', bg_img: '', grid_size: 12 },
+          { room_key: 'salon', room_name: '🏛️ 沙龍', bg_img: '', grid_size: 12 }
+        ];
+        for (const dr of defaults) {
+          await supabase.from(ROOMS_TABLE).upsert(dr, { onConflict: 'room_key' });
+        }
+        customRooms = defaults;
+      }
+      renderRoomDropdown();
+      updateCurrentRoomConfig();
+    }
+
     const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
     const ctx = canvas?.getContext('2d');
     const leaveSeatBtn = document.getElementById('btn-leave-seat');
@@ -694,6 +756,17 @@ import LoginModal from '../components/LoginModal.astro';
           ctx.fillStyle = item.type === 'table' ? '#b45309' : '#334155';
           ctx.fillRect(px + 2, py + 2, iw - 4, ih - 4);
         }
+
+        // 若木椅有人坐，標示閱讀狀態
+        if (item.type === 'seat' && item.host_id) {
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.8)';
+          ctx.fillRect(px + 4, py + ih - 14, iw - 8, 11);
+          ctx.fillStyle = '#fff';
+          ctx.font = '9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`📖 ${item.book_title || '閱讀中'}`, px + iw / 2, py + ih - 5);
+          ctx.textAlign = 'left';
+        }
       });
 
       Object.values(onlinePlayers).forEach((op: any) => {
@@ -763,14 +836,12 @@ import LoginModal from '../components/LoginModal.astro';
     const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
     const customModalTitle = document.getElementById('custom-modal-title');
 
-    // Footer 導航按鈕與向上展開的指南面板
     const footerTabBtns = document.querySelectorAll('.footer-tab-btn');
     const guideDrawer = document.getElementById('guide-drawer');
     const drawerCloseBtn = document.getElementById('drawer-close-btn');
     const guideContentBox = document.getElementById('guide-content-box');
     const shopkeeperDrawerTools = document.getElementById('shopkeeper-drawer-tools');
 
-    // 聊天與書櫃共用 Modal (同一頁開分頁)
     const appDrawerModal = document.getElementById('app-drawer-modal');
     const appDrawerClose = document.getElementById('app-drawer-close');
     const appDrawerIframe = document.getElementById('app-drawer-iframe') as HTMLIFrameElement;
@@ -825,7 +896,7 @@ import LoginModal from '../components/LoginModal.astro';
       if (appDrawerIframe) appDrawerIframe.src = '/record';
     });
 
-    // 指南與佈置結合：去重渲染物件，店主旁顯示 + 符號可直接放置
+    // 支援指南與刪除 item 功能、快速放置
     function renderGuideContent() {
       if (!guideContentBox) return;
       
@@ -851,6 +922,9 @@ import LoginModal from '../components/LoginModal.astro';
       let html = '';
       allItemsMap.forEach((item, label) => {
         const isTable = item.type === 'table';
+        const foundInRoom = roomItems.find(ri => ri.label === label);
+        const itemId = foundInRoom ? foundInRoom.id : null;
+
         html += `
           <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
             <img src="${item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
@@ -858,12 +932,16 @@ import LoginModal from '../components/LoginModal.astro';
               <div style="font-weight:bold; color:var(--accent-color);">${label} ${isTable ? '(🪵共讀桌)' : ''}</div>
               <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
             </div>
-            ${isAdmin ? `<button class="guide-add-btn rpg-btn-sm" data-type="${item.type}" data-label="${label}" style="background:var(--accent-hover); color:#fff; font-weight:bold; padding:4px 8px;">＋</button>` : ''}
+            <div style="display:flex; gap:4px;">
+              ${isAdmin ? `<button class="guide-add-btn rpg-btn-sm" data-type="${item.type}" data-label="${label}" style="background:var(--accent-hover); color:#fff; font-weight:bold; padding:4px 8px;" title="快速放置">＋</button>` : ''}
+              ${isAdmin && itemId ? `<button class="guide-del-btn rpg-btn-sm" data-id="${itemId}" style="background:#ef4444; color:#fff; font-weight:bold; padding:4px 8px;" title="從房間刪除此物件">🗑️</button>` : ''}
+            </div>
           </div>
         `;
       });
       guideContentBox.innerHTML = html;
 
+      // 綁定放置按鈕
       document.querySelectorAll('.guide-add-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const targetBtn = e.currentTarget as HTMLElement;
@@ -879,6 +957,19 @@ import LoginModal from '../components/LoginModal.astro';
 
           if (guideDrawer) guideDrawer.style.display = 'none';
           alert(`已選擇「${targetBtn.dataset.label}」，請點擊畫布空白處放置！`);
+        });
+      });
+
+      // 綁定刪除物件按鈕 (delete item)
+      document.querySelectorAll('.guide-del-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const targetBtn = e.currentTarget as HTMLElement;
+          const itemId = targetBtn.dataset.id;
+          if (itemId && confirm('確定要在房間中刪除此物件嗎？')) {
+            await supabase.from(ITEMS_TABLE).delete().eq('id', itemId);
+            await fetchRoomItems();
+            renderGuideContent();
+          }
         });
       });
     }
@@ -910,6 +1001,17 @@ import LoginModal from '../components/LoginModal.astro';
     const tableInfoClose = document.getElementById('table-info-close');
     const tableDetails = document.getElementById('table-details');
 
+    // 木椅閱讀相關 Modal 元素
+    const seatModal = document.getElementById('seat-modal');
+    const seatFormView = document.getElementById('seat-form-view');
+    const seatInfoView = document.getElementById('seat-info-view');
+    const seatBookInput = document.getElementById('seat-book-input') as HTMLInputElement;
+    const seatSitBtn = document.getElementById('seat-sit-btn');
+    const seatCancelBtn = document.getElementById('seat-cancel-btn');
+    const seatInfoClose = document.getElementById('seat-info-close');
+    const seatDetails = document.getElementById('seat-details');
+    const pickFromRecordBtn = document.getElementById('pick-from-record-btn');
+
     const cfModal = document.getElementById('custom-furniture-modal');
     const openCfModalBtn = document.getElementById('open-cf-modal-btn');
     const cfCancelBtn = document.getElementById('cf-cancel-btn');
@@ -924,31 +1026,6 @@ import LoginModal from '../components/LoginModal.astro';
     const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
 
     let pendingTableItem: any = null;
-
-    async function fetchRooms() {
-      const { data } = await supabase.from(ROOMS_TABLE).select('*').not('room_key', 'is', null)
-        .not('room_name', 'is', null);
-      if (data && data.length > 0) {
-        customRooms = data.map((r: any) => ({
-          room_key: r.room_key,
-          room_name: r.room_name,
-          bg_img: r.bg_img || '',
-          grid_size: r.grid_size || 12
-        }));
-      } else {
-        const defaults = [
-          { room_key: 'study', room_name: '📖 自修室', bg_img: '', grid_size: 12 },
-          { room_key: 'chat', room_name: '☕ 書話間', bg_img: '', grid_size: 12 },
-          { room_key: 'salon', room_name: '🏛️ 沙龍', bg_img: '', grid_size: 12 }
-        ];
-        for (const dr of defaults) {
-          await supabase.from(ROOMS_TABLE).upsert(dr, { onConflict: 'room_key' });
-        }
-        customRooms = defaults;
-      }
-      renderRoomDropdown();
-      updateCurrentRoomConfig();
-    }
 
     function renderRoomDropdown() {
       if (!roomSelectDropdown) return;
@@ -1077,6 +1154,14 @@ import LoginModal from '../components/LoginModal.astro';
 
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
+    // 從個人閱讀記錄選擇書本彈出視窗（支援跳轉或讀取）
+    pickFromRecordBtn?.addEventListener('click', () => {
+      if (seatModal) seatModal.style.display = 'none';
+      // 在同頁分頁開啟書櫃供選擇
+      modalTabRecord?.click();
+      if (appDrawerModal) appDrawerModal.style.display = 'flex';
+    });
+
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -1148,7 +1233,7 @@ import LoginModal from '../components/LoginModal.astro';
           gy: targetGy,
           w: w,
           h: h,
-          book_title: itemType === 'table' ? '' : null,
+          book_title: itemType === 'table' || itemType === 'seat' ? '' : null,
           author: '',
           max_members: 3,
           members: []
@@ -1167,6 +1252,31 @@ import LoginModal from '../components/LoginModal.astro';
         const hitItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
         
         if (hitItem) {
+          // 木椅互動邏輯 (seat 坐下閱讀功能)
+          if (hitItem.type === 'seat') {
+            activeSeatData = hitItem;
+            if (!hitItem.host_id || hitItem.host_id === '') {
+              // 空椅：可坐下輸入書本
+              if (seatBookInput) seatBookInput.value = '';
+              if (seatFormView) seatFormView.style.display = 'block';
+              if (seatInfoView) seatInfoView.style.display = 'none';
+              if (seatModal) seatModal.style.display = 'flex';
+              return;
+            } else {
+              // 已有人坐：顯示閱讀者人名與書名
+              if (seatFormView) seatFormView.style.display = 'none';
+              if (seatInfoView) seatInfoView.style.display = 'block';
+              if (seatDetails) {
+                seatDetails.innerHTML = `
+                  <p><strong>坐下讀者：</strong>${hitItem.host_name || '某位旅人'}</p>
+                  <p><strong>正在閱讀：</strong>《${hitItem.book_title || '沈思中'}》</p>
+                `;
+              }
+              if (seatModal) seatModal.style.display = 'flex';
+              return;
+            }
+          }
+
           if (hitItem.type === 'table') {
             activeTableData = hitItem;
             pendingTableItem = hitItem;
@@ -1228,14 +1338,6 @@ import LoginModal from '../components/LoginModal.astro';
           return;
         }
 
-        const hitSeat = roomItems.find(item => item.type === 'seat' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
-        if (hitSeat) {
-          isDND = true;
-          if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
-          await syncMyStateToDB();
-          return;
-        }
-
         if (!isCellSolidBlocked(targetGx, targetGy)) {
           moveQueue = [];
           let currX = playerGx; let currY = playerGy;
@@ -1246,11 +1348,45 @@ import LoginModal from '../components/LoginModal.astro';
       }
     });
 
+    // 坐下閱讀確認
+    seatSitBtn?.addEventListener('click', async () => {
+      const bookTitle = seatBookInput?.value.trim();
+      if (!bookTitle) { alert('請輸入你想閱讀的書名！'); return; }
+      if (activeSeatData) {
+        isDND = true;
+        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
+        await supabase.from(ITEMS_TABLE).update({
+          host_id: userId,
+          host_name: playerName,
+          book_title: bookTitle
+        }).eq('id', activeSeatData.id);
+      }
+      if (seatModal) seatModal.style.display = 'none';
+      await syncMyStateToDB();
+      await fetchRoomItems();
+    });
+
+    seatCancelBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
+    seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
+
+    // 起立離開木椅
     leaveSeatBtn?.addEventListener('click', async () => {
       isDND = false;
-      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) playerGy += 1;
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      
+      // 清除當前用戶坐著的木椅狀態
+      const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
+      if (seatedSeat) {
+        await supabase.from(ITEMS_TABLE).update({
+          host_id: '',
+          host_name: '',
+          book_title: ''
+        }).eq('id', seatedSeat.id);
+      }
+
+      if (playerGy + 1 < currentGridSize && !isCellSolidBlocked(playerGx, playerGy + 1)) playerGy += 1;
       await syncMyStateToDB();
+      await fetchRoomItems();
     });
 
     tableCreateBtn?.addEventListener('click', async () => {
