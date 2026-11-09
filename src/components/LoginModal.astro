@@ -115,7 +115,16 @@
     else { window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*'); }
   });
 
-  // 訪客模式：資料庫查詢最大流水號、累加編號、先查後寫與離開自動刪除
+// 點擊頭像時加上外框高亮效果
+document.querySelectorAll('input[name="guest-avatar"]').forEach(input => {
+    input.addEventListener('change', (e) => {
+        document.querySelectorAll('.avatar-option').forEach(img => img.style.borderColor = '#cbd5e1');
+        const selectedImg = e.target.parentElement.querySelector('.avatar-option');
+        if (selectedImg) selectedImg.style.borderColor = '#2563eb';
+    });
+});
+
+// 【修改點 A】訪客模式：遞增編號、先查後寫與離開自動刪除
 document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
@@ -129,7 +138,7 @@ document.getElementById('guest-submit-btn')?.addEventListener('click', async () 
     while (!insertSuccess && attempts < 5) {
         attempts++;
 
-        // 1. 先查詢資料庫中所有名字符合「訪客 #數字」格式的紀錄，找出目前的最大編號
+        // 1. 查詢資料庫中所有名字符合「訪客 #數字」格式的紀錄，找出目前最大編號
         const { data: existingGuests, error: fetchError } = await supabase
             .from(TABLE_NAME)
             .select('name')
@@ -167,7 +176,6 @@ document.getElementById('guest-submit-btn')?.addEventListener('click', async () 
         if (!insertError) {
             insertSuccess = true;
         } else {
-            // 如果是因為名字重複（unique constraint 衝突），迴圈會自動 +1 重試
             console.warn(`寫入碰撞 (${guestName})，正在嘗試下一個編號...`);
         }
     }
@@ -180,13 +188,21 @@ document.getElementById('guest-submit-btn')?.addEventListener('click', async () 
     // 儲存於 sessionStorage 供離開時辨識刪除
     sessionStorage.setItem('space_guest_id', guestId);
 
-    // 通知外層進入
+    // 通知外層聊天室頁面登入成功
     window.parent.postMessage({
         type: 'GUEST_LOGIN_SUCCESS',
         guestId: guestId,
         name: guestName,
         avatar: avatarVal
     }, '*');
+});
+
+// 【修改點 B】瀏覽器關閉或離開時，自動從資料庫刪除訪客紀錄
+window.addEventListener('beforeunload', () => {
+    const guestId = sessionStorage.getItem('space_guest_id');
+    if (!guestId) return;
+    supabase.from(TABLE_NAME).delete().eq('user_id', guestId).then();
+    sessionStorage.removeItem('space_guest_id');
 });
 
   // 忘記密碼
