@@ -1,4 +1,5 @@
 ---
+// src/pages/slowplace.astro
 import Layout from '../layouts/Layout.astro';
 import LoginModal from '../components/LoginModal.astro';
 ---
@@ -22,7 +23,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>◆ 閱讀與專心設定 ◆</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">你在此處安坐。請輸入詳細的閱讀進度與筆記：</p>
+        <p class="rpg-text">你在此處安坐。請輸入詳細的閱讀進度與筆記：[cite: 2]</p>
         <input type="text" id="rpg-book-input" placeholder="書名（例：《希臘語課》）" maxlength="25" style="margin-bottom:6px;" />
         <input type="text" id="rpg-author-input" placeholder="作者名" maxlength="20" style="margin-bottom:6px;" />
         <div style="display:flex; gap:6px; margin-bottom:6px;">
@@ -59,7 +60,7 @@ import LoginModal from '../components/LoginModal.astro';
       <div class="rpg-title-bar"><span id="table-modal-title">📖 共讀桌活動</span></div>
       <div class="rpg-content">
         <div id="table-form-view" style="display:none;">
-          <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：</p>
+          <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：[cite: 2]</p>
           <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:6px;" />
           <input type="text" id="table-author" placeholder="作者" style="margin-bottom:6px;" />
           <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">限制參加人數：</div>
@@ -102,7 +103,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>🛠️ 新增空間物件/NPC/傳送門</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
+        <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：[cite: 2]</p>
         <input type="text" id="cf-name" placeholder="名稱（例：屋主 Mi / 綠意書櫃）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/npc_mi.png）" style="margin-bottom:6px;" />
         <input type="text" id="cf-link" placeholder="連結網址（例：/ 或外部網址，無則留空）" style="margin-bottom:6px;" />
@@ -132,7 +133,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window">
       <div class="rpg-title-bar"><span>🏠 房間與背景設定 (店主專用)</span></div>
       <div class="rpg-content">
-        <p class="rpg-text">新增房間代碼、房間名稱、背景圖網址及格子數量：</p>
+        <p class="rpg-text">新增房間代碼、房間名稱、背景圖網址及格子數量：[cite: 2]</p>
         <input type="text" id="rs-room-key" placeholder="房間代碼（例：reading_room）" style="margin-bottom:6px;" />
         <input type="text" id="rs-room-name" placeholder="房間顯示名稱（例：📖 靜心閱覽室）" style="margin-bottom:6px;" />
         <input type="text" id="rs-bg-img" placeholder="背景圖片網址（留空則使用純色背景）" style="margin-bottom:6px;" />
@@ -231,28 +232,24 @@ import LoginModal from '../components/LoginModal.astro';
           <button class="panel-tab-btn shopkeeper-only-tab" data-tab="build" style="display:none; color:#fde68a;">🛠️ 佈置</button>
         </div>
 
-        <!-- 1. 聊天面板 (WhatsApp風格對話視窗) -->
+        <!-- 1. 聊天面板 (WhatsApp風格對話視窗) [保留不改] -->
         <div id="pane-chat" class="pane-content active">
-          <!-- 聊天頂端切換分頁 -->
           <div class="chat-mode-tabs" style="display:flex; gap:4px; margin-bottom:4px; flex-shrink:0;">
             <button id="chat-tab-public" class="rpg-btn-sm active" style="flex:1; background:var(--accent-hover); color:#fff; font-size:10px;">📢 公開大廳</button>
             <button id="chat-tab-dm-list" class="rpg-btn-sm" style="flex:1; background:var(--bg-main); color:#94a3b8; font-size:10px;">🔒 私訊列表</button>
           </div>
 
-          <!-- 私訊對象標頭 -->
           <div id="dm-active-header" class="chat-header-sub" style="display:none;">
             <span id="chat-mode-indicator" class="chat-mode-tag">🔒 專屬私訊</span>
             <button id="back-to-dm-list-btn" class="rpg-btn-sm" style="font-size:9px;">返回私訊列表</button>
           </div>
 
-          <!-- 訊息顯示框 (WhatsApp 綠背景與氣泡) -->
           <div id="chat-messages" class="chat-messages-box whatsapp-style">
-            <div class="chat-welcome">✨ 點擊線上玩家頭像可發起私人對話或查看記錄！</div>
+            <div class="chat-welcome">✨ 點擊線上玩家頭像可發起私人對話或查看記錄！[cite: 2]</div>
           </div>
 
-          <!-- 私訊列表清單容器 -->
           <div id="dm-list-container" class="chat-messages-box whatsapp-style" style="display:none;">
-            <div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！</div>
+            <div class="chat-welcome">目前沒有進行中的私訊。點擊地圖上的玩家頭像即可開始對話！[cite: 2]</div>
           </div>
 
           <form id="chat-form" class="chat-input-row" style="margin-top:4px;">
@@ -261,7 +258,7 @@ import LoginModal from '../components/LoginModal.astro';
           </form>
         </div>
 
-        <!-- 2. 閱讀記錄面板 -->
+        <!-- 2. 閱讀記錄面板 [保留不改] -->
         <div id="pane-logs" class="pane-content" style="display:none;">
           <div class="logs-header-sub">
             <span>📖 個人閱讀清單與書摘</span>
@@ -308,7 +305,6 @@ import LoginModal from '../components/LoginModal.astro';
       --accent-hover: #0284c7;
       --accent-light: #e0f2fe;
 
-      /* WhatsApp 配色變數 */
       --wa-bg: #0b141a;
       --wa-bubble-me: #005c4b;
       --wa-bubble-other: #202c33;
@@ -356,7 +352,6 @@ import LoginModal from '../components/LoginModal.astro';
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
-    /* 下方面板：支援滑鼠或觸控垂直調整大小 (Resize) */
     .split-panel {
       flex: 0 0 30vh;
       display: flex;
@@ -379,7 +374,6 @@ import LoginModal from '../components/LoginModal.astro';
     .chat-header-sub { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 10px; flex-shrink: 0; }
     .chat-mode-tag { color: var(--accent-color); font-weight: bold; }
 
-    /* WhatsApp 風格視窗與氣泡配置 */
     .chat-messages-box.whatsapp-style {
       flex: 1;
       padding: 8px;
@@ -456,20 +450,7 @@ import LoginModal from '../components/LoginModal.astro';
     .rpg-content { padding: 18px; }
     .rpg-text { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.5; }
     
-    .avatar-selector-label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
-    .avatar-selector-group { display: flex; gap: 10px; margin-bottom: 14px; }
-    .avatar-card { flex: 1; background: var(--bg-main); border: 2px solid var(--border-color); border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .avatar-card input { display: none; }
-    .avatar-card input:checked + img, .avatar-card input:checked ~ .avatar-fallback { border-color: var(--accent-color); }
-    .avatar-card input:checked ~ .avatar-name { color: var(--accent-color); font-weight: bold; }
-    .avatar-card img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; border-radius: 4px; background: var(--bg-card); padding: 2px; }
-    .avatar-fallback { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-card); border-radius: 4px; font-size: 12px; color: var(--accent-color); }
-    .avatar-name { font-size: 11px; color: #cbd5e1; }
-
     .rpg-window input[type="text"], .rpg-window input[type="number"], .rpg-window input[type="email"], .rpg-window input[type="password"] { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
-    .role-selector-group { display: flex; gap: 6px; margin-bottom: 14px; }
-    .role-chip { background: var(--bg-main); border: 1px solid var(--border-color); padding: 6px 10px; border-radius: 16px; font-size: 11px; cursor: pointer; color: #cbd5e1; }
-    .role-chip input { margin-right: 4px; accent-color: var(--accent-color); }
     .rpg-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
     .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 8px; }
@@ -497,7 +478,11 @@ import LoginModal from '../components/LoginModal.astro';
   </style>
 
   <script>
-    import { supabase } from '../lib/supabase';
+    import { createClient } from '@supabase/supabase-js';
+
+    const SUPABASE_URL = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const TABLE_NAME = 'slowpace_members';
     const MSG_TABLE_NAME = 'slowsplace_messages';
@@ -583,9 +568,7 @@ import LoginModal from '../components/LoginModal.astro';
       }
     }
 
-// 監聽來自 iframe (/login) 的登入成功訊息
     window.addEventListener('message', async (event) => {
-      // 處理訪客登入成功
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
         userId = event.data.guestId;
         playerName = event.data.name;
@@ -596,7 +579,6 @@ import LoginModal from '../components/LoginModal.astro';
         await startAppSession();
       }
       
-      // 處理一般會員登入成功
       if (event.data && event.data.type === 'LOGIN_SUCCESS') {
         if (modal) modal.style.display = 'none';
         const { data: { session } } = await supabase.auth.getSession();
@@ -657,7 +639,7 @@ import LoginModal from '../components/LoginModal.astro';
 
 
     // ==========================================
-    // 區塊二：雲端同步、資料庫與聊天通訊
+    // 區塊二：雲端同步、資料庫與聊天通訊 [完整保留]
     // ==========================================
     const onlineCountSpan = document.getElementById('online-count');
     const chatMessagesBox = document.getElementById('chat-messages');
@@ -1399,7 +1381,7 @@ import LoginModal from '../components/LoginModal.astro';
       }
     });
 
-    // 畫布點擊事件
+    // 畫布點擊事件（含店主佈置放置物件邏輯與共讀桌、座位互動）
     canvas?.addEventListener('click', async (e) => {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -1411,6 +1393,69 @@ import LoginModal from '../components/LoginModal.astro';
       const targetGx = Math.floor(clickX / tileSize);
       const targetGy = Math.floor(clickY / tileSize);
 
+      // 【補齊功能 1】店主佈置模式：點擊畫布放置物件
+      if (currentTool !== 'move') {
+        if (playerTier !== '店主') {
+          alert('只有店主才能進行空間佈置！');
+          return;
+        }
+
+        if (isCellSolidBlocked(targetGx, targetGy)) {
+          alert('該位置已有物件或無法放置！');
+          return;
+        }
+
+        let itemType = currentTool;
+        let itemLabel = currentTool;
+        let imgSrc = '';
+        let w = 1;
+        let h = 1;
+
+        if (currentTool === 'seat') {
+          itemLabel = '木椅';
+          imgSrc = '/assets/seat.png';
+        } else if (currentTool === 'shelf') {
+          itemLabel = '書架';
+          imgSrc = '/assets/shelf.png';
+        } else if (currentTool === 'table') {
+          itemLabel = '共讀桌';
+          imgSrc = '/assets/table.png';
+          w = 2; h = 2;
+        } else {
+          const customObj = customFurnitureTypes.find(cf => cf.type === currentTool);
+          if (customObj) {
+            itemLabel = customObj.label;
+            imgSrc = customObj.imgSrc;
+            w = customObj.w;
+            h = customObj.h;
+          }
+        }
+
+        const { error } = await supabase.from(ITEMS_TABLE).insert([{
+          room: currentRoom,
+          type: itemType,
+          label: itemLabel,
+          img_src: imgSrc,
+          gx: targetGx,
+          gy: targetGy,
+          w: w,
+          h: h,
+          book_title: itemType === 'table' ? '' : null,
+          author: '',
+          max_members: 3,
+          members: []
+        }]);
+
+        if (error) {
+          console.error('放置物件失敗:', error);
+          alert('放置物件失敗：' + error.message);
+        } else {
+          await fetchRoomItems();
+        }
+        return;
+      }
+
+      // 【補齊功能 2】一般移動模式下的點擊互動 (共讀桌、玩家、書架、座位、走路)
       if (currentTool === 'move') {
         const hitTable = roomItems.find(item => item.type === 'table' && targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
         if (hitTable) {
@@ -1426,6 +1471,21 @@ import LoginModal from '../components/LoginModal.astro';
           if (tableModalTitle) tableModalTitle.textContent = `📖 共讀桌活動：《${hitTable.book_title}》`;
           if (tableFormView) tableFormView.style.display = 'none';
           if (tableInfoView) tableInfoView.style.display = 'block';
+          if (tableDetails) {
+            let membersList = (hitTable.members || []).map((m: any) => m.name).join('、');
+            tableDetails.innerHTML = `
+              <p><strong>書名：</strong>《${hitTable.book_title}》</p>
+              <p><strong>作者：</strong>${hitTable.author || '佚名'}</p>
+              <p><strong>發起人：</strong>${hitTable.host_name || '未知'}</p>
+              <p><strong>預定完讀：</strong>${hitTable.finish_date || '未設定'}</p>
+              <p><strong>成員 (${(hitTable.members || []).length}/${hitTable.max_members})：</strong>${membersList}</p>
+            `;
+            if (hitTable.host_id === userId || playerTier === '店主') {
+              if (tableEndBtn) tableEndBtn.style.display = 'block';
+            } else {
+              if (tableEndBtn) tableEndBtn.style.display = 'none';
+            }
+          }
           if (tableModal) tableModal.style.display = 'flex';
           return;
         }
@@ -1498,8 +1558,10 @@ import LoginModal from '../components/LoginModal.astro';
     tableJoinBtn?.addEventListener('click', async () => {
       if (!activeTableData) return;
       const members = activeTableData.members || [];
-      members.push({ id: userId, name: playerName });
-      await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
+      if (!members.some((m: any) => m.id === userId)) {
+        members.push({ id: userId, name: playerName });
+        await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
+      }
       if (tableModal) tableModal.style.display = 'none';
       fetchRoomItems();
     });
@@ -1514,7 +1576,8 @@ import LoginModal from '../components/LoginModal.astro';
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
-    // 啟動身分檢查
+    // 初始化執行
+    renderCustomToolsUI();
     initAuthCheck();
   </script>
 </Layout>
