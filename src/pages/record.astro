@@ -10,12 +10,12 @@ import Layout from '../layouts/Layout.astro';
       <button id="open-add-modal-btn" class="action-btn primary" style="display: none;">➕ 新增記錄</button>
     </header>
 
-    <!-- 參考相片設計：搜尋列與篩選標籤 -->
+    <!-- 搜尋與篩選標籤 -->
     <div class="explore-filter-section">
       <div class="filter-tags">
         <button class="filter-tag active" data-filter="all">全部</button>
-        <button class="filter-tag" data-filter="title">書名</button>
-        <button class="filter-tag" data-filter="author">作者</button>
+        <button class="filter-tag" data-filter="reading">閱讀中</button>
+        <button class="filter-tag" data-filter="finished">已讀完</button>
         <button class="filter-tag" data-filter="rating">高評價</button>
       </div>
       <div class="search-bar-wrapper">
@@ -24,7 +24,7 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
 
-    <!-- 閱讀清單列表 (卡片化設計，參考相片排版) -->
+    <!-- 閱讀清單列表 (包含進度條與快速操作) -->
     <div class="logs-container" id="my-logs-list">
       <div style="text-align:center; color:#8c8275; padding:30px;">載入記錄中...</div>
     </div>
@@ -43,6 +43,10 @@ import Layout from '../layouts/Layout.astro';
           <div class="form-row-2">
             <div><label>作者</label><input type="text" id="book-author-input" placeholder="韓江" /></div>
             <div><label>譯者</label><input type="text" id="book-translator-input" placeholder="張雅眉" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>目前頁數</label><input type="number" id="current-page-input" placeholder="0" min="0" /></div>
+            <div><label>總頁數</label><input type="number" id="total-pages-input" placeholder="300" min="1" /></div>
           </div>
           <div class="form-row-2">
             <div><label>閱讀日期</label><input type="date" id="start-date-input" /></div>
@@ -70,56 +74,63 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 記錄詳細檢視彈窗 (Modal) -->
+  <!-- 記錄詳細檢視與編輯彈窗 (Modal) -->
   <div id="log-detail-modal" class="modal-overlay" style="display: none;">
     <div class="modal-window">
       <div class="modal-title-bar">
-        <span>📖 閱讀筆記詳情</span>
+        <span>📖 閱讀筆記詳情與編輯</span>
         <button id="detail-close-btn" class="modal-close-btn">✕</button>
       </div>
       <div class="modal-content paper-sheet">
-        <div class="detail-grid">
-          <div class="detail-line"><strong>書名</strong> <span id="modal-book" class="line-content"></span></div>
-          <div class="detail-row-2">
-            <div class="detail-line"><strong>作者</strong> <span id="modal-author" class="line-content"></span></div>
-            <div class="detail-line"><strong>譯者</strong> <span id="modal-translator" class="line-content"></span></div>
+        <input type="hidden" id="edit-log-id" />
+        <div class="form-grid">
+          <div class="form-row"><label>書名</label><input type="text" id="edit-book" /></div>
+          <div class="form-row-2">
+            <div><label>作者</label><input type="text" id="edit-author" /></div>
+            <div><label>譯者</label><input type="text" id="edit-translator" /></div>
           </div>
-          <div class="detail-row-2">
-            <div class="detail-line"><strong>閱讀日期</strong> <span id="modal-start-date" class="line-content"></span></div>
-            <div class="detail-line"><strong>出版社</strong> <span id="modal-publisher" class="line-content"></span></div>
+          <div class="form-row-2">
+            <div><label>目前頁數</label><input type="number" id="edit-current-page" /></div>
+            <div><label>總頁數</label><input type="number" id="edit-total-pages" /></div>
           </div>
-          <div class="detail-row-2">
-            <div class="detail-line"><strong>完成日期</strong> <span id="modal-finish-date" class="line-content"></span></div>
-            <div class="detail-line"><strong>喜愛程度</strong> <span id="modal-rating" class="line-content" style="color: #d97706;"></span></div>
+          <div class="form-row-2">
+            <div><label>閱讀日期</label><input type="date" id="edit-start-date" /></div>
+            <div><label>完成日期</label><input type="date" id="edit-finish-date" /></div>
           </div>
+          <div class="form-row-2">
+            <div><label>出版社</label><input type="text" id="edit-publisher" /></div>
+            <div>
+              <label>喜愛程度</label>
+              <select id="edit-rating">
+                <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+                <option value="4">⭐⭐⭐⭐ (4星)</option>
+                <option value="3">⭐⭐⭐ (3星)</option>
+                <option value="2">⭐⭐ (2星)</option>
+                <option value="1">⭐ (1星)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row"><label>記一些字句：</label><textarea id="edit-quote"></textarea></div>
+          <div class="form-row"><label>記一些疑問：</label><textarea id="edit-questions"></textarea></div>
+          <div class="form-row"><label>記一些感受：</label><textarea id="edit-review"></textarea></div>
         </div>
 
-        <div class="detail-section">
-          <div class="section-title">記一些字句：</div>
-          <div id="modal-quote" class="section-content-box"></div>
-        </div>
-
-        <div class="detail-section">
-          <div class="section-title">記一些疑問：</div>
-          <div id="modal-questions" class="section-content-box"></div>
-        </div>
-
-        <div class="detail-section">
-          <div class="section-title">記一些感受：</div>
-          <div id="modal-review" class="section-content-box"></div>
+        <div class="detail-action-buttons">
+          <button id="finish-book-btn" class="action-btn success">✨ 一鍵讀完</button>
+          <button id="update-log-btn" class="action-btn primary">儲存修改</button>
         </div>
       </div>
     </div>
   </div>
 
-  <style is:global>
+  <style>
     :root {
       --bg-main: #fcfaf7;
       --bg-card: #ffffff;
       --border-color: #f0ebe1;
       --text-main: #2c2420;
       --text-sub: #8c8275;
-      --accent-color: #6b8e23; /* 柔和橄欖綠，呼應相片溫暖自然風 */
+      --accent-color: #6b8e23;
       --accent-hover: #556b2f;
       --tag-bg: #f4efe6;
     }
@@ -153,7 +164,6 @@ import Layout from '../layouts/Layout.astro';
       margin: 0;
     }
 
-    /* 參考相片設計：搜尋與標籤區塊 */
     .explore-filter-section {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -212,7 +222,6 @@ import Layout from '../layouts/Layout.astro';
       background: #fff;
     }
 
-    /* 清單與卡片設計 */
     .logs-container {
       display: flex;
       flex-direction: column;
@@ -235,7 +244,7 @@ import Layout from '../layouts/Layout.astro';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .book-title {
       font-weight: bold;
@@ -247,17 +256,34 @@ import Layout from '../layouts/Layout.astro';
       color: var(--text-sub);
       display: flex;
       gap: 12px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
-    .book-preview-snippet {
-      font-size: 12px;
-      color: #555;
+    
+    /* 進度條樣式 */
+    .progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
       background: var(--tag-bg);
-      padding: 6px 10px;
-      border-radius: 8px;
+      border-radius: 3px;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-color);
+      border-radius: 3px;
+      transition: width 0.3s ease;
     }
 
     /* 表單與 Modal 樣式 */
@@ -279,9 +305,7 @@ import Layout from '../layouts/Layout.astro';
     }
     textarea { height: 60px; resize: none; }
 
-    .action-btn.primary {
-      background: var(--accent-color);
-      color: #fff;
+    .action-btn {
       border: none;
       padding: 10px 16px;
       border-radius: 8px;
@@ -289,23 +313,22 @@ import Layout from '../layouts/Layout.astro';
       font-weight: 500;
       font-size: 13px;
     }
-    .action-btn.primary:hover {
-      background: var(--accent-hover);
+    .action-btn.primary { background: var(--accent-color); color: #fff; }
+    .action-btn.primary:hover { background: var(--accent-hover); }
+    .action-btn.success { background: #3b82f6; color: #fff; }
+    .action-btn.success:hover { background: #2563eb; }
+
+    .detail-action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .detail-action-buttons button {
+      flex: 1;
     }
     
-    /* 詳情紙張格式 */
     .paper-sheet { background: #fff; color: var(--text-main); }
-    .detail-grid { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
-    .detail-row-2 { display: flex; gap: 16px; }
-    .detail-line { flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px; }
-    .detail-line strong { width: 65px; color: var(--text-sub); flex-shrink: 0; }
-    .line-content { color: var(--text-main); font-weight: 500; }
-    
-    .detail-section { margin-top: 14px; }
-    .section-title { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; font-size: 12px; }
-    .section-content-box { background: var(--tag-bg); border-left: 2px solid var(--accent-color); padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #4a4036; }
 
-    /* Modal 共同樣式 */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(44, 36, 32, 0.4); backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center; z-index: 100;
@@ -338,6 +361,8 @@ import Layout from '../layouts/Layout.astro';
 
     const detailModal = document.getElementById('log-detail-modal');
     const detailCloseBtn = document.getElementById('detail-close-btn');
+    const updateLogBtn = document.getElementById('update-log-btn');
+    const finishBookBtn = document.getElementById('finish-book-btn');
 
     async function initPage() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -392,10 +417,15 @@ import Layout from '../layouts/Layout.astro';
         const title = (item.book_title || '').toLowerCase();
         const author = (item.author || '').toLowerCase();
         const query = searchQuery.toLowerCase();
+        const curr = item.current_page || 0;
+        const total = item.total_pages || 100;
+        const isFinished = item.finish_date || curr >= total;
 
+        if (currentFilter === 'reading' && isFinished) return false;
+        if (currentFilter === 'finished' && !isFinished) return false;
+        if (currentFilter === 'rating' && (item.rating || 5) < 4) return false;
         if (currentFilter === 'title' && !title.includes(query)) return false;
         if (currentFilter === 'author' && !author.includes(query)) return false;
-        if (currentFilter === 'rating' && (item.rating || 5) < 4) return false;
 
         if (currentFilter === 'all' && query) {
           return title.includes(query) || author.includes(query);
@@ -411,8 +441,14 @@ import Layout from '../layouts/Layout.astro';
       let html = '';
       filtered.forEach((item) => {
         const ratingStars = '⭐'.repeat(item.rating || 5);
-        const snippet = item.review || item.quote || '點擊查看詳細閱讀筆記與心得...';
-        
+        const curr = item.current_page || 0;
+        const total = item.total_pages || 0;
+        let percent = 0;
+        if (total > 0) {
+          percent = Math.min(100, Math.round((curr / total) * 100));
+        }
+        if (item.finish_date && total > 0) percent = 100;
+
         html += `
           <div class="log-item-card" data-id="${item.id}">
             <div class="card-header">
@@ -421,31 +457,48 @@ import Layout from '../layouts/Layout.astro';
             </div>
             <div class="book-meta">
               <span>作者：${item.author || '佚名'}</span>
-              ${item.finish_date ? `<span>完成：${item.finish_date}</span>` : ''}
+              <span>${item.finish_date ? '已讀完' : `進度：${curr} / ${total} 頁`}</span>
             </div>
-            <div class="book-preview-snippet">${snippet}</div>
+            <div class="progress-section">
+              <div class="progress-info">
+                <span>閱讀進度</span>
+                <span>${percent}%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+              </div>
+            </div>
           </div>
         `;
       });
       listContainer.innerHTML = html;
 
-      // 繫結點擊事件以打開詳情
+      // 點擊卡片開啟詳細與編輯彈窗
       document.querySelectorAll('.log-item-card').forEach(card => {
         card.addEventListener('click', (e) => {
           const logId = (e.currentTarget as HTMLElement).dataset.id;
           const log = cachedLogs.find(l => l.id === logId);
           if (log) {
-            (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title || ''}》`;
-            (document.getElementById('modal-author') as HTMLElement).textContent = log.author || '佚名';
-            (document.getElementById('modal-translator') as HTMLElement).textContent = log.translator || '無';
-            (document.getElementById('modal-start-date') as HTMLElement).textContent = log.start_date || '未填寫';
-            (document.getElementById('modal-finish-date') as HTMLElement).textContent = log.finish_date || '未填寫';
-            (document.getElementById('modal-publisher') as HTMLElement).textContent = log.publisher || '未填寫';
-            (document.getElementById('modal-rating') as HTMLElement).textContent = '⭐'.repeat(log.rating || 5);
+            (document.getElementById('edit-log-id') as HTMLInputElement).value = log.id;
+            (document.getElementById('edit-book') as HTMLInputElement).value = log.book_title || '';
+            (document.getElementById('edit-author') as HTMLInputElement).value = log.author || '';
+            (document.getElementById('edit-translator') as HTMLInputElement).value = log.translator || '';
+            (document.getElementById('edit-current-page') as HTMLInputElement).value = log.current_page || 0;
+            (document.getElementById('edit-total-pages') as HTMLInputElement).value = log.total_pages || '';
+            (document.getElementById('edit-start-date') as HTMLInputElement).value = log.start_date || '';
+            (document.getElementById('edit-finish-date') as HTMLInputElement).value = log.finish_date || '';
+            (document.getElementById('edit-publisher') as HTMLInputElement).value = log.publisher || '';
+            (document.getElementById('edit-rating') as HTMLSelectElement).value = log.rating || 5;
 
-            (document.getElementById('modal-quote') as HTMLElement).textContent = log.quote || '無記錄字句';
-            (document.getElementById('modal-questions') as HTMLElement).textContent = log.questions || '無記錄疑問';
-            (document.getElementById('modal-review') as HTMLElement).textContent = log.review || '無記錄感受';
+            (document.getElementById('edit-quote') as HTMLTextAreaElement).value = log.quote || '';
+            (document.getElementById('edit-questions') as HTMLTextAreaElement).value = log.questions || '';
+            (document.getElementById('edit-review') as HTMLTextAreaElement).value = log.review || '';
+
+            // 非本人隱藏編輯按鈕
+            const actionBtnsContainer = document.querySelector('.detail-action-buttons') as HTMLElement;
+            if (actionBtnsContainer) {
+              actionBtnsContainer.style.display = isOwner ? 'flex' : 'none';
+            }
 
             if (detailModal) detailModal.style.display = 'flex';
           }
@@ -464,22 +517,22 @@ import Layout from '../layouts/Layout.astro';
       });
     });
 
-    // 搜尋輸入監聽
     searchInput?.addEventListener('input', (e) => {
       searchQuery = (e.target as HTMLInputElement).value;
       renderLogs();
     });
 
-    // Modal 開關控制
     openAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'flex'; });
     closeAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'none'; });
     detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
 
-    // 儲存新記錄
+    // 新增記錄
     submitBtn?.addEventListener('click', async () => {
       const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
       const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
       const translator = (document.getElementById('book-translator-input') as HTMLInputElement).value.trim();
+      const currentPage = parseInt((document.getElementById('current-page-input') as HTMLInputElement).value) || 0;
+      const totalPages = parseInt((document.getElementById('total-pages-input') as HTMLInputElement).value) || 0;
       const startDate = (document.getElementById('start-date-input') as HTMLInputElement).value;
       const finishDate = (document.getElementById('finish-date-input') as HTMLInputElement).value;
       const publisher = (document.getElementById('publisher-input') as HTMLInputElement).value.trim();
@@ -500,6 +553,8 @@ import Layout from '../layouts/Layout.astro';
         book_title: bookTitle,
         author: author,
         translator: translator,
+        current_page: currentPage,
+        total_pages: totalPages,
         start_date: startDate,
         finish_date: finishDate,
         publisher: publisher,
@@ -514,19 +569,86 @@ import Layout from '../layouts/Layout.astro';
       if (error) {
         alert('儲存失敗：' + error.message);
       } else {
-        // 清空欄位
-        (document.getElementById('book-title-input') as HTMLInputElement).value = '';
-        (document.getElementById('book-author-input') as HTMLInputElement).value = '';
-        (document.getElementById('book-translator-input') as HTMLInputElement).value = '';
-        (document.getElementById('start-date-input') as HTMLInputElement).value = '';
-        (document.getElementById('finish-date-input') as HTMLInputElement).value = '';
-        (document.getElementById('publisher-input') as HTMLInputElement).value = '';
-        (document.getElementById('quote-input') as HTMLTextAreaElement).value = '';
-        (document.getElementById('questions-input') as HTMLTextAreaElement).value = '';
-        (document.getElementById('review-input') as HTMLTextAreaElement).value = '';
-
-        if (addRecordModal) addRecordModal.status = 'none';
         if (addRecordModal) addRecordModal.style.display = 'none';
+        await fetchAndRenderLogs();
+      }
+    });
+
+    // 儲存修改
+    updateLogBtn?.addEventListener('click', async () => {
+      const logId = (document.getElementById('edit-log-id') as HTMLInputElement).value;
+      if (!logId) return;
+
+      const bookTitle = (document.getElementById('edit-book') as HTMLInputElement).value.trim();
+      const author = (document.getElementById('edit-author') as HTMLInputElement).value.trim() || '佚名';
+      const translator = (document.getElementById('edit-translator') as HTMLInputElement).value.trim();
+      const currentPage = parseInt((document.getElementById('edit-current-page') as HTMLInputElement).value) || 0;
+      const totalPages = parseInt((document.getElementById('edit-total-pages') as HTMLInputElement).value) || 0;
+      const startDate = (document.getElementById('edit-start-date') as HTMLInputElement).value;
+      const finishDate = (document.getElementById('edit-finish-date') as HTMLInputElement).value;
+      const publisher = (document.getElementById('edit-publisher') as HTMLInputElement).value.trim();
+      const rating = parseInt((document.getElementById('edit-rating') as HTMLSelectElement).value) || 5;
+      const quote = (document.getElementById('edit-quote') as HTMLTextAreaElement).value.trim();
+      const questions = (document.getElementById('edit-questions') as HTMLTextAreaElement).value.trim();
+      const review = (document.getElementById('edit-review') as HTMLTextAreaElement).value.trim();
+
+      updateLogBtn.textContent = '更新中...';
+      const { error } = await supabase.from(LOGS_TABLE).update({
+        book_title: bookTitle,
+        author: author,
+        translator: translator,
+        current_page: currentPage,
+        total_pages: totalPages,
+        start_date: startDate,
+        finish_date: finishDate,
+        publisher: publisher,
+        rating: rating,
+        quote: quote,
+        questions: questions,
+        review: review
+      }).eq('id', logId);
+
+      updateLogBtn.textContent = '儲存修改';
+
+      if (error) {
+        alert('更新失敗：' + error.message);
+      } else {
+        if (detailModal) detailModal.style.display = 'none';
+        await fetchAndRenderLogs();
+      }
+    });
+
+    // 一鍵完成閱讀
+    finishBookBtn?.addEventListener('click', async () => {
+      const logId = (document.getElementById('edit-log-id') as HTMLInputElement).value;
+      const totalPagesInput = document.getElementById('edit-total-pages') as HTMLInputElement;
+      const totalPages = parseInt(totalPagesInput.value) || 0;
+
+      if (totalPages <= 0) {
+        alert('請先填寫正確的「總頁數」才能標記為讀完！');
+        totalPagesInput.focus();
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 自動將目前頁數設為總頁數，並填入今天的完成日期
+      (document.getElementById('edit-current-page') as HTMLInputElement).value = totalPages.toString();
+      (document.getElementById('edit-finish-date') as HTMLInputElement).value = today;
+
+      finishBookBtn.textContent = '處理中...';
+      const { error } = await supabase.from(LOGS_TABLE).update({
+        current_page: totalPages,
+        finish_date: today
+      }).eq('id', logId);
+
+      finishBookBtn.textContent = '✨ 一鍵讀完';
+
+      if (error) {
+        alert('操作失敗：' + error.message);
+      } else {
+        alert('恭喜讀完這本書！ 🎉');
+        if (detailModal) detailModal.style.display = 'none';
         await fetchAndRenderLogs();
       }
     });
