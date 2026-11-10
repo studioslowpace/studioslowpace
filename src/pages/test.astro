@@ -53,8 +53,8 @@ import LoginModal from '../components/LoginModal.astro';
         <div id="table-info-view" style="display:none;">
           <div id="table-details" style="font-size:12px; line-height:1.6; color:var(--text-color); margin-bottom:14px;"></div>
           <div class="rpg-btn-group" style="flex-direction:column; gap:8px;">
-            <button id="table-join-btn" class="rpg-btn" style="background:var(--success-color);">🤝 加入共讀</button>
-            <button id="table-end-btn" class="rpg-btn" style="background:var(--danger-color); display:none;">🛑 結束共讀</button>
+            <button id="table-join-btn" class="rpg-btn" style="background:var(--success-color); color:#fff;">🤝 加入共讀</button>
+            <button id="table-end-btn" class="rpg-btn" style="background:var(--danger-color); color:#fff; display:none;">🛑 結束共讀</button>
             <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
           </div>
         </div>
@@ -91,7 +91,7 @@ import LoginModal from '../components/LoginModal.astro';
 
           <div class="rpg-btn-group">
             <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
-            <button id="seat-sit-btn" class="rpg-btn" style="background:var(--success-color);">✨ 坐下閱讀</button>
+            <button id="seat-sit-btn" class="rpg-btn" style="background:var(--success-color); color:#fff;">✨ 坐下閱讀</button>
           </div>
         </div>
 
@@ -113,7 +113,7 @@ import LoginModal from '../components/LoginModal.astro';
             </div>
           </div>
           <div class="rpg-btn-group">
-            <button id="leave-confirm-btn" class="rpg-btn" style="background:var(--success-color);">✅ 確認並起立</button>
+            <button id="leave-confirm-btn" class="rpg-btn" style="background:var(--success-color); color:#fff;">✅ 確認並起立</button>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
         <span id="pc-title">📖 讀者手帳名片</span>
-        <button id="pc-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold;">✕</button>
+        <button id="pc-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold; color:var(--text-color);">✕</button>
       </div>
       <div class="rpg-content">
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
@@ -148,7 +148,7 @@ import LoginModal from '../components/LoginModal.astro';
         <div style="border-top:1px dashed var(--border-color); padding-top:12px;">
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">傳遞手帳私訊紙條：</div>
           <input type="text" id="pc-msg-input" placeholder="寫一句溫馨的悄悄話..." style="margin-bottom:8px;" />
-          <button id="pc-send-msg-btn" class="rpg-btn" style="background:var(--success-color);">💌 傳遞紙條</button>
+          <button id="pc-send-msg-btn" class="rpg-btn" style="background:var(--success-color); color:#fff;">💌 傳遞紙條</button>
         </div>
       </div>
     </div>
@@ -159,7 +159,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
         <span id="orc-title">📜 讀者閱讀足跡</span>
-        <button id="orc-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold;">✕</button>
+        <button id="orc-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold; color:var(--text-color);">✕</button>
       </div>
       <div class="rpg-content">
         <div id="orc-list-box" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
@@ -260,10 +260,10 @@ import LoginModal from '../components/LoginModal.astro';
             <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff;">➕ 新房間</button>
             <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff;">🗑️ 刪除</button>
             
-            <!-- 玩家可自選任意顏色 -->
-            <div style="display:flex; align-items:center; gap:4px; background:var(--bg-input); border:1px solid var(--border-color); padding:2px 8px; border-radius:12px;">
-              <span style="font-size:10px; color:var(--text-muted);">🎨 主題</span>
-              <input type="color" id="custom-color-picker" value="#faf6ee" style="width:24px; height:24px; border:none; background:transparent; cursor:pointer; padding:0;" title="自選背景色" />
+            <!-- 放置於原本主題按鈕位置的動態配色選色盤 -->
+            <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); border:1px solid var(--border-color); padding:4px 10px; border-radius:12px;">
+              <span style="font-size:11px; font-weight:600; color:var(--text-color);">🎨 主題配色</span>
+              <input type="color" id="custom-color-picker" value="#faf6ee" style="width:22px; height:22px; border:none; background:transparent; cursor:pointer; padding:0;" title="自選主要區域配色" />
             </div>
           </div>
         </div>
@@ -294,12 +294,12 @@ import LoginModal from '../components/LoginModal.astro';
           <div id="guide-content-box" class="guide-list-box"></div>
         </div>
 
-        <!-- 底部導覽列 (替換為指定樣式，並將第一個位置改為手札開關) -->
+        <!-- 底部導覽列 -->
         <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
-          <div style="display:flex; align-items:center; background:var(--bg-card, #ffffff); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
+          <div style="display:flex; align-items:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
             <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex; justify-content:space-around; padding:6px 8px; box-sizing:border-box; background:transparent;">
               
-              <!-- 手札 (取代原本探索，點擊可展開指南抽屜) -->
+              <!-- 手札 -->
               <button id="btn-tab-guide" class="footer-tab-link" style="background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; transition:all 0.2s;">
                 <span style="font-size:16px;">📖</span>
                 <span>手札</span>
@@ -361,7 +361,6 @@ import LoginModal from '../components/LoginModal.astro';
 
     .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: var(--bg-main); transition: background 0.5s ease; }
     
-    /* rpg-container 轉為精緻的大圓角卡片排版 */
     .rpg-container {
       width: 100vw; max-width: 430px; height: 96vh; height: 96dvh; max-height: 860px;
       display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
@@ -1372,15 +1371,27 @@ import LoginModal from '../components/LoginModal.astro';
       renderGuideContent();
     });
 
+    // 智慧色彩解析與動態全域樣式切換
+    function applyDynamicTheme(hex: string) {
+      document.documentElement.style.setProperty('--bg-main', hex);
+      
+      // 自動計算配套的輸入框色、卡片色與邊框色
+      // 簡單透過明暗判定來自動匹配對應的文青質感色階
+      document.documentElement.style.setProperty('--bg-card', hex === '#faf6ee' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.82)');
+      document.documentElement.style.setProperty('--bg-input', hex === '#faf6ee' ? '#f4efe6' : 'rgba(0,0,0,0.04)');
+      document.documentElement.style.setProperty('--border-color', '#e6dcc8');
+      
+      localStorage.setItem('rpg_custom_bg', hex);
+    }
+
     customColorPicker?.addEventListener('input', (e) => {
       const hex = (e.target as HTMLInputElement).value;
-      document.documentElement.style.setProperty('--bg-main', hex);
-      localStorage.setItem('rpg_custom_bg', hex);
+      applyDynamicTheme(hex);
     });
 
     const savedBg = localStorage.getItem('rpg_custom_bg');
     if (savedBg) {
-      document.documentElement.style.setProperty('--bg-main', savedBg);
+      applyDynamicTheme(savedBg);
       if (customColorPicker) customColorPicker.value = savedBg;
     }
 
