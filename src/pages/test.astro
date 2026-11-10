@@ -1000,16 +1000,29 @@ import LoginModal from '../components/LoginModal.astro';
     orcCloseFooter?.addEventListener('click', () => { if (otherRecordsModal) otherRecordsModal.style.display = 'none'; });
 
     // 寫入專屬的私訊功能
-  document.getElementById('pcSendMsgBtn')?.addEventListener('click', async () => {
-    const msg = document.getElementById('pcMsgInput')?.value.trim();
-    if (!msg) { alert('請輸入想傳遞的私訊內容！'); return; }
-    if (!window.activePlayerCardData) return;
+ document.getElementById('pcSendMsgBtn')?.addEventListener('click', async () => {
+    const pcMsgInput = document.getElementById('pcMsgInput');
+    const msg = pcMsgInput?.value.trim();
+    
+    if (!msg) { 
+        alert('請輸入想傳遞的私訊內容！'); 
+        return; 
+    }
+    
+    // 檢查是否有抓到對方的資料
+    if (!window.activePlayerCardData) {
+        console.error("錯誤：找不到目標玩家資料 (activePlayerCardData 為空)");
+        alert('無法發送：找不到目標玩家資訊，請重新點擊該玩家。');
+        return;
+    }
 
     const receiverId = window.activePlayerCardData.id || window.activePlayerCardData.user_id;
     const receiverName = window.activePlayerCardData.name;
 
     try {
-        // 寫入專屬的私訊資料表，而非公開聊天室
+        console.log(`準備發送私訊給 ${receiverName} (${receiverId})：`, msg);
+
+        // 寫入專屬私訊資料表
         const { error } = await supabase.from('direct_messages').insert([{
             sender_id: userId,
             sender_name: playerName,
@@ -1021,18 +1034,18 @@ import LoginModal from '../components/LoginModal.astro';
 
         alert(`成功將手帳紙條傳遞給 ${receiverName}！`);
         
-        const pcMsgInput = document.getElementById('pcMsgInput');
         if (pcMsgInput) pcMsgInput.value = '';
         
         const playerCardModal = document.getElementById('playerCardModal');
         if (playerCardModal) playerCardModal.style.display = 'none';
 
-        // 問使用者是否要直接跳轉過去查看私訊對話
+        // 詢問是否直接跳轉至私訊室
         if (confirm(`是否立即前往私訊室與 ${receiverName} 對話？`)) {
             window.location.href = `/chatroom?dm=${receiverId}&name=${encodeURIComponent(receiverName)}`;
         }
     } catch (err) {
-        alert("私訊傳送失敗: " + err.message);
+        console.error("私訊發送失敗詳細原因：", err);
+        alert("私訊發送失敗: " + err.message);
     }
 });
 
