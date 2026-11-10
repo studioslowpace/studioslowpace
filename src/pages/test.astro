@@ -632,7 +632,6 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     async function fetchOnlinePlayers() {
-      // 擴大時間窗至 30 秒，並確保自己永遠在列表中顯示或獨立抓取其他線上玩家
       const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString();
       const { data } = await supabase
         .from(TABLE_NAME)
@@ -674,7 +673,6 @@ import LoginModal from '../components/LoginModal.astro';
         fetchRooms();
       }).subscribe();
 
-      // 每 5 秒心跳：更新線上玩家的心跳時間戳記（即使沒移動也會更新 updated_at，讓別人看得到你），並抓取其他人與物件
       syncInterval = setInterval(() => { 
         syncMyStateToDB();
         fetchOnlinePlayers(); 
@@ -1518,13 +1516,11 @@ import LoginModal from '../components/LoginModal.astro';
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         await syncMyStateToDB();
 
-        // 💡 關鍵修復：明確依據資料表的 id 進行 update，確保 host_id 確實寫入資料庫
+        // 1. 更新 chairs / slowplace_items 的坐下狀態（不包含 current_page / total_pages 避免報錯，僅存基本座席狀態）
         const { error } = await supabase.from(ITEMS_TABLE).update({
           host_id: userId,
           host_name: playerName,
-          book_title: bookTitle,
-          current_page: curPage,
-          total_pages: totPage
+          book_title: bookTitle
         }).eq('id', activeSeatData.id);
 
         if (error) {
@@ -1533,8 +1529,11 @@ import LoginModal from '../components/LoginModal.astro';
           return;
         }
 
+        // 2. 同步更新或新增至 reading_record (閱讀記錄 Table)
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
+            book_title: bookTitle,
+            author: author,
             current_page: curPage,
             total_pages: totPage
           }).eq('id', currentReadingRecordId);
@@ -1563,8 +1562,13 @@ import LoginModal from '../components/LoginModal.astro';
     leaveSeatBtn?.addEventListener('click', () => {
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
-        if (leaveCurrentPage) leaveCurrentPage.value = seatedSeat.current_page || 1;
-        if (leaveTotalPage) leaveTotalPage.value = seatedSeat.total_pages || 100;
+        if (currentReadingRecordId) {
+          const matchedRec = userReadingRecords.find(r => r.id === currentReadingRecordId);
+          if (matchedRec) {
+            if (leaveCurrentPage) leaveCurrentPage.value = matchedRec.current_page || 1;
+            if (leaveTotalPage) leaveTotalPage.value = matchedRec.total_pages || 100;
+          }
+        }
       }
 
       if (seatModalTitle) seatModalTitle.textContent = '🚶 準備起立';
@@ -1584,6 +1588,7 @@ import LoginModal from '../components/LoginModal.astro';
       
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
+        // 1. 更新閱讀記錄 Table (reading_record)
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
             current_page: curPage,
@@ -1591,12 +1596,11 @@ import LoginModal from '../components/LoginModal.astro';
           }).eq('id', currentReadingRecordId);
         }
 
+        // 2. 清空椅子的佔用狀態
         await supabase.from(ITEMS_TABLE).update({
           host_id: '',
           host_name: '',
-          book_title: '',
-          current_page: 0,
-          total_pages: 0
+          book_title: ''
         }).eq('id', seatedSeat.id);
       }
 
