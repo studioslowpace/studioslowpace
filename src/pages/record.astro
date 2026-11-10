@@ -28,6 +28,15 @@ import Layout from '../layouts/Layout.astro';
     <div class="logs-container" id="my-logs-list">
       <div style="text-align:center; color:#8c8275; padding:30px;">載入記錄中...</div>
     </div>
+
+    <div style="display:flex; align-items:center; background:var(--bg-main);">
+          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
+            <a href="/chatroom" class="footer-tab-btn">💬 聊天</a>
+            <a href="/record" class="footer-tab-btn">📚 書櫃</a>
+            <a href="/skillsupermarket" class="footer-tab-btn">萬事屋</a>
+          </div>
+    
+    </div>
   </div>
 
   <!-- 新增記錄彈窗 (Modal) -->
@@ -174,14 +183,7 @@ import Layout from '../layouts/Layout.astro';
       </div>
 
     
-    <div style="display:flex; align-items:center; background:var(--bg-main);">
-          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
-            <a href="/chatroom" class="footer-tab-btn">💬 聊天</a>
-            <a href="/record" class="footer-tab-btn">📚 書櫃</a>
-            <a href="/skillsupermarket" class="footer-tab-btn">萬事屋</a>
-          </div>
     
-        </div>
   </div>
 
   <style is:global>

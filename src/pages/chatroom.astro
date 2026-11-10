@@ -441,6 +441,16 @@ import LoginModal from '../components/LoginModal.astro';
             </div>
 
         </div>
+
+          <!-- 底部主導航列與起立按鈕 -->
+        <div style="display:flex; align-items:center; background:var(--bg-main);">
+          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
+            <a href="/chatroom" class="footer-tab-btn">💬 聊天</a>
+            <a href="/record" class="footer-tab-btn">📚 書櫃</a>
+            <a href="/skillsupermarker" class="footer-tab-btn">萬事屋</a>
+          </div>
+    
+        </div>
     </main>
 
     <!-- 👥 彈窗：在線名單 / 鄰里人總數名單 (含搜尋與會員私訊攔截) -->
@@ -530,19 +540,9 @@ import LoginModal from '../components/LoginModal.astro';
         </div>
     </div>
 
-          <!-- 底部 Footer 導航列與向上展開的指南抽屜 -->
-      <footer class="rpg-footer-nav"  style= "background: var(--bg-card); border-top: 2px solid var(--accent-hover); display: flex; flex-direction: column; flex-shrink: 0; z-index: 50;"">
-   
-        <!-- 底部主導航列與起立按鈕 -->
-        <div style="display:flex; align-items:center; background:var(--bg-main);">
-          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
-            <a href="/chatroom" class="footer-tab-btn">💬 聊天</a>
-            <a href="/record" class="footer-tab-btn">📚 書櫃</a>
-            <a href="/skillsupermarker" class="footer-tab-btn">萬事屋</a>
-          </div>
-    
-        </div>
-      </footer>
+
+      
+
 
     <!-- JavaScript 核心邏輯 (使用標準 ES 模組，不加 is:inline) -->
     <script>
