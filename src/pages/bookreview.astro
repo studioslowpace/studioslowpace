@@ -1,0 +1,207 @@
+---
+// src/pages/public-records.astro
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="大廳書牆 · 公開閱讀記錄 · 空間客舍">
+  <div style="max-width: 600px; margin: 0 auto; min-height: 100vh; padding: 20px 16px; padding-bottom: 100px; box-sizing: border-box; background: var(--bg-main, #fcfaf7); color: var(--text-main, #2c2420); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    
+    <!-- 頂部標題列 -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+      <a href="/" style="color: #6b8e23; text-decoration: none; font-size: 13px; font-weight: 500;">〈 返回空間</a>
+      <h2 style="font-size: 16px; margin: 0;">🌿 大家的公開書牆</h2>
+      <div style="width: 50px;"></div> <!-- 佔位平衡 -->
+    </div>
+
+    <!-- 搜尋列 -->
+    <div style="background: #ffffff; border: 1px solid #f0ebe1; padding: 14px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+      <div style="position: relative; display: flex; align-items: center;">
+        <span style="position: absolute; left: 12px; font-size: 14px;">🔍</span>
+        <input type="text" id="public-search-input" placeholder="搜尋公開書名或作者..." style="width: 100%; background: #f4efe6; border: 1px solid transparent; padding: 10px 12px 10px 36px; border-radius: 12px; font-size: 13px; color: #2c2420; outline: none; box-sizing: border-box;" />
+      </div>
+    </div>
+
+    <!-- 公開記錄清單容器 -->
+    <div id="public-logs-list" style="display: flex; direction: column; gap: 12px;">
+      <div style="text-align: center; color: #8c8275; padding: 30px;">載入公開記錄中...</div>
+    </div>
+
+    <!-- 融入主體的底部導覽列 -->
+    <div style="display: flex; justify-content: center; width: 100%; margin-top: 32px;">
+      <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+        <div style="flex: 1; border-top: none; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
+          <a href="/explore" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
+            <span style="font-size: 16px;">🌿</span>
+            <span>探索</span>
+          </a>
+          <a href="/chatroom" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
+            <span style="font-size: 16px;">💬</span>
+            <span>聊天</span>
+          </a>
+          <a href="/record" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
+            <span style="font-size: 16px;">📚</span>
+            <span>書櫃</span>
+          </a>
+          <!-- 目前在此頁面 -->
+          <a href="/public-records" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
+            <span style="font-size: 16px;">🏛️</span>
+            <span>大廳</span>
+          </a>
+          <a href="/skillsupermarket" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
+            <span style="font-size: 16px;">🏠</span>
+            <span>萬事屋</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 詳細筆記檢視 Modal -->
+  <div id="public-detail-modal" style="position: fixed; inset: 0; background: rgba(44, 36, 32, 0.4); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100;">
+    <div style="background: #ffffff; border: 1px solid #f0ebe1; border-radius: 20px; width: 90%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden;">
+      <div style="background: #f4efe6; color: #2c2420; padding: 12px 16px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0ebe1;">
+        <span>📖 公開閱讀筆記詳情</span>
+        <button id="detail-close-btn" style="background: transparent; color: #8c8275; border: none; font-size: 16px; cursor: pointer;">✕</button>
+      </div>
+      <div style="padding: 20px; overflow-y: auto; max-height: 80vh; background: #fff;">
+        <div style="display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #f0ebe1; padding-bottom: 12px;">
+          <div style="display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">書名</strong> <span id="m-book" style="color: #2c2420; font-weight: 500;"></span></div>
+          <div style="display: flex; gap: 16px;">
+            <div style="flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">作者</strong> <span id="m-author" style="color: #2c2420; font-weight: 500;"></span></div>
+            <div style="flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">譯者</strong> <span id="m-translator" style="color: #2c2420; font-weight: 500;"></span></div>
+          </div>
+          <div style="display: flex; gap: 16px;">
+            <div style="flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">進度</strong> <span id="m-progress" style="color: #2c2420; font-weight: 500;"></span></div>
+            <div style="flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">出版社</strong> <span id="m-publisher" style="color: #2c2420; font-weight: 500;"></span></div>
+          </div>
+          <div style="display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">喜愛程度</strong> <span id="m-rating" style="color: #d97706; font-weight: 500;"></span></div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <div style="font-weight: bold; color: #6b8e23; margin-bottom: 4px; font-size: 12px;">記一些字句：</div>
+          <div id="m-quote" style="background: #f4efe6; border-left: 2px solid #6b8e23; padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #4a4036;"></div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <div style="font-weight: bold; color: #6b8e23; margin-bottom: 4px; font-size: 12px;">記一些疑問：</div>
+          <div id="m-questions" style="background: #f4efe6; border-left: 2px solid #6b8e23; padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #4a4036;"></div>
+        </div>
+
+        <div style="margin-top: 14px;">
+          <div style="font-weight: bold; color: #6b8e23; margin-bottom: 4px; font-size: 12px;">記一些感受：</div>
+          <div id="m-review" style="background: #f4efe6; border-left: 2px solid #6b8e23; padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #4a4036;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    const LOGS_TABLE = 'reading_record';
+    let publicLogs: any[] = [];
+    const listContainer = document.getElementById('public-logs-list');
+    const searchInput = document.getElementById('public-search-input') as HTMLInputElement;
+    const detailModal = document.getElementById('public-detail-modal');
+    const detailCloseBtn = document.getElementById('detail-close-btn');
+
+    async function fetchPublicLogs() {
+      if (!listContainer) return;
+      listContainer.innerHTML = '<div style="text-align: center; color: #8c8275; padding: 30px;">載入公開記錄中...</div>';
+
+      // 查詢所有 is_public 為 true 的記錄
+      const { data, error } = await supabase
+        .from(LOGS_TABLE)
+        .select('*')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        listContainer.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 30px;">載入公開記錄失敗</div>';
+        return;
+      }
+
+      publicLogs = data || [];
+      renderPublicLogs(publicLogs);
+    }
+
+    function renderPublicLogs(items: any[]) {
+      if (!listContainer) return;
+
+      if (items.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: #8c8275; padding: 30px;">目前尚無人分享公開閱讀記錄</div>';
+        return;
+      }
+
+      let html = '';
+      items.forEach((item) => {
+        const ratingNum = item.rating || 5;
+        const ratingStars = '⭐'.repeat(Math.min(ratingNum, 10)) + ` (${ratingNum}星)`;
+        const curr = item.current_page || 0;
+        const total = item.total_pages || 0;
+        let percent = 0;
+        if (total > 0) {
+          percent = Math.min(100, Math.round((curr / total) * 100));
+        }
+        if (item.finish_date && total > 0) percent = 100;
+        const snippet = item.review || item.quote || '點擊查看詳細閱讀筆記與心得...';
+
+        html += `
+          <div class="public-card" data-id="${item.id}" style="background: #ffffff; border: 1px solid #f0ebe1; padding: 16px; border-radius: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <span style="font-weight: bold; color: #2c2420; font-size: 15px;">《${item.book_title || '無題'}》</span>
+              <span style="font-size: 11px; color: #d97706;">${ratingStars}</span>
+            </div>
+            <div style="font-size: 12px; color: #8c8275; display: flex; gap: 12px; margin-bottom: 10px;">
+              <span>作者：${item.author || '佚名'}</span>
+              <span>${item.finish_date ? '已讀完' : `進度：${curr} / ${total} 頁`}</span>
+            </div>
+            <div style="font-size: 12px; color: #555; background: #f4efe6; padding: 6px 10px; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${snippet}
+            </div>
+          </div>
+        `;
+      });
+      listContainer.innerHTML = html;
+
+      // 繫結點擊事件開啟詳情
+      document.querySelectorAll('.public-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const logId = (e.currentTarget as HTMLElement).dataset.id;
+          const log = publicLogs.find(l => l.id === logId);
+          if (log) {
+            (document.getElementById('m-book') as HTMLElement).textContent = `《${log.book_title || ''}》`;
+            (document.getElementById('m-author') as HTMLElement).textContent = log.author || '佚名';
+            (document.getElementById('m-translator') as HTMLElement).textContent = log.translator || '無';
+            (document.getElementById('m-progress') as HTMLElement).textContent = `${log.current_page || 0} / ${log.total_pages || 0} 頁`;
+            (document.getElementById('m-publisher') as HTMLElement).textContent = log.publisher || '未填寫';
+            
+            const rNum = log.rating || 5;
+            (document.getElementById('m-rating') as HTMLElement).textContent = `${'⭐'.repeat(Math.min(rNum, 10))} (${rNum} 星)`;
+
+            (document.getElementById('m-quote') as HTMLElement).textContent = log.quote || '無記錄字句';
+            (document.getElementById('m-questions') as HTMLElement).textContent = log.questions || '無記錄疑問';
+            (document.getElementById('m-review') as HTMLElement).textContent = log.review || '無記錄感受';
+
+            if (detailModal) detailModal.style.display = 'flex';
+          }
+        });
+      });
+    }
+
+    // 搜尋過濾
+    searchInput?.addEventListener('input', (e) => {
+      const query = (e.target as HTMLInputElement).value.toLowerCase();
+      const filtered = publicLogs.filter(item => {
+        const title = (item.book_title || '').toLowerCase();
+        const author = (item.author || '').toLowerCase();
+        return title.includes(query) || author.includes(query);
+      });
+      renderPublicLogs(filtered);
+    });
+
+    detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
+
+    fetchPublicLogs();
+  </script>
+</Layout>
