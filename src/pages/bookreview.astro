@@ -9,19 +9,19 @@ import Layout from '../layouts/Layout.astro';
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
       <a href="/" style="color: #6b8e23; text-decoration: none; font-size: 13px; font-weight: 500;">〈 返回空間</a>
       <h2 style="font-size: 16px; margin: 0;">🌿 大家的公開書牆</h2>
-      <div style="width: 50px;"></div> <!-- 佔位平衡 -->
+      <div style="width: 50px;"></div>
     </div>
 
     <!-- 搜尋列 -->
     <div style="background: #ffffff; border: 1px solid #f0ebe1; padding: 14px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
       <div style="position: relative; display: flex; align-items: center;">
         <span style="position: absolute; left: 12px; font-size: 14px;">🔍</span>
-        <input type="text" id="public-search-input" placeholder="搜尋公開書名或作者..." style="width: 100%; background: #f4efe6; border: 1px solid transparent; padding: 10px 12px 10px 36px; border-radius: 12px; font-size: 13px; color: #2c2420; outline: none; box-sizing: border-box;" />
+        <input type="text" id="public-search-input" placeholder="搜尋書名、作者或讀者..." style="width: 100%; background: #f4efe6; border: 1px solid transparent; padding: 10px 12px 10px 36px; border-radius: 12px; font-size: 13px; color: #2c2420; outline: none; box-sizing: border-box;" />
       </div>
     </div>
 
     <!-- 公開記錄清單容器 -->
-    <div id="public-logs-list" style="display: flex; direction: column; gap: 12px;">
+    <div id="public-logs-list" style="display: flex; flex-direction: column; gap: 12px;">
       <div style="text-align: center; color: #8c8275; padding: 30px;">載入公開記錄中...</div>
     </div>
 
@@ -41,7 +41,6 @@ import Layout from '../layouts/Layout.astro';
             <span style="font-size: 16px;">📚</span>
             <span>書櫃</span>
           </a>
-          <!-- 目前在此頁面 -->
           <a href="/public-records" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
             <span style="font-size: 16px;">🏛️</span>
             <span>大廳</span>
@@ -60,11 +59,12 @@ import Layout from '../layouts/Layout.astro';
   <div id="public-detail-modal" style="position: fixed; inset: 0; background: rgba(44, 36, 32, 0.4); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100;">
     <div style="background: #ffffff; border: 1px solid #f0ebe1; border-radius: 20px; width: 90%; max-width: 480px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden;">
       <div style="background: #f4efe6; color: #2c2420; padding: 12px 16px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0ebe1;">
-        <span>📖 公開閱讀筆記詳情</span>
+        <span id="m-modal-title">📖 公開閱讀筆記詳情</span>
         <button id="detail-close-btn" style="background: transparent; color: #8c8275; border: none; font-size: 16px; cursor: pointer;">✕</button>
       </div>
       <div style="padding: 20px; overflow-y: auto; max-height: 80vh; background: #fff;">
         <div style="display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #f0ebe1; padding-bottom: 12px;">
+          <div style="display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">讀者</strong> <span id="m-reader" style="color: #6b8e23; font-weight: 600;"></span></div>
           <div style="display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">書名</strong> <span id="m-book" style="color: #2c2420; font-weight: 500;"></span></div>
           <div style="display: flex; gap: 16px;">
             <div style="flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px;"><strong style="width: 65px; color: #8c8275;">作者</strong> <span id="m-author" style="color: #2c2420; font-weight: 500;"></span></div>
@@ -125,6 +125,19 @@ import Layout from '../layouts/Layout.astro';
       renderPublicLogs(publicLogs);
     }
 
+    // 自動從內文（心得、引言、疑問）抽取一句精華摘要
+    function extractSnippet(item: any): string {
+      const text = item.review || item.quote || item.questions || '';
+      if (!text.trim()) return '這本書還沒有留下心得或字句...';
+      
+      // 依照常見的標點符號（句號、驚嘆號、問號、換行）切分句子
+      const sentences = text.split(/[\n。！？!?]/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      if (sentences.length > 0) {
+        return `「${sentences[0]}...」`;
+      }
+      return text.length > 30 ? text.substring(0, 30) + '...' : text;
+    }
+
     function renderPublicLogs(items: any[]) {
       if (!listContainer) return;
 
@@ -137,26 +150,27 @@ import Layout from '../layouts/Layout.astro';
       items.forEach((item) => {
         const ratingNum = item.rating || 5;
         const ratingStars = '⭐'.repeat(Math.min(ratingNum, 10)) + ` (${ratingNum}星)`;
-        const curr = item.current_page || 0;
-        const total = item.total_pages || 0;
-        let percent = 0;
-        if (total > 0) {
-          percent = Math.min(100, Math.round((curr / total) * 100));
-        }
-        if (item.finish_date && total > 0) percent = 100;
-        const snippet = item.review || item.quote || '點擊查看詳細閱讀筆記與心得...';
+        const readerName = item.reader_name || item.user_name || '熱心讀者'; // 讀者名稱
+        const snippet = extractSnippet(item); // 自動抽取精華句
 
         html += `
           <div class="public-card" data-id="${item.id}" style="background: #ffffff; border: 1px solid #f0ebe1; padding: 16px; border-radius: 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-              <span style="font-weight: bold; color: #2c2420; font-size: 15px;">《${item.book_title || '無題'}》</span>
+            <!-- 讀者名稱與星級 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; color: #6b8e23; font-weight: 600;">👤 讀者：${readerName}</span>
               <span style="font-size: 11px; color: #d97706;">${ratingStars}</span>
             </div>
+            <!-- 書名 -->
+            <div style="margin-bottom: 6px;">
+              <span style="font-weight: bold; color: #2c2420; font-size: 15px;">《${item.book_title || '無題'}》</span>
+            </div>
+            <!-- 作者名與進度 -->
             <div style="font-size: 12px; color: #8c8275; display: flex; gap: 12px; margin-bottom: 10px;">
               <span>作者：${item.author || '佚名'}</span>
-              <span>${item.finish_date ? '已讀完' : `進度：${curr} / ${total} 頁`}</span>
+              <span>${item.finish_date ? '已讀完' : `進度：${item.current_page || 0} / ${item.total_pages || 0} 頁`}</span>
             </div>
-            <div style="font-size: 12px; color: #555; background: #f4efe6; padding: 6px 10px; border-radius: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <!-- 自動抽取內文一句 -->
+            <div style="font-size: 12px; color: #555; background: #f4efe6; padding: 8px 12px; border-radius: 8px; border-left: 2px solid #6b8e23; font-style: italic;">
               ${snippet}
             </div>
           </div>
@@ -170,6 +184,7 @@ import Layout from '../layouts/Layout.astro';
           const logId = (e.currentTarget as HTMLElement).dataset.id;
           const log = publicLogs.find(l => l.id === logId);
           if (log) {
+            (document.getElementById('m-reader') as HTMLElement).textContent = log.reader_name || log.user_name || '熱心讀者';
             (document.getElementById('m-book') as HTMLElement).textContent = `《${log.book_title || ''}》`;
             (document.getElementById('m-author') as HTMLElement).textContent = log.author || '佚名';
             (document.getElementById('m-translator') as HTMLElement).textContent = log.translator || '無';
@@ -189,13 +204,14 @@ import Layout from '../layouts/Layout.astro';
       });
     }
 
-    // 搜尋過濾
+    // 搜尋過濾（可搜尋書名、作者或讀者名稱）
     searchInput?.addEventListener('input', (e) => {
       const query = (e.target as HTMLInputElement).value.toLowerCase();
       const filtered = publicLogs.filter(item => {
         const title = (item.book_title || '').toLowerCase();
         const author = (item.author || '').toLowerCase();
-        return title.includes(query) || author.includes(query);
+        const reader = (item.reader_name || item.user_name || '熱心讀者').toLowerCase();
+        return title.includes(query) || author.includes(query) || reader.includes(query);
       });
       renderPublicLogs(filtered);
     });

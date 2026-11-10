@@ -451,6 +451,7 @@ import Layout from '../layouts/Layout.astro';
 
     const LOGS_TABLE = 'reading_record';
     let currentUserId: string | null = null;
+    let currentUserName = '熱心讀者';
     let isOwner = false;
     let cachedLogs: any[] = [];
     let currentFilter = 'all';
@@ -486,9 +487,12 @@ import Layout from '../layouts/Layout.astro';
       } else if (session && session.user) {
         currentUserId = session.user.id;
         isOwner = true;
+        // 嘗試從 user_metadata 或 user 資訊中取得會員名稱
+        currentUserName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '會員';
       } else if (guestId) {
         currentUserId = guestId;
         isOwner = true;
+        currentUserName = '訪客';
       } else {
         window.location.href = '/login';
         return;
@@ -674,7 +678,7 @@ import Layout from '../layouts/Layout.astro';
     closeAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'none'; });
     detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
 
-    // 新增記錄
+    // 新增記錄（自動帶入 reader_name）
     submitBtn?.addEventListener('click', async () => {
       const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
       const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
@@ -699,6 +703,7 @@ import Layout from '../layouts/Layout.astro';
       submitBtn.textContent = '儲存中...';
       const { error } = await supabase.from(LOGS_TABLE).insert({
         user_id: currentUserId,
+        reader_name: currentUserName, // 👈 寫入會員名稱
         book_title: bookTitle,
         author: author,
         translator: translator,
@@ -757,7 +762,8 @@ import Layout from '../layouts/Layout.astro';
         quote: quote,
         questions: questions,
         review: review,
-        is_public: isPublic
+        is_public: isPublic,
+        reader_name: currentUserName // 確保更新時也帶上最新名稱
       }).eq('id', logId);
 
       updateLogBtn.textContent = '儲存修改';
