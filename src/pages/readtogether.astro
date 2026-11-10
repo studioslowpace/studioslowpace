@@ -409,7 +409,14 @@ import Layout from '../layouts/Layout.astro';
 
         (document.getElementById('view-table-book') as HTMLElement).textContent = `《${table.book_title}》`;
         (document.getElementById('view-table-author') as HTMLElement).textContent = table.author || '佚名';
-        (document.getElementById('view-table-host') as HTMLElement).textContent = table.host_name || '未知';
+        // 檢查 host_id 或 host_name 是否存在，若無則顯示「無」或隱藏
+        const hostEl = document.getElementById('view-table-host') as HTMLElement;
+        if (table.host_name) {
+          hostEl.textContent = table.host_name;
+          hostEl.parentElement!.style.display = 'flex'; // 確保該行顯示
+        } else {
+          hostEl.parentElement!.style.display = 'none'; // 若無主辦人直接隱藏該行
+        }
         (document.getElementById('view-table-max') as HTMLElement).textContent = `${table.max_members || 3} 人`;
         (document.getElementById('view-table-date') as HTMLElement).textContent = table.finish_date || '未設定';
 
