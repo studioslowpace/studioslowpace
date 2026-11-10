@@ -123,6 +123,35 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
+  <!-- 3.6 玩家手帳名片與私訊 Modal (新加入) -->
+  <div id="player-card-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window" style="background: #faf6ee; color: #2c241d; border: 1px solid #e6dcc8;">
+      <div class="rpg-title-bar" style="background: #f0e8d5; color: #5c4b37; display:flex; justify-content:space-between; align-items:center;">
+        <span id="pc-title">📖 讀者手帳名片</span>
+        <button id="pc-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; color:#5c4b37; font-weight:bold;">✕</button>
+      </div>
+      <div class="rpg-content">
+        <div id="pc-info-view">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <img id="pc-avatar" src="/assets/player1.png" style="width:48px; height:48px; border-radius:50%; background:#e6dcc8; object-fit:cover;" />
+            <div>
+              <div id="pc-name" style="font-weight:700; font-size:15px; color:#2c241d;">旅人</div>
+              <div id="pc-tier" style="font-size:11px; color:#8c7a6b; margin-top:2px;">🌱 鄰里人</div>
+            </div>
+          </div>
+          <div id="pc-reading-box" style="background:#f4efe6; border:1px solid #e6dcc8; padding:10px; border-radius:10px; font-size:12px; margin-bottom:12px; line-height:1.5; color:#4a3f35;">
+            正在載入閱讀記錄...
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:11px; color:#8c7a6b; margin-bottom:4px;">發送私訊 (傳遞手帳紙條)：</div>
+            <input type="text" id="pc-msg-input" placeholder="寫一句溫馨的悄悄話..." style="background:#fff; border:1px solid #e6dcc8; color:#2c241d; margin-bottom:8px;" />
+            <button id="pc-send-msg-btn" class="rpg-btn" style="background:#84a98c; color:#fff;">💌 傳遞紙條</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 4. 彈出網頁視窗 -->
   <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
@@ -448,6 +477,7 @@ import LoginModal from '../components/LoginModal.astro';
     let roomItems: any[] = [];
     let activeSeatData: any = null;
     let activeTableData: any = null;
+    let activePlayerCardData: any = null;
     let userReadingRecords: any[] = [];
     let currentReadingRecordId: string | null = null;
     let syncInterval: any = null;
@@ -691,7 +721,7 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     // ==========================================
-    // 區塊三：獨立讀取房間並繪製 (手帳風便條紙對話框與微呼吸特效)
+    // 區塊三：獨立讀取房間並繪製
     // ==========================================
     async function fetchRooms() {
       const { data } = await supabase
@@ -757,7 +787,6 @@ import LoginModal from '../components/LoginModal.astro';
       return false;
     }
 
-    // 手帳風便條紙風格對話框氣泡
     function drawSpeechBubble(c: CanvasRenderingContext2D, text: string, x: number, y: number, isDndActive = false) {
       c.font = '10px -apple-system, sans-serif';
       const textWidth = c.measureText(text).width;
@@ -771,13 +800,11 @@ import LoginModal from '../components/LoginModal.astro';
       c.strokeStyle = isDndActive ? '#6ee7b7' : 'rgba(255, 255, 255, 0.15)';
       c.lineWidth = 1;
 
-      // 拍立得/便條紙風格微圓角矩形
       c.beginPath();
       c.roundRect(bx, by, bubbleW, bubbleH, 6);
       c.fill();
       c.stroke();
 
-      // 小指標
       c.beginPath();
       c.moveTo(x - 4, by + bubbleH);
       c.lineTo(x + 4, by + bubbleH);
@@ -786,7 +813,6 @@ import LoginModal from '../components/LoginModal.astro';
       c.fill();
       c.stroke();
 
-      // 文字
       c.fillStyle = isDndActive ? '#064e3b' : '#f8fafc';
       c.textAlign = 'center';
       c.fillText(text, x, by + 14);
@@ -810,7 +836,6 @@ import LoginModal from '../components/LoginModal.astro';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      // 舒適的文青主題網格線
       const theme = document.documentElement.getAttribute('data-theme') || 'blue';
       const gridColorMap: Record<string, string> = {
         blue: 'rgba(125, 211, 252, 0.05)',
@@ -834,7 +859,6 @@ import LoginModal from '../components/LoginModal.astro';
         }
       }
 
-      // 繪製室內物件 (含呼吸微光互動)
       roomItems.forEach(item => {
         const px = item.gx * tileSize;
         const py = item.gy * tileSize;
@@ -844,7 +868,6 @@ import LoginModal from '../components/LoginModal.astro';
         const isHovered = hoveredItem && hoveredItem.id === item.id;
         if (isHovered) {
           ctx.save();
-          const glowAlpha = 0.3 + Math.sin(glowCounter * 3) * 0.2;
           ctx.shadowColor = theme === 'green' ? '#6ee7b7' : theme === 'purple' ? '#d8b4fe' : '#7dd3fc';
           ctx.shadowBlur = 14;
           ctx.fillStyle = ctx.shadowColor;
@@ -881,7 +904,6 @@ import LoginModal from '../components/LoginModal.astro';
         }
       });
 
-      // 繪製線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * tileSize + tileSize / 2;
         const py = op.gy * tileSize + tileSize / 2;
@@ -897,7 +919,6 @@ import LoginModal from '../components/LoginModal.astro';
         drawSpeechBubble(ctx, opStatusText, px, py - 18, Boolean(op.is_dnd));
       });
 
-      // 繪製當前玩家
       const pScreenX = playerGx * tileSize + tileSize / 2;
       const pScreenY = playerGy * tileSize + tileSize / 2;
       const playerImg = getLoadedImage(playerAvatar);
@@ -928,7 +949,9 @@ import LoginModal from '../components/LoginModal.astro';
       const gy = Math.floor(y / tileSize);
 
       hoveredItem = roomItems.find(item => gx >= item.gx && gx < item.gx + (item.w || 1) && gy >= item.gy && gy < item.gy + (item.h || 1));
-      canvas.style.cursor = hoveredItem ? 'pointer' : 'default';
+      const hitPlayer = getPlayerAtCell(gx, gy);
+
+      canvas.style.cursor = (hoveredItem || hitPlayer) ? 'pointer' : 'default';
     });
 
     canvas?.addEventListener('mouseleave', () => {
@@ -937,7 +960,7 @@ import LoginModal from '../components/LoginModal.astro';
     });
 
     // ==========================================
-    // 區塊四：UI 互動與導航
+    // 區塊四：UI 互動與導航 (含點擊玩家看名片與私訊)
     // ==========================================
     const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
     const openRoomModalBtn = document.getElementById('open-room-modal-btn');
@@ -958,6 +981,35 @@ import LoginModal from '../components/LoginModal.astro';
     const drawerCloseBtn = document.getElementById('drawer-close-btn');
     const guideContentBox = document.getElementById('guide-content-box');
     const shopkeeperDrawerTools = document.getElementById('shopkeeper-drawer-tools');
+
+    // 玩家名片 Modal 元素
+    const playerCardModal = document.getElementById('player-card-modal');
+    const pcCloseBtn = document.getElementById('pc-close-btn');
+    const pcAvatar = document.getElementById('pc-avatar') as HTMLImageElement;
+    const pcName = document.getElementById('pc-name');
+    const pcTier = document.getElementById('pc-tier');
+    const pcReadingBox = document.getElementById('pc-reading-box');
+    const pcMsgInput = document.getElementById('pc-msg-input') as HTMLInputElement;
+    const pcSendMsgBtn = document.getElementById('pc-send-msg-btn');
+
+    pcCloseBtn?.addEventListener('click', () => { if (playerCardModal) playerCardModal.style.display = 'none'; });
+
+    pcSendMsgBtn?.addEventListener('click', async () => {
+      const msg = pcMsgInput?.value.trim();
+      if (!msg) { alert('請輸入想傳遞的私訊內容！'); return; }
+      if (!activePlayerCardData) return;
+
+      // 模擬傳送私訊到聊天室或動態記錄
+      await supabase.from('chatroom_messages').insert([{
+        user_id: userId,
+        name: `${playerName} 悄悄告訴 ${activePlayerCardData.name}`,
+        content: `💌 [私訊] ${msg}`
+      }]).select();
+
+      alert(`成功將手帳紙條傳遞給 ${activePlayerCardData.name}！`);
+      pcMsgInput.value = '';
+      if (playerCardModal) playerCardModal.style.display = 'none';
+    });
 
     btnTabGuide?.addEventListener('click', () => {
       if (guideDrawer) {
@@ -1368,6 +1420,24 @@ import LoginModal from '../components/LoginModal.astro';
       const targetGx = Math.floor(clickX / tileSize);
       const targetGy = Math.floor(clickY / tileSize);
 
+      // 檢查是否點擊了其他在線玩家（打開名片與私訊）
+      const hitPlayer = getPlayerAtCell(targetGx, targetGy);
+      if (hitPlayer) {
+        activePlayerCardData = hitPlayer;
+        if (pcName) pcName.textContent = hitPlayer.name;
+        if (pcTier) pcTier.textContent = hitPlayer.tier === '鄰里人' ? '🌱 鄰里人' : '☁️ 訪客';
+        if (pcAvatar) pcAvatar.src = hitPlayer.avatar || '/assets/player1.png';
+        if (pcReadingBox) {
+          pcReadingBox.innerHTML = `
+            <p><strong>當前狀態：</strong>${hitPlayer.is_dnd ? '📖 正在專注閱讀中' : '🚶 正在空間中散步'}</p>
+            <p><strong>身分角色：</strong>${hitPlayer.role || '讀者'}</p>
+            <p><strong>所在房間：</strong>${currentRoom}</p>
+          `;
+        }
+        if (playerCardModal) playerCardModal.style.display = 'flex';
+        return;
+      }
+
       if (currentTool === 'delete') {
         if (!isAdmin) { alert('只有店主才能刪除物件！'); return; }
         const hitItem = roomItems.find(item => targetGx >= item.gx && targetGx < item.gx + (item.w || 1) && targetGy >= item.gy && targetGy < item.gy + (item.h || 1));
@@ -1582,11 +1652,6 @@ import LoginModal from '../components/LoginModal.astro';
           }
         }
 
-        const hitPlayer = getPlayerAtCell(targetGx, targetGy);
-        if (hitPlayer) {
-          return;
-        }
-
         if (!isCellSolidBlocked(targetGx, targetGy)) {
           moveQueue = [];
           let currX = playerGx; let currY = playerGy;
@@ -1612,7 +1677,7 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (activeSeatData && userId) {
         isDND = true;
-        if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode'); // 啓動沉浸式專注遮罩
+        if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
@@ -1683,7 +1748,7 @@ import LoginModal from '../components/LoginModal.astro';
       const totPage = parseInt(leaveTotalPage?.value) || 100;
 
       isDND = false;
-      if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode'); // 解除沉浸式專注遮罩
+      if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
       if (seatModal) seatModal.style.display = 'none';
       
