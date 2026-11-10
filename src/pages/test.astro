@@ -632,12 +632,13 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     async function fetchOnlinePlayers() {
-      const fifteenSecondsAgo = new Date(Date.now() - 15000).toISOString();
+      // 擴大時間窗至 30 秒，並確保自己永遠在列表中顯示或獨立抓取其他線上玩家
+      const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString();
       const { data } = await supabase
         .from(TABLE_NAME)
         .select('*')
         .eq('room', currentRoom)
-        .gte('updated_at', fifteenSecondsAgo);
+        .gte('updated_at', thirtySecondsAgo);
 
       if (data) {
         onlinePlayers = {};
@@ -673,7 +674,9 @@ import LoginModal from '../components/LoginModal.astro';
         fetchRooms();
       }).subscribe();
 
+      // 每 5 秒心跳：更新線上玩家的心跳時間戳記（即使沒移動也會更新 updated_at，讓別人看得到你），並抓取其他人與物件
       syncInterval = setInterval(() => { 
+        syncMyStateToDB();
         fetchOnlinePlayers(); 
         fetchRoomItems(); 
       }, 5000);
@@ -1203,7 +1206,7 @@ import LoginModal from '../components/LoginModal.astro';
 
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
-    // 點擊共讀桌相關互動
+    // 共讀桌相關互動
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
@@ -1515,13 +1518,20 @@ import LoginModal from '../components/LoginModal.astro';
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         await syncMyStateToDB();
 
-        await supabase.from(ITEMS_TABLE).update({
+        // 💡 關鍵修復：明確依據資料表的 id 進行 update，確保 host_id 確實寫入資料庫
+        const { error } = await supabase.from(ITEMS_TABLE).update({
           host_id: userId,
           host_name: playerName,
           book_title: bookTitle,
           current_page: curPage,
           total_pages: totPage
         }).eq('id', activeSeatData.id);
+
+        if (error) {
+          console.error('坐下更新失敗:', error);
+          alert('坐下失敗，請稍後再試');
+          return;
+        }
 
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
