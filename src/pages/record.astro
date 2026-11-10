@@ -502,7 +502,7 @@ import Layout from '../layouts/Layout.astro';
         const { data: memberData } = await supabase
           .from(MEMBERS_TABLE)
           .select('name')
-          .eq('id', currentUserId)
+          .eq('user_id', currentUserId)
           .single();
 
         if (memberData && memberData.name) {
