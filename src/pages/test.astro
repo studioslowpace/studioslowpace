@@ -1037,19 +1037,13 @@ import LoginModal from '../components/LoginModal.astro';
       }
     });
 
-    async function openDirectMessage(targetUserId: string, targetUserName: string) {
-      if (!userId) { alert('請先登入會員！'); return; }
-      activeDmTargetId = targetUserId;
-      activeDmTargetName = targetUserName;
-
-      if (dmTitle) dmTitle.textContent = `💬 與 ${targetUserName} 的私訊`;
-      if (dmModal) dmModal.style.display = 'flex';
-      if (playerCardModal) playerCardModal.style.display = 'none';
-
-      await fetchDirectMessages();
-      
-      if (dmPollInterval) clearInterval(dmPollInterval);
-      dmPollInterval = setInterval(fetchDirectMessages, 3000);
+// 直接跳轉到聊天室新頁面並帶入私訊對象參數
+    function openDirectMessage(targetUserId: string, targetUserName: string) {
+      if (!userId) { 
+        alert('請先登入會員！'); 
+        return; 
+      }
+      window.location.href = `/chatroom?dm=${targetUserId}&name=${encodeURIComponent(targetUserName)}`;
     }
 
     async function fetchDirectMessages() {
