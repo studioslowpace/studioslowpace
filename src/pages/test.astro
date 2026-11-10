@@ -4,7 +4,7 @@ import Layout from '../layouts/Layout.astro';
 import LoginModal from '../components/LoginModal.astro';
 ---
 
-<Layout title="空間客舍 · 自由空間">
+<Layout title="空間客舍 · 自由佈置空間">
 
   <!-- 1. 登入 / 訪客 Modal -->
   <div id="rpg-modal" class="rpg-modal-overlay">
@@ -53,8 +53,8 @@ import LoginModal from '../components/LoginModal.astro';
         <div id="table-info-view" style="display:none;">
           <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
           <div class="rpg-btn-group" style="flex-direction:column; gap:8px;">
-            <button id="table-join-btn" class="rpg-btn" style="background:#10b981;">🤝 加入共讀</button>
-            <button id="table-end-btn" class="rpg-btn" style="background:#ef4444; display:none;">🛑 結束共讀</button>
+            <button id="table-join-btn" class="rpg-btn" style="background:var(--success-color);">🤝 加入共讀</button>
+            <button id="table-end-btn" class="rpg-btn" style="background:var(--danger-color); display:none;">🛑 結束共讀</button>
             <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
           </div>
         </div>
@@ -92,7 +92,7 @@ import LoginModal from '../components/LoginModal.astro';
 
           <div class="rpg-btn-group">
             <button id="seat-cancel-btn" class="rpg-btn-ghost">取消</button>
-            <button id="seat-sit-btn" class="rpg-btn" style="background:#10b981;">✨ 坐下閱讀</button>
+            <button id="seat-sit-btn" class="rpg-btn" style="background:var(--success-color);">✨ 坐下閱讀</button>
           </div>
         </div>
 
@@ -116,7 +116,7 @@ import LoginModal from '../components/LoginModal.astro';
             </div>
           </div>
           <div class="rpg-btn-group">
-            <button id="leave-confirm-btn" class="rpg-btn" style="background:#10b981;">✅ 確認並起立</button>
+            <button id="leave-confirm-btn" class="rpg-btn" style="background:var(--success-color);">✅ 確認並起立</button>
           </div>
         </div>
       </div>
@@ -188,10 +188,10 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 主介面 (毛玻璃沉浸式視口) -->
-  <div class="app-viewport">
-    <main class="rpg-container">
-      <header class="rpg-hud">
+  <!-- 主介面 (沈浸式視口與 DND 專注遮罩) -->
+  <div class="app-viewport" id="app-viewport">
+    <main class="rpg-container" id="rpg-container">
+      <header class="rpg-hud" id="rpg-hud">
         <div class="hud-top-row">
           <span class="hud-brand">☁️ 空間客舍</span>
           <div class="hud-right">
@@ -227,7 +227,7 @@ import LoginModal from '../components/LoginModal.astro';
       </div>
 
       <!-- 底部 Footer 導航列與向上展開的指南抽屜 -->
-      <footer class="rpg-footer-nav">
+      <footer class="rpg-footer-nav" id="rpg-footer">
         <!-- 向上展開的指南面板 -->
         <div id="guide-drawer" class="guide-drawer-content" style="display: none;">
           <div class="drawer-header">
@@ -271,6 +271,8 @@ import LoginModal from '../components/LoginModal.astro';
       --text-muted: #94a3b8;
       --danger-color: #ef4444;
       --success-color: #10b981;
+      --grid-line: rgba(255, 255, 255, 0.04);
+      --canvas-bg: #0f172a;
     }
 
     [data-theme="green"] {
@@ -282,6 +284,8 @@ import LoginModal from '../components/LoginModal.astro';
       --accent-hover: #059669;
       --accent-light: #d1fae5;
       --text-muted: #a7f3d0;
+      --grid-line: rgba(52, 211, 153, 0.08);
+      --canvas-bg: #064e3b;
     }
 
     [data-theme="purple"] {
@@ -293,6 +297,8 @@ import LoginModal from '../components/LoginModal.astro';
       --accent-hover: #9333ea;
       --accent-light: #f3e8ff;
       --text-muted: #e9d5ff;
+      --grid-line: rgba(192, 132, 252, 0.08);
+      --canvas-bg: #3b0764;
     }
 
     * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; box-sizing: border-box; }
@@ -304,13 +310,25 @@ import LoginModal from '../components/LoginModal.astro';
       margin: 0; padding: 0; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; touch-action: manipulation;
     }
 
-    .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: #020617; }
+    .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: #020617; transition: background 0.5s ease; }
     
     .rpg-container {
       width: 100vw; max-width: 414px; height: 100vh; height: 100dvh;
       display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
       background-color: var(--bg-main); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.4s ease;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.4s ease, filter 0.4s ease;
+    }
+
+    /* 坐下閱讀專注模式 (DND Focus Mode) */
+    .dnd-focus-mode {
+      filter: brightness(0.85) contrast(1.05);
+    }
+    .dnd-focus-mode .rpg-hud, .dnd-focus-mode .rpg-footer-nav {
+      opacity: 0.65;
+      transition: opacity 0.4s ease;
+    }
+    .dnd-focus-mode .rpg-hud:hover, .dnd-focus-mode .rpg-footer-nav:hover {
+      opacity: 1;
     }
 
     /* 毛玻璃視窗與對話框 */
@@ -329,6 +347,7 @@ import LoginModal from '../components/LoginModal.astro';
       flex-direction: column;
       flex-shrink: 0;
       z-index: 50;
+      transition: opacity 0.4s ease;
     }
 
     .guide-drawer-content {
@@ -388,6 +407,7 @@ import LoginModal from '../components/LoginModal.astro';
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       padding: 8px 12px; font-size: 12px; flex-shrink: 0;
+      transition: opacity 0.4s ease;
     }
     .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .hud-brand { font-weight: 700; color: var(--accent-color); letter-spacing: 0.5px; }
@@ -442,6 +462,9 @@ import LoginModal from '../components/LoginModal.astro';
     let currentGridSize = 12;
     let currentBgImg = '';
 
+    let hoveredItem: any = null;
+    let glowCounter = 0;
+
     function updateCurrentRoomConfig() {
       const r = customRooms.find(rc => rc.room_key === currentRoom);
       if (r) {
@@ -460,6 +483,7 @@ import LoginModal from '../components/LoginModal.astro';
     const logoutBtn = document.getElementById('logout-btn');
     const hudName = document.getElementById('hud-name');
     const hudTierTag = document.getElementById('hud-tier-tag');
+    const rpgContainer = document.getElementById('rpg-container');
 
     async function initAuthCheck() {
       const guestId = sessionStorage.getItem('space_guest_id');
@@ -673,7 +697,7 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     // ==========================================
-    // 區塊三：獨立讀取房間並繪製
+    // 區塊三：獨立讀取房間並繪製 (含微互動與微型對話框氣泡)
     // ==========================================
     async function fetchRooms() {
       const { data } = await supabase
@@ -739,11 +763,48 @@ import LoginModal from '../components/LoginModal.astro';
       return false;
     }
 
+    // 繪製精緻的對話框像素氣泡
+    function drawSpeechBubble(c: CanvasRenderingContext2D, text: string, x: number, y: number, isDndActive = false) {
+      c.font = '10px -apple-system, sans-serif';
+      const textWidth = c.measureText(text).width;
+      const bubbleW = textWidth + 14;
+      const bubbleH = 18;
+      const bx = x - bubbleW / 2;
+      const by = y - 34;
+
+      c.save();
+      c.fillStyle = isDndActive ? 'rgba(16, 185, 129, 0.9)' : 'rgba(15, 23, 42, 0.85)';
+      c.strokeStyle = isDndActive ? '#34d399' : 'rgba(255, 255, 255, 0.2)';
+      c.lineWidth = 1;
+
+      // 圓角矩形氣泡
+      c.beginPath();
+      c.roundRect(bx, by, bubbleW, bubbleH, 4);
+      c.fill();
+      c.stroke();
+
+      // 小三角形指標
+      c.beginPath();
+      c.moveTo(x - 4, by + bubbleH);
+      c.lineTo(x + 4, by + bubbleH);
+      c.lineTo(x, by + bubbleH + 4);
+      c.closePath();
+      c.fill();
+      c.stroke();
+
+      // 文字
+      c.fillStyle = '#ffffff';
+      c.textAlign = 'center';
+      c.fillText(text, x, by + 13);
+      c.restore();
+    }
+
     function draw() {
       if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       const tileSize = canvas.width / currentGridSize;
+      glowCounter += 0.05;
 
       const bgImgObj = getLoadedImage(currentBgImg);
       if (bgImgObj && bgImgObj.complete && bgImgObj.naturalWidth !== 0) {
@@ -755,7 +816,14 @@ import LoginModal from '../components/LoginModal.astro';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+      // 情感化主題網格線
+      const theme = document.documentElement.getAttribute('data-theme') || 'blue';
+      const gridColorMap: Record<string, string> = {
+        blue: 'rgba(56, 189, 248, 0.06)',
+        green: 'rgba(52, 211, 153, 0.08)',
+        purple: 'rgba(192, 132, 252, 0.08)'
+      };
+      ctx.strokeStyle = gridColorMap[theme] || 'rgba(255, 255, 255, 0.04)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += tileSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
       for (let y = 0; y < canvas.height; y += tileSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
@@ -772,11 +840,23 @@ import LoginModal from '../components/LoginModal.astro';
         }
       }
 
+      // 繪製室內物件 (含呼吸發光微互動)
       roomItems.forEach(item => {
         const px = item.gx * tileSize;
         const py = item.gy * tileSize;
         const iw = (item.w || 1) * tileSize;
         const ih = (item.h || 1) * tileSize;
+
+        const isHovered = hoveredItem && hoveredItem.id === item.id;
+        if (isHovered) {
+          ctx.save();
+          const glowAlpha = 0.3 + Math.sin(glowCounter * 3) * 0.2;
+          ctx.shadowColor = theme === 'green' ? '#34d399' : theme === 'purple' ? '#c084fc' : '#38bdf8';
+          ctx.shadowBlur = 12;
+          ctx.fillStyle = ctx.shadowColor;
+          ctx.fillRect(px - 1, py - 1, iw + 2, ih + 2);
+          ctx.restore();
+        }
 
         const img = getLoadedImage(item.img_src);
         if (img && img.complete && img.naturalWidth !== 0) {
@@ -807,6 +887,7 @@ import LoginModal from '../components/LoginModal.astro';
         }
       });
 
+      // 繪製線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * tileSize + tileSize / 2;
         const py = op.gy * tileSize + tileSize / 2;
@@ -817,13 +898,13 @@ import LoginModal from '../components/LoginModal.astro';
           ctx.fillStyle = '#10b981';
           ctx.fillRect(px - 12, py - 12, 24, 24);
         }
-        ctx.fillStyle = '#34d399';
-        ctx.font = '10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(op.name, px, py + 26);
-        ctx.textAlign = 'left';
+        
+        // 玩家頭頂微型對話框氣泡
+        const opStatusText = op.is_dnd ? '📖 閱讀中' : op.name;
+        drawSpeechBubble(ctx, opStatusText, px, py - 18, Boolean(op.is_dnd));
       });
 
+      // 繪製當前玩家
       const pScreenX = playerGx * tileSize + tileSize / 2;
       const pScreenY = playerGy * tileSize + tileSize / 2;
       const playerImg = getLoadedImage(playerAvatar);
@@ -833,17 +914,36 @@ import LoginModal from '../components/LoginModal.astro';
         ctx.fillStyle = isDND ? '#10b981' : '#38bdf8';
         ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
       }
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(playerName, pScreenX, pScreenY + 26);
-      ctx.textAlign = 'left';
+
+      // 自己頭頂微型對話框氣泡
+      const myStatusText = isDND ? '📖 專注閱讀' : playerName;
+      drawSpeechBubble(ctx, myStatusText, pScreenX, pScreenY - 18, isDND);
     }
 
     function gameLoop() {
       draw();
       requestAnimationFrame(gameLoop);
     }
+
+    // 監聽滑鼠移動以達成微互動懸停發光
+    canvas?.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      const tileSize = canvas.width / currentGridSize;
+      const gx = Math.floor(x / tileSize);
+      const gy = Math.floor(y / tileSize);
+
+      hoveredItem = roomItems.find(item => gx >= item.gx && gx < item.gx + (item.w || 1) && gy >= item.gy && gy < item.gy + (item.h || 1));
+      canvas.style.cursor = hoveredItem ? 'pointer' : 'default';
+    });
+
+    canvas?.addEventListener('mouseleave', () => {
+      hoveredItem = null;
+      canvas.style.cursor = 'default';
+    });
 
     // ==========================================
     // 區塊四：UI 互動與導航
@@ -1081,6 +1181,7 @@ import LoginModal from '../components/LoginModal.astro';
       currentRoom = target.value;
       updateCurrentRoomConfig();
       isDND = false;
+      if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
       playerGx = 1; playerGy = 1;
       moveQueue = [];
@@ -1520,6 +1621,7 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (activeSeatData && userId) {
         isDND = true;
+        if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode'); // 啓動沉浸式專注遮罩
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
@@ -1590,6 +1692,7 @@ import LoginModal from '../components/LoginModal.astro';
       const totPage = parseInt(leaveTotalPage?.value) || 100;
 
       isDND = false;
+      if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode'); // 解除沉浸式專注遮罩
       if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
       if (seatModal) seatModal.style.display = 'none';
       
