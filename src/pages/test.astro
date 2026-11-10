@@ -999,21 +999,42 @@ import LoginModal from '../components/LoginModal.astro';
     orcCloseBtn?.addEventListener('click', () => { if (otherRecordsModal) otherRecordsModal.style.display = 'none'; });
     orcCloseFooter?.addEventListener('click', () => { if (otherRecordsModal) otherRecordsModal.style.display = 'none'; });
 
-    pcSendMsgBtn?.addEventListener('click', async () => {
-      const msg = pcMsgInput?.value.trim();
-      if (!msg) { alert('請輸入想傳遞的私訊內容！'); return; }
-      if (!activePlayerCardData) return;
+    // 寫入專屬的私訊功能
+  document.getElementById('pcSendMsgBtn')?.addEventListener('click', async () => {
+    const msg = document.getElementById('pcMsgInput')?.value.trim();
+    if (!msg) { alert('請輸入想傳遞的私訊內容！'); return; }
+    if (!window.activePlayerCardData) return;
 
-      await supabase.from('chatroom_messages').insert([{
-        user_id: userId,
-        name: `${playerName} 悄悄告訴 ${activePlayerCardData.name}`,
-        content: `💌 [私訊] ${msg}`
-      }]).select();
+    const receiverId = window.activePlayerCardData.id || window.activePlayerCardData.user_id;
+    const receiverName = window.activePlayerCardData.name;
 
-      alert(`成功將手帳紙條傳遞給 ${activePlayerCardData.name}！`);
-      pcMsgInput.value = '';
-      if (playerCardModal) playerCardModal.style.display = 'none';
-    });
+    try {
+        // 寫入專屬的私訊資料表，而非公開聊天室
+        const { error } = await supabase.from('direct_messages').insert([{
+            sender_id: userId,
+            sender_name: playerName,
+            receiver_id: receiverId,
+            content: `💌 [私訊] ${msg}`
+        }]);
+
+        if (error) throw error;
+
+        alert(`成功將手帳紙條傳遞給 ${receiverName}！`);
+        
+        const pcMsgInput = document.getElementById('pcMsgInput');
+        if (pcMsgInput) pcMsgInput.value = '';
+        
+        const playerCardModal = document.getElementById('playerCardModal');
+        if (playerCardModal) playerCardModal.style.display = 'none';
+
+        // 問使用者是否要直接跳轉過去查看私訊對話
+        if (confirm(`是否立即前往私訊室與 ${receiverName} 對話？`)) {
+            window.location.href = `/chatroom?dm=${receiverId}&name=${encodeURIComponent(receiverName)}`;
+        }
+    } catch (err) {
+        alert("私訊傳送失敗: " + err.message);
+    }
+});
 
     pcViewRecordsBtn?.addEventListener('click', async () => {
       if (!activePlayerCardData) return;
