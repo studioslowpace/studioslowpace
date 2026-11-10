@@ -96,7 +96,7 @@ import LoginModal from '../components/LoginModal.astro';
           </div>
         </div>
 
-        <!-- 已有人坐：檢視資訊（其他人不能坐） -->
+        <!-- 已有人坐：檢視資訊 -->
         <div id="seat-info-view" style="display:none;">
           <div id="seat-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
           <button id="seat-info-close" class="rpg-btn-ghost">關閉</button>
@@ -143,7 +143,7 @@ import LoginModal from '../components/LoginModal.astro';
       <div class="rpg-content">
         <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
         <input type="hidden" id="cf-edit-id" value="" />
-        <input type="text" id="cf-name" placeholder="名稱（例：書架）" maxlength="15" style="margin-bottom:6px;" />
+        <input type="text" id="cf-name" placeholder="名稱（例：自定書櫃）" maxlength="15" style="margin-bottom:6px;" />
         <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/shelf.png）" style="margin-bottom:6px;" />
         <input type="text" id="cf-link" placeholder="連結網址（無則留空）" style="margin-bottom:6px;" />
         
@@ -434,6 +434,7 @@ import LoginModal from '../components/LoginModal.astro';
     let playerAvatar = '/assets/player1.png';
     let playerTier = '鄰里人';
     let isAdmin = false;
+    let isGuest = false; // 訪客身分標記
     let playerGx = 2;
     let playerGy = 2;
     let currentTool = 'move';
@@ -479,6 +480,7 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (guestId) {
         userId = guestId;
+        isGuest = true;
         playerName = sessionStorage.getItem('space_guest_name') || '訪客';
         playerAvatar = sessionStorage.getItem('space_guest_avatar') || '/assets/player1.png';
         isAdmin = false;
@@ -490,6 +492,7 @@ import LoginModal from '../components/LoginModal.astro';
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           userId = session.user.id;
+          isGuest = false;
           if (modal) modal.style.display = 'none';
           await loadUserProfile(userId);
           await startAppSession();
@@ -502,6 +505,7 @@ import LoginModal from '../components/LoginModal.astro';
     window.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
         userId = event.data.guestId;
+        isGuest = true;
         playerName = event.data.name;
         playerAvatar = event.data.avatar;
         isAdmin = false;
@@ -516,6 +520,7 @@ import LoginModal from '../components/LoginModal.astro';
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           userId = session.user.id;
+          isGuest = false;
           await loadUserProfile(userId);
           await startAppSession();
         }
@@ -525,6 +530,7 @@ import LoginModal from '../components/LoginModal.astro';
     supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
         userId = session.user.id;
+        isGuest = false;
         if (modal) modal.style.display = 'none';
         await loadUserProfile(userId);
         await startAppSession();
@@ -587,7 +593,7 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     async function fetchUserReadingRecords() {
-      if (!userId) return;
+      if (!userId || isGuest) return;
       const { data } = await supabase
         .from(LOGS_TABLE)
         .select('*')
@@ -1160,8 +1166,12 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
 
+      // 將名稱轉為合法的英文 type key（保留英數字與下劃線，若全中文則使用自定代碼）
+      const cleanTypeKey = name.toLowerCase().replace(/[^a-z0-9_]/g, '_') || 'custom_item';
+
       if (editId) {
         await supabase.from(ITEMS_TABLE).update({
+          type: cleanTypeKey,
           label: name,
           img_src: img,
           link: link,
@@ -1171,10 +1181,9 @@ import LoginModal from '../components/LoginModal.astro';
           h: h
         }).eq('id', editId);
       } else {
-        const typeKey = 'cf_' + Math.random().toString(36).substring(2, 8);
         const { error } = await supabase.from(ITEMS_TABLE).insert([{
           room: currentRoom,
-          type: typeKey,
+          type: cleanTypeKey,
           label: name,
           img_src: img,
           link: link,
@@ -1209,6 +1218,7 @@ import LoginModal from '../components/LoginModal.astro';
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
     tableCreateBtn?.addEventListener('click', async () => {
+      if (isGuest) { alert('訪客無法發起共讀活動，請登入完整會員！'); return; }
       if (!activeTableData || !userId) return;
       const title = tableBook?.value.trim();
       const author = tableAuthor?.value.trim() || '佚名';
@@ -1234,6 +1244,7 @@ import LoginModal from '../components/LoginModal.astro';
     });
 
     tableJoinBtn?.addEventListener('click', async () => {
+      if (isGuest) { alert('訪客無法加入共讀，請登入完整會員！'); return; }
       if (!activeTableData || !userId) return;
       let members = activeTableData.members || [];
       if (members.some((m: any) => m.user_id === userId)) {
@@ -1372,12 +1383,15 @@ import LoginModal from '../components/LoginModal.astro';
         
         if (hitItem) {
           if (hitItem.type === 'seat') {
+            if (isGuest) {
+              alert('訪客無法使用木椅閱讀功能，請註冊或登入完整會員！');
+              return;
+            }
             activeSeatData = hitItem;
             playerGx = hitItem.gx;
             playerGy = hitItem.gy;
             await syncMyStateToDB();
 
-            // 檢查椅子是否已經有人坐（且不是自己）
             if (hitItem.host_id && hitItem.host_id !== '' && hitItem.host_id !== userId) {
               if (seatModalTitle) seatModalTitle.textContent = '🪑 木椅閱讀角';
               if (seatFormView) seatFormView.style.display = 'none';
@@ -1398,7 +1412,6 @@ import LoginModal from '../components/LoginModal.astro';
               return;
             }
 
-            // 如果是空位，彈出坐下表單
             if (!hitItem.host_id || hitItem.host_id === '') {
               await fetchUserReadingRecords();
               currentReadingRecordId = null;
@@ -1415,7 +1428,6 @@ import LoginModal from '../components/LoginModal.astro';
               if (seatModal) seatModal.style.display = 'flex';
               return;
             } else {
-              // 自己本來就坐在這張椅子上
               if (seatModalTitle) seatModalTitle.textContent = '🪑 木椅閱讀角';
               if (seatFormView) seatFormView.style.display = 'none';
               if (seatInfoView) seatInfoView.style.display = 'block';
@@ -1435,6 +1447,10 @@ import LoginModal from '../components/LoginModal.astro';
           }
 
           if (hitItem.type === 'table') {
+            if (isGuest) {
+              alert('訪客無法使用共讀桌功能，請註冊或登入完整會員！');
+              return;
+            }
             activeTableData = hitItem;
             if (!hitItem.book_title || hitItem.book_title === '') {
               if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
@@ -1473,22 +1489,25 @@ import LoginModal from '../components/LoginModal.astro';
 
           if (hitItem.link && hitItem.link.trim() !== '') {
             const oType = hitItem.open_type || 'current';
-            if (oType === 'blank') { window.open(hitItem.link, '_blank'); }
-            else if (oType === 'modal') {
+            const customModalFrame = document.getElementById('custom-modal-frame');
+            const customModalTitle = document.getElementById('custom-modal-title');
+            const customModalIframe = document.getElementById('custom-modal-iframe') as HTMLIFrameElement;
+
+            if (oType === 'blank') { 
+              window.open(hitItem.link, '_blank'); 
+            } else if (oType === 'modal') {
               if (customModalTitle) customModalTitle.textContent = `📄 ${hitItem.label || '內容預覽'}`;
               if (customModalIframe) customModalIframe.src = hitItem.link;
               if (customModalFrame) customModalFrame.style.display = 'flex';
-            } else { window.location.href = hitItem.link; }
+            } else { 
+              window.location.href = hitItem.link; 
+            }
             return;
           }
         }
 
         const hitPlayer = getPlayerAtCell(targetGx, targetGy);
         if (hitPlayer) {
-          selectedPeer = hitPlayer;
-          if (pamTitle) pamTitle.textContent = `👤 ${hitPlayer.name} (${hitPlayer.role})`;
-          const playerActionModal = document.getElementById('player-action-modal');
-          if (playerActionModal) playerActionModal.style.display = 'flex';
           return;
         }
 
@@ -1499,6 +1518,12 @@ import LoginModal from '../components/LoginModal.astro';
           while (currY !== targetGy) { currY += currY < targetGy ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
         }
       }
+    });
+
+    const customModalClose = document.getElementById('custom-modal-close');
+    customModalClose?.addEventListener('click', () => {
+      const customModalFrame = document.getElementById('custom-modal-frame');
+      if (customModalFrame) customModalFrame.style.display = 'none';
     });
 
     seatSitBtn?.addEventListener('click', async () => {
@@ -1516,7 +1541,6 @@ import LoginModal from '../components/LoginModal.astro';
         if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         await syncMyStateToDB();
 
-        // 1. 更新 chairs / slowplace_items 的坐下狀態（不包含 current_page / total_pages 避免報錯，僅存基本座席狀態）
         const { error } = await supabase.from(ITEMS_TABLE).update({
           host_id: userId,
           host_name: playerName,
@@ -1529,7 +1553,6 @@ import LoginModal from '../components/LoginModal.astro';
           return;
         }
 
-        // 2. 同步更新或新增至 reading_record (閱讀記錄 Table)
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
             book_title: bookTitle,
@@ -1588,7 +1611,6 @@ import LoginModal from '../components/LoginModal.astro';
       
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
-        // 1. 更新閱讀記錄 Table (reading_record)
         if (currentReadingRecordId) {
           await supabase.from(LOGS_TABLE).update({
             current_page: curPage,
@@ -1596,7 +1618,6 @@ import LoginModal from '../components/LoginModal.astro';
           }).eq('id', currentReadingRecordId);
         }
 
-        // 2. 清空椅子的佔用狀態
         await supabase.from(ITEMS_TABLE).update({
           host_id: '',
           host_name: '',
