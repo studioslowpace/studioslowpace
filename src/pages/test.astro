@@ -50,7 +50,7 @@ import LoginModal from '../components/LoginModal.astro';
           </div>
         </div>
 
-        <div id="table-info-view">
+        <div id="table-info-view" style="display:none;">
           <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:12px;"></div>
           <div class="rpg-btn-group" style="flex-direction:column; gap:6px;">
             <button id="table-join-btn" class="rpg-btn" style="background:#10b981;">🤝 加入共讀</button>
@@ -62,11 +62,12 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 3.5 木椅坐下閱讀 Modal -->
+  <!-- 3.5 木椅閱讀角 Modal -->
   <div id="seat-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar"><span id="seat-modal-title">🪑 木椅閱讀角</span></div>
       <div class="rpg-content">
+        <!-- 坐下表單 -->
         <div id="seat-form-view" style="display:none;">
           <p class="rpg-text">請選擇您的閱讀記錄或手動輸入新書：</p>
           
@@ -95,11 +96,13 @@ import LoginModal from '../components/LoginModal.astro';
           </div>
         </div>
 
+        <!-- 已有人坐：檢視資訊（其他人不能坐） -->
         <div id="seat-info-view" style="display:none;">
           <div id="seat-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
           <button id="seat-info-close" class="rpg-btn-ghost">關閉</button>
         </div>
 
+        <!-- 起立時：更新頁數表單 -->
         <div id="seat-update-view" style="display:none;">
           <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
           <div style="display:flex; gap:6px; margin-bottom:12px;">
@@ -443,6 +446,7 @@ import LoginModal from '../components/LoginModal.astro';
     let onlinePlayers: Record<string, any> = {};
     let roomItems: any[] = [];
     let activeSeatData: any = null;
+    let activeTableData: any = null;
     let userReadingRecords: any[] = [];
     let currentReadingRecordId: string | null = null;
     let syncInterval: any = null;
@@ -639,7 +643,6 @@ import LoginModal from '../components/LoginModal.astro';
         onlinePlayers = {};
         let count = 0;
         data.forEach((p: any) => {
-          // 💡 關鍵修復：絕對不要把自己的本地座標覆蓋成雲端的舊座標，防止抖動！
           if (p.user_id !== userId) {
             onlinePlayers[p.user_id] = p;
           }
@@ -670,7 +673,6 @@ import LoginModal from '../components/LoginModal.astro';
         fetchRooms();
       }).subscribe();
 
-      // 定期更新房間物件與在線人數（不定期強制覆蓋自己座標）
       syncInterval = setInterval(() => { 
         fetchOnlinePlayers(); 
         fetchRoomItems(); 
@@ -772,7 +774,6 @@ import LoginModal from '../components/LoginModal.astro';
           if (!isCellSolidBlocked(nextStep.gx, nextStep.gy)) {
             playerGx = nextStep.gx;
             playerGy = nextStep.gy;
-            // 💡 走到新格子時立刻同步一次資料庫
             syncMyStateToDB();
           } else { moveQueue = []; }
         }
@@ -799,6 +800,16 @@ import LoginModal from '../components/LoginModal.astro';
           ctx.font = '9px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText(`📖 ${item.book_title || '閱讀中'}`, px + iw / 2, py + ih - 5);
+          ctx.textAlign = 'left';
+        }
+
+        if (item.type === 'table' && item.book_title) {
+          ctx.fillStyle = 'rgba(180, 83, 9, 0.85)';
+          ctx.fillRect(px + 4, py + ih - 16, iw - 8, 13);
+          ctx.fillStyle = '#fff';
+          ctx.font = '9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`📖 ${item.book_title}`, px + iw / 2, py + ih - 6);
           ctx.textAlign = 'left';
         }
       });
@@ -1043,8 +1054,6 @@ import LoginModal from '../components/LoginModal.astro';
     const cfHInput = document.getElementById('cf-h') as HTMLInputElement;
     const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
 
-    let pendingTableItem: any = null;
-
     openCfModalBtn?.addEventListener('click', () => {
       const cfModalTitle = document.getElementById('cf-modal-title');
       if (cfModalTitle) cfModalTitle.textContent = '🛠️ 新增物件/NPC';
@@ -1194,6 +1203,70 @@ import LoginModal from '../components/LoginModal.astro';
 
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
+    // 點擊共讀桌相關互動
+    tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+    tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+
+    tableCreateBtn?.addEventListener('click', async () => {
+      if (!activeTableData || !userId) return;
+      const title = tableBook?.value.trim();
+      const author = tableAuthor?.value.trim() || '佚名';
+      const maxM = parseInt(tableMax?.value) || 3;
+      const dateStr = tableDate?.value || '';
+
+      if (!title) { alert('請輸入共讀書名！'); return; }
+
+      const newMembers = [{ user_id: userId, name: playerName }];
+      await supabase.from(ITEMS_TABLE).update({
+        book_title: title,
+        author: author,
+        max_members: maxM,
+        finish_date: dateStr,
+        host_id: userId,
+        host_name: playerName,
+        members: newMembers
+      }).eq('id', activeTableData.id);
+
+      if (tableModal) tableModal.style.display = 'none';
+      await fetchRoomItems();
+      alert('成功發起共讀活動！');
+    });
+
+    tableJoinBtn?.addEventListener('click', async () => {
+      if (!activeTableData || !userId) return;
+      let members = activeTableData.members || [];
+      if (members.some((m: any) => m.user_id === userId)) {
+        alert('你已經加入這場共讀了！');
+        return;
+      }
+      if (members.length >= (activeTableData.max_members || 3)) {
+        alert('此共讀桌人數已滿！');
+        return;
+      }
+
+      members.push({ user_id: userId, name: playerName });
+      await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
+      if (tableModal) tableModal.style.display = 'none';
+      await fetchRoomItems();
+      alert('成功加入共讀！');
+    });
+
+    tableEndBtn?.addEventListener('click', async () => {
+      if (!activeTableData) return;
+      if (confirm('確定要結束這場共讀活動嗎？')) {
+        await supabase.from(ITEMS_TABLE).update({
+          book_title: '',
+          author: '',
+          finish_date: '',
+          host_id: '',
+          host_name: '',
+          members: []
+        }).eq('id', activeTableData.id);
+        if (tableModal) tableModal.style.display = 'none';
+        await fetchRoomItems();
+      }
+    });
+
     canvas?.addEventListener('click', async (e) => {
       if (isDND) return;
 
@@ -1303,6 +1376,28 @@ import LoginModal from '../components/LoginModal.astro';
             playerGy = hitItem.gy;
             await syncMyStateToDB();
 
+            // 檢查椅子是否已經有人坐（且不是自己）
+            if (hitItem.host_id && hitItem.host_id !== '' && hitItem.host_id !== userId) {
+              if (seatModalTitle) seatModalTitle.textContent = '🪑 木椅閱讀角';
+              if (seatFormView) seatFormView.style.display = 'none';
+              if (seatInfoView) seatInfoView.style.display = 'block';
+              if (seatUpdateView) seatUpdateView.style.display = 'none';
+              if (seatDetails) {
+                const cur = hitItem.current_page || 1;
+                const tot = hitItem.total_pages || 100;
+                const pct = tot > 0 ? Math.round((cur / tot) * 100) : 0;
+                seatDetails.innerHTML = `
+                  <p style="color:#ef4444; font-weight:bold;">此座位目前已有旅人入座，無法乘坐！</p>
+                  <p><strong>坐下讀者：</strong>${hitItem.host_name || '某位旅人'}</p>
+                  <p><strong>正在閱讀：</strong>《${hitItem.book_title || '沈思中'}》</p>
+                  <p><strong>閱讀進度：</strong>第 ${cur} / ${tot} 頁 (${pct}%)</p>
+                `;
+              }
+              if (seatModal) seatModal.style.display = 'flex';
+              return;
+            }
+
+            // 如果是空位，彈出坐下表單
             if (!hitItem.host_id || hitItem.host_id === '') {
               await fetchUserReadingRecords();
               currentReadingRecordId = null;
@@ -1319,6 +1414,7 @@ import LoginModal from '../components/LoginModal.astro';
               if (seatModal) seatModal.style.display = 'flex';
               return;
             } else {
+              // 自己本來就坐在這張椅子上
               if (seatModalTitle) seatModalTitle.textContent = '🪑 木椅閱讀角';
               if (seatFormView) seatFormView.style.display = 'none';
               if (seatInfoView) seatInfoView.style.display = 'block';
@@ -1328,8 +1424,7 @@ import LoginModal from '../components/LoginModal.astro';
                 const tot = hitItem.total_pages || 100;
                 const pct = tot > 0 ? Math.round((cur / tot) * 100) : 0;
                 seatDetails.innerHTML = `
-                  <p><strong>坐下讀者：</strong>${hitItem.host_name || '某位旅人'}</p>
-                  <p><strong>正在閱讀：</strong>《${hitItem.book_title || '沈思中'}》</p>
+                  <p><strong>您正在此處閱讀：</strong>《${hitItem.book_title || '沈思中'}》</p>
                   <p><strong>閱讀進度：</strong>第 ${cur} / ${tot} 頁 (${pct}%)</p>
                 `;
               }
@@ -1340,7 +1435,6 @@ import LoginModal from '../components/LoginModal.astro';
 
           if (hitItem.type === 'table') {
             activeTableData = hitItem;
-            pendingTableItem = hitItem;
             if (!hitItem.book_title || hitItem.book_title === '') {
               if (tableModalTitle) tableModalTitle.textContent = '✨ 發起共讀活動';
               if (tableFormView) tableFormView.style.display = 'block';
@@ -1418,6 +1512,7 @@ import LoginModal from '../components/LoginModal.astro';
         isDND = true;
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
+        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
         await syncMyStateToDB();
 
         await supabase.from(ITEMS_TABLE).update({
