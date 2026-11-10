@@ -41,7 +41,6 @@ import Layout from '../layouts/Layout.astro';
             <span style="font-size: 16px;">💬</span>
             <span>聊天</span>
           </a>
-          <!-- 目前在書櫃頁面 -->
           <a href="/record" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
             <span style="font-size: 16px;">📚</span>
             <span>書櫃</span>
@@ -157,7 +156,11 @@ import Layout from '../layouts/Layout.astro';
           <div id="modal-review" class="section-content-box"></div>
         </div>
 
-        <div id="owner-action-bar" style="margin-top: 20px; display: none;">
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+          <button id="download-card-btn" class="action-btn success" style="flex: 1;">📥 下載記錄卡片</button>
+        </div>
+
+        <div id="owner-action-bar" style="margin-top: 12px; display: none;">
           <button id="switch-to-edit-btn" class="action-btn primary" style="width: 100%;">✏️ 編輯內容</button>
         </div>
       </div>
@@ -450,12 +453,14 @@ import Layout from '../layouts/Layout.astro';
     import { supabase } from '../lib/supabase';
 
     const LOGS_TABLE = 'reading_record';
+    const MEMBERS_TABLE = 'slowspace_members';
     let currentUserId: string | null = null;
     let currentUserName = '熱心讀者';
     let isOwner = false;
     let cachedLogs: any[] = [];
     let currentFilter = 'all';
     let searchQuery = '';
+    let selectedLogForDownload: any = null;
 
     const listContainer = document.getElementById('my-logs-list');
     const submitBtn = document.getElementById('submit-log-btn');
@@ -474,6 +479,7 @@ import Layout from '../layouts/Layout.astro';
     const updateLogBtn = document.getElementById('update-log-btn');
     const finishBookBtn = document.getElementById('finish-book-btn');
     const ownerActionBar = document.getElementById('owner-action-bar');
+    const downloadCardBtn = document.getElementById('download-card-btn');
 
     async function initPage() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -487,15 +493,29 @@ import Layout from '../layouts/Layout.astro';
       } else if (session && session.user) {
         currentUserId = session.user.id;
         isOwner = true;
-        // 嘗試從 user_metadata 或 user 資訊中取得會員名稱
-        currentUserName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '會員';
       } else if (guestId) {
         currentUserId = guestId;
         isOwner = true;
-        currentUserName = '訪客';
       } else {
         window.location.href = '/login';
         return;
+      }
+
+      // 從 slowspace_members 表中抓取會員的 name
+      if (currentUserId) {
+        const { data: memberData } = await supabase
+          .from(MEMBERS_TABLE)
+          .select('name')
+          .eq('id', currentUserId)
+          .single();
+
+        if (memberData && memberData.name) {
+          currentUserName = memberData.name;
+        } else if (session?.user) {
+          currentUserName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || '會員';
+        } else {
+          currentUserName = guestId ? '訪客' : '熱心讀者';
+        }
       }
 
       if (isOwner && openAddModalBtn) {
@@ -594,6 +614,8 @@ import Layout from '../layouts/Layout.astro';
           const logId = (e.currentTarget as HTMLElement).dataset.id;
           const log = cachedLogs.find(l => l.id === logId);
           if (log) {
+            selectedLogForDownload = log; // 暫存當前記錄供下載使用
+            
             // 填入檢視模式內容
             (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title || ''}》`;
             (document.getElementById('modal-author') as HTMLElement).textContent = log.author || '佚名';
@@ -633,7 +655,6 @@ import Layout from '../layouts/Layout.astro';
             if (editModeContainer) editModeContainer.style.display = 'none';
             if (modalWindowTitle) modalWindowTitle.textContent = '📖 閱讀筆記詳情';
 
-            // 若為本人則顯示編輯按鈕
             if (ownerActionBar) {
               ownerActionBar.style.display = isOwner ? 'block' : 'none';
             }
@@ -644,21 +665,124 @@ import Layout from '../layouts/Layout.astro';
       });
     }
 
-    // 點擊「編輯內容」按鈕才切換到編輯面板
+    // 將閱讀記錄轉為圖片並下載
+    downloadCardBtn?.addEventListener('click', () => {
+      if (!selectedLogForDownload) return;
+      const log = selectedLogForDownload;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 1000;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. 繪製溫潤文青風背景
+      ctx.fillStyle = '#fcfaf7';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 裝飾邊框
+      ctx.strokeStyle = '#f0ebe1';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+      // 2. 標題與讀者
+      ctx.fillStyle = '#6b8e23';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(`🌿 空間客舍 · 閱讀筆記`, 70, 90);
+
+      ctx.fillStyle = '#8c8275';
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`讀者：${log.reader_name || currentUserName}`, canvas.width - 70, 90);
+      ctx.textAlign = 'left';
+
+      // 3. 書名
+      ctx.fillStyle = '#2c2420';
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillText(`《${log.book_title || '無題'}》`, 70, 160);
+
+      // 4. 作者與評分
+      ctx.font = '18px sans-serif';
+      ctx.fillStyle = '#8c8275';
+      ctx.fillText(`作者：${log.author || '佚名'}`, 70, 200);
+
+      const ratingNum = log.rating || 5;
+      ctx.fillStyle = '#d97706';
+      ctx.fillText('⭐'.repeat(Math.min(ratingNum, 10)) + ` (${ratingNum}星)`, 70, 235);
+
+      // 5. 摘錄字句區塊
+      ctx.fillStyle = '#f4efe6';
+      ctx.fillRect(70, 280, canvas.width - 140, 180);
+      ctx.fillStyle = '#6b8e23';
+      ctx.fillRect(70, 280, 6, 180);
+
+      ctx.fillStyle = '#2c2420';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('記一些字句：', 100, 315);
+      ctx.font = 'italic 16px sans-serif';
+      
+      const quoteText = log.quote || '無記錄字句';
+      wrapText(ctx, quoteText, 100, 350, canvas.width - 200, 24);
+
+      // 6. 心得感受區塊
+      ctx.fillStyle = '#f4efe6';
+      ctx.fillRect(70, 490, canvas.width - 140, 220);
+      ctx.fillStyle = '#6b8e23';
+      ctx.fillRect(70, 490, 6, 220);
+
+      ctx.fillStyle = '#2c2420';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('記一些感受：', 100, 525);
+      ctx.font = '16px sans-serif';
+
+      const reviewText = log.review || '無記錄感受';
+      wrapText(ctx, reviewText, 100, 560, canvas.width - 200, 24);
+
+      // 7. 底部聲明
+      ctx.fillStyle = '#8c8275';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('SlowSpace 空間客舍 · 紀錄每一刻閱讀的足跡', 70, canvas.height - 80);
+
+      // 轉換為圖片並下載
+      const link = document.createElement('a');
+      link.download = `閱讀記錄-${log.book_title || 'book'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // 輔助函式：自動換行文字繪製
+    function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+      const words = text.split('');
+      let line = '';
+      let currentY = y;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n];
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          ctx.fillText(line, x, currentY);
+          line = words[n];
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, currentY);
+    }
+
     switchToEditBtn?.addEventListener('click', () => {
       if (viewModeContainer) viewModeContainer.style.display = 'none';
       if (editModeContainer) editModeContainer.style.display = 'block';
       if (modalWindowTitle) modalWindowTitle.textContent = '✏️ 編輯閱讀筆記';
     });
 
-    // 取消編輯，返回詳情檢視
     cancelEditBtn?.addEventListener('click', () => {
       if (editModeContainer) editModeContainer.style.display = 'none';
       if (viewModeContainer) viewModeContainer.style.display = 'block';
       if (modalWindowTitle) modalWindowTitle.textContent = '📖 閱讀筆記詳情';
     });
 
-    // 篩選標籤切換
     document.querySelectorAll('.filter-tag').forEach(btn => {
       btn.addEventListener('click', (e) => {
         document.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
@@ -678,7 +802,7 @@ import Layout from '../layouts/Layout.astro';
     closeAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'none'; });
     detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
 
-    // 新增記錄（自動帶入 reader_name）
+    // 新增記錄
     submitBtn?.addEventListener('click', async () => {
       const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
       const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
@@ -703,7 +827,7 @@ import Layout from '../layouts/Layout.astro';
       submitBtn.textContent = '儲存中...';
       const { error } = await supabase.from(LOGS_TABLE).insert({
         user_id: currentUserId,
-        reader_name: currentUserName, // 👈 寫入會員名稱
+        reader_name: currentUserName,
         book_title: bookTitle,
         author: author,
         translator: translator,
@@ -763,7 +887,7 @@ import Layout from '../layouts/Layout.astro';
         questions: questions,
         review: review,
         is_public: isPublic,
-        reader_name: currentUserName // 確保更新時也帶上最新名稱
+        reader_name: currentUserName
       }).eq('id', logId);
 
       updateLogBtn.textContent = '儲存修改';
