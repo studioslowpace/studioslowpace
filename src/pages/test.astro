@@ -120,7 +120,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 3.6 讀者手帳名片與私訊 Modal (更新版：純書名、作者與查看閱讀記錄) -->
+  <!-- 3.6 讀者手帳名片與私訊 Modal -->
   <div id="player-card-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
@@ -197,7 +197,7 @@ import LoginModal from '../components/LoginModal.astro';
         <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">連結開啟方式：</div>
         <select id="cf-open-type" style="width:100%; background:var(--bg-input); color:var(--text-color); border:1px solid var(--border-color); padding:10px; border-radius:12px; margin-bottom:8px;">
           <option value="current">🌐 在當前頁面跳轉 (預設)</option>
-          <option value="blank">📑在新分頁開啟 (_blank)</option>
+          <option value="blank">📑 在新分頁開啟 (_blank)</option>
           <option value="modal">🪟 以彈出視窗 (Modal) 顯示</option>
         </select>
 
@@ -235,7 +235,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 主介面 (沈浸式視口與 DND 專注遮罩) -->
+  <!-- 主介面 (沈浸式視口與大圓角容器) -->
   <div class="app-viewport" id="app-viewport">
     <main class="rpg-container" id="rpg-container">
       <header class="rpg-hud" id="rpg-hud">
@@ -244,7 +244,7 @@ import LoginModal from '../components/LoginModal.astro';
           <div class="hud-right">
             <span class="online-indicator">🟢 在線: <strong id="online-count">1</strong></span>
             <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
-            <strong id="hud-name" style="color: var(--accent-light);">旅人</strong>
+            <strong id="hud-name" style="color: var(--accent-hover);">旅人</strong>
             <button id="logout-btn" class="rpg-btn-sm" style="background:var(--danger-color); color:#fff; border:none;">🚪 登出</button>
           </div>
         </div>
@@ -260,7 +260,7 @@ import LoginModal from '../components/LoginModal.astro';
             <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff;">➕ 新房間</button>
             <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff;">🗑️ 刪除</button>
             
-            <!-- 玩家可自選任意顏色的顏色選擇器 -->
+            <!-- 玩家可自選任意顏色 -->
             <div style="display:flex; align-items:center; gap:4px; background:var(--bg-input); border:1px solid var(--border-color); padding:2px 8px; border-radius:12px;">
               <span style="font-size:10px; color:var(--text-muted);">🎨 主題</span>
               <input type="color" id="custom-color-picker" value="#faf6ee" style="width:24px; height:24px; border:none; background:transparent; cursor:pointer; padding:0;" title="自選背景色" />
@@ -294,14 +294,44 @@ import LoginModal from '../components/LoginModal.astro';
           <div id="guide-content-box" class="guide-list-box"></div>
         </div>
 
-        <!-- 底部主導航列與起立按鈕 -->
-        <div style="display:flex; align-items:center; background:rgba(250, 246, 238, 0.6);">
-          <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex;">
-            <a href="/chatroom" class="footer-tab-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">💬 聊天</a>
-            <a href="/record" class="footer-tab-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">📚 書櫃</a>
-            <button class="footer-tab-btn" id="btn-tab-guide" data-target="guide">📖 手札</button>
+        <!-- 底部導覽列 (替換為指定樣式，並將第一個位置改為手札開關) -->
+        <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
+          <div style="display:flex; align-items:center; background:var(--bg-card, #ffffff); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
+            <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex; justify-content:space-around; padding:6px 8px; box-sizing:border-box; background:transparent;">
+              
+              <!-- 手札 (取代原本探索，點擊可展開指南抽屜) -->
+              <button id="btn-tab-guide" class="footer-tab-link" style="background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; transition:all 0.2s;">
+                <span style="font-size:16px;">📖</span>
+                <span>手札</span>
+              </button>
+
+              <!-- 聊天 -->
+              <a href="/chatroom" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+                <span style="font-size:16px;">💬</span>
+                <span>聊天</span>
+              </a>
+
+              <!-- 書櫃 (高亮) -->
+              <a href="/record" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--accent-hover); font-weight:600; font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; background:var(--bg-input);">
+                <span style="font-size:16px;">📚</span>
+                <span>書櫃</span>
+              </a>
+
+              <!-- 共讀 -->
+              <a href="/co-read" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+                <span style="font-size:16px;">📖</span>
+                <span>共讀</span>
+              </a>
+
+              <!-- 萬事屋 -->
+              <a href="/skillsupermarket" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+                <span style="font-size:16px;">🏠</span>
+                <span>萬事屋</span>
+              </a>
+
+            </div>
           </div>
-          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff; font-weight:bold; margin-right:10px; padding:6px 14px;">🚶 起立</button>
+          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff; font-weight:bold; margin-left:8px; padding:6px 12px; border-radius:12px; align-self:center;">🚶 起立</button>
         </div>
       </footer>
     </main>
@@ -309,14 +339,12 @@ import LoginModal from '../components/LoginModal.astro';
 
   <style is:global>
     :root {
-      --bg-main: #faf6ee; /* 預設米杏色文青背景 */
-      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-main: #faf6ee;
+      --bg-card: rgba(255, 255, 255, 0.9);
       --bg-input: #f4efe6;
       --border-color: #e6dcc8;
       --text-color: #2c241d;
-      --accent-color: #84a98c;
       --accent-hover: #52796f;
-      --accent-light: #cad2c5;
       --text-muted: #8c7a6b;
       --danger-color: #e07a5f;
       --success-color: #81b29a;
@@ -333,14 +361,14 @@ import LoginModal from '../components/LoginModal.astro';
 
     .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: var(--bg-main); transition: background 0.5s ease; }
     
+    /* rpg-container 轉為精緻的大圓角卡片排版 */
     .rpg-container {
-      width: 100vw; max-width: 414px; height: 100vh; height: 100dvh;
+      width: 100vw; max-width: 430px; height: 96vh; height: 96dvh; max-height: 860px;
       display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
-      background-color: var(--bg-main); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
-      box-shadow: 0 10px 40px rgba(44, 36, 29, 0.08); transition: background-color 0.5s ease, filter 0.4s ease;
+      background-color: var(--bg-main); border: 1px solid var(--border-color); border-radius: 28px;
+      box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); transition: background-color 0.5s ease, filter 0.4s ease;
     }
 
-    /* 沈浸式專注模式 (DND Focus Mode) */
     .dnd-focus-mode {
       filter: brightness(0.92) contrast(1.04);
     }
@@ -352,11 +380,10 @@ import LoginModal from '../components/LoginModal.astro';
       opacity: 1;
     }
 
-    /* 文青手帳風彈出視窗與對話框 (全圓角) */
     .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(44, 36, 29, 0.45); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .rpg-window { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 20px; width: 90%; max-width: 360px; box-shadow: 0 16px 32px rgba(44, 36, 29, 0.12); }
+    .rpg-window { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border-color); border-radius: 24px; width: 90%; max-width: 360px; box-shadow: 0 20px 40px rgba(44, 36, 29, 0.12); }
     
-    .embed-window { max-width: 390px; height: 82vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 20px; }
+    .embed-window { max-width: 390px; height: 82vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 24px; }
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
@@ -379,9 +406,9 @@ import LoginModal from '../components/LoginModal.astro';
       min-height: 190px;
       display: flex;
       flex-direction: column;
-      padding: 12px 16px;
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
+      padding: 14px 18px;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
       animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -392,45 +419,35 @@ import LoginModal from '../components/LoginModal.astro';
 
     .drawer-header {
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 12px; font-weight: 700; color: var(--accent-hover); margin-bottom: 10px; flex-shrink: 0;
+      font-size: 13px; font-weight: 700; color: var(--accent-hover); margin-bottom: 10px; flex-shrink: 0;
     }
 
     .shopkeeper-tools-bar {
       display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0;
-      background: var(--bg-input); padding: 6px; border-radius: 12px; border: 1px solid var(--border-color); align-items: center;
+      background: var(--bg-input); padding: 8px; border-radius: 14px; border: 1px solid var(--border-color); align-items: center;
     }
 
     .guide-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 
-    .footer-tabs-bar { display: flex; background: rgba(244, 239, 230, 0.5); }
-
-    .footer-tab-btn {
-      flex: 1; background: transparent; border: none; color: var(--text-muted);
-      padding: 12px; font-size: 12px; cursor: pointer; font-weight: 500; text-align: center; transition: color 0.2s;
-    }
-    .footer-tab-btn.active { color: var(--accent-hover); background: var(--bg-card); font-weight: 700; }
-
-    .rpg-title-bar { background: rgba(244, 239, 230, 0.6); color: var(--accent-hover); padding: 12px 16px; font-size: 13px; font-weight: 700; border-top-left-radius: 20px; border-top-right-radius: 20px; border-bottom: 1px solid var(--border-color); }
-    .rpg-content { padding: 18px; }
+    .rpg-title-bar { background: var(--bg-input); color: var(--accent-hover); padding: 14px 18px; font-size: 13px; font-weight: 700; border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom: 1px solid var(--border-color); }
+    .rpg-content { padding: 20px; }
     .rpg-text { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.6; }
     
     .rpg-window input[type="text"], .rpg-window input[type="number"], .rpg-window input[type="email"], .rpg-window input[type="password"], .rpg-window textarea, .rpg-window select {
-      width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 10px; outline: none; border-radius: 12px; transition: border-color 0.2s;
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px 12px; font-size: 13px; box-sizing: border-box; margin-bottom: 10px; outline: none; border-radius: 14px; transition: border-color 0.2s;
     }
     .rpg-window input:focus, .rpg-window textarea:focus, .rpg-window select:focus { border-color: var(--accent-hover); }
 
-    .rpg-btn { background: var(--accent-hover); color: #fff; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 700; border-radius: 12px; transition: all 0.2s; }
+    .rpg-btn { background: var(--accent-hover); color: #fff; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 700; border-radius: 14px; transition: all 0.2s; }
     .rpg-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
-    .rpg-btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 12px; }
+    .rpg-btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 14px; }
     .rpg-btn-group { display: flex; gap: 8px; }
 
-    /* 浮動書籤感 HUD 頂部列 (全圓角) */
     .rpg-hud {
       background: var(--bg-card);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);
-      padding: 10px 14px; font-size: 12px; flex-shrink: 0;
-      transition: opacity 0.4s ease;
+      padding: 12px 16px; font-size: 12px; flex-shrink: 0;
     }
     .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .hud-brand { font-weight: 700; color: var(--accent-hover); letter-spacing: 0.8px; }
@@ -442,8 +459,8 @@ import LoginModal from '../components/LoginModal.astro';
     .theme-select-dropdown { background: var(--bg-input); color: var(--text-color); border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; border-radius: 12px; outline: none; cursor: pointer; font-weight: 500; }
     .rpg-btn-sm { background: var(--bg-input); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 10px; font-weight: 600; }
     
-    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-main); padding: 6px; overflow: hidden; min-height: 0; }
-    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; image-rendering: pixelated; border-radius: 16px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
+    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-main); padding: 8px; overflow: hidden; min-height: 0; }
+    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; image-rendering: pixelated; border-radius: 20px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
 
     .tool-btn { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 10px; }
     .tool-btn.active { background: var(--accent-hover); color: #fff; border-color: var(--accent-hover); font-weight: 700; }
@@ -500,9 +517,6 @@ import LoginModal from '../components/LoginModal.astro';
       }
     }
 
-    // ==========================================
-    // 區塊一：身分驗證與初始化
-    // ==========================================
     const modal = document.getElementById('rpg-modal');
     const logoutBtn = document.getElementById('logout-btn');
     const hudName = document.getElementById('hud-name');
@@ -611,9 +625,6 @@ import LoginModal from '../components/LoginModal.astro';
       }
     });
 
-    // ==========================================
-    // 區塊二：雲端同步與遊戲迴圈
-    // ==========================================
     const onlineCountSpan = document.getElementById('online-count');
 
     async function startAppSession() {
@@ -720,9 +731,6 @@ import LoginModal from '../components/LoginModal.astro';
       }, 5000);
     }
 
-    // ==========================================
-    // 區塊三：獨立讀取房間並繪製
-    // ==========================================
     async function fetchRooms() {
       const { data } = await supabase
         .from(ROOMS_TABLE)
@@ -813,7 +821,7 @@ import LoginModal from '../components/LoginModal.astro';
       c.fill();
       c.stroke();
 
-      c.fillStyle = isDndActive ? '#2c241d' : '#2c241d';
+      c.fillStyle = '#2c241d';
       c.textAlign = 'center';
       c.fillText(text, x, by + 14);
       c.restore();
@@ -951,9 +959,6 @@ import LoginModal from '../components/LoginModal.astro';
       canvas.style.cursor = 'default';
     });
 
-    // ==========================================
-    // 區塊四：UI 互動與導航 (含讀者手帳名片與閱讀記錄查詢)
-    // ==========================================
     const roomSelectDropdown = document.getElementById('room-select-dropdown') as HTMLSelectElement;
     const openRoomModalBtn = document.getElementById('open-room-modal-btn');
     const deleteRoomBtn = document.getElementById('delete-room-btn') as HTMLButtonElement;
@@ -974,7 +979,6 @@ import LoginModal from '../components/LoginModal.astro';
     const guideContentBox = document.getElementById('guide-content-box');
     const shopkeeperDrawerTools = document.getElementById('shopkeeper-drawer-tools');
 
-    // 玩家手帳名片 Modal 元素
     const playerCardModal = document.getElementById('player-card-modal');
     const pcCloseBtn = document.getElementById('pc-close-btn');
     const pcAvatar = document.getElementById('pc-avatar') as HTMLImageElement;
@@ -986,7 +990,6 @@ import LoginModal from '../components/LoginModal.astro';
     const pcMsgInput = document.getElementById('pc-msg-input') as HTMLInputElement;
     const pcSendMsgBtn = document.getElementById('pc-send-msg-btn');
 
-    // 他人閱讀記錄 Modal 元素
     const otherRecordsModal = document.getElementById('other-records-modal');
     const orcCloseBtn = document.getElementById('orc-close-btn');
     const orcCloseFooter = document.getElementById('orc-close-footer');
@@ -1013,7 +1016,6 @@ import LoginModal from '../components/LoginModal.astro';
       if (playerCardModal) playerCardModal.style.display = 'none';
     });
 
-    // 點擊「查看他的閱讀記錄」
     pcViewRecordsBtn?.addEventListener('click', async () => {
       if (!activePlayerCardData) return;
       if (playerCardModal) playerCardModal.style.display = 'none';
@@ -1370,7 +1372,6 @@ import LoginModal from '../components/LoginModal.astro';
       renderGuideContent();
     });
 
-    // 玩家自選任意顏色
     customColorPicker?.addEventListener('input', (e) => {
       const hex = (e.target as HTMLInputElement).value;
       document.documentElement.style.setProperty('--bg-main', hex);
@@ -1463,7 +1464,6 @@ import LoginModal from '../components/LoginModal.astro';
       const targetGx = Math.floor(clickX / tileSize);
       const targetGy = Math.floor(clickY / tileSize);
 
-      // 檢查是否點擊了其他在線玩家（打開名片：僅顯示正在閱讀與參與共讀）
       const hitPlayer = getPlayerAtCell(targetGx, targetGy);
       if (hitPlayer) {
         activePlayerCardData = hitPlayer;
@@ -1471,14 +1471,12 @@ import LoginModal from '../components/LoginModal.astro';
         if (pcTier) pcTier.textContent = hitPlayer.tier === '鄰里人' ? '🌱 鄰里人' : '☁️ 訪客';
         if (pcAvatar) pcAvatar.src = hitPlayer.avatar || '/assets/player1.png';
 
-        // 尋找該玩家正在閱讀的書（從 seat 或 reading_record）
         let currentReadingBookText = '目前未在木椅閱讀';
         const seatedItem = roomItems.find(item => item.type === 'seat' && item.host_id === hitPlayer.user_id);
         if (seatedItem && seatedItem.book_title) {
           currentReadingBookText = `《${seatedItem.book_title}》`;
         }
 
-        // 尋找該玩家參與的共讀桌
         let participatingTableText = '目前未參與共讀';
         const tableItem = roomItems.find(item => item.type === 'table' && item.members && item.members.some((m: any) => m.user_id === hitPlayer.user_id));
         if (tableItem && tableItem.book_title) {
