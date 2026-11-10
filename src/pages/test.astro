@@ -23,7 +23,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window embed-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
         <span>📚 客舍館藏書單 (Library)</span>
-        <button id="library-close-btn" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+        <button id="library-close-btn" class="rpg-btn-sm" style="padding:4px 10px;">✕ 關閉</button>
       </div>
       <div class="embed-frame-wrapper">
         <iframe src="/library" class="embed-iframe"></iframe>
@@ -38,12 +38,12 @@ import LoginModal from '../components/LoginModal.astro';
       <div class="rpg-content">
         <div id="table-form-view" style="display:none;">
           <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：</p>
-          <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:6px;" />
-          <input type="text" id="table-author" placeholder="作者" style="margin-bottom:6px;" />
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">限制參加人數：</div>
-          <input type="number" id="table-max" value="3" min="1" max="10" style="margin-bottom:6px;" />
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">預定完讀日期：</div>
-          <input type="date" id="table-date" style="width:100%; background:var(--bg-main); border:1px solid var(--border-color); color:#fff; padding:8px; border-radius:8px; margin-bottom:12px;" />
+          <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:8px;" />
+          <input type="text" id="table-author" placeholder="作者" style="margin-bottom:8px;" />
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">限制參加人數：</div>
+          <input type="number" id="table-max" value="3" min="1" max="10" style="margin-bottom:8px;" />
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">預定完讀日期：</div>
+          <input type="date" id="table-date" style="width:100%; background:var(--bg-input); border:1px solid var(--border-color); color:#fff; padding:10px; border-radius:8px; margin-bottom:14px;" />
           <div class="rpg-btn-group">
             <button id="table-cancel-btn" class="rpg-btn-ghost">取消</button>
             <button id="table-create-btn" class="rpg-btn">✨ 發起共讀</button>
@@ -51,8 +51,8 @@ import LoginModal from '../components/LoginModal.astro';
         </div>
 
         <div id="table-info-view" style="display:none;">
-          <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:12px;"></div>
-          <div class="rpg-btn-group" style="flex-direction:column; gap:6px;">
+          <div id="table-details" style="font-size:12px; line-height:1.6; color:#f8fafc; margin-bottom:14px;"></div>
+          <div class="rpg-btn-group" style="flex-direction:column; gap:8px;">
             <button id="table-join-btn" class="rpg-btn" style="background:#10b981;">🤝 加入共讀</button>
             <button id="table-end-btn" class="rpg-btn" style="background:#ef4444; display:none;">🛑 結束共讀</button>
             <button id="table-info-close" class="rpg-btn-ghost">關閉</button>
@@ -71,21 +71,21 @@ import LoginModal from '../components/LoginModal.astro';
         <div id="seat-form-view" style="display:none;">
           <p class="rpg-text">請選擇您的閱讀記錄或手動輸入新書：</p>
           
-          <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">從個人閱讀記錄選擇：</div>
-          <select id="seat-record-select" style="width:100%; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:10px;">
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">從個人閱讀記錄選擇：</div>
+          <select id="seat-record-select" style="width:100%; background:var(--bg-input); color:#f8fafc; border:1px solid var(--border-color); padding:10px; border-radius:8px; margin-bottom:10px;">
             <option value="">-- 手動輸入新書 --</option>
           </select>
 
-          <input type="text" id="seat-book-input" placeholder="書名（例：少女核）" style="margin-bottom:6px;" />
-          <input type="text" id="seat-author-input" placeholder="作者（選填）" style="margin-bottom:6px;" />
+          <input type="text" id="seat-book-input" placeholder="書名（例：少女核）" style="margin-bottom:8px;" />
+          <input type="text" id="seat-author-input" placeholder="作者（選填）" style="margin-bottom:8px;" />
           
-          <div style="display:flex; gap:6px; margin-bottom:12px;">
+          <div style="display:flex; gap:8px; margin-bottom:14px;">
             <div style="flex:1;">
-              <div style="font-size:10px; color:#94a3b8; margin-bottom:2px;">目前頁數</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">目前頁數</div>
               <input type="number" id="seat-current-page" value="1" min="0" style="margin-bottom:0;" />
             </div>
             <div style="flex:1;">
-              <div style="font-size:10px; color:#94a3b8; margin-bottom:2px;">總頁數</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">總頁數</div>
               <input type="number" id="seat-total-page" value="100" min="1" style="margin-bottom:0;" />
             </div>
           </div>
@@ -105,13 +105,13 @@ import LoginModal from '../components/LoginModal.astro';
         <!-- 起立時：更新頁數表單 -->
         <div id="seat-update-view" style="display:none;">
           <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
-          <div style="display:flex; gap:6px; margin-bottom:12px;">
+          <div style="display:flex; gap:8px; margin-bottom:14px;">
             <div style="flex:1;">
-              <div style="font-size:10px; color:#94a3b8; margin-bottom:2px;">目前頁數</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">目前頁數</div>
               <input type="number" id="leave-current-page" value="1" min="0" style="margin-bottom:0;" />
             </div>
             <div style="flex:1;">
-              <div style="font-size:10px; color:#94a3b8; margin-bottom:2px;">總頁數</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">總頁數</div>
               <input type="number" id="leave-total-page" value="100" min="1" style="margin-bottom:0;" />
             </div>
           </div>
@@ -128,7 +128,7 @@ import LoginModal from '../components/LoginModal.astro';
     <div class="rpg-window embed-window">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
         <span id="custom-modal-title">📄 內容預覽</span>
-        <button id="custom-modal-close" class="rpg-btn-sm" style="padding:2px 8px;">✕ 關閉</button>
+        <button id="custom-modal-close" class="rpg-btn-sm" style="padding:4px 10px;">✕ 關閉</button>
       </div>
       <div class="embed-frame-wrapper">
         <iframe id="custom-modal-iframe" src="" class="embed-iframe"></iframe>
@@ -143,25 +143,25 @@ import LoginModal from '../components/LoginModal.astro';
       <div class="rpg-content">
         <p class="rpg-text">設定物件名稱、圖片、說明及點擊後的連結行為：</p>
         <input type="hidden" id="cf-edit-id" value="" />
-        <input type="text" id="cf-name" placeholder="名稱（例：自定書櫃）" maxlength="15" style="margin-bottom:6px;" />
-        <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/shelf.png）" style="margin-bottom:6px;" />
-        <input type="text" id="cf-link" placeholder="連結網址（無則留空）" style="margin-bottom:6px;" />
+        <input type="text" id="cf-name" placeholder="名稱（例：自定書櫃）" maxlength="15" style="margin-bottom:8px;" />
+        <input type="text" id="cf-img" placeholder="圖片路徑（例：/assets/shelf.png）" style="margin-bottom:8px;" />
+        <input type="text" id="cf-link" placeholder="連結網址（無則留空）" style="margin-bottom:8px;" />
         
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">連結開啟方式：</div>
-        <select id="cf-open-type" style="width:100%; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">連結開啟方式：</div>
+        <select id="cf-open-type" style="width:100%; background:var(--bg-input); color:#f8fafc; border:1px solid var(--border-color); padding:10px; border-radius:8px; margin-bottom:8px;">
           <option value="current">🌐 在當前頁面跳轉 (預設)</option>
           <option value="blank">📑 在新分頁開啟 (_blank)</option>
           <option value="modal">🪟 以彈出視窗 (Modal) 顯示</option>
         </select>
 
-        <textarea id="cf-desc" placeholder="物件說明文字..." style="width:100%; height:50px; background:var(--bg-main); color:#f8fafc; border:1px solid var(--border-color); border-radius:6px; padding:6px; font-size:11px; resize:none; outline:none; box-sizing:border-box; margin-bottom:6px;"></textarea>
+        <textarea id="cf-desc" placeholder="物件說明文字..." style="width:100%; height:60px; background:var(--bg-input); color:#f8fafc; border:1px solid var(--border-color); border-radius:8px; padding:8px; font-size:12px; resize:none; outline:none; box-sizing:border-box; margin-bottom:8px;"></textarea>
         
-        <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
           <input type="number" id="cf-w" placeholder="寬度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
           <input type="number" id="cf-h" placeholder="高度 (格)" value="1" min="1" max="4" style="flex:1; margin-bottom:0;" />
         </div>
 
-        <div class="rpg-btn-group" style="margin-top:10px;">
+        <div class="rpg-btn-group" style="margin-top:12px;">
           <button id="cf-cancel-btn" class="rpg-btn-ghost">取消</button>
           <button id="cf-confirm-btn" class="rpg-btn">✨ 儲存變更</button>
         </div>
@@ -175,11 +175,11 @@ import LoginModal from '../components/LoginModal.astro';
       <div class="rpg-title-bar"><span>🏠 房間與背景設定 (店主專用)</span></div>
       <div class="rpg-content">
         <p class="rpg-text">新增房間代碼、房間名稱、背景圖網址及格子數量：</p>
-        <input type="text" id="rs-room-key" placeholder="房間代碼（例：reading_room）" style="margin-bottom:6px;" />
-        <input type="text" id="rs-room-name" placeholder="房間顯示名稱（例：📖 靜心閱覽室）" style="margin-bottom:6px;" />
-        <input type="text" id="rs-bg-img" placeholder="背景圖片網址（留空則使用純色背景）" style="margin-bottom:6px;" />
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">格子大小 (預設 12x12)：</div>
-        <input type="number" id="rs-grid-size" placeholder="格子數 (預設 12)" value="12" min="6" max="30" style="margin-bottom:12px;" />
+        <input type="text" id="rs-room-key" placeholder="房間代碼（例：reading_room）" style="margin-bottom:8px;" />
+        <input type="text" id="rs-room-name" placeholder="房間顯示名稱（例：📖 靜心閱覽室）" style="margin-bottom:8px;" />
+        <input type="text" id="rs-bg-img" placeholder="背景圖片網址（留空則使用純色背景）" style="margin-bottom:8px;" />
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">格子大小 (預設 12x12)：</div>
+        <input type="number" id="rs-grid-size" placeholder="格子數 (預設 12)" value="12" min="6" max="30" style="margin-bottom:14px;" />
         <div class="rpg-btn-group">
           <button id="rs-cancel-btn" class="rpg-btn-ghost">取消</button>
           <button id="rs-confirm-btn" class="rpg-btn">✨ 建立並儲存房間</button>
@@ -188,7 +188,7 @@ import LoginModal from '../components/LoginModal.astro';
     </div>
   </div>
 
-  <!-- 主介面 -->
+  <!-- 主介面 (毛玻璃沉浸式視口) -->
   <div class="app-viewport">
     <main class="rpg-container">
       <header class="rpg-hud">
@@ -197,21 +197,21 @@ import LoginModal from '../components/LoginModal.astro';
           <div class="hud-right">
             <span class="online-indicator">🟢 在線: <strong id="online-count">1</strong></span>
             <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
-            <strong id="hud-name" style="color: var(--accent-light, #e0f2fe);">旅人</strong>
-            <button id="logout-btn" class="rpg-btn-sm" style="background:#ef4444; color:#fff; border:none;">🚪 登出</button>
+            <strong id="hud-name" style="color: var(--accent-light);">旅人</strong>
+            <button id="logout-btn" class="rpg-btn-sm" style="background:var(--danger-color); color:#fff; border:none;">🚪 登出</button>
           </div>
         </div>
 
         <div class="hud-mid-row">
           <div class="room-selector-wrapper">
-            <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:4px 8px; font-weight:bold;">
+            <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:6px 10px; font-weight:600;">
               <option value="study">📖 自修室</option>
             </select>
           </div>
 
-          <div style="display:flex; gap:4px; align-items:center;">
-            <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff; font-size:10px;">➕ 新房間</button>
-            <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-size:10px;">🗑️ 刪除</button>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff;">➕ 新房間</button>
+            <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff;">🗑️ 刪除</button>
             <select id="theme-select" class="theme-select-dropdown">
               <option value="blue">☁️ 晴空藍</option>
               <option value="green">🍃 森林綠</option>
@@ -232,28 +232,28 @@ import LoginModal from '../components/LoginModal.astro';
         <div id="guide-drawer" class="guide-drawer-content" style="display: none;">
           <div class="drawer-header">
             <span>📖 空間物件與放置指南</span>
-            <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:2px 6px;">✕ 收起</button>
+            <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:3px 8px;">✕ 收起</button>
           </div>
           
           <div id="shopkeeper-drawer-tools" class="shopkeeper-tools-bar" style="display: none; justify-content: space-between; align-items: center;">
             <div style="display:flex; gap:6px;">
               <button class="tool-btn active" data-tool="move">🚶 移動模式</button>
-              <button class="tool-btn" data-tool="delete" style="color:#ef4444; border-color:#ef4444;">🗑️ 刪除模式</button>
+              <button class="tool-btn" data-tool="delete" style="color:var(--danger-color); border-color:var(--danger-color);">🗑️ 刪除模式</button>
             </div>
-            <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff; font-size:11px;">➕ 新增物件/NPC</button>
+            <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff;">➕ 新增物件/NPC</button>
           </div>
 
           <div id="guide-content-box" class="guide-list-box"></div>
         </div>
 
         <!-- 底部主導航列與起立按鈕 -->
-        <div style="display:flex; align-items:center; background:var(--bg-main);">
+        <div style="display:flex; align-items:center; background:rgba(15, 23, 42, 0.4);">
           <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex;">
             <a href="/chatroom" class="footer-tab-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">💬 聊天</a>
             <a href="/record" class="footer-tab-btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">📚 書櫃</a>
             <button class="footer-tab-btn" id="btn-tab-guide" data-target="guide">📖 指南</button>
           </div>
-          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:#ef4444; color:#fff; font-weight:bold; margin-right:8px; padding:6px 12px;">🚶 起立</button>
+          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff; font-weight:bold; margin-right:10px; padding:6px 14px;">🚶 起立</button>
         </div>
       </footer>
     </main>
@@ -262,32 +262,40 @@ import LoginModal from '../components/LoginModal.astro';
   <style is:global>
     :root {
       --bg-main: #0f172a;
-      --bg-card: #1e293b;
-      --border-color: #334155;
+      --bg-card: rgba(30, 41, 59, 0.75);
+      --bg-input: #0b1120;
+      --border-color: rgba(51, 65, 85, 0.6);
       --accent-color: #38bdf8;
       --accent-hover: #0284c7;
       --accent-light: #e0f2fe;
+      --text-muted: #94a3b8;
+      --danger-color: #ef4444;
+      --success-color: #10b981;
     }
 
     [data-theme="green"] {
       --bg-main: #064e3b;
-      --bg-card: #065f46;
-      --border-color: #047857;
+      --bg-card: rgba(6, 95, 70, 0.75);
+      --bg-input: #022c22;
+      --border-color: rgba(4, 120, 87, 0.6);
       --accent-color: #34d399;
       --accent-hover: #059669;
       --accent-light: #d1fae5;
+      --text-muted: #a7f3d0;
     }
 
     [data-theme="purple"] {
       --bg-main: #3b0764;
-      --bg-card: #581c87;
-      --border-color: #7e22ce;
+      --bg-card: rgba(88, 28, 135, 0.75);
+      --bg-input: #230444;
+      --border-color: rgba(126, 34, 206, 0.6);
       --accent-color: #c084fc;
       --accent-hover: #9333ea;
       --accent-light: #f3e8ff;
+      --text-muted: #e9d5ff;
     }
 
-    * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; }
+    * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; box-sizing: border-box; }
 
     html, body {
       background-color: #020617;
@@ -297,23 +305,26 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     .app-viewport { width: 100vw; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; background: #020617; }
+    
     .rpg-container {
       width: 100vw; max-width: 414px; height: 100vh; height: 100dvh;
-      display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
       background-color: var(--bg-main); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.3s ease;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); transition: background-color 0.4s ease;
     }
 
-    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; }
-    .rpg-window { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    /* 毛玻璃視窗與對話框 */
+    .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .rpg-window { background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-color); border-radius: 14px; width: 90%; max-width: 360px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); }
     
-    .embed-window { max-width: 390px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+    .embed-window { max-width: 390px; height: 82vh; display: flex; flex-direction: column; overflow: hidden; }
     .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     .embed-iframe { width: 100%; height: 100%; border: none; }
 
     .rpg-footer-nav {
       background: var(--bg-card);
-      border-top: 2px solid var(--accent-hover);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
@@ -322,14 +333,14 @@ import LoginModal from '../components/LoginModal.astro';
 
     .guide-drawer-content {
       background: var(--bg-card);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);
-      max-height: 45vh;
-      min-height: 180px;
+      max-height: 46vh;
+      min-height: 190px;
       display: flex;
       flex-direction: column;
-      padding: 8px 12px;
-      box-sizing: border-box;
-      animation: slideUp 0.25s ease-out;
+      padding: 10px 14px;
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes slideUp {
@@ -338,86 +349,61 @@ import LoginModal from '../components/LoginModal.astro';
     }
 
     .drawer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      font-weight: bold;
-      color: var(--accent-color);
-      margin-bottom: 6px;
-      flex-shrink: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; font-weight: 700; color: var(--accent-color); margin-bottom: 8px; flex-shrink: 0;
     }
 
     .shopkeeper-tools-bar {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
-      flex-shrink: 0;
-      background: var(--bg-main);
-      padding: 6px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-      align-items: center;
+      display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0;
+      background: var(--bg-input); padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); align-items: center;
     }
 
-    .guide-list-box {
-      flex: 1;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-height: 0;
-    }
+    .guide-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 
-    .footer-tabs-bar {
-      display: flex;
-      background: var(--bg-main);
-      border-top: 1px solid var(--border-color);
-    }
+    .footer-tabs-bar { display: flex; background: rgba(15, 23, 42, 0.5); }
 
     .footer-tab-btn {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #94a3b8;
-      padding: 10px;
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 500;
-      text-align: center;
+      flex: 1; background: transparent; border: none; color: var(--text-muted);
+      padding: 12px; font-size: 12px; cursor: pointer; font-weight: 500; text-align: center; transition: color 0.2s;
     }
+    .footer-tab-btn.active { color: var(--accent-color); background: var(--bg-card); font-weight: 700; }
 
-    .footer-tab-btn.active {
-      color: var(--accent-color);
-      background: var(--bg-card);
-      font-weight: bold;
-    }
-
-    .rpg-title-bar { background: var(--bg-main); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid var(--border-color); }
+    .rpg-title-bar { background: rgba(15, 23, 42, 0.6); color: var(--accent-color); padding: 12px 16px; font-size: 13px; font-weight: 600; border-top-left-radius: 13px; border-top-right-radius: 13px; border-bottom: 1px solid var(--border-color); }
     .rpg-content { padding: 18px; }
-    .rpg-text { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.5; }
+    .rpg-text { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
     
-    .rpg-window input[type="text"], .rpg-window input[type="number"], .rpg-window input[type="email"], .rpg-window input[type="password"], .rpg-window textarea, .rpg-window select { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 12px; outline: none; border-radius: 8px; }
-    .rpg-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 500; border-radius: 8px; }
-    .rpg-btn-ghost { background: transparent; color: #94a3b8; border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
+    .rpg-window input[type="text"], .rpg-window input[type="number"], .rpg-window input[type="email"], .rpg-window input[type="password"], .rpg-window textarea, .rpg-window select {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border-color); color: #f8fafc; padding: 10px; font-size: 13px; box-sizing: border-box; margin-bottom: 10px; outline: none; border-radius: 8px; transition: border-color 0.2s;
+    }
+    .rpg-window input:focus, .rpg-window textarea:focus, .rpg-window select:focus { border-color: var(--accent-color); }
+
+    .rpg-btn { background: var(--accent-hover); color: #f8fafc; border: none; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; font-weight: 600; border-radius: 8px; transition: background 0.2s; }
+    .rpg-btn:hover { filter: brightness(1.1); }
+    .rpg-btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 8px; }
     .rpg-btn-group { display: flex; gap: 8px; }
 
-    .rpg-hud { background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
-    .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .hud-brand { font-weight: 600; color: var(--accent-color); }
+    /* 毛玻璃 HUD 頂部列 */
+    .rpg-hud {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 12px; font-size: 12px; flex-shrink: 0;
+    }
+    .hud-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .hud-brand { font-weight: 700; color: var(--accent-color); letter-spacing: 0.5px; }
     .hud-right { display: flex; align-items: center; gap: 6px; }
-    .online-indicator { color: #34d399; }
-    .user-tag { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2px 6px; border-radius: 8px; font-size: 10px; color: var(--accent-color); }
+    .online-indicator { color: var(--success-color); font-weight: 500; }
+    .user-tag { background: var(--bg-input); border: 1px solid var(--border-color); padding: 2px 8px; border-radius: 10px; font-size: 10px; color: var(--accent-color); font-weight: 600; }
     
     .hud-mid-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .theme-select-dropdown { background: var(--bg-main); color: var(--accent-color); border: 1px solid var(--border-color); padding: 3px 6px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; }
-    .rpg-btn-sm { background: var(--bg-main); color: #cbd5e1; border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 6px; }
+    .theme-select-dropdown { background: var(--bg-input); color: var(--accent-color); border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; border-radius: 8px; outline: none; cursor: pointer; font-weight: 500; }
+    .rpg-btn-sm { background: var(--bg-input); color: #cbd5e1; border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; font-weight: 600; }
     
-    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 2px; overflow: hidden; min-height: 0; }
-    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 8px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
+    .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; padding: 4px; overflow: hidden; min-height: 0; }
+    #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-main); cursor: pointer; image-rendering: pixelated; border-radius: 10px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
 
-    .tool-btn { background: var(--bg-main); color: #94a3b8; border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
-    .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 500; }
+    .tool-btn { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 6px; }
+    .tool-btn.active { background: var(--accent-hover); color: #f8fafc; border-color: var(--accent-hover); font-weight: 600; }
   </style>
 
   <script>
@@ -434,7 +420,7 @@ import LoginModal from '../components/LoginModal.astro';
     let playerAvatar = '/assets/player1.png';
     let playerTier = '鄰里人';
     let isAdmin = false;
-    let isGuest = false; // 訪客身分標記
+    let isGuest = false;
     let playerGx = 2;
     let playerGy = 2;
     let currentTool = 'move';
@@ -769,7 +755,7 @@ import LoginModal from '../components/LoginModal.astro';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
       ctx.lineWidth = 1;
       for (let x = 0; x < canvas.width; x += tileSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
       for (let y = 0; y < canvas.height; y += tileSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
@@ -801,7 +787,7 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         if (item.type === 'seat' && item.host_id) {
-          ctx.fillStyle = 'rgba(16, 185, 129, 0.8)';
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
           ctx.fillRect(px + 4, py + ih - 14, iw - 8, 11);
           ctx.fillStyle = '#fff';
           ctx.font = '9px sans-serif';
@@ -811,7 +797,7 @@ import LoginModal from '../components/LoginModal.astro';
         }
 
         if (item.type === 'table' && item.book_title) {
-          ctx.fillStyle = 'rgba(180, 83, 9, 0.85)';
+          ctx.fillStyle = 'rgba(180, 83, 9, 0.9)';
           ctx.fillRect(px + 4, py + ih - 16, iw - 8, 13);
           ctx.fillStyle = '#fff';
           ctx.font = '9px sans-serif';
@@ -928,14 +914,14 @@ import LoginModal from '../components/LoginModal.astro';
       uniqueItemsMap.forEach((item, label) => {
         const isTable = item.type === 'table';
         html += `
-          <div style="display:flex; gap:10px; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:8px; border-radius:6px; margin-bottom:6px;">
-            <img src="${item.imgSrc || item.img_src}" style="width:36px; height:36px; object-fit:contain; background:var(--bg-card); border-radius:4px; padding:2px;" onerror="this.style.display='none'" />
+          <div style="display:flex; gap:10px; align-items:center; background:var(--bg-input); border:1px solid var(--border-color); padding:8px 10px; border-radius:8px; margin-bottom:6px;">
+            <img src="${item.imgSrc || item.img_src}" style="width:36px; height:36px; object-fit:contain; background:rgba(30,41,59,0.5); border-radius:6px; padding:2px;" onerror="this.style.display='none'" />
             <div style="flex:1;">
-              <div style="font-weight:bold; color:var(--accent-color);">${label} ${isTable ? '(🪵共讀桌)' : ''}</div>
+              <div style="font-weight:700; color:var(--accent-color);">${label} ${isTable ? '(🪵共讀桌)' : ''}</div>
               <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">說明：${item.description || '無'}</div>
             </div>
             <div style="display:flex; gap:4px;">
-              ${isAdmin && !item.isSystem ? `<button class="guide-edit-btn rpg-btn-sm" data-id="${item.id}" style="background:var(--bg-card); color:#38bdf8; font-weight:bold; padding:4px 8px;" title="修改物件">✏️</button>` : ''}
+              ${isAdmin && !item.isSystem ? `<button class="guide-edit-btn rpg-btn-sm" data-id="${item.id}" style="background:var(--bg-card); color:var(--accent-color); font-weight:bold; padding:4px 8px;" title="修改物件">✏️</button>` : ''}
               ${isAdmin ? `<button class="guide-add-btn rpg-btn-sm" data-type="${item.type}" data-label="${label}" style="background:var(--accent-hover); color:#fff; font-weight:bold; padding:4px 8px;" title="放置至畫布">＋</button>` : ''}
             </div>
           </div>
@@ -1166,7 +1152,6 @@ import LoginModal from '../components/LoginModal.astro';
 
       if (!name || !img) { alert('請填寫物件名稱與圖片路徑'); return; }
 
-      // 將名稱轉為合法的英文 type key（保留英數字與下劃線，若全中文則使用自定代碼）
       const cleanTypeKey = name.toLowerCase().replace(/[^a-z0-9_]/g, '_') || 'custom_item';
 
       if (editId) {
@@ -1213,7 +1198,6 @@ import LoginModal from '../components/LoginModal.astro';
 
     libraryCloseBtn?.addEventListener('click', () => { if (libraryModal) libraryModal.style.display = 'none'; });
 
-    // 共讀桌相關互動
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
