@@ -442,15 +442,33 @@ import LoginModal from '../components/LoginModal.astro';
 
         </div>
 
-          <!-- 底部主導航列與起立按鈕 -->
-        <div style="display:flex; align-items:center; background:var(--bg-main);">
-          <div class="footer-tabs-bar" style="flex:1; border-top:none;">
-            <a href="/chatroom" class="footer-tab-btn">💬 聊天</a>
-            <a href="/record" class="footer-tab-btn">📚 書櫃</a>
-            <a href="/skillsupermarker" class="footer-tab-btn">萬事屋</a>
-          </div>
-    
-        </div>
+
+        <!-- 底部導覽列 (純內聯樣式，無 <style> 標籤) -->
+    <div style="display:flex; align-items:center; background:var(--bg-main, #fcfaf7); position:fixed; bottom:0; left:0; right:0; justify-content:center; z-index:99; border-top:1px solid #f0ebe1; box-shadow:0 -4px 20px rgba(0,0,0,0.03);">
+      <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex; justify-content:space-around; max-width:600px; padding:8px 12px; box-sizing:border-box;">
+        <a href="/explore" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:#8c8275; font-size:11px; gap:2px; padding:6px 12px; border-radius:12px;">
+          <span style="font-size:16px;">🌿</span>
+          <span>探索</span>
+        </a>
+        <a href="/chatroom" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:#8c8275; font-size:11px; gap:2px; padding:6px 12px; border-radius:12px;">
+          <span style="font-size:16px;">💬</span>
+          <span>聊天</span>
+        </a>
+        <!-- 目前在書櫃頁面，套用高亮色與背景 -->
+        <a href="/record" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:#6b8e23; font-weight:600; font-size:11px; gap:2px; padding:6px 12px; border-radius:12px; background:#f4efe6;">
+          <span style="font-size:16px;">📚</span>
+          <span>書櫃</span>
+        </a>
+        <a href="/co-read" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:#8c8275; font-size:11px; gap:2px; padding:6px 12px; border-radius:12px;">
+          <span style="font-size:16px;">📖</span>
+          <span>共讀</span>
+        </a>
+        <a href="/skillsupermarket" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:#8c8275; font-size:11px; gap:2px; padding:6px 12px; border-radius:12px;">
+          <span style="font-size:16px;">🏠</span>
+          <span>萬事屋</span>
+        </a>
+      </div>
+    </div>
     </main>
 
     <!-- 👥 彈窗：在線名單 / 鄰里人總數名單 (含搜尋與會員私訊攔截) -->
