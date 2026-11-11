@@ -2,6 +2,7 @@
 const { title = "預設標題" } = Astro.props;
 import Footer from '../components/phonefooter.astro';
 import Header from '../components/phoneheader.astro';
+import LoginModal from '../components/LoginModal.astro';
 import { supabase } from '../lib/supabase';
 
 const TABLE_NAME = 'slowpace_members';
