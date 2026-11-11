@@ -1,52 +1,67 @@
-<!-- LoginModal 元件（不含頁面 Header） -->
-<div style="max-width: 100%; padding: 10px; background: #1e293b; color: #fff; box-sizing: border-box;">
+<!-- LoginModal 元件（含文青 Logo 與沉穩色調） -->
+<div style="max-width: 100%; padding: 24px; background: #262422; color: #e7e2d8; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 8px;">
+
+  <!-- 頂部文青 Logo 與返回首頁 -->
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #3c3835;">
+    <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #f5f2eb;">
+      <span style="font-size: 1.25rem;">☕</span>
+      <div style="display: flex; flex-direction: column;">
+        <span style="font-size: 0.95rem; font-weight: 500; letter-spacing: 0.05em;">客舍萬事屋</span>
+        <span style="font-size: 0.7rem; color: #a39b90; letter-spacing: 0.1em;">Slow Pace Skill</span>
+      </div>
+    </a>
+    <a href="/" style="font-size: 0.75rem; color: #a39b90; text-decoration: none; padding: 4px 8px; border: 1px solid #3c3835; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.color='#f5f2eb'; this.style.borderColor='#78716c';" onmouseout="this.style.color='#a39b90'; this.style.borderColor='#3c3835';">
+      ← 回到首頁
+    </a>
+  </div>
+
   <!-- 切換登入、註冊與訪客模式分頁 -->
-  <div style="display: flex; gap: 6px; margin-bottom: 16px;">
-    <button id="tab-login-mode" class="auth-tab-btn" style="flex:1; padding:8px; background:#0284c7; color:#fff; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">會員登入</button>
-    <button id="tab-register-mode" class="auth-tab-btn" style="flex:1; padding:8px; background:#0f172a; color:#94a3b8; border:1px solid #334155; border-radius:4px; cursor:pointer;">會員註冊</button>
-    <button id="tab-guest-mode" class="auth-tab-btn" style="flex:1; padding:8px; background:#0f172a; color:#94a3b8; border:1px solid #334155; border-radius:4px; cursor:pointer;">👤 訪客模式</button>
+  <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+    <button id="tab-login-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; cursor:pointer; font-weight:500; font-size:0.9rem; transition: background 0.2s;">會員登入</button>
+    <button id="tab-register-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#262422; color:#a39b90; border:1px solid #3c3835; border-radius:6px; cursor:pointer; font-size:0.9rem; transition: background 0.2s;">會員註冊</button>
+    <button id="tab-guest-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#262422; color:#a39b90; border:1px solid #3c3835; border-radius:6px; cursor:pointer; font-size:0.9rem; transition: background 0.2s;">👤 訪客模式</button>
   </div>
 
   <!-- 會員登入表單區塊 -->
   <div id="login-form-container">
-    <input type="email" id="login-email" placeholder="電子信箱 (Email)" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
-    <input type="password" id="login-password" placeholder="密碼" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
+    <input type="email" id="login-email" placeholder="電子信箱 (Email)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    <input type="password" id="login-password" placeholder="密碼" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
     
-    <button id="login-submit-btn" style="width:100%; padding:10px; background:#0284c7; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-bottom: 12px;">登入</button>
+    <button id="login-submit-btn" style="width:100%; padding:12px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer; margin-bottom: 14px; transition: background 0.2s;" onmouseover="this.style.background='#5c534d'" onmouseout="this.style.background='#4a443f'">登入空間</button>
     
     <div style="text-align: right;">
-      <button id="forgot-password-btn" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
+      <button id="forgot-password-btn" style="background: none; border: none; color: #b8aea3; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
     </div>
   </div>
 
   <!-- 會員註冊表單區塊 -->
   <div id="register-form-container" style="display: none;">
-    <input type="email" id="register-email" placeholder="電子信箱 (Email)" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
-    <input type="password" id="register-password" placeholder="設定密碼 (至少 6 碼)" style="width:100%; padding:10px; margin-bottom:10px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
-    <input type="password" id="register-password-confirm" placeholder="確認密碼" style="width:100%; padding:10px; margin-bottom:12px; background:#0f172a; color:#fff; border:1px solid #334155; border-radius:4px; box-sizing:border-box;" />
+    <input type="email" id="register-email" placeholder="電子信箱 (Email)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    <input type="password" id="register-password" placeholder="設定密碼 (至少 6 碼)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    <input type="password" id="register-password-confirm" placeholder="確認密碼" style="width:100%; padding:12px; margin-bottom:16px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
     
-    <button id="register-submit-btn" style="width:100%; padding:10px; background:#059669; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">註冊新帳號</button>
+    <button id="register-submit-btn" style="width:100%; padding:12px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='#5c534d'" onmouseout="this.style.background='#4a443f'">註冊新帳號</button>
   </div>
 
   <!-- 訪客快速進入表單區塊 -->
   <div id="guest-form-container" style="display: none;">
-    <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">訪客將依序自動指派編號（如 訪客 #1），離開空間後資料將自動清除。</p>
+    <p style="font-size: 0.8rem; color: #a39b90; margin-bottom: 16px; line-height: 1.5;">訪客將依序自動指派編號（如 訪客 #1），離開空間後資料將自動清除，享受一段寧靜的短暫停留。</p>
     
-    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">選擇分身造型：</div>
-    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-      <label style="flex:1; background:#0f172a; border:1px solid #334155; padding:8px; text-align:center; border-radius:6px; cursor:pointer;">
+    <div style="font-size: 0.8rem; color: #a39b90; margin-bottom: 8px;">選擇分身造型：</div>
+    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:10px; text-align:center; border-radius:8px; cursor:pointer;">
         <input type="radio" name="guest-avatar" value="/assets/player1.png" checked style="display:none;" />
-        <img src="/assets/player1.png" alt="P1" style="width:32px; height:32px;" />
-        <div style="font-size:11px; color:#fff;">分身一號</div>
+        <img src="/assets/player1.png" alt="P1" style="width:32px; height:32px; margin-bottom: 4px;" />
+        <div style="font-size:0.75rem; color:#f5f2eb;">分身一號</div>
       </label>
-      <label style="flex:1; background:#0f172a; border:1px solid #334155; padding:8px; text-align:center; border-radius:6px; cursor:pointer;">
+      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:10px; text-align:center; border-radius:8px; cursor:pointer;">
         <input type="radio" name="guest-avatar" value="/assets/player2.png" style="display:none;" />
-        <img src="/assets/player2.png" alt="P2" style="width:32px; height:32px;" />
-        <div style="font-size:11px; color:#fff;">分身二號</div>
+        <img src="/assets/player2.png" alt="P2" style="width:32px; height:32px; margin-bottom: 4px;" />
+        <div style="font-size:0.75rem; color:#f5f2eb;">分身二號</div>
       </label>
     </div>
 
-    <button id="guest-submit-btn" style="width:100%; padding:10px; background:#10b981; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">🚀 快速進入客舍空間</button>
+    <button id="guest-submit-btn" style="width:100%; padding:12px; background:#5c534d; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='#6e635c'" onmouseout="this.style.background='#5c534d'">🍵 快速進入客舍空間</button>
   </div>
 </div>
 
@@ -54,7 +69,7 @@
   import { supabase } from '../lib/supabase';
   const TABLE_NAME = 'slowpace_members';
 
-  // 分頁切換按鈕邏輯
+  // 分頁切換按鈕邏輯（同步配合文青色調）
   const tabLoginMode = document.getElementById('tab-login-mode');
   const tabRegisterMode = document.getElementById('tab-register-mode');
   const tabGuestMode = document.getElementById('tab-guest-mode');
@@ -64,27 +79,27 @@
   const guestFormContainer = document.getElementById('guest-form-container');
 
   tabLoginMode?.addEventListener('click', () => {
-    tabLoginMode.style.background = '#0284c7'; tabLoginMode.style.color = '#fff'; tabLoginMode.style.border = 'none';
-    if (tabRegisterMode) { tabRegisterMode.style.background = '#0f172a'; tabRegisterMode.style.color = '#94a3b8'; tabRegisterMode.style.border = '1px solid #334155'; }
-    if (tabGuestMode) { tabGuestMode.style.background = '#0f172a'; tabGuestMode.style.color = '#94a3b8'; tabGuestMode.style.border = '1px solid #334155'; }
+    tabLoginMode.style.background = '#4a443f'; tabLoginMode.style.color = '#f5f2eb'; tabLoginMode.style.border = 'none';
+    if (tabRegisterMode) { tabRegisterMode.style.background = '#262422'; tabRegisterMode.style.color = '#a39b90'; tabRegisterMode.style.border = '1px solid #3c3835'; }
+    if (tabGuestMode) { tabGuestMode.style.background = '#262422'; tabGuestMode.style.color = '#a39b90'; tabGuestMode.style.border = '1px solid #3c3835'; }
     if (loginFormContainer) loginFormContainer.style.display = 'block';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
   });
 
   tabRegisterMode?.addEventListener('click', () => {
-    tabRegisterMode.style.background = '#059669'; tabRegisterMode.style.color = '#fff'; tabRegisterMode.style.border = 'none';
-    if (tabLoginMode) { tabLoginMode.style.background = '#0f172a'; tabLoginMode.style.color = '#94a3b8'; tabLoginMode.style.border = '1px solid #334155'; }
-    if (tabGuestMode) { tabGuestMode.style.background = '#0f172a'; tabGuestMode.style.color = '#94a3b8'; tabGuestMode.style.border = '1px solid #334155'; }
+    tabRegisterMode.style.background = '#4a443f'; tabRegisterMode.style.color = '#f5f2eb'; tabRegisterMode.style.border = 'none';
+    if (tabLoginMode) { tabLoginMode.style.background = '#262422'; tabLoginMode.style.color = '#a39b90'; tabLoginMode.style.border = '1px solid #3c3835'; }
+    if (tabGuestMode) { tabGuestMode.style.background = '#262422'; tabGuestMode.style.color = '#a39b90'; tabGuestMode.style.border = '1px solid #3c3835'; }
     if (registerFormContainer) registerFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
   });
 
   tabGuestMode?.addEventListener('click', () => {
-    tabGuestMode.style.background = '#10b981'; tabGuestMode.style.color = '#fff'; tabGuestMode.style.border = 'none';
-    if (tabLoginMode) { tabLoginMode.style.background = '#0f172a'; tabLoginMode.style.color = '#94a3b8'; tabLoginMode.style.border = '1px solid #334155'; }
-    if (tabRegisterMode) { tabRegisterMode.style.background = '#0f172a'; tabRegisterMode.style.color = '#94a3b8'; tabRegisterMode.style.border = '1px solid #334155'; }
+    tabGuestMode.style.background = '#4a443f'; tabGuestMode.style.color = '#f5f2eb'; tabGuestMode.style.border = 'none';
+    if (tabLoginMode) { tabLoginMode.style.background = '#262422'; tabLoginMode.style.color = '#a39b90'; tabLoginMode.style.border = '1px solid #3c3835'; }
+    if (tabRegisterMode) { tabRegisterMode.style.background = '#262422'; tabRegisterMode.style.color = '#a39b90'; tabRegisterMode.style.border = '1px solid #3c3835'; }
     if (guestFormContainer) guestFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
@@ -115,17 +130,8 @@
     else { window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*'); }
   });
 
-// 點擊頭像時加上外框高亮效果
-document.querySelectorAll('input[name="guest-avatar"]').forEach(input => {
-    input.addEventListener('change', (e) => {
-        document.querySelectorAll('.avatar-option').forEach(img => img.style.borderColor = '#cbd5e1');
-        const selectedImg = e.target.parentElement.querySelector('.avatar-option');
-        if (selectedImg) selectedImg.style.borderColor = '#2563eb';
-    });
-});
-
-// 【修改點 A】訪客模式：遞增編號、先查後寫與離開自動刪除
-document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
+  // 訪客模式：遞增編號、先查後寫與離開自動刪除
+  document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
 
@@ -134,76 +140,71 @@ document.getElementById('guest-submit-btn')?.addEventListener('click', async () 
     let insertSuccess = false;
     let attempts = 0;
 
-    // 迴圈嘗試寫入，若遇上並發衝突（流水號重複）則自動遞增重試
     while (!insertSuccess && attempts < 5) {
-        attempts++;
+      attempts++;
 
-        // 1. 查詢資料庫中所有名字符合「訪客 #數字」格式的紀錄，找出目前最大編號
-        const { data: existingGuests, error: fetchError } = await supabase
-            .from(TABLE_NAME)
-            .select('name')
-            .like('name', '訪客 #%');
+      const { data: existingGuests, error: fetchError } = await supabase
+        .from(TABLE_NAME)
+        .select('name')
+        .like('name', '訪客 #%');
 
-        let nextIndex = 1;
-        if (!fetchError && existingGuests && existingGuests.length > 0) {
-            const numbers = existingGuests.map(g => {
-                const match = g.name.match(/訪客 #(\d+)/);
-                return match ? parseInt(match[1], 10) : 0;
-            });
-            const maxIndex = Math.max(...numbers, 0);
-            nextIndex = maxIndex + 1;
-        }
+      let nextIndex = 1;
+      if (!fetchError && existingGuests && existingGuests.length > 0) {
+        const numbers = existingGuests.map(g => {
+          const match = g.name.match(/訪客 #(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
+        });
+        const maxIndex = Math.max(...numbers, 0);
+        nextIndex = maxIndex + 1;
+      }
 
-        guestName = `訪客 #${nextIndex}`;
-        guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
+      guestName = `訪客 #${nextIndex}`;
+      guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
 
-        const guestData = {
-            user_id: guestId,
-            name: guestName,
-            role: '☁️ 訪客',
-            tier: '鄰里人',
-            avatar: avatarVal,
-            room: 'study',
-            gx: 2,
-            gy: 2,
-            reading_log: [],
-            updated_at: new Date()
-        };
+      const guestData = {
+        user_id: guestId,
+        name: guestName,
+        role: '☁️ 訪客',
+        tier: '鄰里人',
+        avatar: avatarVal,
+        room: 'study',
+        gx: 2,
+        gy: 2,
+        reading_log: [],
+        updated_at: new Date()
+      };
 
-        // 2. 嘗試寫入資料庫
-        const { error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]);
-        
-        if (!insertError) {
-            insertSuccess = true;
-        } else {
-            console.warn(`寫入碰撞 (${guestName})，正在嘗試下一個編號...`);
-        }
+      const { error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]);
+      
+      if (!insertError) {
+        insertSuccess = true;
+      } else {
+        console.warn(`寫入碰撞 (${guestName})，正在嘗試下一個編號...`);
+      }
     }
 
     if (!insertSuccess) {
-        alert('進入空間失敗：無法分配訪客編號，請稍後再試。');
-        return;
+      alert('進入空間失敗：無法分配訪客編號，請稍後再試。');
+      return;
     }
 
-    // 儲存於 sessionStorage 供離開時辨識刪除
     sessionStorage.setItem('space_guest_id', guestId);
 
-    // 通知外層聊天室頁面登入成功
     window.parent.postMessage({
-        type: 'GUEST_LOGIN_SUCCESS',
-        guestId: guestId,
-        name: guestName,
-        avatar: avatarVal
+      type: 'GUEST_LOGIN_SUCCESS',
+      guestId: guestId,
+      name: guestName,
+      avatar: avatarVal
     }, '*');
-});
+  });
 
-// 【修改點 B】瀏覽器關閉或離開時，自動從資料庫刪除訪客紀錄
-window.addEventListener('beforeunload', () => {
+  // 瀏覽器關閉或離開時，自動從資料庫刪除訪客紀錄
+  window.addEventListener('beforeunload', () => {
     const guestId = sessionStorage.getItem('space_guest_id');
     if (!guestId) return;
     supabase.from(TABLE_NAME).delete().eq('user_id', guestId).then();
     sessionStorage.removeItem('space_guest_id');
-});
+  });
 
   // 忘記密碼
   document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
