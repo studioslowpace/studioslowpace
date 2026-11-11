@@ -167,7 +167,7 @@ const { onlineCount = 1 } = Astro.props;
       const { data: member } = await supabase
         .from(TABLE_NAME)
         .select('name, tier')
-        .eq('id', session.user.id)
+        .eq('user_id', session.user.id)
         .single();
 
       if (nameEl) nameEl.textContent = member?.name || session.user.email || '旅人';
