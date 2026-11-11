@@ -12,16 +12,19 @@ import Footer from '../components/phonefooter.astro';
         <meta name="generator" content={Astro.generator} />
         <title>{title}</title>
     </head>
-    <body>
-        <main style="flex: 1; width: 100%; max-width: 800px; margin: 0 auto; padding: 24px; box-sizing: border-box;">
-          <slot />
-        </main>
+<body style="display: flex; flex-direction: column; min-height: 100vh; margin: 0; background: #fdfbf7;">
+    
+    <!-- 頁面主要內容區域 -->
+    <main style="flex: 1; width: 100%; max-width: 800px; margin: 0 auto; padding: 24px; box-sizing: border-box;">
+      <slot />
+    </main>
 
     <!-- 共用 Footer：同樣放在這個限制寬度的置中容器內，它就會跟主內容等寬、完美貼合！ -->
-        <footer-wrapper style="width: 100%; max-width: 800px; margin: 0 auto; padding: 0 24px; box-sizing: border-box;">
-          <Footer />
-        </footer-wrapper>
-    </body>
+    <footer-wrapper style="width: 100%; max-width: 800px; margin: 0 auto; padding: 0 24px; box-sizing: border-box;">
+      <Footer />
+    </footer-wrapper>
+
+  </body>
 </html>
 
 <style>
