@@ -50,8 +50,20 @@ try {
         <div class="app-footer-wrapper">
           <Footer />
         </div>
-
       </div>
+
+          <!-- 1. 會員身分驗證 Modal (未登入時顯示) -->
+    <div id="rpg-modal" class="rpg-modal-overlay" style="display: none;">
+        <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
+            <div style="background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #334155; display:flex; justify-content:space-between; align-items:center;">
+                <span>◆ 空間客舍 · 身分認證 ◆</span>
+            </div>
+            <div class="embed-frame-wrapper" style="flex:1;">
+                <LoginModal />
+            </div>
+        </div>
+    </div>
+
     </div>
   </body>
 </html>
@@ -158,6 +170,8 @@ try {
   const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
   const client = createClient(supabaseUrl, supabaseKey);
 
+  
+
   // 統一的權限檢查
   async function checkLayoutAdminStatus(user) {
     if (!user) return false;
@@ -193,6 +207,18 @@ try {
       }
     });
   }
+
+  // 顯示登入彈窗
+function showLoginModal() {
+  const modal = document.getElementById('rpg-modal');
+  if (modal) modal.style.display = 'flex'; // 讓它置中顯示
+}
+
+// 隱關閉登入彈窗
+function hideLoginModal() {
+  const modal = document.getElementById('rpg-modal');
+  if (modal) modal.style.display = 'none';
+}
 
   initLayoutAuth();
 </script>

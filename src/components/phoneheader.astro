@@ -1,11 +1,10 @@
 ---
-// 你可以透過 props 接收動態資料，或維持預設值
-const { onlineCount = 1, tier = "🌱 鄰里人", username = "旅人" } = Astro.props;
+// Header 保持作為 UI 元件接收初始 Props
+const { onlineCount = 1 } = Astro.props;
 ---
 
 <header class="rpg-hud" id="rpg-hud">
   <div class="hud-top-row">
-    
     <!-- 左側：品牌標誌 -->
     <div class="hud-brand-group">
       <span class="hud-brand">☁️ 空間客舍</span>
@@ -13,15 +12,16 @@ const { onlineCount = 1, tier = "🌱 鄰里人", username = "旅人" } = Astro.
 
     <!-- 右側：使用者狀態與功能工具列 -->
     <div class="hud-right-group">
-      <!-- 在線人數與身分 -->
+      <!-- 在線狀態膠囊 -->
       <div class="hud-status-badge">
         <span class="online-dot">🟢</span>
         <span class="online-text">線上: <strong id="online-count">{onlineCount}</strong></span>
       </div>
 
+      <!-- 身分標籤與名稱 -->
       <div class="hud-user-profile">
-        <span class="user-tag" id="hud-tier-tag">{tier}</span>
-        <strong id="hud-name">{username}</strong>
+        <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
+        <strong id="hud-name">加載中...</strong>
       </div>
 
       <!-- 主題自選色盤 -->
@@ -33,7 +33,6 @@ const { onlineCount = 1, tier = "🌱 鄰里人", username = "旅人" } = Astro.
       <!-- 登出按鈕 -->
       <button id="logout-btn" class="rpg-btn-logout">🚪 登出</button>
     </div>
-
   </div>
 </header>
 
@@ -150,16 +149,50 @@ const { onlineCount = 1, tier = "🌱 鄰里人", username = "旅人" } = Astro.
   }
 </style>
 
-<!-- 如果有登出的前端互動 JS，可以留在這裡或統一管理 -->
 <script>
   import { supabase } from '../lib/supabase';
 
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
-      window.location.href = '/login';
+  const TABLE_NAME = 'slowpace_members';
+
+  async function initAuthHeader() {
+    // 1. 檢查 Supabase Auth 目前的使用者 Session
+    const { data: { session } } = await supabase.auth.getSession();
+
+    const nameEl = document.getElementById('hud-name');
+    const tierEl = document.getElementById('hud-tier-tag');
+    const modal = document.getElementById('rpg-modal');
+
+    if (session?.user) {
+      // 2. 已登入：從 slowpace_members 撈取對應資料
+      const { data: member } = await supabase
+        .from(TABLE_NAME)
+        .select('name, tier')
+        .eq('id', session.user.id)
+        .single();
+
+      if (nameEl) nameEl.textContent = member?.name || session.user.email || '旅人';
+      if (tierEl && member?.tier) tierEl.textContent = member.tier;
+      
+      // 確保登入時關閉認證 Modal
+      if (modal) modal.style.display = 'none';
     } else {
-      console.error('登出失敗:', error.message);
+      // 3. 未登入：顯示訪客狀態，並自動彈出 Layout 的認證 Modal
+      if (nameEl) nameEl.textContent = '訪客';
+      if (modal) modal.style.display = 'flex';
     }
-  });
+
+    // 4. 綁定登出按鈕事件
+    const logoutBtn = document.getElementById('logout-btn');
+    logoutBtn?.addEventListener('click', async () => {
+      const { error } = await supabase.auth.signOut();
+      if (!error) {
+        window.location.href = '/login';
+      } else {
+        console.error('登出失敗:', error.message);
+      }
+    });
+  }
+
+  // 頁面載入後執行身分初始化
+  initAuthHeader();
 </script>
