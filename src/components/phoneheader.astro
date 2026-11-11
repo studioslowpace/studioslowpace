@@ -1,24 +1,18 @@
 ---
 // Header 保持作為 UI 元件接收初始 Props
-const { onlineCount = 1 } = Astro.props;
+const { onlineCount = 1, totalCount = 0 } = Astro.props;
 ---
 
 <header class="rpg-hud" id="rpg-hud">
+  <!-- 第一列：品牌與使用者控制區 -->
   <div class="hud-top-row">
     <!-- 左側：品牌標誌 -->
     <div class="hud-brand-group">
       <span class="hud-brand">☁️ 空間客舍</span>
     </div>
 
-    <!-- 右側：使用者狀態與功能工具列 -->
+    <!-- 右側：使用者身分、選色盤與登出 -->
     <div class="hud-right-group">
-      <!-- 在線狀態膠囊 -->
-      <div class="hud-status-badge">
-        <span class="online-dot">🟢</span>
-        <span class="online-text">線上: <strong id="online-count">{onlineCount}</strong></span>
-      </div>
-
-      <!-- 身分標籤與名稱 -->
       <div class="hud-user-profile">
         <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
         <strong id="hud-name">加載中...</strong>
@@ -34,6 +28,13 @@ const { onlineCount = 1 } = Astro.props;
       <button id="logout-btn" class="rpg-btn-logout">🚪 登出</button>
     </div>
   </div>
+
+  <!-- 第二列：獨立的在線人數與總人數狀態列 -->
+  <div class="phone-sub-bar">
+    <span>🟢 在線：<strong id="online-count-trigger-home"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
+    <span class="sub-bar-divider">|</span>
+    <span>📜 鄰里人總數：<strong id="total-count-trigger-home"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
+  </div>
 </header>
 
 <style>
@@ -41,9 +42,12 @@ const { onlineCount = 1 } = Astro.props;
     width: 100%;
     background: var(--bg-card, rgba(255, 255, 255, 0.85));
     border-bottom: 1px solid var(--border-color, #e6dcc8);
-    padding: 10px 16px;
+    padding: 10px 16px 8px 16px;
     box-sizing: border-box;
     backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .hud-top-row {
@@ -73,22 +77,6 @@ const { onlineCount = 1 } = Astro.props;
     flex-wrap: nowrap;
   }
 
-  /* 在線狀態膠囊 */
-  .hud-status-badge {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: var(--text-muted, #8c7a6b);
-    background: var(--bg-input, #f4efe6);
-    padding: 3px 8px;
-    border-radius: 8px;
-  }
-
-  .online-dot {
-    font-size: 9px;
-  }
-
   /* 使用者身分與名稱 */
   .hud-user-profile {
     display: flex;
@@ -107,7 +95,7 @@ const { onlineCount = 1 } = Astro.props;
     font-weight: 600;
   }
 
-  /* 主題選色盤微調 */
+  /* 主題選色盤 */
   .hud-theme-picker {
     display: flex;
     align-items: center;
@@ -132,7 +120,7 @@ const { onlineCount = 1 } = Astro.props;
     padding: 0;
   }
 
-  /* 簡潔的登出按鈕 */
+  /* 登出按鈕 */
   .rpg-btn-logout {
     background: var(--danger-color, #e07a5f);
     color: #fff;
@@ -147,6 +135,30 @@ const { onlineCount = 1 } = Astro.props;
   .rpg-btn-logout:hover {
     opacity: 0.9;
   }
+
+  /* 新增的 sub-bar 簡潔文青風格樣式 */
+  .phone-sub-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-input, #f4efe6);
+    border: 1px solid var(--border-color, #e6dcc8);
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--text-muted, #8c7a6b);
+    width: 100%;
+  }
+
+  .phone-sub-bar strong {
+    color: var(--text-color, #2c241d);
+  }
+
+  .sub-bar-divider {
+    color: var(--border-color, #e6dcc8);
+    font-weight: 300;
+  }
 </style>
 
 <script>
@@ -154,8 +166,16 @@ const { onlineCount = 1 } = Astro.props;
 
   const TABLE_NAME = 'slowpace_members';
 
+  let currentUserId = '';
+  let currentUserName = '';
+  let allUserRecords = [];
+  let onlineUsersMap = {};
+  let presenceChannel = null;
+
+  /* ==========================================
+     1. 會員驗證與登出管理
+     ========================================== */
   async function initAuthHeader() {
-    // 1. 檢查 Supabase Auth 目前的使用者 Session
     const { data: { session } } = await supabase.auth.getSession();
 
     const nameEl = document.getElementById('hud-name');
@@ -163,27 +183,31 @@ const { onlineCount = 1 } = Astro.props;
     const modal = document.getElementById('rpg-modal');
 
     if (session?.user) {
-      // 2. 已登入：從 slowpace_members 撈取對應資料
+      currentUserId = session.user.id;
+      
       const { data: member } = await supabase
         .from(TABLE_NAME)
         .select('name, tier')
         .eq('user_id', session.user.id)
         .single();
 
-      if (nameEl) nameEl.textContent = member?.name || session.user.email || '旅人';
+      currentUserName = member?.name || session.user.email || '旅人';
+
+      if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl && member?.tier) tierEl.textContent = member.tier;
-      
-      // 確保登入時關閉認證 Modal
       if (modal) modal.style.display = 'none';
     } else {
-      // 3. 未登入：顯示訪客狀態，並自動彈出 Layout 的認證 Modal
+      currentUserName = '訪客';
       if (nameEl) nameEl.textContent = '訪客';
       if (modal) modal.style.display = 'flex';
     }
 
-    // 4. 綁定登出按鈕事件
-    const logoutBtn = document.getElementById('logout-btn');
-    logoutBtn?.addEventListener('click', async () => {
+    // 載入成員資料與啟動在線追蹤
+    await fetchAllUserRecordsFromSupabase();
+    initPresenceTracker();
+
+    // 登出按鈕事件
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
       const { error } = await supabase.auth.signOut();
       if (!error) {
         window.location.href = '/login';
@@ -193,6 +217,64 @@ const { onlineCount = 1 } = Astro.props;
     });
   }
 
-  // 頁面載入後執行身分初始化
+  /* ==========================================
+     2. 成員與在線狀態管理
+     ========================================== */
+  async function fetchAllUserRecordsFromSupabase() {
+    try {
+      const { data, error, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
+      if (error) throw error;
+      allUserRecords = data || [];
+      const totalCount = count !== null ? count : allUserRecords.length;
+
+      // 使用安全可選鏈更新文字，即使頁面沒有某些元素也不會報錯
+      const setTotal = (id) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = totalCount;
+      };
+
+      setTotal('total-users-count-home');
+      setTotal('total-users-count-chat');
+      setTotal('total-users-count-dm');
+    } catch (err) { 
+      console.error("讀取用戶紀錄失敗:", err.message); 
+    }
+  }
+
+  function initPresenceTracker() {
+    const trackName = currentUserName || '訪客';
+
+    if (presenceChannel) supabase.removeChannel(presenceChannel);
+
+    presenceChannel = supabase.channel('community-online-room', {
+      config: { presence: { key: currentUserId || trackName } }
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        onlineUsersMap = {};
+        Object.keys(state).forEach(key => {
+          onlineUsersMap[key] = true;
+        });
+        const onlineCount = Object.keys(state).length || 1;
+        
+        const setOnline = (id) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = onlineCount;
+        };
+
+        setOnline('online-users-count-home');
+        setOnline('online-users-count-chat');
+        setOnline('online-users-count-dm');
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ name: trackName, online_at: new Date().toISOString() });
+        }
+      });
+  }
+
+  // 初始化執行
   initAuthHeader();
 </script>
