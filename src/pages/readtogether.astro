@@ -26,7 +26,7 @@ import Layout from '../layouts/Layout.astro';
     <div style="display: flex; justify-content: center; width: 100%; margin-top: 32px;">
       <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
         <div style="flex: 1; border-top: none; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
-          <a href="/explore" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
+          <a href="/slowplace" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
             <span style="font-size: 16px;">🌿</span>
             <span>探索</span>
           </a>
@@ -39,7 +39,7 @@ import Layout from '../layouts/Layout.astro';
             <span>書櫃</span>
           </a>
           <!-- 目前在此共讀頁面 -->
-          <a href="/co-read" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
+          <a href="/readtogether" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
             <span style="font-size: 16px;">📖</span>
             <span>共讀</span>
           </a>
@@ -77,10 +77,9 @@ import Layout from '../layouts/Layout.astro';
       <div id="view-table-container" class="modal-content paper-sheet" style="display: none;">
         <div class="detail-grid">
           <div class="detail-line"><strong>共讀書名</strong> <span id="view-table-book" class="line-content"></span></div>
-          <div class="detail-row-2">
-            <div class="detail-line"><strong>作者</strong> <span id="view-table-author" class="line-content"></span></div>
-            <div class="detail-line"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>
-          </div>
+          <div class="detail-line"><strong>作者</strong> <span id="view-table-author" class="line-content"></span></div>
+          <!-- 獨立一行的主辦人，方便控制顯示/隱藏 -->
+          <div class="detail-line" id="host-row-container"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>
           <div class="detail-row-2">
             <div class="detail-line"><strong>人數限制</strong> <span id="view-table-max" class="line-content"></span></div>
             <div class="detail-line"><strong>完成期限</strong> <span id="view-table-date" class="line-content"></span></div>
@@ -409,14 +408,17 @@ import Layout from '../layouts/Layout.astro';
 
         (document.getElementById('view-table-book') as HTMLElement).textContent = `《${table.book_title}》`;
         (document.getElementById('view-table-author') as HTMLElement).textContent = table.author || '佚名';
-        // 檢查 host_id 或 host_name 是否存在，若無則顯示「無」或隱藏
+        
+        // 精準控制獨立行容器的顯示與隱藏
+        const hostRowContainer = document.getElementById('host-row-container');
         const hostEl = document.getElementById('view-table-host') as HTMLElement;
-        if (table.host_name) {
+        if (table.host_id && table.host_name) {
           hostEl.textContent = table.host_name;
-          hostEl.parentElement!.style.display = 'flex'; // 確保該行顯示
+          if (hostRowContainer) hostRowContainer.style.display = 'flex';
         } else {
-          hostEl.parentElement!.style.display = 'none'; // 若無主辦人直接隱藏該行
+          if (hostRowContainer) hostRowContainer.style.display = 'none';
         }
+
         (document.getElementById('view-table-max') as HTMLElement).textContent = `${table.max_members || 3} 人`;
         (document.getElementById('view-table-date') as HTMLElement).textContent = table.finish_date || '未設定';
 
