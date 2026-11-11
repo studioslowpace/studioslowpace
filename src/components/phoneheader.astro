@@ -1,0 +1,151 @@
+---
+// 你可以透過 props 接收動態資料，或維持預設值
+const { onlineCount = 1, tier = "🌱 鄰里人", username = "旅人" } = Astro.props;
+---
+
+<header class="rpg-hud" id="rpg-hud">
+  <div class="hud-top-row">
+    
+    <!-- 左側：品牌標誌 -->
+    <div class="hud-brand-group">
+      <span class="hud-brand">☁️ 空間客舍</span>
+    </div>
+
+    <!-- 右側：使用者狀態與功能工具列 -->
+    <div class="hud-right-group">
+      <!-- 在線人數與身分 -->
+      <div class="hud-status-badge">
+        <span class="online-dot">🟢</span>
+        <span class="online-text">線上: <strong id="online-count">{onlineCount}</strong></span>
+      </div>
+
+      <div class="hud-user-profile">
+        <span class="user-tag" id="hud-tier-tag">{tier}</span>
+        <strong id="hud-name">{username}</strong>
+      </div>
+
+      <!-- 主題自選色盤 -->
+      <div class="hud-theme-picker" title="自選主要區域配色">
+        <span class="theme-label">🎨</span>
+        <input type="color" id="custom-color-picker" value="#faf6ee" />
+      </div>
+
+      <!-- 登出按鈕 -->
+      <button id="logout-btn" class="rpg-btn-logout">🚪 登出</button>
+    </div>
+
+  </div>
+</header>
+
+<style>
+  .rpg-hud {
+    width: 100%;
+    background: var(--bg-card, rgba(255, 255, 255, 0.85));
+    border-bottom: 1px solid var(--border-color, #e6dcc8);
+    padding: 10px 16px;
+    box-sizing: border-box;
+    backdrop-filter: blur(8px);
+  }
+
+  .hud-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .hud-brand-group {
+    display: flex;
+    align-items: center;
+  }
+
+  .hud-brand {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color, #2c241d);
+    letter-spacing: 0.5px;
+  }
+
+  .hud-right-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  /* 在線狀態膠囊 */
+  .hud-status-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted, #8c7a6b);
+    background: var(--bg-input, #f4efe6);
+    padding: 3px 8px;
+    border-radius: 8px;
+  }
+
+  .online-dot {
+    font-size: 9px;
+  }
+
+  /* 使用者身分與名稱 */
+  .hud-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .user-tag {
+    font-size: 11px;
+    color: var(--text-muted, #8c7a6b);
+  }
+
+  #hud-name {
+    color: var(--accent-hover, #52796f);
+    font-weight: 600;
+  }
+
+  /* 主題選色盤微調 */
+  .hud-theme-picker {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--bg-input, #f4efe6);
+    border: 1px solid var(--border-color, #e6dcc8);
+    padding: 2px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .theme-label {
+    font-size: 10px;
+  }
+
+  .hud-theme-picker input[type="color"] {
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  /* 簡潔的登出按鈕 */
+  .rpg-btn-logout {
+    background: var(--danger-color, #e07a5f);
+    color: #fff;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .rpg-btn-logout:hover {
+    opacity: 0.9;
+  }
+</style>
