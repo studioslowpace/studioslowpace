@@ -319,39 +319,55 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   let onlineUsersMap = {};
   let presenceChannel = null;
 
-  async function initAuthHeader() {
-    const { data: { session } } = await supabase.auth.getSession();
-
+async function initAuthHeader() {
     const nameEl = document.getElementById('hud-name');
     const tierEl = document.getElementById('hud-tier-tag');
     const modal = document.getElementById('rpg-modal');
 
-    if (session?.user) {
-      currentUserId = session.user.id;
-      
+    // 共用：更新畫面上的會員資料
+    async function updateUserData(user) {
+      currentUserId = user.id;
       const { data: member } = await supabase
         .from(TABLE_NAME)
         .select('name, tier')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .single();
 
-      currentUserName = member?.name || session.user.email || '旅人';
+      currentUserName = member?.name || user.email || '旅人';
 
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl && member?.tier) tierEl.textContent = member.tier;
       
+      // ✨ 關鍵：只要偵測到已登入，立刻強制關閉登入認證 Modal！
       if (modal) modal.style.display = 'none';
+
+      await fetchAllUserRecordsFromSupabase();
+      initPresenceTracker();
+    }
+
+    // 1. 初始化檢查目前 Session
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      await updateUserData(session.user);
     } else {
       currentUserName = '訪客';
       if (nameEl) nameEl.textContent = '訪客';
-      
       if (modal) modal.style.display = 'flex';
     }
 
-    await fetchAllUserRecordsFromSupabase();
-    initPresenceTracker();
+    // 2. 🌟 監聽 Supabase 即時登入/登出狀態變化（這樣在 LoginModal 登入成功時，這裡會立刻感應到並自動關閉 Modal）
+    supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      if (event === 'SIGNED_IN' && currentSession?.user) {
+        await updateUserData(currentSession.user);
+      } else if (event === 'SIGNED_OUT') {
+        if (nameEl) nameEl.textContent = '訪客';
+        if (tierEl) tierEl.textContent = '🌱 鄰里人';
+        if (modal) modal.style.display = 'flex';
+      }
+    });
 
-    // 登出確認視窗邏輯
+    // 3. 登出確認視窗互動邏輯
     const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
     const logoutModal = document.getElementById('logout-confirm-modal');
     const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
