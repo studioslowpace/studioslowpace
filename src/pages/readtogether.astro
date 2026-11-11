@@ -5,7 +5,6 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="共讀大廳 · 空間客舍">
   <div class="reading-page-container">
     <header class="reading-top-bar">
-      <a href="/" class="back-btn">〈 返回空間</a>
       <h2 id="page-title">📖 書香共讀大廳</h2>
       <div style="width: 70px;"></div> <!-- 佔位平衡 -->
     </header>
@@ -22,34 +21,7 @@ import Layout from '../layouts/Layout.astro';
       <div style="text-align:center; color:#8c8275; padding:30px;">載入共讀桌中...</div>
     </div>
 
-    <!-- 融入主體的底部導覽列 -->
-    <div style="display: flex; justify-content: center; width: 100%; margin-top: 32px;">
-      <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-        <div style="flex: 1; border-top: none; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
-          <a href="/slowplace" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">🌿</span>
-            <span>探索</span>
-          </a>
-          <a href="/chatroom" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">💬</span>
-            <span>聊天</span>
-          </a>
-          <a href="/record" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">📚</span>
-            <span>書櫃</span>
-          </a>
-          <!-- 目前在此共讀頁面 -->
-          <a href="/readtogether" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
-            <span style="font-size: 16px;">📖</span>
-            <span>共讀</span>
-          </a>
-          <a href="/skillsupermarket" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">🏠</span>
-            <span>萬事屋</span>
-          </a>
-        </div>
-      </div>
-    </div>
+  
   </div>
 
   <!-- 共讀桌互動視窗 (Modal) -->
@@ -316,7 +288,15 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
-      tablesData = data || [];
+      // 👇 排序邏輯：將有 book_title（有資料）的排在前面，沒有的（空白桌）排在後面
+      tablesData = (data || []).sort((a, b) => {
+        const aHasData = a.book_title && a.book_title.trim() !== '';
+        const bHasData = b.book_title && b.book_title.trim() !== '';
+        if (aHasData && !bHasData) return -1; // a 在前
+        if (!aHasData && bHasData) return 1;  // b 在前
+        return 0;
+      });
+      
       renderCoReadTables(tablesData);
     }
 
