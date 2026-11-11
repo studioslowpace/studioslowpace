@@ -278,9 +278,11 @@ import Layout from '../layouts/Layout.astro';
       if (!listContainer) return;
       listContainer.innerHTML = '<div style="text-align:center; color:#8c8275; padding:30px;">載入共讀桌中...</div>';
 
+      // 👈 加上 .eq('type', 'table') 篩選出共讀桌
       const { data, error } = await supabase
         .from(ITEMS_TABLE)
         .select('*')
+        .eq('type', 'table')
         .order('id', { ascending: true });
 
       if (error) {
@@ -288,18 +290,18 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
-      // 👇 排序邏輯：將有 book_title（有資料）的排在前面，沒有的（空白桌）排在後面
+      // 👈 排序：有資料的放前面，空白桌放後面
       tablesData = (data || []).sort((a, b) => {
         const aHasData = a.book_title && a.book_title.trim() !== '';
         const bHasData = b.book_title && b.book_title.trim() !== '';
-        if (aHasData && !bHasData) return -1; // a 在前
-        if (!aHasData && bHasData) return 1;  // b 在前
+        if (aHasData && !bHasData) return -1;
+        if (!aHasData && bHasData) return 1;
         return 0;
       });
-      
+
       renderCoReadTables(tablesData);
     }
-
+    
     function renderCoReadTables(tables: any[]) {
       if (!listContainer) return;
 
