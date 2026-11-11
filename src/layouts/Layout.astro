@@ -1,5 +1,6 @@
 ---
 const { title = "預設標題" } = Astro.props;
+import Footer from '../components/phonefooter.astro';
 ---
 
 <!doctype html>
@@ -15,6 +16,9 @@ const { title = "預設標題" } = Astro.props;
         <main>
             <slot />
         </main>
+        <Footer>
+          <slot />
+        <Footer />
     </body>
 </html>
 

@@ -1,0 +1,83 @@
+---
+const currentPath = Astro.url.pathname;
+
+const navItems = [
+  { id: 'explore-btn', icon: '🌿', label: '探索', isAction: true }, // 特殊按鈕：不跳轉，改為觸發事件
+  { href: '/chatroom', icon: '💬', label: '聊天' },
+  { href: '/record', icon: '📚', label: '書櫃' },
+  { href: '/readtogether', icon: '📖', label: '共讀' },
+  { href: '/skillsupermarket', icon: '🏠', label: '萬事屋' },
+];
+---
+
+<footer style="position: fixed; bottom: 0; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 1000; padding-bottom: 16px; pointer-events: none;">
+  
+  <!-- 抽屜與額外擴充內容插槽 -->
+  <div style="width: 100%; max-width: 600px; padding: 0 16px; box-sizing: border-box; pointer-events: auto;">
+    <slot name="drawer" />
+  </div>
+
+  <!-- 導覽列主體 -->
+  <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); pointer-events: auto;">
+    <div style="flex: 1; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
+      {
+        navItems.map((item) => {
+          if (item.isAction) {
+            return (
+              <button 
+                id={item.id}
+                type="button" 
+                style="display: flex; flex-direction: column; align-items: center; background: #f4efe6; border: none; cursor: pointer; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; color: #6b8e23; font-weight: 600;"
+              >
+                <span style="font-size: 16px;">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            );
+          }
+
+          const isActive = currentPath === item.href;
+          return (
+            <a 
+              href={item.href} 
+              style={`
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                text-decoration: none; 
+                font-size: 11px; 
+                gap: 2px; 
+                padding: 6px 12px; 
+                border-radius: 12px;
+                color: ${isActive ? '#6b8e23' : '#8c8275'};
+                font-weight: ${isActive ? '600' : 'normal'};
+                background: ${isActive ? '#f4efe6' : 'transparent'};
+              `}
+            >
+              <span style="font-size: 16px;">{item.icon}</span>
+              <span>{item.label}</span>
+            </a>
+          );
+        })
+      }
+    </div>
+  </div>
+</footer>
+
+<script>
+  // 共用的點擊開關互動邏輯（控制抽屜顯隱）
+  const exploreBtn = document.getElementById('explore-btn');
+  const drawer = document.getElementById('guide-drawer');
+  const closeBtn = document.getElementById('drawer-close-btn');
+
+  exploreBtn?.addEventListener('click', () => {
+    if (drawer) {
+      drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+
+  closeBtn?.addEventListener('click', () => {
+    if (drawer) {
+      drawer.style.display = 'none';
+    }
+  });
+</script>
