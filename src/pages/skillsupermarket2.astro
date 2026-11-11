@@ -1,6 +1,7 @@
 ---
 // 匯入 Layout
 import BaseLayout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
 ---
 <BaseLayout title="客舍萬事屋 Slow Pace Skill Supermarker">
     <Fragment slot="head">
@@ -8,7 +9,6 @@ import BaseLayout from '../layouts/Layout.astro';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     </Fragment>
     
 <style is:global>
@@ -1217,9 +1217,6 @@ import BaseLayout from '../layouts/Layout.astro';
     import { supabase } from '../lib/supabase';
     const TABLE_NAME = 'skills';
     const POSTS_TABLE = 'posts';
-    
-    const supabaseInstance = window.supabase || supabase;
-    const client = supabaseInstance.createClient(supabaseUrl, supabaseKey);
     
     let posts = [];
     let skills = [];
