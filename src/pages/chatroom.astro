@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import LoginModal from '../components/LoginModal.astro';
+
 ---
 
 <Layout title="客舍萬事屋 | 鄰里人交流區">
@@ -285,18 +285,6 @@ import LoginModal from '../components/LoginModal.astro';
         .embed-window { max-width: 390px; height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
         .embed-frame-wrapper { flex: 1; width: 100%; background: #ffffff; }
     </style>
-
-    <!-- 1. 會員身分驗證 Modal (未登入時顯示) -->
-    <div id="rpg-modal" class="rpg-modal-overlay" style="display: none;">
-        <div class="rpg-window embed-window" style="max-width: 420px; height: 520px;">
-            <div style="background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #334155; display:flex; justify-content:space-between; align-items:center;">
-                <span>◆ 空間客舍 · 身分認證 ◆</span>
-            </div>
-            <div class="embed-frame-wrapper" style="flex:1;">
-                <LoginModal />
-            </div>
-        </div>
-    </div>
 
     <!-- 🏮 頂部管理員/主理人選單 -->
     <div id="admin-navbar" class="hidden admin-nav">
