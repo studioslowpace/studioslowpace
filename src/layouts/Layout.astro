@@ -2,6 +2,32 @@
 const { title = "預設標題" } = Astro.props;
 import Footer from '../components/phonefooter.astro';
 import Header from '../components/phoneheader.astro';
+import { supabase } from '../lib/supabase';
+
+const { title } = Astro.props;
+const TABLE_NAME = 'slowpace_members';
+
+// 1. 在 Layout 頂端統一向 Supabase 查詢會員資料
+// (如果是用 Supabase Auth 登入，通常會先取得 user，再對應到 slowpace_members 表)
+let username = '旅人';
+let tier = '🌱 鄰里人';
+
+try {
+  // 這裡假設你有辦法抓到目前的會員資料 (例如用 Cookie 或 Session)
+  // 範例先以簡單撈取第一筆或示範為主，可依你的驗證邏輯調整
+  const { data: memberData } = await supabase
+    .from(TABLE_NAME)
+    .select('*')
+    .limit(1)
+    .single();
+
+  if (memberData) {
+    username = memberData.name || '旅人';
+    tier = memberData.tier || '🌱 鄰里人';
+  }
+} catch (e) {
+  // 未登入或尚未建立資料時的預設防護
+}
 ---
 
 <!doctype html>

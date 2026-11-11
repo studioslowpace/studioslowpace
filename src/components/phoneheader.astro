@@ -149,3 +149,17 @@ const { onlineCount = 1, tier = "🌱 鄰里人", username = "旅人" } = Astro.
     opacity: 0.9;
   }
 </style>
+
+<!-- 如果有登出的前端互動 JS，可以留在這裡或統一管理 -->
+<script>
+  import { supabase } from '../lib/supabase';
+
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      window.location.href = '/login';
+    } else {
+      console.error('登出失敗:', error.message);
+    }
+  });
+</script>
