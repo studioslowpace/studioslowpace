@@ -5,9 +5,8 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="共讀大廳 · 空間客舍">
   <div class="reading-page-container">
     <header class="reading-top-bar">
-      <a href="/" class="back-btn">〈 返回空間</a>
       <h2 id="page-title">📖 書香共讀大廳</h2>
-      <div style="width: 70px;"></div>
+      <div style="width: 70px;"></div> <!-- 佔位平衡 -->
     </header>
 
     <!-- 頂部提示卡片 -->
@@ -22,34 +21,7 @@ import Layout from '../layouts/Layout.astro';
       <div style="text-align:center; color:#8c8275; padding:30px;">載入共讀桌中...</div>
     </div>
 
-    <!-- 融入主體的底部導覽列 -->
-    <div style="display: flex; justify-content: center; width: 100%; margin-top: 32px;">
-      <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 16px; width: 100%; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-        <div style="flex: 1; border-top: none; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
-          <a href="/explore" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">🌿</span>
-            <span>探索</span>
-          </a>
-          <a href="/chatroom" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">💬</span>
-            <span>聊天</span>
-          </a>
-          <a href="/record" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">📚</span>
-            <span>書櫃</span>
-          </a>
-          <!-- 目前在此共讀頁面 -->
-          <a href="/co-read" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #6b8e23; font-weight: 600; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px; background: #f4efe6;">
-            <span style="font-size: 16px;">📖</span>
-            <span>共讀</span>
-          </a>
-          <a href="/skillsupermarket" style="display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8c8275; font-size: 11px; gap: 2px; padding: 6px 12px; border-radius: 12px;">
-            <span style="font-size: 16px;">🏠</span>
-            <span>萬事屋</span>
-          </a>
-        </div>
-      </div>
-    </div>
+  
   </div>
 
   <!-- 共讀桌互動視窗 (Modal) -->
@@ -78,7 +50,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="detail-grid">
           <div class="detail-line"><strong>共讀書名</strong> <span id="view-table-book" class="line-content"></span></div>
           <div class="detail-line"><strong>作者</strong> <span id="view-table-author" class="line-content"></span></div>
-          <!-- 獨立一行的主辦人，若無資料會自動隱藏 -->
+          <!-- 獨立一行的主辦人，方便控制顯示/隱藏 -->
           <div class="detail-line" id="host-row-container"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>
           <div class="detail-row-2">
             <div class="detail-line"><strong>人數限制</strong> <span id="view-table-max" class="line-content"></span></div>
@@ -243,8 +215,8 @@ import Layout from '../layouts/Layout.astro';
   <script>
     import { supabase } from '../lib/supabase';
 
-    const ITEMS_TABLE = 'reading_tables'; // 請依你的共讀桌資料表名稱調整
-    const MEMBERS_TABLE = 'slowspace_members';
+    const ITEMS_TABLE = 'slowplace_items'; // 請依你的共讀桌資料表名稱調整
+    const MEMBERS_TABLE = 'slowpace_members';
     
     let userId: string | null = null;
     let playerName = '熱心讀者';
@@ -281,6 +253,7 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
+      // 抓取會員真實姓名
       const loginUserId = session?.user?.id || guestId;
       if (loginUserId && !isGuest) {
         const { data: memberData } = await supabase
@@ -305,11 +278,9 @@ import Layout from '../layouts/Layout.astro';
       if (!listContainer) return;
       listContainer.innerHTML = '<div style="text-align:center; color:#8c8275; padding:30px;">載入共讀桌中...</div>';
 
-      // 👈 加上 .eq('type', 'table') 篩選出共讀桌
       const { data, error } = await supabase
         .from(ITEMS_TABLE)
         .select('*')
-        .eq('type', 'table')
         .order('id', { ascending: true });
 
       if (error) {
@@ -317,15 +288,15 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
-      // 👈 排序：有資料的放前面，空白桌放後面
+      // 👇 排序邏輯：將有 book_title（有資料）的排在前面，沒有的（空白桌）排在後面
       tablesData = (data || []).sort((a, b) => {
         const aHasData = a.book_title && a.book_title.trim() !== '';
         const bHasData = b.book_title && b.book_title.trim() !== '';
-        if (aHasData && !bHasData) return -1;
-        if (!aHasData && bHasData) return 1;
+        if (aHasData && !bHasData) return -1; // a 在前
+        if (!aHasData && bHasData) return 1;  // b 在前
         return 0;
       });
-
+      
       renderCoReadTables(tablesData);
     }
 
@@ -353,10 +324,10 @@ import Layout from '../layouts/Layout.astro';
           html += `
             <div class="log-item-card open-modal-card" data-id="${table.id}" style="border: 2px dashed #dcd6cd; background: #fcfaf7; cursor: pointer;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: bold; color: #8c8275; font-size: 15px;">📖 空白共讀桌 #${table.id}</span>
+                <span style="font-weight: bold; color: #8c8275; font-size: 15px;">📖 空白共讀桌</span>
                 <span class="action-btn primary" style="padding: 6px 14px; font-size: 12px;">➕ 發起共讀</span>
               </div>
-              <div style="font-size: 12px; color: #8c8275; margin-top: 6px;">點擊發起一場新的共讀活動，邀請書友一同閱讀。</div>
+             
             </div>
           `;
         } else {
@@ -384,6 +355,7 @@ import Layout from '../layouts/Layout.astro';
 
       listContainer.innerHTML = html;
 
+      // 綁定點擊事件開啟 Modal
       document.querySelectorAll('.open-modal-card').forEach(card => {
         card.addEventListener('click', (e) => {
           const tableId = (e.currentTarget as HTMLElement).dataset.id;
@@ -400,6 +372,7 @@ import Layout from '../layouts/Layout.astro';
       if (!tableModal) return;
 
       if (!table.book_title) {
+        // 顯示發起表單
         if (modalTitleText) modalTitleText.textContent = `📖 發起共讀桌 #${table.id}`;
         if (createTableContainer) createTableContainer.style.display = 'block';
         if (viewTableContainer) viewTableContainer.style.display = 'none';
@@ -408,14 +381,15 @@ import Layout from '../layouts/Layout.astro';
         if (tableMax) tableMax.value = '3';
         if (tableDate) tableDate.value = '';
       } else {
+        // 顯示桌子詳情與動作按鈕
         if (modalTitleText) modalTitleText.textContent = `📖 共讀桌詳情`;
         if (createTableContainer) createTableContainer.style.display = 'none';
         if (viewTableContainer) viewTableContainer.style.display = 'block';
 
         (document.getElementById('view-table-book') as HTMLElement).textContent = `《${table.book_title}》`;
         (document.getElementById('view-table-author') as HTMLElement).textContent = table.author || '佚名';
-
-        // 👈 精準控制主辦人欄位顯示與隱藏
+        
+        // 精準控制獨立行容器的顯示與隱藏
         const hostRowContainer = document.getElementById('host-row-container');
         const hostEl = document.getElementById('view-table-host') as HTMLElement;
         if (table.host_id && table.host_name) {
@@ -432,6 +406,7 @@ import Layout from '../layouts/Layout.astro';
         const memberListStr = members.map((m: any, idx: number) => `${idx + 1}. ${m.name}`).join('\n') || '尚無成員';
         (document.getElementById('view-table-members') as HTMLElement).textContent = memberListStr;
 
+        // 動態組合按鈕
         const isHosting = table.host_id === userId;
         const hasJoined = members.some((m: any) => m.user_id === userId);
         const isFull = members.length >= (table.max_members || 3);
@@ -448,6 +423,7 @@ import Layout from '../layouts/Layout.astro';
         }
         if (tableActionButtons) tableActionButtons.innerHTML = btnHtml;
 
+        // 綁定詳情內的按鈕事件
         document.getElementById('modal-close-action')?.addEventListener('click', () => { tableModal.style.display = 'none'; });
         document.getElementById('modal-end-btn')?.addEventListener('click', endTableAction);
         document.getElementById('modal-join-btn')?.addEventListener('click', joinTableAction);
@@ -456,6 +432,7 @@ import Layout from '../layouts/Layout.astro';
       tableModal.style.display = 'flex';
     }
 
+    // 發起共讀
     tableCreateBtn?.addEventListener('click', async () => {
       if (isGuest) { alert('訪客無法發起共讀活動，請登入完整會員！'); return; }
       if (!activeTableData || !userId) return;
@@ -486,6 +463,7 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
+    // 加入共讀
     async function joinTableAction() {
       if (isGuest) { alert('訪客無法加入共讀，請登入完整會員！'); return; }
       if (!activeTableData || !userId) return;
@@ -511,6 +489,7 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
+    // 結束共讀
     async function endTableAction() {
       if (!activeTableData) return;
       if (confirm('確定要結束這場共讀活動嗎？')) {
