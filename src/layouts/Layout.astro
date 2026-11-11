@@ -10,18 +10,18 @@ import Footer from '../components/phonefooter.astro';
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
   </head>
-  <body>
-    <!-- 全站外層視窗 -->
+<body>
+    <!-- 確保外層 viewport 絕對置中，且禁止全頁滾動 -->
     <div class="app-viewport">
       <div class="rpg-container">
         
-        <!-- 頁面內容 -->
-        <main style="flex: 1; overflow-y: auto; padding: 16px;">
+        <!-- 內容區：如果內部有超出的內容，讓它在內部滾動而不撐開外框 -->
+        <main class="app-main">
           <slot />
         </main>
 
         <!-- 底部共用導覽列 -->
-        <div style="padding: 0 16px 16px 16px;">
+        <div class="app-footer-wrapper">
           <Footer />
         </div>
 
@@ -30,7 +30,6 @@ import Footer from '../components/phonefooter.astro';
   </body>
 </html>
 
-<!-- 使用 is:global 讓這些樣式直接變成全域生效 -->
 <style is:global>
   :root {
     --bg-main: #faf6ee;
@@ -50,6 +49,7 @@ import Footer from '../components/phonefooter.astro';
     box-sizing: border-box; 
   }
 
+  /* 鎖死全頁，絕對不允許出現視窗捲軸 */
   html, body {
     background-color: var(--bg-main);
     color: var(--text-color);
@@ -60,9 +60,9 @@ import Footer from '../components/phonefooter.astro';
     height: 100vh; 
     height: 100dvh; 
     overflow: hidden; 
-    touch-action: manipulation;
   }
 
+  /* 外層視窗：強迫置中所有內容 */
   .app-viewport { 
     width: 100vw; 
     height: 100vh; 
@@ -71,24 +71,56 @@ import Footer from '../components/phonefooter.astro';
     justify-content: center; 
     align-items: center; 
     background: var(--bg-main); 
-    transition: background 0.5s ease; 
+    overflow: hidden;
   }
   
+  /* 核心容器：限制最大寬度為 430px，並強制隱藏所有超出範圍的捲軸 */
   .rpg-container {
-    width: 100vw; 
+    width: 100%;
     max-width: 430px; 
-    height: 96vh; 
-    height: 96dvh; 
-    max-height: 860px;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 880px;
     display: flex; 
     flex-direction: column; 
     justify-content: space-between; 
-    overflow: hidden;
     background-color: var(--bg-main); 
     border: 1px solid var(--border-color); 
-    border-radius: 28px;
+    border-radius: 0;
     box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); 
-    transition: background-color 0.5s ease, filter 0.4s ease;
+    overflow: hidden; /* 關鍵：切掉任何跑出卡片外面的東西，防止出現捲軸 */
+  }
+
+  /* 在桌機版時顯示漂亮的圓角卡片外框 */
+  @media (min-width: 480px) {
+    .rpg-container {
+      border-radius: 28px;
+      height: 96vh;
+      height: 96dvh;
+    }
+  }
+
+  /* 主內容區：允許內部滾動，但隱藏醜陋的捲軸 */
+  .app-main {
+    flex: 1; 
+    overflow-y: auto; 
+    overflow-x: hidden;
+    padding: 16px;
+    width: 100%;
+  }
+
+  /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
+  .app-main::-webkit-scrollbar {
+    display: none;
+  }
+  /* 隱藏 Firefox 捲軸 */
+  .app-main {
+    scrollbar-width: none; 
+  }
+
+  .app-footer-wrapper {
+    padding: 0 16px 16px 16px;
+    width: 100%;
   }
 </style>
 
