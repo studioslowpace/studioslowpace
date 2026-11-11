@@ -292,7 +292,9 @@ import LoginModal from '../components/LoginModal.astro';
         <canvas id="rpg-canvas" width="384" height="384"></canvas>
       </div>
 
-     
+      <!-- 底部 Footer 導航列與向上展開的手帳手札抽屜 -->
+      <footer class="rpg-footer-nav" id="rpg-footer">
+        <!-- 向上展開的手札指南面板 -->
         <div id="guide-drawer" class="guide-drawer-content" style="display: none;">
           <div class="drawer-header">
             <span>📖 客舍手札 · 物件與空間指南</span>
@@ -310,6 +312,46 @@ import LoginModal from '../components/LoginModal.astro';
           <div id="guide-content-box" class="guide-list-box"></div>
         </div>
 
+        <!-- 底部導覽列 -->
+        <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
+          <div style="display:flex; align-items:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
+            <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex; justify-content:space-around; padding:6px 8px; box-sizing:border-box; background:transparent;">
+              
+              <!-- 手札 -->
+              <button id="btn-tab-guide" class="footer-tab-link" style="background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; transition:all 0.2s;">
+                <span style="font-size:16px;">📖</span>
+                <span>手札</span>
+              </button>
+
+              <!-- 聊天 -->
+              <a href="/chatroom" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+                <span style="font-size:16px;">💬</span>
+                <span>聊天</span>
+              </a>
+
+              <!-- 書櫃 (高亮) -->
+              <a href="/record" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--accent-hover); font-weight:600; font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; background:var(--bg-input);">
+                <span style="font-size:16px;">📚</span>
+                <span>書櫃</span>
+              </a>
+
+              <!-- 共讀 -->
+              <a href="/co-read" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+                <span style="font-size:16px;">📖</span>
+                <span>共讀</span>
+              </a>
+
+              <!-- 萬事屋 -->
+              <a href="/skillsupermarket" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+                <span style="font-size:16px;">🏠</span>
+                <span>萬事屋</span>
+              </a>
+
+            </div>
+          </div>
+          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff; font-weight:bold; margin-left:8px; padding:6px 12px; border-radius:12px; align-self:center;">🚶 起立</button>
+        </div>
+      </footer>
     </main>
   </div>
 
