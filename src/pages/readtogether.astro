@@ -1,412 +1,521 @@
 ---
-const { onlineCount = 1, totalCount = 0 } = Astro.props;
+// src/pages/co-read.astro
+import Layout from '../layouts/Layout.astro';
 ---
+<Layout title="共讀大廳 · 空間客舍">
+  <div class="reading-page-container">
+    <header class="reading-top-bar">
+      <h2 id="page-title">📖 書香共讀大廳</h2>
+      <div style="width: 70px;"></div> <!-- 佔位平衡 -->
+    </header>
 
-<header class="rpg-hud" id="rpg-hud">
-  <!-- 第一列：品牌與使用者控制區 -->
-  <div class="hud-top-row">
-    <!-- 左側：品牌標誌 -->
-    <div class="hud-brand-group">
-      <span class="hud-brand">☁️ 空間客舍</span>
-    </div>
-
-    <!-- 右側：使用者身分與登出按鈕 -->
-    <div class="hud-right-group">
-      <div class="hud-user-profile">
-        <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
-        <strong id="hud-name">加載中...</strong>
-      </div>
-
-      <!-- 登出按鈕 (改為觸發文青確認視窗) -->
-      <button id="logout-trigger-btn" class="rpg-btn-logout">🚪 登出</button>
-    </div>
-  </div>
-
-  <!-- 第二列：無框線、無背景。左：在線 | 中：調色盤 | 右：總數 -->
-  <div class="phone-sub-bar-clean">
-    <!-- 左側：在線人數 -->
-    <div class="sub-bar-left">
-      <span>🟢 在線：<strong id="online-count-trigger-home"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
-    </div>
-
-    <!-- 中間：主題自選色盤 -->
-    <div class="sub-bar-center">
-      <div class="hud-theme-picker" title="自選主要區域配色">
-        <span class="theme-label">🎨 主題</span>
-        <input type="color" id="custom-color-picker" value="#faf6ee" />
+    <!-- 頂部提示卡片 -->
+    <div class="explore-filter-section" style="margin-bottom: 16px;">
+      <div style="font-size: 13px; color: #8c8275; line-height: 1.5;">
+        🌿 這裡是一期一會的共讀桌。選擇一張空白桌發起共讀，或加入其他書友的共讀桌，一起在慢空間中享受閱讀時光。
       </div>
     </div>
 
-    <!-- 右側：總數 -->
-    <div class="sub-bar-right">
-      <span>📜 總數：<strong id="total-count-trigger-home"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
+    <!-- 共讀桌列表容器 -->
+    <div class="logs-container" id="co-read-list">
+      <div style="text-align:center; color:#8c8275; padding:30px;">載入共讀桌中...</div>
     </div>
-  </div>
-</header>
 
-<!-- 🚪 文青風格登出確認彈窗 (內嵌於 Header 或可共用) -->
-<div id="logout-confirm-modal" class="rpg-modal-overlay" style="display: none;">
-  <div class="rpg-logout-window">
-    <div class="logout-window-header">
-      <span>◆ 空間客舍 · 離席確認 ◆</span>
-    </div>
-    <div class="logout-window-body">
-      <p class="logout-quote">「聚散終有時，此處暫歇，他日再會。」</p>
-      <p class="logout-desc">您目前正在空間客舍中，請問是否要登出或切換帳號？</p>
-      
-      <div class="logout-actions">
-        <button id="cancel-logout-btn" class="btn-secondary">留在此處</button>
-        <button id="confirm-logout-btn" class="btn-primary">確認登出 / 切換</button>
+  
+  </div>
+
+  <!-- 共讀桌互動視窗 (Modal) -->
+  <div id="table-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+      <div class="modal-title-bar">
+        <span id="modal-title-text">📖 共讀桌詳情</span>
+        <button id="table-modal-close-btn" class="modal-close-btn">✕</button>
       </div>
+
+      <!-- 1. 發起共讀表單 (當點擊空白桌時顯示) -->
+      <div id="create-table-container" class="modal-content paper-sheet" style="display: none;">
+        <div class="form-grid">
+          <div class="form-row"><label>共讀書名</label><input type="text" id="table-book-input" placeholder="例：《百年孤寂》" /></div>
+          <div class="form-row-2">
+            <div><label>作者</label><input type="text" id="table-author-input" placeholder="賈西亞·馬奎斯" /></div>
+            <div><label>人數上限</label><input type="number" id="table-max-input" value="3" min="2" max="10" /></div>
+          </div>
+          <div class="form-row"><label>預定完成日期</label><input type="date" id="table-date-input" /></div>
+        </div>
+        <button id="table-create-btn" class="action-btn primary" style="margin-top: 16px; width: 100%;">確認發起共讀</button>
+      </div>
+
+      <!-- 2. 已有共讀桌詳情與加入 (當點擊進行中的桌子時顯示) -->
+      <div id="view-table-container" class="modal-content paper-sheet" style="display: none;">
+        <div class="detail-grid">
+          <div class="detail-line"><strong>共讀書名</strong> <span id="view-table-book" class="line-content"></span></div>
+          <div class="detail-line"><strong>作者</strong> <span id="view-table-author" class="line-content"></span></div>
+          <!-- 獨立一行的主辦人，方便控制顯示/隱藏 -->
+          <div class="detail-line" id="host-row-container"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>人數限制</strong> <span id="view-table-max" class="line-content"></span></div>
+            <div class="detail-line"><strong>完成期限</strong> <span id="view-table-date" class="line-content"></span></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="section-title">目前參與成員：</div>
+          <div id="view-table-members" class="section-content-box" style="font-weight: 500;"></div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; gap: 8px;" id="table-action-buttons">
+          <!-- 動態渲染加入或結束按鈕 -->
+        </div>
+      </div>
+
     </div>
   </div>
-</div>
 
-<style>
-  .rpg-hud {
-    width: 100%;
-    background: var(--bg-card, rgba(255, 255, 255, 0.85));
-    border-bottom: 1px solid var(--border-color, #e6dcc8);
-    padding: 10px 16px 8px 16px;
-    box-sizing: border-box;
-    backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .hud-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
-  }
-
-  .hud-brand {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-color, #2c241d);
-    letter-spacing: 0.5px;
-  }
-
-  .hud-right-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .hud-user-profile {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-  }
-
-  .user-tag {
-    font-size: 11px;
-    color: var(--text-muted, #8c7a6b);
-  }
-
-  #hud-name {
-    color: var(--accent-hover, #52796f);
-    font-weight: 600;
-  }
-
-  /* 登出按鈕 */
-  .rpg-btn-logout {
-    background: var(--danger-color, #e07a5f);
-    color: #fff;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .rpg-btn-logout:hover {
-    opacity: 0.9;
-  }
-
-  /* 第二列：無框線、無背景，三欄式排版 */
-  .phone-sub-bar-clean {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--text-muted, #8c7a6b);
-    width: 100%;
-    padding: 2px 4px;
-  }
-
-  .phone-sub-bar-clean strong {
-    color: var(--text-color, #2c241d);
-  }
-
-  .sub-bar-left {
-    text-align: left;
-    flex: 1;
-  }
-
-  .sub-bar-center {
-    text-align: center;
-    flex: 1;
-    display: flex;
-    justify-content: center;
-  }
-
-  .sub-bar-right {
-    text-align: right;
-    flex: 1;
-  }
-
-  /* 主題選色盤（無背景簡約風） */
-  .hud-theme-picker {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    background: var(--bg-input, #f4efe6);
-    padding: 2px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color, #e6dcc8);
-  }
-
-  .theme-label {
-    font-size: 10px;
-    font-weight: 600;
-  }
-
-  .hud-theme-picker input[type="color"] {
-    width: 16px;
-    height: 16px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  /* 🚪 文青登出確認視窗樣式 */
-  .rpg-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(44, 36, 29, 0.4);
-    backdrop-filter: blur(4px);
-    z-index: 99999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 16px;
-  }
-
-  .rpg-logout-window {
-    width: 100%;
-    max-width: 320px;
-    background: var(--bg-main, #faf6ee);
-    border: 1px solid var(--border-color, #e6dcc8);
-    border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15);
-    overflow: hidden;
-    animation: modalPop 0.25s ease-out;
-  }
-
-  @keyframes modalPop {
-    from { transform: scale(0.95); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-
-  .logout-window-header {
-    background: var(--bg-input, #f4efe6);
-    color: var(--text-color, #2c241d);
-    padding: 10px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    border-bottom: 1px solid var(--border-color, #e6dcc8);
-    text-align: center;
-    letter-spacing: 1px;
-  }
-
-  .logout-window-body {
-    padding: 20px 16px;
-    text-align: center;
-  }
-
-  .logout-quote {
-    font-size: 12px;
-    color: var(--accent-hover, #52796f);
-    font-style: italic;
-    margin-bottom: 10px;
-    line-height: 1.5;
-  }
-
-  .logout-desc {
-    font-size: 12px;
-    color: var(--text-muted, #8c7a6b);
-    margin-bottom: 20px;
-    line-height: 1.4;
-  }
-
-  .logout-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-  }
-
-  .btn-secondary {
-    flex: 1;
-    background: var(--bg-input, #f4efe6);
-    color: var(--text-color, #2c241d);
-    border: 1px solid var(--border-color, #e6dcc8);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .btn-secondary:hover {
-    background: var(--border-color, #e6dcc8);
-  }
-
-  .btn-primary {
-    flex: 1;
-    background: var(--danger-color, #e07a5f);
-    color: #fff;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .btn-primary:hover {
-    opacity: 0.9;
-  }
-</style>
-
-<script>
-  import { supabase } from '../lib/supabase';
-
-  const TABLE_NAME = 'slowpace_members';
-
-  let currentUserId = '';
-  let currentUserName = '';
-  let allUserRecords = [];
-  let onlineUsersMap = {};
-  let presenceChannel = null;
-
-  async function initAuthHeader() {
-    const { data: { session } } = await supabase.auth.getSession();
-
-    const nameEl = document.getElementById('hud-name');
-    const tierEl = document.getElementById('hud-tier-tag');
-    const modal = document.getElementById('rpg-modal');
-
-    if (session?.user) {
-      currentUserId = session.user.id;
-      
-      const { data: member } = await supabase
-        .from(TABLE_NAME)
-        .select('name, tier')
-        .eq('user_id', session.user.id)
-        .single();
-
-      currentUserName = member?.name || session.user.email || '旅人';
-
-      if (nameEl) nameEl.textContent = currentUserName;
-      if (tierEl && member?.tier) tierEl.textContent = member.tier;
-      if (modal) modal.style.display = 'none';
-    } else {
-      currentUserName = '訪客';
-      if (nameEl) nameEl.textContent = '訪客';
-      if (modal) modal.style.display = 'flex';
+  <style is:global>
+    :root {
+      --bg-main: #fcfaf7;
+      --bg-card: #ffffff;
+      --border-color: #f0ebe1;
+      --text-main: #2c2420;
+      --text-sub: #8c8275;
+      --accent-color: #6b8e23;
+      --accent-hover: #556b2f;
+      --tag-bg: #f4efe6;
+    }
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .reading-page-container {
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 16px;
+      padding-bottom: 40px;
+      box-sizing: border-box;
+    }
+    .reading-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    #page-title {
+      font-size: 16px;
+      margin: 0;
     }
 
-    await fetchAllUserRecordsFromSupabase();
-    initPresenceTracker();
+    .explore-filter-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 14px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .logs-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .log-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .log-item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .book-title {
+      font-weight: bold;
+      color: var(--text-main);
+      font-size: 15px;
+    }
+    .book-meta {
+      font-size: 12px;
+      color: var(--text-sub);
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
 
-    // 🚪 彈出文青登出確認視窗邏輯
-    const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
-    const logoutModal = document.getElementById('logout-confirm-modal');
-    const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
-    const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
+    .form-grid { display: flex; flex-direction: column; gap: 12px; }
+    .form-row { display: flex; flex-direction: column; gap: 4px; }
+    .form-row-2 { display: flex; gap: 10px; }
+    .form-row-2 > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 11px; color: var(--text-sub); font-weight: 500; }
+    input, select {
+      background: #fff;
+      border: 1px solid #dcd6cd;
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      box-sizing: border-box;
+      width: 100%;
+    }
 
-    // 點擊「登出」按鈕 -> 顯示文青確認視窗
-    logoutTriggerBtn?.addEventListener('click', () => {
-      if (logoutModal) logoutModal.style.display = 'flex';
-    });
+    .action-btn {
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+    }
+    .action-btn.primary { background: var(--accent-color); color: #fff; }
+    .action-btn.primary:hover { background: var(--accent-hover); }
+    .action-btn.success { background: #3b82f6; color: #fff; }
+    .action-btn.success:hover { background: #2563eb; }
+    .action-btn.secondary { background: #e5e0d8; color: #2c2420; }
+    .action-btn.secondary:hover { background: #dcd6cd; }
 
-    // 點擊「留在此處」 -> 關閉視窗
-    cancelLogoutBtn?.addEventListener('click', () => {
-      if (logoutModal) logoutModal.style.display = 'none';
-    });
+    .paper-sheet { background: #fff; color: var(--text-main); }
+    .detail-grid { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+    .detail-row-2 { display: flex; gap: 16px; }
+    .detail-line { flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px; }
+    .detail-line strong { width: 65px; color: var(--text-sub); flex-shrink: 0; }
+    .line-content { color: var(--text-main); font-weight: 500; }
+    
+    .detail-section { margin-top: 14px; }
+    .section-title { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; font-size: 12px; }
+    .section-content-box { background: var(--tag-bg); border-left: 2px solid var(--accent-color); padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #4a4036; }
 
-    // 點擊「確認登出 / 切換」 -> 執行 Supabase 登出並跳轉
-    confirmLogoutBtn?.addEventListener('click', async () => {
-      const { error } = await supabase.auth.signOut();
-      if (!error) {
-        window.location.href = '/login';
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(44, 36, 32, 0.4); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal-window {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; width: 90%; max-width: 480px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden;
+    }
+    .modal-title-bar { background: var(--tag-bg); color: var(--text-main); padding: 12px 16px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+    .modal-close-btn { background: transparent; color: var(--text-sub); border: none; font-size: 16px; cursor: pointer; }
+    .modal-content { padding: 20px; overflow-y: auto; max-height: 80vh; }
+  </style>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    const ITEMS_TABLE = 'slowplace_items'; // 請依你的共讀桌資料表名稱調整
+    const MEMBERS_TABLE = 'slowpace_members';
+    
+    let userId: string | null = null;
+    let playerName = '熱心讀者';
+    let isGuest = false;
+    let tablesData: any[] = [];
+    let activeTableData: any = null;
+
+    const listContainer = document.getElementById('co-read-list');
+    const tableModal = document.getElementById('table-modal');
+    const modalTitleText = document.getElementById('modal-title-text');
+    const tableModalCloseBtn = document.getElementById('table-modal-close-btn');
+    const createTableContainer = document.getElementById('create-table-container');
+    const viewTableContainer = document.getElementById('view-table-container');
+
+    const tableBook = document.getElementById('table-book-input') as HTMLInputElement;
+    const tableAuthor = document.getElementById('table-author-input') as HTMLInputElement;
+    const tableMax = document.getElementById('table-max-input') as HTMLInputElement;
+    const tableDate = document.getElementById('table-date-input') as HTMLInputElement;
+    const tableCreateBtn = document.getElementById('table-create-btn');
+    const tableActionButtons = document.getElementById('table-action-buttons');
+
+    async function initCoRead() {
+      const { data: { session } } = await supabase.auth.getSession();
+      const guestId = sessionStorage.getItem('space_guest_id');
+
+      if (session && session.user) {
+        userId = session.user.id;
+        isGuest = false;
+      } else if (guestId) {
+        userId = guestId;
+        isGuest = true;
       } else {
-        console.error('登出失敗:', error.message);
+        window.location.href = '/login';
+        return;
       }
-    });
-  }
 
-  async function fetchAllUserRecordsFromSupabase() {
-    try {
-      const { data, error, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
-      if (error) throw error;
-      allUserRecords = data || [];
-      const totalCount = count !== null ? count : allUserRecords.length;
+      // 抓取會員真實姓名
+      const loginUserId = session?.user?.id || guestId;
+      if (loginUserId && !isGuest) {
+        const { data: memberData } = await supabase
+          .from(MEMBERS_TABLE)
+          .select('name')
+          .eq('id', loginUserId)
+          .single();
 
-      const setTotal = (id) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = totalCount;
-      };
+        if (memberData && memberData.name) {
+          playerName = memberData.name;
+        } else if (session?.user) {
+          playerName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || '會員';
+        }
+      } else {
+        playerName = '訪客';
+      }
 
-      setTotal('total-users-count-home');
-      setTotal('total-users-count-chat');
-      setTotal('total-users-count-dm');
-    } catch (err) { 
-      console.error("讀取用戶紀錄失敗:", err.message); 
+      await fetchRoomItems();
     }
-  }
 
-  function initPresenceTracker() {
-    const trackName = currentUserName || '訪客';
+async function fetchRoomItems() {
+      if (!listContainer) return;
+      listContainer.innerHTML = '<div style="text-align:center; color:#8c8275; padding:30px;">載入共讀桌中...</div>';
 
-    if (presenceChannel) supabase.removeChannel(presenceChannel);
+      // 👈 加上 .eq('type', 'table') 篩選出共讀桌
+      const { data, error } = await supabase
+        .from(ITEMS_TABLE)
+        .select('*')
+        .eq('type', 'table')
+        .order('id', { ascending: true });
 
-    presenceChannel = supabase.channel('community-online-room', {
-      config: { presence: { key: currentUserId || trackName } }
-    });
+      if (error) {
+        listContainer.innerHTML = '<div style="text-align:center; color:#ef4444; padding:30px;">載入共讀桌失敗</div>';
+        return;
+      }
 
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        onlineUsersMap = {};
-        Object.keys(state).forEach(key => {
-          onlineUsersMap[key] = true;
-        });
-        const onlineCount = Object.keys(state).length || 1;
-        
-        const setOnline = (id) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = onlineCount;
-        };
+      // 👈 排序：有資料的放前面，空白桌放後面
+      tablesData = (data || []).sort((a, b) => {
+        const aHasData = a.book_title && a.book_title.trim() !== '';
+        const bHasData = b.book_title && b.book_title.trim() !== '';
+        if (aHasData && !bHasData) return -1;
+        if (!aHasData && bHasData) return 1;
+        return 0;
+      });
 
-        setOnline('online-users-count-home');
-        setOnline('online-users-count-chat');
-        setOnline('online-users-count-dm');
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({ name: trackName, online_at: new Date().toISOString() });
+      renderCoReadTables(tablesData);
+    }
+
+    function renderCoReadTables(tables: any[]) {
+      if (!listContainer) return;
+
+      if (!tables || tables.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center; color:#8c8275; padding:30px;">目前尚無共讀桌</div>';
+        return;
+      }
+
+      let html = '';
+      tables.forEach((table) => {
+        const title = table.book_title;
+        const author = table.author || '佚名';
+        const maxM = table.max_members || 3;
+        const members = table.members || [];
+        const isHosting = table.host_id === userId;
+        const hasJoined = members.some((m: any) => m.user_id === userId);
+        const isFull = members.length >= maxM;
+        const memberNames = members.map((m: any) => m.name).join('、') || '暫無成員';
+
+        if (!title) {
+          // 空白桌
+          html += `
+            <div class="log-item-card open-modal-card" data-id="${table.id}" style="border: 2px dashed #dcd6cd; background: #fcfaf7; cursor: pointer;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; color: #8c8275; font-size: 15px;">📖 空白共讀桌</span>
+                <span class="action-btn primary" style="padding: 6px 14px; font-size: 12px;">➕ 發起共讀</span>
+              </div>
+             
+            </div>
+          `;
+        } else {
+          // 進行中的桌子
+          html += `
+            <div class="log-item-card open-modal-card" data-id="${table.id}" style="background: #ffffff; cursor: pointer;">
+              <div class="card-header">
+                <span class="book-title">《${title}》</span>
+                <span style="font-size: 11px; color: #6b8e23; background: #f4efe6; padding: 2px 8px; border-radius: 6px;">共讀中</span>
+              </div>
+              <div class="book-meta">
+                <span>作者：${author}</span>
+                <span>主辦人：${table.host_name || '未知'}</span>
+              </div>
+              <div style="font-size: 12px; color: #555; background: #f4efe6; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px;">
+                👥 成員 (${members.length}/${maxM})：${memberNames}
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 8px; font-size: 12px; color: #8c8275;">
+                ${isHosting ? '<span style="color:#ef4444; font-weight:500;">(你是主辦人)</span>' : hasJoined ? '<span style="color:#6b8e23; font-weight:500;">✓ 已加入</span>' : isFull ? '<span>已額滿</span>' : '<span style="color:#6b8e23;">點擊查看並加入</span>'}
+              </div>
+            </div>
+          `;
         }
       });
-  }
 
-  initAuthHeader();
-</script>
+      listContainer.innerHTML = html;
+
+      // 綁定點擊事件開啟 Modal
+      document.querySelectorAll('.open-modal-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const tableId = (e.currentTarget as HTMLElement).dataset.id;
+          const tableData = tables.find(t => t.id == tableId);
+          if (tableData) {
+            openTableModal(tableData);
+          }
+        });
+      });
+    }
+
+    function openTableModal(table: any) {
+      activeTableData = table;
+      if (!tableModal) return;
+
+      if (!table.book_title) {
+        // 顯示發起表單
+        if (modalTitleText) modalTitleText.textContent = `📖 發起共讀桌 #${table.id}`;
+        if (createTableContainer) createTableContainer.style.display = 'block';
+        if (viewTableContainer) viewTableContainer.style.display = 'none';
+        if (tableBook) tableBook.value = '';
+        if (tableAuthor) tableAuthor.value = '';
+        if (tableMax) tableMax.value = '3';
+        if (tableDate) tableDate.value = '';
+      } else {
+        // 顯示桌子詳情與動作按鈕
+        if (modalTitleText) modalTitleText.textContent = `📖 共讀桌詳情`;
+        if (createTableContainer) createTableContainer.style.display = 'none';
+        if (viewTableContainer) viewTableContainer.style.display = 'block';
+
+        (document.getElementById('view-table-book') as HTMLElement).textContent = `《${table.book_title}》`;
+        (document.getElementById('view-table-author') as HTMLElement).textContent = table.author || '佚名';
+        
+        // 精準控制獨立行容器的顯示與隱藏
+        const hostRowContainer = document.getElementById('host-row-container');
+        const hostEl = document.getElementById('view-table-host') as HTMLElement;
+        if (table.host_id && table.host_name) {
+          hostEl.textContent = table.host_name;
+          if (hostRowContainer) hostRowContainer.style.display = 'flex';
+        } else {
+          if (hostRowContainer) hostRowContainer.style.display = 'none';
+        }
+
+        (document.getElementById('view-table-max') as HTMLElement).textContent = `${table.max_members || 3} 人`;
+        (document.getElementById('view-table-date') as HTMLElement).textContent = table.finish_date || '未設定';
+
+        const members = table.members || [];
+        const memberListStr = members.map((m: any, idx: number) => `${idx + 1}. ${m.name}`).join('\n') || '尚無成員';
+        (document.getElementById('view-table-members') as HTMLElement).textContent = memberListStr;
+
+        // 動態組合按鈕
+        const isHosting = table.host_id === userId;
+        const hasJoined = members.some((m: any) => m.user_id === userId);
+        const isFull = members.length >= (table.max_members || 3);
+
+        let btnHtml = '<button class="action-btn secondary" id="modal-close-action" style="flex:1;">關閉</button>';
+        if (isHosting) {
+          btnHtml += `<button class="action-btn" id="modal-end-btn" style="background:#ef4444; color:#fff; flex:1;">結束共讀</button>`;
+        } else if (hasJoined) {
+          btnHtml += `<button class="action-btn secondary" disabled style="flex:1; opacity:0.7;">已加入共讀</button>`;
+        } else if (isFull) {
+          btnHtml += `<button class="action-btn secondary" disabled style="flex:1; opacity:0.7;">此桌已額滿</button>`;
+        } else {
+          btnHtml += `<button class="action-btn primary" id="modal-join-btn" style="flex:1;">加入共讀</button>`;
+        }
+        if (tableActionButtons) tableActionButtons.innerHTML = btnHtml;
+
+        // 綁定詳情內的按鈕事件
+        document.getElementById('modal-close-action')?.addEventListener('click', () => { tableModal.style.display = 'none'; });
+        document.getElementById('modal-end-btn')?.addEventListener('click', endTableAction);
+        document.getElementById('modal-join-btn')?.addEventListener('click', joinTableAction);
+      }
+
+      tableModal.style.display = 'flex';
+    }
+
+    // 發起共讀
+    tableCreateBtn?.addEventListener('click', async () => {
+      if (isGuest) { alert('訪客無法發起共讀活動，請登入完整會員！'); return; }
+      if (!activeTableData || !userId) return;
+      const title = tableBook?.value.trim();
+      const author = tableAuthor?.value.trim() || '佚名';
+      const maxM = parseInt(tableMax?.value) || 3;
+      const dateStr = tableDate?.value || '';
+
+      if (!title) { alert('請輸入共讀書名！'); return; }
+
+      const newMembers = [{ user_id: userId, name: playerName }];
+      const { error } = await supabase.from(ITEMS_TABLE).update({
+        book_title: title,
+        author: author,
+        max_members: maxM,
+        finish_date: dateStr,
+        host_id: userId,
+        host_name: playerName,
+        members: newMembers
+      }).eq('id', activeTableData.id);
+
+      if (error) {
+        alert('發起失敗：' + error.message);
+      } else {
+        if (tableModal) tableModal.style.display = 'none';
+        await fetchRoomItems();
+        alert('成功發起共讀活動！');
+      }
+    });
+
+    // 加入共讀
+    async function joinTableAction() {
+      if (isGuest) { alert('訪客無法加入共讀，請登入完整會員！'); return; }
+      if (!activeTableData || !userId) return;
+      let members = activeTableData.members || [];
+      if (members.some((m: any) => m.user_id === userId)) {
+        alert('你已經加入這場共讀了！');
+        return;
+      }
+      if (members.length >= (activeTableData.max_members || 3)) {
+        alert('此共讀桌人數已滿！');
+        return;
+      }
+
+      members.push({ user_id: userId, name: playerName });
+      const { error } = await supabase.from(ITEMS_TABLE).update({ members }).eq('id', activeTableData.id);
+      
+      if (error) {
+        alert('加入失敗：' + error.message);
+      } else {
+        if (tableModal) tableModal.style.display = 'none';
+        await fetchRoomItems();
+        alert('成功加入共讀！');
+      }
+    }
+
+    // 結束共讀
+    async function endTableAction() {
+      if (!activeTableData) return;
+      if (confirm('確定要結束這場共讀活動嗎？')) {
+        const { error } = await supabase.from(ITEMS_TABLE).update({
+          book_title: '',
+          author: '',
+          max_members: 3,
+          finish_date: '',
+          host_id: '',
+          host_name: '',
+          members: []
+        }).eq('id', activeTableData.id);
+
+        if (error) {
+          alert('結束失敗：' + error.message);
+        } else {
+          if (tableModal) tableModal.style.display = 'none';
+          await fetchRoomItems();
+        }
+      }
+    }
+
+    tableModalCloseBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
+
+    initCoRead();
+  </script>
+</Layout>
