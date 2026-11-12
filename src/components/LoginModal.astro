@@ -1,4 +1,5 @@
-<!-- LoginModal 元件（含文青 Logo 與沉穩色調） -->
+---
+<!-- LoginModal 元件（含文青 Logo 與沉穩色調、註冊分身與角色選擇） -->
 <div style="max-width: 100%; padding: 24px; background: #262422; color: #e7e2d8; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 8px;">
 
   <!-- 頂部文青 Logo 與返回首頁 -->
@@ -6,7 +7,7 @@
     <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #f5f2eb;">
       <span style="font-size: 1.25rem;">☕</span>
       <div style="display: flex; flex-direction: column;">
-        <span style="font-size: 0.95rem; font-weight: 500; letter-spacing: 0.05em;">客舍萬事屋</span>
+        <span style="font-size: 0.95rem; font-weight: 500; letter-spacing: 0.05em;">空間客舍</span>
         <span style="font-size: 0.7rem; color: #a39b90; letter-spacing: 0.1em;">Slow Pace Skill</span>
       </div>
     </a>
@@ -34,11 +35,36 @@
     </div>
   </div>
 
-  <!-- 會員註冊表單區塊 -->
+  <!-- 會員註冊表單區塊（已加入暱稱、分身造型與角色選擇） -->
   <div id="register-form-container" style="display: none;">
+    <input type="text" id="register-name" placeholder="鄰里人稱呼 / 暱稱 (Name)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
     <input type="email" id="register-email" placeholder="電子信箱 (Email)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
     <input type="password" id="register-password" placeholder="設定密碼 (至少 6 碼)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
-    <input type="password" id="register-password-confirm" placeholder="確認密碼" style="width:100%; padding:12px; margin-bottom:16px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    <input type="password" id="register-password-confirm" placeholder="確認密碼" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    
+    <!-- 角色選擇 (role) -->
+    <div style="font-size: 0.8rem; color: #a39b90; margin-bottom: 6px;">選擇你的身分角色 (Role)：</div>
+    <select id="register-role" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none; cursor:pointer;">
+      <option value="漫步者">漫步者</option>
+      <option value="探索者">探索者</option>
+      <option value="實踐者">實踐者</option>
+      <option value="觀察者">觀察者</option>
+    </select>
+
+    <!-- 分身造型選擇 -->
+    <div style="font-size: 0.8rem; color: #a39b90; margin-bottom: 6px;">選擇分身造型：</div>
+    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:8px; text-align:center; border-radius:8px; cursor:pointer;">
+        <input type="radio" name="register-avatar" value="/assets/player1.png" checked style="display:none;" />
+        <img src="/assets/player1.png" alt="P1" style="width:28px; height:28px; margin-bottom: 2px;" />
+        <div style="font-size:0.7rem; color:#f5f2eb;">分身一號</div>
+      </label>
+      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:8px; text-align:center; border-radius:8px; cursor:pointer;">
+        <input type="radio" name="register-avatar" value="/assets/player2.png" style="display:none;" />
+        <img src="/assets/player2.png" alt="P2" style="width:28px; height:28px; margin-bottom: 2px;" />
+        <div style="font-size:0.7rem; color:#f5f2eb;">分身二號</div>
+      </label>
+    </div>
     
     <button id="register-submit-btn" style="width:100%; padding:12px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer; transition: background 0.2s;" onmouseover="this.style.background='#5c534d'" onmouseout="this.style.background='#4a443f'">註冊新帳號</button>
   </div>
@@ -69,7 +95,7 @@
   import { supabase } from '../lib/supabase';
   const TABLE_NAME = 'slowpace_members';
 
-  // 分頁切換按鈕邏輯（同步配合文青色調）
+  // 分頁切換按鈕邏輯
   const tabLoginMode = document.getElementById('tab-login-mode');
   const tabRegisterMode = document.getElementById('tab-register-mode');
   const tabGuestMode = document.getElementById('tab-guest-mode');
@@ -116,21 +142,50 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-  // 會員註冊
+  // 會員註冊（支援寫入 name, role, avatar 等自訂資料到 slowpace_members）
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value.trim();
     const passwordConfirm = document.getElementById('register-password-confirm').value.trim();
-    if (!email || !password || !passwordConfirm) { alert('請完整填寫所有欄位'); return; }
+    const role = document.getElementById('register-role').value;
+    const selectedAvatar = document.querySelector('input[name="register-avatar"]:checked');
+    const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
+
+    if (!name || !email || !password || !passwordConfirm) { alert('請完整填寫所有註冊欄位'); return; }
     if (password !== passwordConfirm) { alert('兩次輸入的密碼不相符'); return; }
     if (password.length < 6) { alert('密碼長度至少需要 6 個字元'); return; }
 
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) { alert('註冊失敗：' + error.message); } 
-    else { window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*'); }
+    // 1. 透過 Supabase Auth 建立帳號
+    const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+    if (authError) { 
+      alert('註冊失敗：' + authError.message); 
+      return; 
+    }
+
+    const userId = authData?.user?.id;
+    if (userId) {
+      // 2. 將使用者的暱稱、角色與分身造型同步寫入 slowpace_members 資料表
+      const memberPayload = {
+        user_id: userId,
+        name: name,
+        role: role,
+        tier: '鄰里人',
+        avatar: avatarVal,
+        updated_at: new Date()
+      };
+
+      const { error: dbError } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
+      if (dbError) {
+        console.error("同步寫入會員資料表失敗:", dbError.message);
+      }
+    }
+
+    alert('註冊成功！歡迎加入空間客舍。');
+    window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
-  // 訪客模式：遞增編號、先查後寫與離開自動刪除
+  // 訪客快速進入表單區塊
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
