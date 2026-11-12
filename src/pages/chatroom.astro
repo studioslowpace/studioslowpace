@@ -306,7 +306,20 @@ import Layout from '../layouts/Layout.astro';
     <!-- 📱 手機應用主容器 -->
     <main>
         
-
+        <!-- 頂部標題列 -->
+        <div class="phone-title-bar">
+            <div class="main-title-box">
+                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
+                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
+                </span>
+                <span>鄰里人交流區</span>
+            </div>
+            <div style="display: flex; gap: 4px; align-items: center;">
+                <a href="/slowplace" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🏠 回空間</a>
+                <div id="my-identity-badge-top" class="identity-badge" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">👤 載入中</div>
+                <button id="logout-btn" class="nav-link-btn" style="background:#ef4444; color:#fff; border-color:#dc2626;">🚪 登出</button>
+            </div>
+        </div>
 
         <!-- 🔓 交流區主視窗 -->
         <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
@@ -314,14 +327,17 @@ import Layout from '../layouts/Layout.astro';
             <!-- 🏠 PAGE 1: 交流區首頁 (主題與私訊列表) -->
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
+                <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
+                    <span>🟢 在線：<strong id="online-count-trigger-home"><span id="online-users-count-home">1</span> 人</strong></span>
+                    <span>|</span>
+                    <span>📜 鄰里人總數：<strong id="total-count-trigger-home"><span id="total-users-count-home">0</span> 人</strong></span>
+                </div>
+
                 <div class="info-card-grid">
                     <div class="info-trigger-btn" id="modal-origin-btn">
                         <h5>🌱 社群源由</h5>
                         <span>點擊查看詳情</span>
                     </div>
-                    <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
-                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
-                   </span>
                     <div class="info-trigger-btn" id="modal-rules-btn">
                         <h5>📜 交流區守則</h5>
                         <span>點擊查看公約</span>
@@ -356,7 +372,7 @@ import Layout from '../layouts/Layout.astro';
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
                 <div class="phone-header">
-                    <button id="chat-back-btn" class="nav-link-btn">首頁</button>
+                    <button id="chat-back-btn" class="nav-link-btn">< 首頁</button>
                     
                     <div class="phone-header-title" id="topic-switcher-trigger">
                         <div style="display: flex; align-items: center; gap: 3px;">
@@ -366,10 +382,16 @@ import Layout from '../layouts/Layout.astro';
                         <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
                     </div>
 
-                    <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
+                                        <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
+                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
+                   </span>
                 </div>
 
-
+                <div class="phone-sub-bar">
+                    <span>🟢 在線：<strong id="online-count-trigger-chat"><span id="online-users-count-chat">1</span> 人</strong></span>
+                    <span>|</span>
+                    <span>📜 鄰里人總數：<strong id="total-count-trigger-chat"><span id="total-users-count-chat">0</span> 人</strong></span>
+                </div>
 
                 <div id="topic-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
@@ -385,14 +407,18 @@ import Layout from '../layouts/Layout.astro';
             <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 
                 <div class="phone-header" style="background: #eff6ff;">
-                    <button id="dm-back-btn" class="nav-link-btn">首頁</button>
+                    <button id="dm-back-btn" class="nav-link-btn">< 首頁</button>
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
                     <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">👤 訪客</div>
                 </div>
 
-
+                <div class="phone-sub-bar">
+                    <span>🟢 在線：<strong id="online-count-trigger-dm"><span id="online-users-count-dm">1</span> 人</strong></span>
+                    <span>|</span>
+                    <span>📜 鄰里人總數：<strong id="total-count-trigger-dm"><span id="total-users-count-dm">0</span> 人</strong></span>
+                </div>
 
                 <div id="dm-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入私訊中...</p>
@@ -612,7 +638,7 @@ import Layout from '../layouts/Layout.astro';
 
         // 驗證完成後初始化各項服務
         function finishAuthSetup(name) {
-
+            document.getElementById('my-identity-badge-top').textContent = `👤 ${name}`;
             document.getElementById('my-identity-badge-chat').textContent = `👤 ${name}`;
             
             fetchAllUserRecordsFromSupabase();
