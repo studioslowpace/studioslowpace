@@ -1,5 +1,5 @@
 ---
-import LoginModal from '../components/LoginModal.astro'; // 請依你實際的登入元件路徑調整
+import LoginModal from '../components/LoginModal.astro';
 
 const { onlineCount = 1, totalCount = 0 } = Astro.props;
 ---
@@ -9,14 +9,14 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   <div class="hud-top-row">
     <!-- 左側：品牌標誌 -->
     <div class="hud-brand-group">
-      <span class="hud-brand">☁️ 空間客舍</span>
+      <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊切換主理人模式">☁️ 空間客舍</span>
     </div>
 
     <!-- 右側：使用者身分與登出按鈕 -->
     <div class="hud-right-group">
       <div class="hud-user-profile">
-        <span class="user-tag" id="hud-tier-tag">🌱 鄰里人</span>
-        <strong id="hud-name">加載中...</strong>
+        <span class="user-tag" id="hud-tier-tag">👤 載入中</span>
+        <strong id="hud-name">載入中...</strong>
       </div>
 
       <!-- 登出按鈕 (觸發文青確認視窗) -->
@@ -26,9 +26,9 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 
   <!-- 第二列：無框線、無背景。左：在線 | 中：調色盤 | 右：總數 -->
   <div class="phone-sub-bar-clean">
-    <!-- 左側：在線人數 -->
+    <!-- 左側：在線人數 (可點擊開啟在線名單) -->
     <div class="sub-bar-left">
-      <span>🟢 在線：<strong id="online-count-trigger-home"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
+      <span>🟢 在線：<strong id="online-count-trigger-home" style="cursor: pointer;"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
     </div>
 
     <!-- 中間：主題自選色盤 -->
@@ -39,9 +39,9 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       </div>
     </div>
 
-    <!-- 右側：總數 -->
+    <!-- 右側：總數 (可點擊開啟全部成員名單) -->
     <div class="sub-bar-right">
-      <span>📜 總數：<strong id="total-count-trigger-home"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
+      <span>📜 總數：<strong id="total-count-trigger-home" style="cursor: pointer;"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
     </div>
   </div>
 </header>
@@ -87,245 +87,52 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex-shrink: 0;
+    z-index: 20;
   }
-
-  .hud-top-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
-  }
-
-  .hud-brand-group {
-    display: flex;
-    align-items: center;
-  }
-
-  .hud-brand {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-color, #2c241d);
-    letter-spacing: 0.5px;
-  }
-
-  .hud-right-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .hud-user-profile {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-  }
-
-  .user-tag {
-    font-size: 11px;
-    color: var(--text-muted, #8c7a6b);
-  }
-
-  #hud-name {
-    color: var(--accent-hover, #52796f);
-    font-weight: 600;
-  }
-
-  .rpg-btn-logout {
-    background: var(--danger-color, #e07a5f);
-    color: #fff;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .rpg-btn-logout:hover {
-    opacity: 0.9;
-  }
-
-  .phone-sub-bar-clean {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    color: var(--text-muted, #8c7a6b);
-    width: 100%;
-    padding: 2px 4px;
-  }
-
-  .phone-sub-bar-clean strong {
-    color: var(--text-color, #2c241d);
-  }
-
-  .sub-bar-left {
-    text-align: left;
-    flex: 1;
-  }
-
-  .sub-bar-center {
-    text-align: center;
-    flex: 1;
-    display: flex;
-    justify-content: center;
-  }
-
-  .sub-bar-right {
-    text-align: right;
-    flex: 1;
-  }
-
-  .hud-theme-picker {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    background: var(--bg-input, #f4efe6);
-    padding: 2px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color, #e6dcc8);
-  }
-
-  .theme-label {
-    font-size: 10px;
-    font-weight: 600;
-  }
-
-  .hud-theme-picker input[type="color"] {
-    width: 16px;
-    height: 16px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
-  }
-
-  /* 遮罩及彈窗樣式 */
-  .rpg-modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(44, 36, 29, 0.4);
-    backdrop-filter: blur(4px);
-    z-index: 99999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 16px;
-  }
-
-  .rpg-logout-window {
-    width: 100%;
-    max-width: 320px;
-    background: var(--bg-main, #faf6ee);
-    border: 1px solid var(--border-color, #e6dcc8);
-    border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15);
-    overflow: hidden;
-    animation: modalPop 0.25s ease-out;
-  }
-
-  @keyframes modalPop {
-    from {
-      transform: scale(0.95);
-      opacity: 0;
-    }
-    to {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
-  .logout-window-header {
-    background: var(--bg-input, #f4efe6);
-    color: var(--text-color, #2c241d);
-    padding: 10px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    border-bottom: 1px solid var(--border-color, #e6dcc8);
-    text-align: center;
-    letter-spacing: 1px;
-  }
-
-  .logout-window-body {
-    padding: 20px 16px;
-    text-align: center;
-  }
-
-  .logout-quote {
-    font-size: 12px;
-    color: var(--accent-hover, #52796f);
-    font-style: italic;
-    margin-bottom: 10px;
-    line-height: 1.5;
-  }
-
-  .logout-desc {
-    font-size: 12px;
-    color: var(--text-muted, #8c7a6b);
-    margin-bottom: 20px;
-    line-height: 1.4;
-  }
-
-  .logout-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-  }
-
-  .btn-secondary {
-    flex: 1;
-    background: var(--bg-input, #f4efe6);
-    color: var(--text-color, #2c241d);
-    border: 1px solid var(--border-color, #e6dcc8);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .btn-secondary:hover {
-    background: var(--border-color, #e6dcc8);
-  }
-
-  .btn-primary {
-    flex: 1;
-    background: var(--danger-color, #e07a5f);
-    color: #fff;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-
-  .btn-primary:hover {
-    opacity: 0.9;
-  }
+  .hud-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px; }
+  .hud-brand-group { display: flex; align-items: center; }
+  .hud-brand { font-size: 15px; font-weight: 600; color: var(--text-color, #2c241d); letter-spacing: 0.5px; }
+  .hud-right-group { display: flex; align-items: center; gap: 10px; }
+  .hud-user-profile { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+  .user-tag { font-size: 11px; color: var(--text-muted, #8c7a6b); }
+  #hud-name { color: var(--accent-hover, #52796f); font-weight: 600; }
+  .rpg-btn-logout { background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 4px 8px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: opacity 0.2s; }
+  .rpg-btn-logout:hover { opacity: 0.9; }
+  .phone-sub-bar-clean { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted, #8c7a6b); width: 100%; padding: 2px 4px; }
+  .phone-sub-bar-clean strong { color: var(--text-color, #2c241d); }
+  .sub-bar-left { text-align: left; flex: 1; }
+  .sub-bar-center { text-align: center; flex: 1; display: flex; justify-content: center; }
+  .sub-bar-right { text-align: right; flex: 1; }
+  .hud-theme-picker { display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-input, #f4efe6); padding: 2px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e6dcc8); }
+  .theme-label { font-size: 10px; font-weight: 600; }
+  .hud-theme-picker input[type="color"] { width: 16px; height: 16px; border: none; background: transparent; cursor: pointer; padding: 0; }
+  .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(44, 36, 29, 0.4); backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 16px; }
+  .rpg-logout-window { width: 100%; max-width: 320px; background: var(--bg-main, #faf6ee); border: 1px solid var(--border-color, #e6dcc8); border-radius: 16px; box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15); overflow: hidden; animation: modalPop 0.25s ease-out; }
+  @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .logout-window-header { background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); padding: 10px 14px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border-color, #e6dcc8); text-align: center; letter-spacing: 1px; }
+  .logout-window-body { padding: 20px 16px; text-align: center; }
+  .logout-quote { font-size: 12px; color: var(--accent-hover, #52796f); font-style: italic; margin-bottom: 10px; line-height: 1.5; }
+  .logout-desc { font-size: 12px; color: var(--text-muted, #8c7a6b); margin-bottom: 20px; line-height: 1.4; }
+  .logout-actions { display: flex; gap: 10px; justify-content: center; }
+  .btn-secondary { flex: 1; background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); border: 1px solid var(--border-color, #e6dcc8); padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
+  .btn-primary { flex: 1; background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
 </style>
 
 <script>
   import { supabase } from '../lib/supabase';
-
   const TABLE_NAME = 'slowpace_members';
 
   let currentUserId = '';
   let currentUserName = '';
-  let allUserRecords = [];
-  let onlineUsersMap = {};
   let presenceChannel = null;
 
-async function initAuthHeader() {
+  async function initAuthHeader() {
     const nameEl = document.getElementById('hud-name');
     const tierEl = document.getElementById('hud-tier-tag');
     const modal = document.getElementById('rpg-modal');
 
-    // 共用：更新畫面上的會員資料
-    async function updateUserData(user) {
+    async function updateUserData(user, nameOverride = null) {
       currentUserId = user.id;
       const { data: member } = await supabase
         .from(TABLE_NAME)
@@ -333,93 +140,83 @@ async function initAuthHeader() {
         .eq('user_id', user.id)
         .single();
 
-      currentUserName = member?.name || user.email || '旅人';
+      currentUserName = nameOverride || member?.name || user.email || '訪客';
 
       if (nameEl) nameEl.textContent = currentUserName;
-      if (tierEl && member?.tier) tierEl.textContent = member.tier;
+      if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
       
-      // ✨ 關鍵：只要偵測到已登入，立刻強制關閉登入認證 Modal！
       if (modal) modal.style.display = 'none';
 
-      await fetchAllUserRecordsFromSupabase();
+      // 廣域發布認證完成事件，讓主頁面聊天室同步當前身分
+      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
+        detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
+      }));
+
       initPresenceTracker();
     }
 
-    // 1. 初始化檢查目前 Session
-    const { data: { session } } = await supabase.auth.getSession();
+    // 檢查 Session 或 SessionStorage 訪客身分
+    const guestId = sessionStorage.getItem('space_guest_id');
+    const guestName = sessionStorage.getItem('space_guest_name');
 
-    if (session?.user) {
-      await updateUserData(session.user);
+    if (guestId) {
+      currentUserId = guestId;
+      currentUserName = guestName || '訪客';
+      if (nameEl) nameEl.textContent = currentUserName;
+      if (tierEl) tierEl.textContent = '☁️ 訪客';
+      if (modal) modal.style.display = 'none';
+
+      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
+        detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
+      }));
+      initPresenceTracker();
     } else {
-      currentUserName = '訪客';
-      if (nameEl) nameEl.textContent = '訪客';
-      if (modal) modal.style.display = 'flex';
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await updateUserData(session.user);
+      } else {
+        currentUserName = '訪客';
+        if (nameEl) nameEl.textContent = '訪客';
+        if (tierEl) tierEl.textContent = '👤 未登入';
+        if (modal) modal.style.display = 'flex';
+      }
     }
 
-    // 2. 🌟 監聽 Supabase 即時登入/登出狀態變化（這樣在 LoginModal 登入成功時，這裡會立刻感應到並自動關閉 Modal）
-    supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (event === 'SIGNED_IN' && currentSession?.user) {
-        await updateUserData(currentSession.user);
-      } else if (event === 'SIGNED_OUT') {
-        if (nameEl) nameEl.textContent = '訪客';
-        if (tierEl) tierEl.textContent = '🌱 鄰里人';
-        if (modal) modal.style.display = 'flex';
+    // 監聽登入彈窗傳來的事件 (支援 LoginModal 跨組件通訊)
+    window.addEventListener('message', async (event) => {
+      if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+        sessionStorage.setItem('space_guest_id', event.data.guestId);
+        sessionStorage.setItem('space_guest_name', event.data.name);
+        window.location.reload();
+      }
+      if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+        window.location.reload();
       }
     });
 
-    // 3. 登出確認視窗互動邏輯
+    // 登出互動按鈕
     const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
     const logoutModal = document.getElementById('logout-confirm-modal');
     const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
     const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
 
-    logoutTriggerBtn?.addEventListener('click', () => {
-      if (logoutModal) logoutModal.style.display = 'flex';
-    });
-
-    cancelLogoutBtn?.addEventListener('click', () => {
-      if (logoutModal) logoutModal.style.display = 'none';
-    });
+    logoutTriggerBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'flex'; });
+    cancelLogoutBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'none'; });
 
     confirmLogoutBtn?.addEventListener('click', async () => {
-      const { error } = await supabase.auth.signOut();
-      if (!error) {
-        if (logoutModal) logoutModal.style.display = 'none';
-        
-        if (nameEl) nameEl.textContent = '訪客';
-        if (tierEl) tierEl.textContent = '🌱 鄰里人';
-
-        const loginModal = document.getElementById('rpg-modal');
-        if (loginModal) loginModal.style.display = 'flex';
-      } else {
-        console.error('登出失敗:', error.message);
+      const currentGuestId = sessionStorage.getItem('space_guest_id');
+      if (currentGuestId) {
+        await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+        sessionStorage.clear();
       }
+      await supabase.auth.signOut();
+      localStorage.clear();
+      window.location.reload();
     });
-  }
-
-  async function fetchAllUserRecordsFromSupabase() {
-    try {
-      const { data, error, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
-      if (error) throw error;
-      allUserRecords = data || [];
-      const totalCount = count !== null ? count : allUserRecords.length;
-
-      const setTotal = (id) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = totalCount;
-      };
-
-      setTotal('total-users-count-home');
-      setTotal('total-users-count-chat');
-      setTotal('total-users-count-dm');
-    } catch (err) { 
-      console.error("讀取用戶紀錄失敗:", err.message); 
-    }
   }
 
   function initPresenceTracker() {
     const trackName = currentUserName || '訪客';
-
     if (presenceChannel) supabase.removeChannel(presenceChannel);
 
     presenceChannel = supabase.channel('community-online-room', {
@@ -429,20 +226,14 @@ async function initAuthHeader() {
     presenceChannel
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState();
-        onlineUsersMap = {};
-        Object.keys(state).forEach(key => {
-          onlineUsersMap[key] = true;
-        });
         const onlineCount = Object.keys(state).length || 1;
         
-        const setOnline = (id) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = onlineCount;
-        };
+        // 更新 Header 上的線上人數
+        const onlineEl = document.getElementById('online-users-count-home');
+        if (onlineEl) onlineEl.textContent = onlineCount;
 
-        setOnline('online-users-count-home');
-        setOnline('online-users-count-chat');
-        setOnline('online-users-count-dm');
+        // 同步通知主畫面更新人數
+        window.dispatchEvent(new CustomEvent('ONLINE_COUNT_UPDATED', { detail: { count: onlineCount, state } }));
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
@@ -451,6 +242,5 @@ async function initAuthHeader() {
       });
   }
 
-  
   initAuthHeader();
 </script>
