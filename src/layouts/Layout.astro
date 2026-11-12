@@ -2,31 +2,6 @@
 const { title = "預設標題" } = Astro.props;
 import Footer from '../components/phonefooter.astro';
 import Header from '../components/phoneheader.astro';
-import { supabase } from '../lib/supabase';
-
-const TABLE_NAME = 'slowpace_members';
-
-// 1. 在 Layout 頂端統一向 Supabase 查詢會員資料
-// (如果是用 Supabase Auth 登入，通常會先取得 user，再對應到 slowpace_members 表)
-let username = '旅人';
-let tier = '🌱 鄰里人';
-
-try {
-  // 這裡假設你有辦法抓到目前的會員資料 (例如用 Cookie 或 Session)
-  // 範例先以簡單撈取第一筆或示範為主，可依你的驗證邏輯調整
-  const { data: memberData } = await supabase
-    .from(TABLE_NAME)
-    .select('*')
-    .limit(1)
-    .single();
-
-  if (memberData) {
-    username = memberData.name || '旅人';
-    tier = memberData.tier || '🌱 鄰里人';
-  }
-} catch (e) {
-  // 未登入或尚未建立資料時的預設防護
-}
 ---
 
 <!doctype html>
@@ -151,64 +126,3 @@ try {
     width: 100%;
   }
 </style>
-
-<!-- 讓這段 JS 在客戶端（瀏覽器）執行 -->
-<script>
-  import { createClient } from '@supabase/supabase-js';
-
-  const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-  const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-  const client = createClient(supabaseUrl, supabaseKey);
-
-  
-
-  // 統一的權限檢查
-  async function checkLayoutAdminStatus(user) {
-    if (!user) return false;
-    const { data: profile, error } = await client
-        .from('slowpace_members')
-        .select('is_admin')
-        .eq('id', user.id)
-        .maybeSingle();
-    return !error && profile?.is_admin === true;
-  }
-
-  // 初始化 Layout 的管理員狀態
-  async function initLayoutAuth() {
-    try {
-      const { data: { session } } = await client.auth.getSession();
-      const isAdmin = await checkLayoutAdminStatus(session?.user);
-      
-      // 依據 isAdmin 控制 Layout 中的按鈕（例如 header 裡的管理者連結）
-      const adminLink = document.getElementById('admin-link');
-      if (adminLink) {
-        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
-      }
-    } catch (err) {
-      console.error("Layout 權限檢查失敗:", err);
-    }
-
-    // 實時監聽
-    client.auth.onAuthStateChange(async (event, session) => {
-      const isAdmin = await checkLayoutAdminStatus(session?.user);
-      const adminLink = document.getElementById('admin-link');
-      if (adminLink) {
-        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
-      }
-    });
-  }
-
-  // 顯示登入彈窗
-function showLoginModal() {
-  const modal = document.getElementById('rpg-modal');
-  if (modal) modal.style.display = 'flex'; // 讓它置中顯示
-}
-
-// 隱關閉登入彈窗
-function hideLoginModal() {
-  const modal = document.getElementById('rpg-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-  initLayoutAuth();
-</script>
