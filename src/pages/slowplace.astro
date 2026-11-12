@@ -507,6 +507,7 @@ import Layout from '../layouts/Layout.astro';
     async function syncMyStateToDB() {
       if (!userId) return;
       await supabase.from(TABLE_NAME).upsert({
+        id:你的id數值或uuid,
         user_id: userId,
         name: playerName,
         is_admin: isAdmin,
@@ -517,7 +518,7 @@ import Layout from '../layouts/Layout.astro';
         is_dnd: isDND,
         task: currentTask,
         updated_at: new Date()
-      }, { onConflict: 'user_id' });
+      }, { onConflict: 'id' });
     }
 
     async function fetchOnlinePlayers() {
