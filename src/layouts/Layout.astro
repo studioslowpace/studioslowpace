@@ -129,9 +129,11 @@ try {
   /* 主內容區：允許內部滾動，但隱藏醜陋的捲軸 */
   .app-main {
     flex: 1; 
+    display: flex;
     overflow-y: auto; 
     overflow-x: auto;
     padding: 0px;
+    min-height: 0;
     width: 100%;
   }
 
@@ -145,7 +147,7 @@ try {
   }
 
   .app-footer-wrapper {
-    padding: 0 16px 16px 16px;
+    padding: 0px;
     width: 100%;
   }
 </style>
