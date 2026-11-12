@@ -310,7 +310,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
         const targetId = btn.getAttribute('data-target-id');
         const targetName = encodeURIComponent(btn.getAttribute('data-target-name'));
         closeUserListModal();
-        window.location.href = `/?dm=${targetId}&name=${targetName}`;
+        window.location.href = `/chatroom?dm=${targetId}&name=${targetName}`;
       }
     });
 

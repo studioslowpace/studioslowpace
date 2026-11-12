@@ -4,7 +4,6 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="空間客舍 · 自由佈置空間">
 
-
   <!-- 2. 圖書館藏 Modal -->
   <div id="library-modal" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
@@ -156,21 +155,15 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 3.8 即時私訊聊天室 Modal -->
-  <div id="dm-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 380px; height: 480px; display: flex; flex-direction: column;">
+  <!-- 3.8 手札指南清單 Modal -->
+  <div id="guide-modal" class="rpg-modal-overlay" style="display: none;">
+    <div class="rpg-window" style="max-width: 400px; height: 500px; display: flex; flex-direction: column;">
       <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span id="dm-title">💬 與 旅人 的私訊對話</span>
-        <button id="dm-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold; color:var(--text-color);">✕</button>
+        <span>📖 客舍手札 · 物件與空間指南</span>
+        <button id="guide-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold; color:var(--text-color);">✕</button>
       </div>
       <div class="rpg-content" style="flex: 1; display: flex; flex-direction: column; padding: 12px; overflow: hidden;">
-        <div id="dm-messages-box" style="flex: 1; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; font-size: 12px;">
-          載入對話中...
-        </div>
-        <div style="display: flex; gap: 6px;">
-          <input type="text" id="dm-input" placeholder="輸入私訊內容..." style="margin-bottom: 0; flex: 1;" />
-          <button id="dm-send-btn" class="rpg-btn" style="width: auto; padding: 0 14px; background: var(--success-color); color: #fff;">發送</button>
-        </div>
+        <div id="guide-content-box" class="guide-list-box" style="flex: 1; overflow-y: auto;"></div>
       </div>
     </div>
   </div>
@@ -240,90 +233,68 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 主介面 (沈浸式視口與大圓角容器) -->
-
-    <main >
-      <!-- 房間選擇與房間管理列 (原先重複的 HUD 資訊已由 phoneheader 統一控制，此處保留房間切換與管理工具) -->
-      <div class="room-control-bar" style="padding: 10px 16px; background: var(--bg-card); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-        <div class="room-selector-wrapper">
-          <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:6px 10px; font-weight:600;">
-            <option value="study">📖 自修室</option>
-          </select>
-        </div>
-
-        <div style="display:flex; gap:6px; align-items:center;">
-          <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff;">➕ 新房間</button>
-          <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff;">🗑️ 刪除</button>
-        </div>
+  <!-- 主介面 容器整頁100%且垂直置中 -->
+  <main style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; align-items:center;">
+    <!-- 房間選擇與房間管理列 -->
+    <div class="room-control-bar" style="width:100%; padding: 10px 16px; background: var(--bg-card); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-sizing:border-box;">
+      <div class="room-selector-wrapper">
+        <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:6px 10px; font-weight:600;">
+          <option value="study">📖 自修室</option>
+        </select>
       </div>
 
-      <!-- 畫布區塊 -->
-      <div class="canvas-wrapper">
-        <canvas id="rpg-canvas" width="384" height="384"></canvas>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff;">➕ 新房間</button>
+        <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff;">🗑️ 刪除</button>
       </div>
+    </div>
 
-      <!-- 底部 Footer 導航列與向上展開的手帳手札抽屜 -->
-      <footer class="rpg-footer-nav" id="rpg-footer">
-        <!-- 向上展開的手札指南面板 -->
-        <div id="guide-drawer" class="guide-drawer-content" style="display: none;">
-          <div class="drawer-header">
-            <span>📖 客舍手札 · 物件與空間指南</span>
-            <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:3px 8px;">✕ 收起</button>
-          </div>
-          
-          <div id="shopkeeper-drawer-tools" class="shopkeeper-tools-bar" style="display: none; justify-content: space-between; align-items: center;">
-            <div style="display:flex; gap:6px;">
-              <button class="tool-btn active" data-tool="move">🚶 散步模式</button>
-              <button class="tool-btn" data-tool="delete" style="color:var(--danger-color); border-color:var(--danger-color);">🗑️ 移除模式</button>
-            </div>
-            <button id="open-cf-modal-btn" class="rpg-btn-sm" style="background:var(--accent-hover); color:#fff;">➕ 新增物件/NPC</button>
-          </div>
+    <!-- 畫布置中區塊 -->
+    <div class="canvas-wrapper" style="width:100%; flex:1; display:flex; align-items:center; justify-content:center;">
+      <canvas id="rpg-canvas" width="384" height="384"></canvas>
+    </div>
 
-          <div id="guide-content-box" class="guide-list-box"></div>
+    <!-- 底部功能與操作列 -->
+    <footer class="rpg-footer-nav" id="rpg-footer" style="width:100%;">
+      <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
+        <div style="display:flex; align-items:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
+          <div class="footer-tabs-bar" style="flex:1; display:flex; justify-content:space-around; align-items:center; padding:6px 8px; box-sizing:border-box; background:transparent; gap:4px;">
+            
+            <!-- 手札 -->
+            <button id="btn-tab-guide" class="footer-tab-link" style="background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px; transition:all 0.2s;">
+              <span style="font-size:16px;">📖</span>
+              <span>手札</span>
+            </button>
+
+            <!-- 散步模式 -->
+            <button id="btn-mode-move" class="footer-tab-link active-mode" style="background:var(--bg-input); border:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--accent-hover); font-weight:600; font-size:11px; gap:2px; padding:6px 8px; border-radius:12px;">
+              <span style="font-size:16px;">🚶</span>
+              <span>散步</span>
+            </button>
+
+            <!-- 移除模式 (店主專用) -->
+            <button id="btn-mode-delete" class="shopkeeper-only-btn footer-tab-link" style="display:none; background:transparent; border:none; cursor:pointer; flex-direction:column; align-items:center; color:var(--danger-color); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px;">
+              <span style="font-size:16px;">🗑️</span>
+              <span>移除</span>
+            </button>
+
+            <!-- 新增物件 (店主專用) -->
+            <button id="open-cf-modal-btn" class="shopkeeper-only-btn footer-tab-link" style="display:none; background:transparent; border:none; cursor:pointer; flex-direction:column; align-items:center; color:var(--accent-hover); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px;">
+              <span style="font-size:16px;">➕</span>
+              <span>新物件</span>
+            </button>
+
+            <!-- 🚶 起立按鈕 (取代萬事屋按鈕) -->
+            <button id="btn-leave-seat" class="footer-tab-link" style="background:transparent; border:none; cursor:not-allowed; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px; opacity:0.5;" disabled>
+              <span style="font-size:16px;">🚶</span>
+              <span>起立</span>
+            </button>
+
+          </div>
         </div>
-
-        <!-- 底部導覽列 -->
-        <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
-          <div style="display:flex; align-items:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
-            <div class="footer-tabs-bar" style="flex:1; border-top:none; display:flex; justify-content:space-around; padding:6px 8px; box-sizing:border-box; background:transparent;">
-              
-              <!-- 手札 -->
-              <button id="btn-tab-guide" class="footer-tab-link" style="background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; transition:all 0.2s;">
-                <span style="font-size:16px;">📖</span>
-                <span>手札</span>
-              </button>
-
-              <!-- 聊天 -->
-              <a href="/chatroom" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
-                <span style="font-size:16px;">💬</span>
-                <span>聊天</span>
-              </a>
-
-              <!-- 書櫃 (高亮) -->
-              <a href="/record" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--accent-hover); font-weight:600; font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; background:var(--bg-input);">
-                <span style="font-size:16px;">📚</span>
-                <span>書櫃</span>
-              </a>
-
-              <!-- 共讀 -->
-              <a href="/co-read" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
-                <span style="font-size:16px;">📖</span>
-                <span>共讀</span>
-              </a>
-
-              <!-- 萬事屋 -->
-              <a href="/skillsupermarket" style="display:flex; flex-direction:column; align-items:center; text-decoration:none; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
-                <span style="font-size:16px;">🏠</span>
-                <span>萬事屋</span>
-              </a>
-
-            </div>
-          </div>
-          <button id="btn-leave-seat" class="rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff; font-weight:bold; margin-left:8px; padding:6px 12px; border-radius:12px; align-self:center;">🚶 起立</button>
-        </div>
-      </footer>
-    </main>
-  </div>
+      </div>
+    </footer>
+  </main>
 
   <style is:global>
 
@@ -356,35 +327,6 @@ import Layout from '../layouts/Layout.astro';
       transition: opacity 0.4s ease;
     }
 
-    .guide-drawer-content {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border-color);
-      max-height: 46vh;
-      min-height: 190px;
-      display: flex;
-      flex-direction: column;
-      padding: 14px 18px;
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-
-    .drawer-header {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 13px; font-weight: 700; color: var(--accent-hover); margin-bottom: 10px; flex-shrink: 0;
-    }
-
-    .shopkeeper-tools-bar {
-      display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0;
-      background: var(--bg-input); padding: 8px; border-radius: 14px; border: 1px solid var(--border-color); align-items: center;
-    }
-
     .guide-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
 
     .rpg-title-bar { background: var(--bg-input); color: var(--accent-hover); padding: 14px 18px; font-size: 13px; font-weight: 700; border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom: 1px solid var(--border-color); }
@@ -407,8 +349,12 @@ import Layout from '../layouts/Layout.astro';
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-main); padding: 8px; overflow: hidden; min-height: 0; }
     #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; image-rendering: pixelated; border-radius: 20px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
 
-    .tool-btn { background: var(--bg-input); color: var(--text-muted); border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 10px; }
-    .tool-btn.active { background: var(--accent-hover); color: #fff; border-color: var(--accent-hover); font-weight: 700; }
+    .active-mode {
+      background: var(--bg-input) !important;
+      border: 1px solid var(--border-color) !important;
+      color: var(--accent-hover) !important;
+      font-weight: 600 !important;
+    }
   </style>
 
   <script>
@@ -449,9 +395,6 @@ import Layout from '../layouts/Layout.astro';
     let hoveredItem: any = null;
     let glowCounter = 0;
 
-    let activeDmTargetId: string | null = null;
-    let dmPollInterval: any = null;
-
     function updateCurrentRoomConfig() {
       const r = customRooms.find(rc => rc.room_key === currentRoom);
       if (r) {
@@ -465,7 +408,6 @@ import Layout from '../layouts/Layout.astro';
 
     const rpgContainer = document.getElementById('rpg-container');
 
-    // 聆聽來自 phoneheader 透過 custom event 傳遞的身分就緒狀態
     window.addEventListener('USER_AUTH_READY', async (e: any) => {
       userId = e.detail.userId;
       playerName = e.detail.userName;
@@ -482,7 +424,7 @@ import Layout from '../layouts/Layout.astro';
           isAdmin = Boolean(data.is_admin);
           if (data.avatar) playerAvatar = data.avatar;
           if (isAdmin) {
-            document.querySelectorAll('.shopkeeper-only-btn').forEach(b => (b as HTMLElement).style.display = 'inline-block');
+            document.querySelectorAll('.shopkeeper-only-btn').forEach(b => (b as HTMLElement).style.display = 'flex');
           }
         }
       }
@@ -620,7 +562,24 @@ import Layout from '../layouts/Layout.astro';
 
     const canvas = document.getElementById('rpg-canvas') as HTMLCanvasElement;
     const ctx = canvas?.getContext('2d');
-    const leaveSeatBtn = document.getElementById('btn-leave-seat');
+    const leaveSeatBtn = document.getElementById('btn-leave-seat') as HTMLButtonElement;
+
+    function setLeaveSeatButtonState(active: boolean) {
+      if (!leaveSeatBtn) return;
+      if (active) {
+        leaveSeatBtn.disabled = false;
+        leaveSeatBtn.style.opacity = '1';
+        leaveSeatBtn.style.cursor = 'pointer';
+        leaveSeatBtn.style.color = 'var(--danger-color)';
+        leaveSeatBtn.style.fontWeight = 'bold';
+      } else {
+        leaveSeatBtn.disabled = true;
+        leaveSeatBtn.style.opacity = '0.5';
+        leaveSeatBtn.style.cursor = 'not-allowed';
+        leaveSeatBtn.style.color = 'var(--text-muted)';
+        leaveSeatBtn.style.fontWeight = 'normal';
+      }
+    }
 
     const imageCache: Record<string, HTMLImageElement> = {};
     const imageFailed: Record<string, boolean> = {};
@@ -830,10 +789,24 @@ import Layout from '../layouts/Layout.astro';
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
     const btnTabGuide = document.getElementById('btn-tab-guide');
-    const guideDrawer = document.getElementById('guide-drawer');
-    const drawerCloseBtn = document.getElementById('drawer-close-btn');
+    const guideModal = document.getElementById('guide-modal');
+    const guideCloseBtn = document.getElementById('guide-close-btn');
     const guideContentBox = document.getElementById('guide-content-box');
-    const shopkeeperDrawerTools = document.getElementById('shopkeeper-drawer-tools');
+
+    const btnModeMove = document.getElementById('btn-mode-move');
+    const btnModeDelete = document.getElementById('btn-mode-delete');
+
+    btnModeMove?.addEventListener('click', () => {
+      currentTool = 'move';
+      btnModeMove.classList.add('active-mode');
+      btnModeDelete?.classList.remove('active-mode');
+    });
+
+    btnModeDelete?.addEventListener('click', () => {
+      currentTool = 'delete';
+      btnModeDelete.classList.add('active-mode');
+      btnModeMove?.classList.remove('active-mode');
+    });
 
     const playerCardModal = document.getElementById('player-card-modal');
     const pcCloseBtn = document.getElementById('pc-close-btn');
@@ -851,19 +824,9 @@ import Layout from '../layouts/Layout.astro';
     const orcTitle = document.getElementById('orc-title');
     const orcListBox = document.getElementById('orc-list-box');
 
-    const dmModal = document.getElementById('dm-modal');
-    const dmCloseBtn = document.getElementById('dm-close-btn');
-    const dmMessagesBox = document.getElementById('dm-messages-box');
-    const dmInput = document.getElementById('dm-input') as HTMLInputElement;
-    const dmSendBtn = document.getElementById('dm-send-btn');
-
     pcCloseBtn?.addEventListener('click', () => { if (playerCardModal) playerCardModal.style.display = 'none'; });
     orcCloseBtn?.addEventListener('click', () => { if (otherRecordsModal) otherRecordsModal.style.display = 'none'; });
     orcCloseFooter?.addEventListener('click', () => { if (otherRecordsModal) otherRecordsModal.style.display = 'none'; });
-    dmCloseBtn?.addEventListener('click', () => {
-      if (dmModal) dmModal.style.display = 'none';
-      if (dmPollInterval) clearInterval(dmPollInterval);
-    });
 
     pcDmBtn?.addEventListener('click', () => {
       if (activePlayerCardData) {
@@ -913,20 +876,16 @@ import Layout from '../layouts/Layout.astro';
     });
 
     btnTabGuide?.addEventListener('click', () => {
-      if (guideDrawer) {
-        const isVisible = guideDrawer.style.display === 'flex';
-        guideDrawer.style.display = isVisible ? 'none' : 'flex';
-        if (!isVisible) renderGuideContent();
-      }
+      renderGuideContent();
+      if (guideModal) guideModal.style.display = 'flex';
     });
 
-    drawerCloseBtn?.addEventListener('click', () => {
-      if (guideDrawer) guideDrawer.style.display = 'none';
+    guideCloseBtn?.addEventListener('click', () => {
+      if (guideModal) guideModal.style.display = 'none';
     });
 
     function renderGuideContent() {
       if (!guideContentBox) return;
-      if (isAdmin && shopkeeperDrawerTools) { shopkeeperDrawerTools.style.display = 'flex'; }
 
       const baseStandardItems = [
         { id: 'std_seat', type: 'seat', label: '木椅', imgSrc: '/assets/seat.png', description: '供旅人安坐專心的木椅', w: 1, h: 1, isSystem: true },
@@ -977,8 +936,7 @@ import Layout from '../layouts/Layout.astro';
         btn.addEventListener('click', (e) => {
           const targetBtn = e.currentTarget as HTMLElement;
           currentTool = targetBtn.dataset.type || 'move';
-          document.querySelectorAll('.shopkeeper-tools-bar .tool-btn').forEach(tb => tb.classList.remove('active'));
-          if (guideDrawer) guideDrawer.style.display = 'none';
+          if (guideModal) guideModal.style.display = 'none';
           alert(`已選擇「${targetBtn.dataset.label}」，請點擊畫布空白處放置！`);
         });
       });
@@ -1014,15 +972,6 @@ import Layout from '../layouts/Layout.astro';
         });
       });
     }
-
-    document.querySelectorAll('.shopkeeper-tools-bar .tool-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.shopkeeper-tools-bar .tool-btn').forEach(b => b.classList.remove('active'));
-        const target = e.currentTarget as HTMLElement;
-        target.classList.add('active');
-        currentTool = target.dataset.tool!;
-      });
-    });
 
     const tableModal = document.getElementById('table-modal');
     const tableModalTitle = document.getElementById('table-modal-title');
@@ -1125,7 +1074,7 @@ import Layout from '../layouts/Layout.astro';
       updateCurrentRoomConfig();
       isDND = false;
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
-      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      setLeaveSeatButtonState(false);
       playerGx = 1; playerGy = 1;
       moveQueue = [];
       renderRoomDropdown();
@@ -1582,7 +1531,7 @@ import Layout from '../layouts/Layout.astro';
         if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
-        if (leaveSeatBtn) leaveSeatBtn.style.display = 'inline-block';
+        setLeaveSeatButtonState(true);
         await syncMyStateToDB();
 
         const { error } = await supabase.from(ITEMS_TABLE).update({
@@ -1627,6 +1576,7 @@ import Layout from '../layouts/Layout.astro';
     seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
 
     leaveSeatBtn?.addEventListener('click', () => {
+      if (leaveSeatBtn.disabled) return;
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
         if (currentReadingRecordId) {
@@ -1651,7 +1601,7 @@ import Layout from '../layouts/Layout.astro';
 
       isDND = false;
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
-      if (leaveSeatBtn) leaveSeatBtn.style.display = 'none';
+      setLeaveSeatButtonState(false);
       if (seatModal) seatModal.style.display = 'none';
       
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
