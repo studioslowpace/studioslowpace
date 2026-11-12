@@ -424,27 +424,59 @@ import Layout from '../layouts/Layout.astro';
         let currentUserName = '訪客';
         let isGuest = false;
 
-        window.onload = function() {
+        window.onload = async function() {
+            // 1. 主動優先檢查 sessionStorage 是否有訪客身分
+            const guestId = sessionStorage.getItem('space_guest_id');
+            const guestName = sessionStorage.getItem('space_guest_name');
+
+            if (guestId) {
+                currentUserId = guestId;
+                currentUserName = guestName || '訪客';
+                isGuest = true;
+            } else {
+                // 2. 若無訪客身分，檢查 Supabase 真實會員 Session
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    currentUserId = session.user.id;
+                    const { data: member } = await supabase
+                        .from(TABLE_NAME)
+                        .select('name')
+                        .eq('user_id', session.user.id)
+                        .single();
+                    currentUserName = member?.name || session.user.email || '鄰里人';
+                    isGuest = false;
+                } else {
+                    currentUserId = 'guest_' + Math.random().toString(36).substring(2, 9);
+                    currentUserName = '訪客';
+                    isGuest = true;
+                }
+            }
+
+            // 更新聊天室介面的身分標籤
+            const badgeEl = document.getElementById('my-identity-badge-chat');
+            if (badgeEl) badgeEl.textContent = `👤 ${currentUserName}`;
+
+            // 執行後續資料載入
+            await checkAdminPermission(currentUserId);
+            fetchAllUserRecordsFromSupabase();
+            fetchTopics();
+            fetchUserDmConversations();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetDmId = urlParams.get('dm');
+            const targetDmName = urlParams.get('name');
+            if (targetDmId) {
+                setTimeout(() => {
+                    startDirectChat(targetDmId, targetDmName ? decodeURIComponent(targetDmName) : targetDmId);
+                }, 400);
+            }
+
+            // 同步監聽 Header 的事件
             window.addEventListener('USER_AUTH_READY', async (e) => {
                 currentUserId = e.detail.userId;
                 currentUserName = e.detail.userName;
                 isGuest = e.detail.isGuest;
-
-                document.getElementById('my-identity-badge-chat').textContent = `👤 ${currentUserName}`;
-
-                await checkAdminPermission(currentUserId);
-                fetchAllUserRecordsFromSupabase();
-                fetchTopics();
-                fetchUserDmConversations();
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const targetDmId = urlParams.get('dm');
-                const targetDmName = urlParams.get('name');
-                if (targetDmId) {
-                    setTimeout(() => {
-                        startDirectChat(targetDmId, targetDmName ? decodeURIComponent(targetDmName) : targetDmId);
-                    }, 400);
-                }
+                if (badgeEl) badgeEl.textContent = `👤 ${currentUserName}`;
             });
 
             window.addEventListener('ONLINE_COUNT_UPDATED', (e) => {
