@@ -1,7 +1,6 @@
 ---
 // 匯入 Layout
 import BaseLayout from '../layouts/Layout.astro';
-import { supabase } from '../lib/supabase';
 ---
 <BaseLayout title="客舍萬事屋 Slow Pace Skill Supermarker">
     <Fragment slot="head">
@@ -9,6 +8,7 @@ import { supabase } from '../lib/supabase';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     </Fragment>
     
 <style is:global>
@@ -931,7 +931,7 @@ import { supabase } from '../lib/supabase';
         </div>
     </div>
 
-    <main >
+    <main id="main-content-layout" class="main-layout">
         <div id="global-admin-badge" class="hidden admin-status-badge">🔑 主理人權限運作中 — 全域管理功能已解鎖</div>
         
         <div class="layout-spacing">
@@ -1214,9 +1214,13 @@ import { supabase } from '../lib/supabase';
 
 <script>
     
-    import { supabase } from '../lib/supabase';
+    const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+    const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
     const TABLE_NAME = 'skills';
     const POSTS_TABLE = 'posts';
+    
+    const supabaseInstance = window.supabase || supabase;
+    const client = supabaseInstance.createClient(supabaseUrl, supabaseKey);
     
     let posts = [];
     let skills = [];
