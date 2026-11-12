@@ -155,19 +155,6 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
-  <!-- 3.8 手札指南清單 Modal -->
-  <div id="guide-modal" class="rpg-modal-overlay" style="display: none;">
-    <div class="rpg-window" style="max-width: 400px; height: 500px; display: flex; flex-direction: column;">
-      <div class="rpg-title-bar" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>📖 客舍手札 · 物件與空間指南</span>
-        <button id="guide-close-btn" class="rpg-btn-sm" style="background:transparent; border:none; font-weight:bold; color:var(--text-color);">✕</button>
-      </div>
-      <div class="rpg-content" style="flex: 1; display: flex; flex-direction: column; padding: 12px; overflow: hidden;">
-        <div id="guide-content-box" class="guide-list-box" style="flex: 1; overflow-y: auto;"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- 4. 彈出網頁視窗 -->
   <div id="custom-modal-frame" class="rpg-modal-overlay" style="display: none;">
     <div class="rpg-window embed-window">
@@ -235,16 +222,16 @@ import Layout from '../layouts/Layout.astro';
 
   <!-- 主介面 容器整頁100%且垂直置中 -->
   <main style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; align-items:center;">
-    <!-- 房間選擇與房間管理列 -->
-    <div class="room-control-bar" style="width:100%; padding: 10px 16px; background: var(--bg-card); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; box-sizing:border-box;">
+    
+    <!-- 頂端中央：自修室下拉選單 (無框線、無背景) 與店主專用管理按鈕 -->
+    <div class="room-control-bar" style="width:100%; padding: 12px 16px; background: transparent; display: flex; justify-content: center; align-items: center; position: relative; flex-shrink: 0; box-sizing:border-box;">
       <div class="room-selector-wrapper">
-        <select id="room-select-dropdown" class="theme-select-dropdown" style="padding:6px 10px; font-weight:600;">
+        <select id="room-select-dropdown" class="clean-room-dropdown" style="padding:4px 8px; font-weight:600; font-size:14px; background:transparent; border:none; outline:none; cursor:pointer; color:var(--text-color); text-align:center;">
           <option value="study">📖 自修室</option>
         </select>
       </div>
 
-      <div style="display:flex; gap:6px; align-items:center;">
-        <button id="open-room-modal-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--accent-hover); color:#fff;">➕ 新房間</button>
+      <div style="position: absolute; right: 16px; display:flex; gap:6px; align-items:center;">
         <button id="delete-room-btn" class="shopkeeper-only-btn rpg-btn-sm" style="display:none; background:var(--danger-color); color:#fff;">🗑️ 刪除</button>
       </div>
     </div>
@@ -255,37 +242,53 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <!-- 底部功能與操作列 -->
-    <footer class="rpg-footer-nav" id="rpg-footer" style="width:100%;">
+    <footer class="rpg-footer-nav" id="rpg-footer" style="width:100%; background:transparent; border:none;">
+      
+      <!-- 向上展開的手札指南抽屜 -->
+      <div id="guide-drawer" class="guide-drawer-content" style="display: none; width:100%; max-width:430px; margin:0 auto;">
+        <div class="drawer-header">
+          <span>📖 客舍手札 · 物件與空間指南</span>
+          <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:3px 8px;">✕ 收起</button>
+        </div>
+        <div id="guide-content-box" class="guide-list-box"></div>
+      </div>
+
       <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
         <div style="display:flex; align-items:center; background:var(--bg-card); border:1px solid var(--border-color); border-radius:16px; width:100%; max-width:600px; box-shadow:0 4px 12px rgba(44,36,29,0.04);">
           <div class="footer-tabs-bar" style="flex:1; display:flex; justify-content:space-around; align-items:center; padding:6px 8px; box-sizing:border-box; background:transparent; gap:4px;">
             
-            <!-- 手札 -->
-            <button id="btn-tab-guide" class="footer-tab-link" style="background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px; transition:all 0.2s;">
+            <!-- 手札 (保留向上展開) -->
+            <button id="btn-tab-guide" class="footer-tab-outline-btn" style="background:transparent; border:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--text-color); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; transition:all 0.2s;">
               <span style="font-size:16px;">📖</span>
               <span>手札</span>
             </button>
 
             <!-- 散步模式 -->
-            <button id="btn-mode-move" class="footer-tab-link active-mode" style="background:var(--bg-input); border:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--accent-hover); font-weight:600; font-size:11px; gap:2px; padding:6px 8px; border-radius:12px;">
+            <button id="btn-mode-move" class="footer-tab-outline-btn active-mode" style="background:var(--bg-input); border:1px solid var(--border-color); cursor:pointer; display:flex; flex-direction:column; align-items:center; color:var(--accent-hover); font-weight:600; font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
               <span style="font-size:16px;">🚶</span>
               <span>散步</span>
             </button>
 
             <!-- 移除模式 (店主專用) -->
-            <button id="btn-mode-delete" class="shopkeeper-only-btn footer-tab-link" style="display:none; background:transparent; border:none; cursor:pointer; flex-direction:column; align-items:center; color:var(--danger-color); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px;">
+            <button id="btn-mode-delete" class="shopkeeper-only-btn footer-tab-outline-btn" style="display:none; background:transparent; border:1px solid var(--border-color); cursor:pointer; flex-direction:column; align-items:center; color:var(--danger-color); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
               <span style="font-size:16px;">🗑️</span>
               <span>移除</span>
             </button>
 
             <!-- 新增物件 (店主專用) -->
-            <button id="open-cf-modal-btn" class="shopkeeper-only-btn footer-tab-link" style="display:none; background:transparent; border:none; cursor:pointer; flex-direction:column; align-items:center; color:var(--accent-hover); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px;">
+            <button id="open-cf-modal-btn" class="shopkeeper-only-btn footer-tab-outline-btn" style="display:none; background:transparent; border:1px solid var(--border-color); cursor:pointer; flex-direction:column; align-items:center; color:var(--accent-hover); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
               <span style="font-size:16px;">➕</span>
               <span>新物件</span>
             </button>
 
-            <!-- 🚶 起立按鈕 (取代萬事屋按鈕) -->
-            <button id="btn-leave-seat" class="footer-tab-link" style="background:transparent; border:none; cursor:not-allowed; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 8px; border-radius:12px; opacity:0.5;" disabled>
+            <!-- 新房間 (店主專用，放在新物件右邊) -->
+            <button id="open-room-modal-btn" class="shopkeeper-only-btn footer-tab-outline-btn" style="display:none; background:transparent; border:1px solid var(--border-color); cursor:pointer; flex-direction:column; align-items:center; color:var(--accent-hover); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
+              <span style="font-size:16px;">🏠</span>
+              <span>新房間</span>
+            </button>
+
+            <!-- 🚶 起立按鈕 -->
+            <button id="btn-leave-seat" class="footer-tab-outline-btn" style="background:transparent; border:1px solid var(--border-color); cursor:not-allowed; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; opacity:0.5;" disabled>
               <span style="font-size:16px;">🚶</span>
               <span>起立</span>
             </button>
@@ -297,15 +300,14 @@ import Layout from '../layouts/Layout.astro';
   </main>
 
   <style is:global>
-
     .dnd-focus-mode {
       filter: brightness(0.92) contrast(1.04);
     }
-    .dnd-focus-mode .rpg-hud, .dnd-focus-mode .rpg-footer-nav, .dnd-focus-mode .room-control-bar {
+    .dnd-focus-mode .rpg-footer-nav, .dnd-focus-mode .room-control-bar {
       opacity: 0.5;
       transition: opacity 0.5s ease;
     }
-    .dnd-focus-mode .rpg-hud:hover, .dnd-focus-mode .rpg-footer-nav:hover, .dnd-focus-mode .room-control-bar:hover {
+    .dnd-focus-mode .rpg-footer-nav:hover, .dnd-focus-mode .room-control-bar:hover {
       opacity: 1;
     }
 
@@ -319,12 +321,36 @@ import Layout from '../layouts/Layout.astro';
     .rpg-footer-nav {
       background: var(--bg-card);
       backdrop-filter: blur(16px);
-      border-top: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       z-index: 50;
-      transition: opacity 0.4s ease;
+    }
+
+    .guide-drawer-content {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      max-height: 46vh;
+      min-height: 190px;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 18px;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .drawer-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; font-weight: 700; color: var(--accent-hover); margin-bottom: 10px; flex-shrink: 0;
     }
 
     .guide-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
@@ -343,11 +369,27 @@ import Layout from '../layouts/Layout.astro';
     .rpg-btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 10px; font-size: 13px; cursor: pointer; width: 100%; border-radius: 14px; }
     .rpg-btn-group { display: flex; gap: 8px; }
 
-    .theme-select-dropdown { background: var(--bg-input); color: var(--text-color); border: 1px solid var(--border-color); padding: 4px 8px; font-size: 11px; border-radius: 12px; outline: none; cursor: pointer; font-weight: 500; }
+    .clean-room-dropdown {
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-color);
+      cursor: pointer;
+    }
+
     .rpg-btn-sm { background: var(--bg-input); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 10px; font-weight: 600; }
     
     .canvas-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-main); padding: 8px; overflow: hidden; min-height: 0; }
     #rpg-canvas { border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; image-rendering: pixelated; border-radius: 20px; width: 100%; max-width: 384px; height: 100%; max-height: 384px; object-fit: contain; }
+
+    .footer-tab-outline-btn {
+      border: 1px solid var(--border-color) !important;
+      border-radius: 12px;
+      background: transparent;
+    }
 
     .active-mode {
       background: var(--bg-input) !important;
@@ -789,8 +831,8 @@ import Layout from '../layouts/Layout.astro';
     const libraryCloseBtn = document.getElementById('library-close-btn');
 
     const btnTabGuide = document.getElementById('btn-tab-guide');
-    const guideModal = document.getElementById('guide-modal');
-    const guideCloseBtn = document.getElementById('guide-close-btn');
+    const guideDrawer = document.getElementById('guide-drawer');
+    const drawerCloseBtn = document.getElementById('drawer-close-btn');
     const guideContentBox = document.getElementById('guide-content-box');
 
     const btnModeMove = document.getElementById('btn-mode-move');
@@ -876,12 +918,15 @@ import Layout from '../layouts/Layout.astro';
     });
 
     btnTabGuide?.addEventListener('click', () => {
-      renderGuideContent();
-      if (guideModal) guideModal.style.display = 'flex';
+      if (guideDrawer) {
+        const isVisible = guideDrawer.style.display === 'flex';
+        guideDrawer.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) renderGuideContent();
+      }
     });
 
-    guideCloseBtn?.addEventListener('click', () => {
-      if (guideModal) guideModal.style.display = 'none';
+    drawerCloseBtn?.addEventListener('click', () => {
+      if (guideDrawer) guideDrawer.style.display = 'none';
     });
 
     function renderGuideContent() {
@@ -936,7 +981,7 @@ import Layout from '../layouts/Layout.astro';
         btn.addEventListener('click', (e) => {
           const targetBtn = e.currentTarget as HTMLElement;
           currentTool = targetBtn.dataset.type || 'move';
-          if (guideModal) guideModal.style.display = 'none';
+          if (guideDrawer) guideDrawer.style.display = 'none';
           alert(`已選擇「${targetBtn.dataset.label}」，請點擊畫布空白處放置！`);
         });
       });
