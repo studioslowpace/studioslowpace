@@ -11,6 +11,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
     </div>
 
+    <!-- 右側：身分顯示與登出按鈕 (移至 Header 統一管理) -->
     <div class="hud-right-group">
       <div class="hud-user-profile">
         <span class="user-tag" id="hud-tier-tag">👤 載入中</span>
@@ -70,7 +71,22 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   </div>
 </div>
 
+<!-- 全站共用的成員列表 Modal (點擊線上/總數時彈出) -->
+<div id="user-list-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1250; padding:1rem;">
+    <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 id="user-list-modal-title" style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">👥 成員列表</h3>
+            <button id="user-list-close-btn" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+        </div>
+        <input type="text" id="user-search-input" placeholder="🔍 搜尋鄰里人名字..." style="width: 100%; padding: 0.5rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.75rem; outline: none;" />
+        <div id="user-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:240px;">
+            <p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入中...</p>
+        </div>
+    </div>
+</div>
+
 <style>
+  .hidden { display: none !important; }
   .rpg-hud {
     width: 100%;
     background: var(--bg-card, rgba(255, 255, 255, 0.85));
@@ -119,7 +135,10 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 
   let currentUserId = '';
   let currentUserName = '';
+  let isGuest = false;
   let presenceChannel = null;
+  let onlineUsersMap = {};
+  let allUserRecords = [];
 
   async function initAuthHeader() {
     const nameEl = document.getElementById('hud-name');
@@ -127,7 +146,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     const modal = document.getElementById('rpg-modal');
     const colorPicker = document.getElementById('custom-color-picker');
 
-    // 恢復儲存的主題顏色
+    // 1. 調色盤即時變色功能
     const savedColor = localStorage.getItem('space_theme_color');
     if (savedColor && colorPicker) {
       colorPicker.value = savedColor;
@@ -140,31 +159,29 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       localStorage.setItem('space_theme_color', val);
     });
 
-    // 1. 【最強防護】第一步優先攔截 sessionStorage 內的訪客身分
+    // 2. 嚴格優先檢查 sessionStorage 是否為訪客身分
     const guestId = sessionStorage.getItem('space_guest_id');
     const guestName = sessionStorage.getItem('space_guest_name');
 
     if (guestId) {
       currentUserId = guestId;
       currentUserName = guestName || '訪客';
+      isGuest = true;
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl) tierEl.textContent = '☁️ 訪客';
-      
-      // 強制關閉並隱藏登入彈窗，絕不允許它跳出來
       if (modal) modal.style.display = 'none';
 
+      // 廣播身分就緒事件供全站共用
       window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
         detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
       }));
-      initPresenceTracker();
-      
-      // 監聽來自 Modal 的跨視窗訊息
-      setupMessageListener(modal);
-      setupLogoutHandlers();
-      return; // 🛑 立即終止，不往下執行 Supabase Auth 檢查，徹底解決跳回登入框的問題！
+
+      initPresenceAndFetchData();
+      setupHeaderEventListeners();
+      return;
     }
 
-    // 2. 若沒有訪客身分，才檢查正式會員的 Supabase Auth Session
+    // 3. 檢查 Supabase 會員身分
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       const { data: member } = await supabase
@@ -175,6 +192,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 
       currentUserId = session.user.id;
       currentUserName = member?.name || session.user.email || '鄰里人';
+      isGuest = false;
 
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
@@ -183,34 +201,132 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
         detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
       }));
-      initPresenceTracker();
+
+      initPresenceAndFetchData();
     } else {
       currentUserName = '訪客';
       if (nameEl) nameEl.textContent = '訪客';
       if (tierEl) tierEl.textContent = '👤 未登入';
-      if (modal) modal.style.display = 'flex'; // 只有在既不是訪客又沒登入時才開彈窗
+      if (modal) modal.style.display = 'flex';
     }
 
-    setupMessageListener(modal);
-    setupLogoutHandlers();
+    setupHeaderEventListeners();
   }
 
-  function setupMessageListener(modal) {
+  // 初始化線上追蹤與抓取所有成員紀錄（供在線/總數彈窗共用）
+  async function initPresenceAndFetchData() {
+    try {
+      const { data, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
+      allUserRecords = data || [];
+      const totalCount = count !== null ? count : allUserRecords.length;
+      const totalEl = document.getElementById('total-users-count-home');
+      if (totalEl) totalEl.textContent = totalCount;
+    } catch (err) {
+      console.error("載入成員失敗:", err);
+    }
+
+    if (presenceChannel) supabase.removeChannel(presenceChannel);
+
+    presenceChannel = supabase.channel('community-online-room', {
+      config: { presence: { key: currentUserId || currentUserName } }
+    });
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        onlineUsersMap = {};
+        Object.keys(state).forEach(key => { onlineUsersMap[key] = true; });
+        const onlineCount = Object.keys(state).length || 1;
+
+        const onlineEl = document.getElementById('online-users-count-home');
+        if (onlineEl) onlineEl.textContent = onlineCount;
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ name: currentUserName, online_at: new Date().toISOString() });
+        }
+      });
+  }
+
+  let currentUserListMode = 'online';
+  function openUserListModal(mode) {
+    currentUserListMode = mode;
+    const modalBox = document.getElementById('user-list-modal');
+    document.getElementById('user-list-modal-title').textContent = mode === 'online' ? "🟢 在線鄰里人名單" : "📜 全部鄰里人名單";
+    document.getElementById('user-search-input').value = '';
+    renderUserListModalContent('');
+    modalBox.classList.remove('hidden');
+  }
+
+  function closeUserListModal() {
+    document.getElementById('user-list-modal').classList.add('hidden');
+  }
+
+  function renderUserListModalContent(filter = '') {
+    const container = document.getElementById('user-list-container');
+    if (!container) return;
+
+    let list = currentUserListMode === 'online' 
+        ? Object.keys(onlineUsersMap).map(key => {
+            const record = allUserRecords.find(u => u.user_id === key || u.name === key);
+            return { id: record ? record.user_id : key, name: record ? record.name : key };
+        })
+        : allUserRecords.map(u => ({ id: u.user_id, name: u.name })).filter(u => u.name);
+
+    if (filter) list = list.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()));
+
+    if (list.length === 0) {
+        container.innerHTML = `<p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">沒有找到符合的成員</p>`;
+        return;
+    }
+
+    container.innerHTML = list.map(item => {
+        const isSelf = (item.id === currentUserId || item.name === currentUserName);
+        const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
+        // 點擊私訊按鈕：自動跳轉回主頁並開啟對應的私訊
+        let actionBtn = (!isSelf && !isGuest && !item.id?.includes('guest_')) 
+            ? `<button data-target-id="${item.id}" data-target-name="${item.name}" class="header-dm-action-btn" style="background:#2563eb; color:white; border:none; padding:2px 8px; font-size:0.65rem; border-radius:4px; cursor:pointer;">私訊</button>` : '';
+
+        return `
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.75rem; font-weight:bold; color:#1e293b;">👤 ${item.name} ${badge}</span>
+                ${actionBtn}
+            </div>
+        `;
+    }).join('');
+  }
+
+  function setupHeaderEventListeners() {
+    // 點擊線上與總數開啟成員列表
+    document.getElementById('online-count-trigger-home')?.addEventListener('click', () => openUserListModal('online'));
+    document.getElementById('total-count-trigger-home')?.addEventListener('click', () => openUserListModal('total'));
+    document.getElementById('user-list-close-btn')?.addEventListener('click', closeUserListModal);
+    document.getElementById('user-search-input')?.addEventListener('input', (e) => renderUserListModalContent(e.target.value.trim()));
+
+    // 點擊私訊按鈕自動導向主頁並攜帶參數
+    document.getElementById('user-list-container')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.header-dm-action-btn');
+      if (btn) {
+        const targetId = btn.getAttribute('data-target-id');
+        const targetName = encodeURIComponent(btn.getAttribute('data-target-name'));
+        closeUserListModal();
+        window.location.href = `/?dm=${targetId}&name=${targetName}`;
+      }
+    });
+
+    // 訊息監聽 (登入成功 / 訪客登入)
     window.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
         sessionStorage.setItem('space_guest_id', event.data.guestId);
-        sessionStorage.setItem('space_guest_name', event.data.name); // 完整儲存訪客名稱
-        if (modal) modal.style.display = 'none';
+        sessionStorage.setItem('space_guest_name', event.data.name);
         window.location.reload();
       }
       if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-        if (modal) modal.style.display = 'none';
         window.location.reload();
       }
     });
-  }
 
-  function setupLogoutHandlers() {
+    // 登出按鈕邏輯
     const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
     const logoutModal = document.getElementById('logout-confirm-modal');
     const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
@@ -229,31 +345,6 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       localStorage.clear();
       window.location.reload();
     });
-  }
-
-  function initPresenceTracker() {
-    const trackName = currentUserName || '訪客';
-    if (presenceChannel) supabase.removeChannel(presenceChannel);
-
-    presenceChannel = supabase.channel('community-online-room', {
-      config: { presence: { key: currentUserId || trackName } }
-    });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        const onlineCount = Object.keys(state).length || 1;
-        
-        const onlineEl = document.getElementById('online-users-count-home');
-        if (onlineEl) onlineEl.textContent = onlineCount;
-
-        window.dispatchEvent(new CustomEvent('ONLINE_COUNT_UPDATED', { detail: { count: onlineCount, state } }));
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({ name: trackName, online_at: new Date().toISOString() });
-        }
-      });
   }
 
   initAuthHeader();

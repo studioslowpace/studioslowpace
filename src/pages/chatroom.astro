@@ -95,12 +95,6 @@ import Layout from '../layouts/Layout.astro';
             width: 100%;
         }
 
-
-          /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
-  .phone-chat-messages::-webkit-scrollbar {
-    display: none;
-  }
-
         .msg-bubble {
             max-width: 78%;
             padding: 0.5rem 0.75rem 0.35rem 0.75rem;
@@ -260,7 +254,7 @@ import Layout from '../layouts/Layout.astro';
 
             </div>
 
-            <!-- 💬 PAGE 2: 群組對話模式 (關鍵高度鎖定) -->
+            <!-- 💬 PAGE 2: 群組對話模式 (固定上下，中間滾動) -->
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
                 <!-- 固定標題 -->
@@ -275,7 +269,7 @@ import Layout from '../layouts/Layout.astro';
                         <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
                     </div>
 
-                    <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
+                    <div style="width: 40px;"></div>
                 </div>
 
                 <!-- 內部滾動訊息區 -->
@@ -290,7 +284,7 @@ import Layout from '../layouts/Layout.astro';
                 </form>
             </div>
 
-            <!-- 💬 PAGE 3: 單對單私訊模式 (關鍵高度鎖定) -->
+            <!-- 💬 PAGE 3: 單對單私訊模式 (固定上下，中間滾動) -->
             <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
                 <!-- 固定標題 -->
@@ -299,7 +293,7 @@ import Layout from '../layouts/Layout.astro';
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
-                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">👤 訪客</div>
+                    <div style="width: 40px;"></div>
                 </div>
 
                 <!-- 內部滾動私訊區 -->
@@ -316,20 +310,6 @@ import Layout from '../layouts/Layout.astro';
 
         </div>
     </main>
-
-    <!-- 👥 成員列表 Modal -->
-    <div id="user-list-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1250; padding:1rem;">
-        <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 id="user-list-modal-title" style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">👥 成員列表</h3>
-                <button id="user-list-close-btn" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
-            </div>
-            <input type="text" id="user-search-input" placeholder="🔍 搜尋鄰里人名字..." class="input-field" style="padding: 0.5rem; font-size: 0.75rem;">
-            <div id="user-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:240px;">
-                <p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入中...</p>
-            </div>
-        </div>
-    </div>
 
     <!-- 📖 社群源由 Modal -->
     <div id="modal-origin" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1200; padding:1rem;">
@@ -410,7 +390,6 @@ import Layout from '../layouts/Layout.astro';
         const TABLE_NAME = 'slowpace_members';
         const PROFILES_TABLE = 'profiles';
         let allUserRecords = [];
-        let onlineUsersMap = {};
         let topics = [];
         let activeTopicId = null;
         let activeDmReceiverId = null;
@@ -425,12 +404,11 @@ import Layout from '../layouts/Layout.astro';
         let isGuest = false;
 
         window.onload = function() {
+            // 接收來自 Header 的共用身分就緒事件
             window.addEventListener('USER_AUTH_READY', async (e) => {
                 currentUserId = e.detail.userId;
                 currentUserName = e.detail.userName;
                 isGuest = e.detail.isGuest;
-
-                document.getElementById('my-identity-badge-chat').textContent = `👤 ${currentUserName}`;
 
                 await checkAdminPermission(currentUserId);
                 fetchAllUserRecordsFromSupabase();
@@ -447,15 +425,17 @@ import Layout from '../layouts/Layout.astro';
                 }
             });
 
-            window.addEventListener('ONLINE_COUNT_UPDATED', (e) => {
-                const count = e.detail.count;
-                const state = e.detail.state;
-                onlineUsersMap = {};
-                Object.keys(state).forEach(key => { onlineUsersMap[key] = true; });
-
-                const onlineEl = document.getElementById('online-users-count-home');
-                if (onlineEl) onlineEl.textContent = count;
-            });
+            // 支援直接從 sessionStorage 讀取（防止事件尚未綁定前遺漏）
+            const guestId = sessionStorage.getItem('space_guest_id');
+            const guestName = sessionStorage.getItem('space_guest_name');
+            if (guestId) {
+                currentUserId = guestId;
+                currentUserName = guestName || '訪客';
+                isGuest = true;
+                fetchAllUserRecordsFromSupabase();
+                fetchTopics();
+                fetchUserDmConversations();
+            }
 
             initEventListeners();
         };
@@ -490,11 +470,8 @@ import Layout from '../layouts/Layout.astro';
 
         async function fetchAllUserRecordsFromSupabase() {
             try {
-                const { data, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
+                const { data } = await supabase.from(TABLE_NAME).select('*');
                 allUserRecords = data || [];
-                const totalCount = count !== null ? count : allUserRecords.length;
-                const totalEl = document.getElementById('total-users-count-home');
-                if (totalEl) totalEl.textContent = totalCount;
             } catch (err) { console.error("讀取用戶紀錄失敗:", err.message); }
         }
 
@@ -530,10 +507,11 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('page-dm').classList.add('hidden');
             document.getElementById('page-home').classList.remove('hidden');
             fetchUserDmConversations();
+            window.history.replaceState({}, '', window.location.pathname);
         }
 
         async function fetchUserDmConversations() {
-            if (isGuest) return;
+            if (isGuest || !currentUserId) return;
             const container = document.getElementById('dm-conversations-list-container');
             if (!container) return;
 
@@ -574,12 +552,11 @@ import Layout from '../layouts/Layout.astro';
             }
 
             container.innerHTML = partners.map(item => {
-                const isOnline = onlineUsersMap[item.partnerId] ? '🟢' : '⚪';
                 const timeStr = new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 return `
                     <div data-partner-id="${item.partnerId}" data-partner-name="${item.partnerName}" class="dm-convo-item topic-select-card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem; padding: 0.6rem 0.75rem;">
                         <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
-                            <h4 style="font-size: 0.825rem; font-weight: 800; color: #1e293b;">${isOnline} ${item.partnerName}</h4>
+                            <h4 style="font-size: 0.825rem; font-weight: 800; color: #1e293b;">💬 ${item.partnerName}</h4>
                             <p style="font-size: 0.7rem; color: #64748b; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">${item.lastMsg}</p>
                         </div>
                         <span style="font-size:0.6rem; color:#94a3b8;">${timeStr}</span>
@@ -591,10 +568,6 @@ import Layout from '../layouts/Layout.astro';
         function startDirectChat(targetId, targetName) {
             if (isGuest || (currentUserId && currentUserId.startsWith('guest_'))) {
                 alert("🔒 訪客身分無法使用私訊功能！");
-                return;
-            }
-            if ((targetId && targetId.includes('guest_')) || (targetName && targetName.includes('訪客'))) {
-                alert("🔒 無法與訪客進行私訊對話。");
                 return;
             }
             activeDmReceiverId = targetId;
@@ -672,51 +645,6 @@ import Layout from '../layouts/Layout.astro';
                     fetchUserDmConversations();
                 })
                 .subscribe();
-        }
-
-        let currentUserListMode = 'online';
-        function openUserListModal(mode) {
-            currentUserListMode = mode;
-            const modalBox = document.getElementById('user-list-modal');
-            document.getElementById('user-list-modal-title').textContent = mode === 'online' ? "🟢 在線鄰里人名單" : "📜 全部鄰里人名單";
-            document.getElementById('user-search-input').value = '';
-            renderUserListModalContent('');
-            modalBox.classList.remove('hidden');
-        }
-
-        function closeUserListModal() {
-            document.getElementById('user-list-modal').classList.add('hidden');
-        }
-
-        function renderUserListModalContent(filter = '') {
-            const container = document.getElementById('user-list-container');
-            let list = currentUserListMode === 'online' 
-                ? Object.keys(onlineUsersMap).map(key => {
-                    const record = allUserRecords.find(u => u.user_id === key || u.name === key);
-                    return { id: record ? record.user_id : key, name: record ? record.name : key };
-                })
-                : allUserRecords.map(u => ({ id: u.user_id, name: u.name })).filter(u => u.name);
-
-            if (filter) list = list.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()));
-
-            if (list.length === 0) {
-                container.innerHTML = `<p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">沒有找到符合的成員</p>`;
-                return;
-            }
-
-            container.innerHTML = list.map(item => {
-                const isSelf = (item.id === currentUserId || item.name === currentUserName);
-                const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
-                let actionBtn = (!isSelf && !isGuest && !item.id?.includes('guest_')) 
-                    ? `<button data-target-id="${item.id}" data-target-name="${item.name}" class="dm-action-btn btn-blue" style="padding:2px 8px; font-size:0.65rem;">私訊</button>` : '';
-
-                return `
-                    <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.75rem; font-weight:bold; color:#1e293b;">👤 ${item.name} ${badge}</span>
-                        ${actionBtn}
-                    </div>
-                `;
-            }).join('');
         }
 
         async function fetchTopics() {
@@ -908,21 +836,6 @@ import Layout from '../layouts/Layout.astro';
         }
 
         function initEventListeners() {
-            document.getElementById('logo-toggle-btn')?.addEventListener('click', () => {
-                const nav = document.getElementById('admin-navbar');
-                nav.classList.toggle('hidden');
-                if (!nav.classList.contains('hidden') && isAdmin) {
-                    document.getElementById('admin-logged-in').classList.remove('hidden');
-                }
-            });
-
-            document.getElementById('admin-logout-btn')?.addEventListener('click', () => {
-                document.getElementById('admin-navbar').classList.add('hidden');
-            });
-
-            document.getElementById('online-count-trigger-home')?.addEventListener('click', () => openUserListModal('online'));
-            document.getElementById('total-count-trigger-home')?.addEventListener('click', () => openUserListModal('total'));
-
             document.getElementById('modal-origin-btn').addEventListener('click', () => document.getElementById('modal-origin').classList.remove('hidden'));
             document.getElementById('modal-origin-close').addEventListener('click', () => document.getElementById('modal-origin').classList.add('hidden'));
             document.getElementById('modal-origin-ok').addEventListener('click', () => document.getElementById('modal-origin').classList.add('hidden'));
@@ -937,8 +850,6 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('topic-switcher-trigger').addEventListener('click', () => document.getElementById('topic-switcher-modal').classList.remove('hidden'));
             document.getElementById('topic-switcher-close').addEventListener('click', () => document.getElementById('topic-switcher-modal').classList.add('hidden'));
 
-            document.getElementById('user-list-close-btn').addEventListener('click', closeUserListModal);
-            document.getElementById('user-search-input').addEventListener('input', (e) => renderUserListModalContent(e.target.value.trim()));
             document.getElementById('dm-search-input').addEventListener('input', (e) => renderDmConversationsList(allDmRecords, e.target.value.trim()));
 
             document.getElementById('chat-back-btn').addEventListener('click', backToHome);
@@ -956,14 +867,6 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('topic-modal-close')?.addEventListener('click', () => document.getElementById('topic-modal').classList.add('hidden'));
             document.getElementById('topic-modal-cancel')?.addEventListener('click', () => document.getElementById('topic-modal').classList.add('hidden'));
             document.getElementById('create-topic-form')?.addEventListener('submit', handleCreateTopic);
-
-            document.getElementById('user-list-container').addEventListener('click', (e) => {
-                const btn = e.target.closest('.dm-action-btn');
-                if (btn) {
-                    closeUserListModal();
-                    startDirectChat(btn.getAttribute('data-target-id'), btn.getAttribute('data-target-name'));
-                }
-            });
 
             document.getElementById('dm-conversations-list-container').addEventListener('click', (e) => {
                 const card = e.target.closest('.dm-convo-item');
