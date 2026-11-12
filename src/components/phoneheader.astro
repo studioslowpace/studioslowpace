@@ -6,7 +6,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   <!-- 第一列：品牌與使用者控制區 -->
   <div class="hud-top-row">
     <div class="hud-brand-group">
-      <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查身分">☁️ 空間客舍</span>
+      <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
     </div>
 
     <!-- 右側：身分顯示與登出按鈕 -->
@@ -38,6 +38,82 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     </div>
   </div>
 </header>
+
+<!-- 🔒 整合在一起的身份認證 Modal (內建登入、註冊、訪客進入) -->
+<div id="rpg-modal" class="rpg-modal-overlay" style="display: none;">
+  <div class="modal-card">
+    <!-- 頁籤切換 -->
+    <div class="modal-tabs">
+      <button id="tab-login-mode" type="button" class="tab-btn active">會員登入</button>
+      <button id="tab-register-mode" type="button" class="tab-btn">註冊帳號</button>
+      <button id="tab-guest-mode" type="button" class="tab-btn">訪客快速進入</button>
+    </div>
+
+    <!-- 1. 會員登入表單 -->
+    <div id="login-form-container" class="form-section">
+      <h3>歡迎回來，旅人</h3>
+      <div class="input-group">
+        <label for="login-email">電子信箱 (Email)</label>
+        <input type="email" id="login-email" placeholder="your@email.com" />
+      </div>
+      <div class="input-group">
+        <label for="login-password">密碼</label>
+        <input type="password" id="login-password" placeholder="••••••••" />
+      </div>
+      <button id="login-submit-btn" type="button" class="primary-btn">登入空間</button>
+      <button id="forgot-password-btn" type="button" class="text-btn">忘記密碼？</button>
+    </div>
+
+    <!-- 2. 註冊帳號表單 -->
+    <div id="register-form-container" class="form-section" style="display: none;">
+      <h3>加入空間客舍</h3>
+      <div class="input-group">
+        <label for="register-name">您的稱呼</label>
+        <input type="text" id="register-name" placeholder="例如：阿明" />
+      </div>
+      <div class="input-group">
+        <label for="register-email">電子信箱 (Email)</label>
+        <input type="email" id="register-email" placeholder="your@email.com" />
+      </div>
+      <div class="input-group">
+        <label for="register-password">設定密碼 (至少 6 碼)</label>
+        <input type="password" id="register-password" placeholder="••••••••" />
+      </div>
+      <div class="input-group">
+        <label for="register-password-confirm">確認密碼</label>
+        <input type="password" id="register-password-confirm" placeholder="••••••••" />
+      </div>
+      <div class="input-group">
+        <label for="register-role">身分角色</label>
+        <select id="register-role">
+          <option value="🌱 鄰里人">🌱 鄰里人</option>
+          <option value="☕ 駐站夥伴">☕ 駐站夥伴</option>
+          <option value="📚 讀書會成員">📚 讀書會成員</option>
+        </select>
+      </div>
+      <button id="register-submit-btn" type="button" class="primary-btn">註冊並建立身分</button>
+    </div>
+
+    <!-- 3. 訪客快速進入表單 -->
+    <div id="guest-form-container" class="form-section" style="display: none;">
+      <h3>以訪客身分探索</h3>
+      <p class="section-desc">無需註冊，直接選擇造型進入客舍互動。</p>
+      
+      <div class="avatar-selection">
+        <label class="avatar-option">
+          <input type="radio" name="guest-avatar" value="/assets/player1.png" checked />
+          <span class="avatar-box">預設旅人</span>
+        </label>
+        <label class="avatar-option">
+          <input type="radio" name="guest-avatar" value="/assets/player2.png" />
+          <span class="avatar-box">探索者</span>
+        </label>
+      </div>
+
+      <button id="guest-submit-btn" type="button" class="primary-btn guest-btn">快速進入客舍空間</button>
+    </div>
+  </div>
+</div>
 
 <!-- 登出確認彈窗 -->
 <div id="logout-confirm-modal" class="rpg-modal-overlay" style="display: none;">
@@ -104,13 +180,33 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   .theme-label { font-size: 10px; font-weight: 600; }
   .hud-theme-picker input[type="color"] { width: 16px; height: 16px; border: none; background: transparent; cursor: pointer; padding: 0; }
   
-  .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(44, 36, 29, 0.4); backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 16px; }
-  .rpg-logout-window { width: 100%; max-width: 320px; background: var(--bg-main, #faf6ee); border: 1px solid var(--border-color, #e6dcc8); border-radius: 16px; box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15); overflow: hidden; animation: modalPop 0.25s ease-out; }
-  @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  .logout-window-header { background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); padding: 10px 14px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border-color, #e6dcc8); text-align: center; letter-spacing: 1px; }
+  /* Modal 共用樣式 */
+  .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(44, 36, 29, 0.5); backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 16px; }
+  .modal-card { background: #faf6ee; width: 100%; max-width: 400px; border: 1px solid #e6dcc8; border-radius: 20px; padding: 24px; box-shadow: 0 16px 40px rgba(44, 36, 29, 0.15); }
+  .modal-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e6dcc8; padding-bottom: 12px; }
+  .tab-btn { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #e6dcc8; background: #f4efe6; color: #8c7a6b; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: #4a443f; color: #f5f2eb; border-color: #4a443f; font-weight: 500; }
+  .form-section h3 { margin: 0 0 8px 0; color: #2c241d; font-size: 18px; }
+  .section-desc { font-size: 13px; color: #8c7a6b; margin-bottom: 16px; }
+  .input-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+  .input-group label { font-size: 13px; color: #5c4f44; font-weight: 500; }
+  .input-group input, .input-group select { padding: 10px 14px; border: 1px solid #e6dcc8; border-radius: 10px; background: #fff; color: #2c241d; font-size: 14px; outline: none; }
+  .primary-btn { width: 100%; padding: 12px; background: #2c241d; color: #faf6ee; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 8px; }
+  .primary-btn:hover { background: #4a443f; }
+  .guest-btn { background: #52796f; }
+  .guest-btn:hover { background: #3d5a52; }
+  .text-btn { background: none; border: none; color: #8c7a6b; font-size: 13px; cursor: pointer; width: 100%; margin-top: 10px; text-align: center; }
+  .avatar-selection { display: flex; gap: 12px; margin-bottom: 16px; }
+  .avatar-option { flex: 1; cursor: pointer; }
+  .avatar-option input { display: none; }
+  .avatar-box { display: block; text-align: center; padding: 10px; border: 1px solid #e6dcc8; border-radius: 10px; background: #fff; font-size: 13px; color: #5c4f44; }
+  .avatar-option input:checked + .avatar-box { border-color: #52796f; background: #f0f4f3; color: #52796f; font-weight: 500; }
+
+  .rpg-logout-window { width: 100%; max-width: 320px; background: var(--bg-main, #faf6ee); border: 1px solid var(--border-color, #e6dcc8); border-radius: 16px; box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15); overflow: hidden; }
+  .logout-window-header { background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); padding: 10px 14px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border-color, #e6dcc8); text-align: center; }
   .logout-window-body { padding: 20px 16px; text-align: center; }
-  .logout-quote { font-size: 12px; color: var(--accent-hover, #52796f); font-style: italic; margin-bottom: 10px; line-height: 1.5; }
-  .logout-desc { font-size: 12px; color: var(--text-muted, #8c7a6b); margin-bottom: 20px; line-height: 1.4; }
+  .logout-quote { font-size: 12px; color: var(--accent-hover, #52796f); font-style: italic; margin-bottom: 10px; }
+  .logout-desc { font-size: 12px; color: var(--text-muted, #8c7a6b); margin-bottom: 20px; }
   .logout-actions { display: flex; gap: 10px; justify-content: center; }
   .btn-secondary { flex: 1; background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); border: 1px solid var(--border-color, #e6dcc8); padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
   .btn-primary { flex: 1; background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
@@ -128,12 +224,13 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   let allUserRecords = [];
 
   async function initAuthHeader() {
+    console.log("🔍 [Header] 初始化身分檢查與 Modal 綁定...");
+
     const nameEl = document.getElementById('hud-name');
     const tierEl = document.getElementById('hud-tier-tag');
-    const modal = document.getElementById('rpg-modal');
     const colorPicker = document.getElementById('custom-color-picker');
 
-    // 1. 調色盤功能
+    // 1. 調色盤
     const savedColor = localStorage.getItem('space_theme_color');
     if (savedColor && colorPicker) {
       colorPicker.value = savedColor;
@@ -155,20 +252,17 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       isGuest = true;
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl) tierEl.textContent = '☁️ 訪客';
+      
+      const modal = document.getElementById('rpg-modal');
       if (modal) modal.style.display = 'none';
 
-      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
-        detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
-      }));
-
       initPresenceAndFetchData();
-      setupHeaderEventListeners();
+      setupAllEventListeners();
       return;
     }
 
-    // 3. 檢查 Supabase 會員身分
+    // 3. 檢查 Supabase Session
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (session?.user) {
       const { data: member } = await supabase
         .from(TABLE_NAME)
@@ -182,23 +276,162 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
+      
+      const modal = document.getElementById('rpg-modal');
       if (modal) modal.style.display = 'none';
-
-      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
-        detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
-      }));
 
       initPresenceAndFetchData();
     } else {
-      currentUserName = '訪客';
       if (nameEl) nameEl.textContent = '訪客';
       if (tierEl) tierEl.textContent = '👤 未登入';
-      if (modal) modal.style.display = 'flex'; // 自動彈出 LoginModal
+      
+      // 彈出登入視窗
+      const modal = document.getElementById('rpg-modal');
+      if (modal) modal.style.display = 'flex';
     }
 
-    setupHeaderEventListeners();
+    setupAllEventListeners();
   }
-  
+
+  // 綁定所有互動事件（包括 Modal 內的登入、註冊、訪客進入與導覽列）
+  function setupAllEventListeners() {
+    // 頁籤切換
+    const tabs = [
+      { btn: document.getElementById('tab-login-mode'), form: document.getElementById('login-form-container') },
+      { btn: document.getElementById('tab-register-mode'), form: document.getElementById('register-form-container') },
+      { btn: document.getElementById('tab-guest-mode'), form: document.getElementById('guest-form-container') }
+    ];
+
+    tabs.forEach(current => {
+      current.btn?.addEventListener('click', () => {
+        tabs.forEach(t => {
+          if (t.btn) t.btn.classList.remove('active');
+          if (t.form) t.form.style.display = 'none';
+        });
+        current.btn.classList.add('active');
+        if (current.form) current.form.style.display = 'block';
+      });
+    });
+
+    // A. 訪客快速進入（直接在 Header 執行 upsert 寫入 Table，確保100%成功）
+    document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
+      const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
+      const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
+
+      // 計算流水號
+      const { data: existingGuests, error: fetchError } = await supabase
+        .from(TABLE_NAME)
+        .select('name')
+        .like('name', '訪客 #%');
+
+      let nextIndex = 1;
+      if (!fetchError && existingGuests) {
+        existingGuests.forEach(g => {
+          const match = g.name?.match(/訪客 #(\d+)/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num >= nextIndex) nextIndex = num + 1;
+          }
+        });
+      }
+
+      const guestName = `訪客 #${nextIndex}`;
+      let guestId = localStorage.getItem('space_guest_id');
+      if (!guestId) {
+        guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
+      }
+
+      const guestData = {
+        user_id: guestId,
+        name: guestName,
+        role: '☁️ 訪客',
+        tier: '鄰里人',
+        avatar: avatarVal,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log("📌 [Header] 寫入訪客資料至 Table...", guestData);
+
+      const { error: upsertError } = await supabase
+        .from(TABLE_NAME)
+        .upsert([guestData], { onConflict: 'user_id' });
+
+      if (upsertError) {
+        console.error("❌ 寫入失敗：", upsertError.message);
+        alert('進入空間失敗：' + upsertError.message);
+        return;
+      }
+
+      localStorage.setItem('space_guest_id', guestId);
+      localStorage.setItem('space_guest_name', guestName);
+
+      const modal = document.getElementById('rpg-modal');
+      if (modal) modal.style.display = 'none';
+      window.location.reload();
+    });
+
+    // B. 會員登入
+    document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      if (!email || !password) { alert('請填寫 Email 與密碼'); return; }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { alert('登入失敗：' + error.message); } 
+      else { window.location.reload(); }
+    });
+
+    // C. 會員註冊
+    document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
+      const name = document.getElementById('register-name').value.trim();
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value.trim();
+      const role = document.getElementById('register-role').value;
+
+      if (!name || !email || !password) { alert('請完整填寫註冊欄位'); return; }
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+      if (authError) { alert('註冊失敗：' + authError.message); return; }
+
+      if (authData?.user?.id) {
+        await supabase.from(TABLE_NAME).upsert([{
+          user_id: authData.user.id,
+          name: name,
+          role: role,
+          tier: '鄰里人',
+          avatar: '/assets/player1.png',
+          updated_at: new Date().toISOString()
+        }], { onConflict: 'user_id' });
+      }
+
+      alert('註冊成功！');
+      window.location.reload();
+    });
+
+    // D. 登出邏輯
+    const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
+    const logoutModal = document.getElementById('logout-confirm-modal');
+    logoutTriggerBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'flex'; });
+    document.getElementById('cancel-logout-btn')?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'none'; });
+
+    document.getElementById('confirm-logout-btn')?.addEventListener('click', async () => {
+      const currentGuestId = localStorage.getItem('space_guest_id');
+      if (currentGuestId) {
+        await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+        localStorage.removeItem('space_guest_id');
+        localStorage.removeItem('space_guest_name');
+      }
+      await supabase.auth.signOut();
+      window.location.reload();
+    });
+
+    // 在線與總數彈窗
+    document.getElementById('online-count-trigger-home')?.addEventListener('click', () => openUserListModal('online'));
+    document.getElementById('total-count-trigger-home')?.addEventListener('click', () => openUserListModal('total'));
+    document.getElementById('user-list-close-btn')?.addEventListener('click', () => document.getElementById('user-list-modal').classList.add('hidden'));
+    document.getElementById('user-search-input')?.addEventListener('input', (e) => renderUserListModalContent(e.target.value.trim()));
+  }
+
   async function initPresenceAndFetchData() {
     try {
       const { data, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
@@ -222,7 +455,6 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
         onlineUsersMap = {};
         Object.keys(state).forEach(key => { onlineUsersMap[key] = true; });
         const onlineCount = Object.keys(state).length || 1;
-
         const onlineEl = document.getElementById('online-users-count-home');
         if (onlineEl) onlineEl.textContent = onlineCount;
       })
@@ -241,10 +473,6 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     document.getElementById('user-search-input').value = '';
     renderUserListModalContent('');
     modalBox.classList.remove('hidden');
-  }
-
-  function closeUserListModal() {
-    document.getElementById('user-list-modal').classList.add('hidden');
   }
 
   function renderUserListModalContent(filter = '') {
@@ -268,57 +496,12 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     container.innerHTML = list.map(item => {
         const isSelf = (item.id === currentUserId || item.name === currentUserName);
         const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
-        let actionBtn = (!isSelf && !isGuest && !item.id?.includes('guest_')) 
-            ? `<button data-target-id="${item.id}" data-target-name="${item.name}" class="header-dm-action-btn" style="background:#2563eb; color:white; border:none; padding:2px 8px; font-size:0.65rem; border-radius:4px; cursor:pointer;">私訊</button>` : '';
-
         return `
             <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:0.75rem; font-weight:bold; color:#1e293b;">👤 ${item.name} ${badge}</span>
-                ${actionBtn}
             </div>
         `;
     }).join('');
-  }
-
-  function setupHeaderEventListeners() {
-    document.getElementById('online-count-trigger-home')?.addEventListener('click', () => openUserListModal('online'));
-    document.getElementById('total-count-trigger-home')?.addEventListener('click', () => openUserListModal('total'));
-    document.getElementById('user-list-close-btn')?.addEventListener('click', closeUserListModal);
-    document.getElementById('user-search-input')?.addEventListener('input', (e) => renderUserListModalContent(e.target.value.trim()));
-
-    // 監聽來自 LoginModal 的訊息 (確保登入或訪客進入後順利關閉 Modal 並重整)
-    window.addEventListener('message', async (event) => {
-      if (event.data && (event.data.type === 'GUEST_LOGIN_SUCCESS' || event.data.type === 'LOGIN_SUCCESS')) {
-        const modal = document.getElementById('rpg-modal');
-        if (modal) modal.style.display = 'none';
-        window.location.reload();
-      }
-    });
-
-    // 登出按鈕邏輯
-    const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
-    const logoutModal = document.getElementById('logout-confirm-modal');
-    const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
-    const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
-
-    logoutTriggerBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'flex'; });
-    cancelLogoutBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'none'; });
-
-    // 🔒 真正的登出與 Table 清理邏輯
-    confirmLogoutBtn?.addEventListener('click', async () => {
-      const currentGuestId = localStorage.getItem('space_guest_id');
-      if (currentGuestId) {
-        // 從資料庫刪除訪客紀錄
-        await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-        localStorage.removeItem('space_guest_id');
-        localStorage.removeItem('space_guest_name');
-      }
-      
-      // 正式會員登出
-      await supabase.auth.signOut();
-      localStorage.clear();
-      window.location.reload();
-    });
   }
 
   initAuthHeader();
