@@ -1,251 +1,47 @@
 ---
-import LoginModal from '../components/LoginModal.astro';
+const currentPath = Astro.url.pathname;
 
-const { onlineCount = 1, totalCount = 0 } = Astro.props;
+const navItems = [
+  { href: '/slowplace', icon: '🌿', label: '探索' },
+  { href: '/chatroom', icon: '💬', label: '聊天' },
+  { href: '/bookreview', icon: '📚', label: '書櫃' },
+  { href: '/readtogether', icon: '📖', label: '共讀' },
+  { href: '/skillsupermarket2', icon: '🏠', label: '萬事屋' },
+];
 ---
 
-<header class="rpg-hud" id="rpg-hud">
-  <!-- 第一列：品牌與使用者控制區 -->
-  <div class="hud-top-row">
-    <div class="hud-brand-group">
-      <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
-    </div>
+<footer style="display: flex; justify-content: center; width: 100%; ">
+  <!-- 導覽列本體：使用 100% 寬度，透過父層容器來限制最大寬度 -->
+  <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 0px; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+    <div style="flex: 1; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
+      {
+        navItems.map((item) => {
+          const isActive = currentPath === item.href;
 
-    <div class="hud-right-group">
-      <div class="hud-user-profile">
-        <span class="user-tag" id="hud-tier-tag">👤 載入中</span>
-        <strong id="hud-name">載入中...</strong>
-      </div>
-
-      <button id="logout-trigger-btn" class="rpg-btn-logout">🚪 登出</button>
+          return (
+            <a 
+              href={item.href} 
+              style={`
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                text-decoration: none; 
+                font-size: 11px; 
+                gap: 2px; 
+                padding: 6px 12px; 
+                border-radius: 12px;
+                color: ${isActive ? '#6b8e23' : '#8c8275'};
+                font-weight: ${isActive ? '600' : 'normal'};
+                background: ${isActive ? '#f4efe6' : 'transparent'};
+                transition: background 0.2s, color 0.2s;
+              `}
+            >
+              <span style="font-size: 16px;">{item.icon}</span>
+              <span>{item.label}</span>
+            </a>
+          );
+        })
+      }
     </div>
   </div>
-
-  <!-- 第二列：在線 | 調色盤 | 總數 -->
-  <div class="phone-sub-bar-clean">
-    <div class="sub-bar-left">
-      <span>🟢 在線：<strong id="online-count-trigger-home" style="cursor: pointer;"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
-    </div>
-
-    <div class="sub-bar-center">
-      <div class="hud-theme-picker" title="自選主要區域配色">
-        <span class="theme-label">🎨 主題</span>
-        <input type="color" id="custom-color-picker" value="#faf6ee" />
-      </div>
-    </div>
-
-    <div class="sub-bar-right">
-      <span>📜 總數：<strong id="total-count-trigger-home" style="cursor: pointer;"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
-    </div>
-  </div>
-</header>
-
-<!-- 身分驗證 Modal -->
-<div id="rpg-modal" class="rpg-modal-overlay" style="display: none;">
-  <div class="rpg-window embed-window" style="width: 100%; max-width: 420px; height: 520px; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color, #e6dcc8); box-shadow: 0 16px 48px rgba(44, 36, 29, 0.15);">
-    <div style="background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; display:flex; justify-content:space-between; align-items:center;">
-      <span>◆ 空間客舍 · 身分認證 ◆</span>
-    </div>
-    <div class="embed-frame-wrapper" style="flex:1; overflow-y: auto; padding: 16px; background: var(--bg-main, #faf6ee);">
-      <LoginModal />
-    </div>
-  </div>
-</div>
-
-<!-- 登出確認彈窗 -->
-<div id="logout-confirm-modal" class="rpg-modal-overlay" style="display: none;">
-  <div class="rpg-logout-window">
-    <div class="logout-window-header">
-      <span>◆ 空間客舍 · 離席確認 ◆</span>
-    </div>
-    <div class="logout-window-body">
-      <p class="logout-quote">「聚散終有時，此處暫歇，他日再會。」</p>
-      <p class="logout-desc">您目前正在空間客舍中，請問是否要登出或切換帳號？</p>
-      
-      <div class="logout-actions">
-        <button id="cancel-logout-btn" class="btn-secondary">留在此處</button>
-        <button id="confirm-logout-btn" class="btn-primary">確認登出 / 切換</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-  .rpg-hud {
-    width: 100%;
-    background: var(--bg-card, rgba(255, 255, 255, 0.85));
-    border-bottom: 1px solid var(--border-color, #e6dcc8);
-    padding: 10px 16px 8px 16px;
-    box-sizing: border-box;
-    backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex-shrink: 0;
-    z-index: 20;
-  }
-  .hud-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px; }
-  .hud-brand-group { display: flex; align-items: center; }
-  .hud-brand { font-size: 15px; font-weight: 600; color: var(--text-color, #2c241d); letter-spacing: 0.5px; }
-  .hud-right-group { display: flex; align-items: center; gap: 10px; }
-  .hud-user-profile { display: flex; align-items: center; gap: 4px; font-size: 12px; }
-  .user-tag { font-size: 11px; color: var(--text-muted, #8c7a6b); }
-  #hud-name { color: var(--accent-hover, #52796f); font-weight: 600; }
-  .rpg-btn-logout { background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 4px 8px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: opacity 0.2s; }
-  .rpg-btn-logout:hover { opacity: 0.9; }
-  .phone-sub-bar-clean { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted, #8c7a6b); width: 100%; padding: 2px 4px; }
-  .phone-sub-bar-clean strong { color: var(--text-color, #2c241d); }
-  .sub-bar-left { text-align: left; flex: 1; }
-  .sub-bar-center { text-align: center; flex: 1; display: flex; justify-content: center; }
-  .sub-bar-right { text-align: right; flex: 1; }
-  .hud-theme-picker { display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-input, #f4efe6); padding: 2px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e6dcc8); }
-  .theme-label { font-size: 10px; font-weight: 600; }
-  .hud-theme-picker input[type="color"] { width: 16px; height: 16px; border: none; background: transparent; cursor: pointer; padding: 0; }
-  .rpg-modal-overlay { position: fixed; inset: 0; background: rgba(44, 36, 29, 0.4); backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 16px; }
-  .rpg-logout-window { width: 100%; max-width: 320px; background: var(--bg-main, #faf6ee); border: 1px solid var(--border-color, #e6dcc8); border-radius: 16px; box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15); overflow: hidden; animation: modalPop 0.25s ease-out; }
-  @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  .logout-window-header { background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); padding: 10px 14px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border-color, #e6dcc8); text-align: center; letter-spacing: 1px; }
-  .logout-window-body { padding: 20px 16px; text-align: center; }
-  .logout-quote { font-size: 12px; color: var(--accent-hover, #52796f); font-style: italic; margin-bottom: 10px; line-height: 1.5; }
-  .logout-desc { font-size: 12px; color: var(--text-muted, #8c7a6b); margin-bottom: 20px; line-height: 1.4; }
-  .logout-actions { display: flex; gap: 10px; justify-content: center; }
-  .btn-secondary { flex: 1; background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); border: 1px solid var(--border-color, #e6dcc8); padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
-  .btn-primary { flex: 1; background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
-</style>
-
-<script>
-  import { supabase } from '../lib/supabase';
-  const TABLE_NAME = 'slowpace_members';
-
-  let currentUserId = '';
-  let currentUserName = '';
-  let presenceChannel = null;
-
-  async function initAuthHeader() {
-    const nameEl = document.getElementById('hud-name');
-    const tierEl = document.getElementById('hud-tier-tag');
-    const modal = document.getElementById('rpg-modal');
-    const colorPicker = document.getElementById('custom-color-picker');
-
-    // 恢復儲存的主題顏色
-    const savedColor = localStorage.getItem('space_theme_color');
-    if (savedColor && colorPicker) {
-      colorPicker.value = savedColor;
-      document.documentElement.style.setProperty('--bg-main', savedColor);
-    }
-
-    colorPicker?.addEventListener('input', (e) => {
-      const val = e.target.value;
-      document.documentElement.style.setProperty('--bg-main', val);
-      localStorage.setItem('space_theme_color', val);
-    });
-
-    async function updateUserData(user) {
-      currentUserId = user.id;
-      const { data: member } = await supabase
-        .from(TABLE_NAME)
-        .select('name, tier')
-        .eq('user_id', user.id)
-        .single();
-
-      currentUserName = member?.name || user.email || '訪客';
-
-      if (nameEl) nameEl.textContent = currentUserName;
-      if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
-      
-      if (modal) modal.style.display = 'none';
-
-      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
-        detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
-      }));
-
-      initPresenceTracker();
-    }
-
-    const guestId = sessionStorage.getItem('space_guest_id');
-    const guestName = sessionStorage.getItem('space_guest_name');
-
-    if (guestId) {
-      currentUserId = guestId;
-      currentUserName = guestName || '訪客';
-      if (nameEl) nameEl.textContent = currentUserName;
-      if (tierEl) tierEl.textContent = '☁️ 訪客';
-      if (modal) modal.style.display = 'none';
-
-      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
-        detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
-      }));
-      initPresenceTracker();
-    } else {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await updateUserData(session.user);
-      } else {
-        currentUserName = '訪客';
-        if (nameEl) nameEl.textContent = '訪客';
-        if (tierEl) tierEl.textContent = '👤 未登入';
-        if (modal) modal.style.display = 'flex';
-      }
-    }
-
-    // 💡 關鍵修復：監聽來自 LoginModal 的成功通知（包含 GUEST_LOGIN_SUCCESS 與 LOGIN_SUCCESS）
-    window.addEventListener('message', async (event) => {
-      if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-        sessionStorage.setItem('space_guest_id', event.data.guestId);
-        sessionStorage.setItem('space_guest_name', event.data.name);
-        if (modal) modal.style.display = 'none';
-        window.location.reload(); // 強制重新整理以載入最新狀態與解鎖頁面
-      }
-      if (event.data && event.data.type === 'LOGIN_SUCCESS') {
-        if (modal) modal.style.display = 'none';
-        window.location.reload();
-      }
-    });
-
-    const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
-    const logoutModal = document.getElementById('logout-confirm-modal');
-    const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
-    const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
-
-    logoutTriggerBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'flex'; });
-    cancelLogoutBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'none'; });
-
-    confirmLogoutBtn?.addEventListener('click', async () => {
-      const currentGuestId = sessionStorage.getItem('space_guest_id');
-      if (currentGuestId) {
-        await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-        sessionStorage.clear();
-      }
-      await supabase.auth.signOut();
-      localStorage.clear();
-      window.location.reload();
-    });
-  }
-
-  function initPresenceTracker() {
-    const trackName = currentUserName || '訪客';
-    if (presenceChannel) supabase.removeChannel(presenceChannel);
-
-    presenceChannel = supabase.channel('community-online-room', {
-      config: { presence: { key: currentUserId || trackName } }
-    });
-
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        const onlineCount = Object.keys(state).length || 1;
-        
-        const onlineEl = document.getElementById('online-users-count-home');
-        if (onlineEl) onlineEl.textContent = onlineCount;
-
-        window.dispatchEvent(new CustomEvent('ONLINE_COUNT_UPDATED', { detail: { count: onlineCount, state } }));
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await presenceChannel.track({ name: trackName, online_at: new Date().toISOString() });
-        }
-      });
-  }
-
-  initAuthHeader();
-</script>
+</footer>

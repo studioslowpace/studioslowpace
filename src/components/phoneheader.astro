@@ -7,12 +7,10 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 <header class="rpg-hud" id="rpg-hud">
   <!-- 第一列：品牌與使用者控制區 -->
   <div class="hud-top-row">
-    <!-- 左側：品牌標誌 (點擊可檢查主理人身分) -->
     <div class="hud-brand-group">
       <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
     </div>
 
-    <!-- 右側：使用者身分與登出按鈕 -->
     <div class="hud-right-group">
       <div class="hud-user-profile">
         <span class="user-tag" id="hud-tier-tag">👤 載入中</span>
@@ -23,7 +21,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     </div>
   </div>
 
-  <!-- 第二列：左：在線 | 中：調色盤 | 右：總數 -->
+  <!-- 第二列：在線 | 調色盤 | 總數 -->
   <div class="phone-sub-bar-clean">
     <div class="sub-bar-left">
       <span>🟢 在線：<strong id="online-count-trigger-home" style="cursor: pointer;"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
@@ -42,7 +40,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   </div>
 </header>
 
-<!-- 1. 身分驗證 Modal -->
+<!-- 身分驗證 Modal -->
 <div id="rpg-modal" class="rpg-modal-overlay" style="display: none;">
   <div class="rpg-window embed-window" style="width: 100%; max-width: 420px; height: 520px; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color, #e6dcc8); box-shadow: 0 16px 48px rgba(44, 36, 29, 0.15);">
     <div style="background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; display:flex; justify-content:space-between; align-items:center;">
@@ -54,7 +52,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   </div>
 </div>
 
-<!-- 2. 文青風格登出確認彈窗 -->
+<!-- 登出確認彈窗 -->
 <div id="logout-confirm-modal" class="rpg-modal-overlay" style="display: none;">
   <div class="rpg-logout-window">
     <div class="logout-window-header">
@@ -190,13 +188,16 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       }
     }
 
+    // 💡 關鍵修復：監聽來自 LoginModal 的成功通知（包含 GUEST_LOGIN_SUCCESS 與 LOGIN_SUCCESS）
     window.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
         sessionStorage.setItem('space_guest_id', event.data.guestId);
         sessionStorage.setItem('space_guest_name', event.data.name);
-        window.location.reload();
+        if (modal) modal.style.display = 'none';
+        window.location.reload(); // 強制重新整理以載入最新狀態與解鎖頁面
       }
       if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+        if (modal) modal.style.display = 'none';
         window.location.reload();
       }
     });
