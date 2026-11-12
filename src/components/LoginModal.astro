@@ -170,7 +170,7 @@
         role: role,
         tier: '鄰里人',
         avatar: avatarVal,
-        updated_at: new Date()
+        updated_at: new Date().toISOString()
       };
 
       const { error: dbError } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
