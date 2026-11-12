@@ -1,7 +1,8 @@
 ---
-const { title = "預設標題" } = Astro.props;
-import Footer from '../components/phonefooter.astro';
+const { title = "空間客舍 · Slow Pace Studio" } = Astro.props;
 import Header from '../components/phoneheader.astro';
+import LoginModal from '../components/LoginModal.astro';
+import Footer from '../components/phonefooter.astro';
 ---
 
 <!doctype html>
@@ -10,13 +11,14 @@ import Header from '../components/phoneheader.astro';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
-  </head>
+</head>
 <body>
-    <!-- 確保外層 viewport 絕對置中，且禁止全頁滾動 -->
     <div class="app-viewport">
       <div class="rpg-container">
+        <!-- 頂端控制列 (包含登出、狀態與各種 Modal 觸發) -->
         <Header />
-        <!-- 內容區：如果內部有超出的內容，讓它在內部滾動而不撐開外框 -->
+
+        <!-- 內容區 -->
         <main class="app-main">
           <slot />
         </main>
@@ -26,8 +28,10 @@ import Header from '../components/phoneheader.astro';
           <Footer />
         </div>
       </div>
-
     </div>
+
+    <!-- 全域常駐的身分認證 Modal (未登入時由 Header 自動控制顯示) -->
+    <LoginModal />
   </body>
 </html>
 
@@ -50,7 +54,6 @@ import Header from '../components/phoneheader.astro';
     box-sizing: border-box; 
   }
 
-  /* 鎖死全頁，絕對不允許出現視窗捲軸 */
   html, body {
     background-color: var(--bg-main);
     color: var(--text-color);
@@ -63,7 +66,6 @@ import Header from '../components/phoneheader.astro';
     overflow: hidden; 
   }
 
-  /* 外層視窗：強迫置中所有內容 */
   .app-viewport { 
     width: 100vw; 
     height: 100vh; 
@@ -75,7 +77,6 @@ import Header from '../components/phoneheader.astro';
     overflow: hidden;
   }
   
-  /* 核心容器：限制最大寬度為 430px，並強制隱藏所有超出範圍的捲軸 */
   .rpg-container {
     width: 100%;
     max-width: 430px; 
@@ -89,10 +90,9 @@ import Header from '../components/phoneheader.astro';
     border: 1px solid var(--border-color); 
     border-radius: 0;
     box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); 
-    overflow: hidden; /* 關鍵：切掉任何跑出卡片外面的東西，防止出現捲軸 */
+    overflow: hidden;
   }
 
-  /* 在桌機版時顯示漂亮的圓角卡片外框 */
   @media (min-width: 480px) {
     .rpg-container {
       border-radius: 28px;
@@ -101,7 +101,6 @@ import Header from '../components/phoneheader.astro';
     }
   }
 
-  /* 主內容區：允許內部滾動，但隱藏醜陋的捲軸 */
   .app-main {
     flex: 1; 
     display: flex;
@@ -112,11 +111,9 @@ import Header from '../components/phoneheader.astro';
     width: 100%;
   }
 
-  /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
   .app-main::-webkit-scrollbar {
     display: none;
   }
-  /* 隱藏 Firefox 捲軸 */
   .app-main {
     scrollbar-width: none; 
   }
