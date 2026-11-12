@@ -11,7 +11,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
     </div>
 
-    <!-- 右側：身分顯示與登出按鈕 (移至 Header 統一管理) -->
+    <!-- 右側：身分顯示與登出按鈕 (統一由 Header 管理) -->
     <div class="hud-right-group">
       <div class="hud-user-profile">
         <span class="user-tag" id="hud-tier-tag">👤 載入中</span>
@@ -130,7 +130,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 </style>
 
 <script>
-import { supabase } from '../lib/supabase';
+  import { supabase } from '../lib/supabase';
   const TABLE_NAME = 'slowpace_members';
 
   let currentUserId = '';
@@ -161,16 +161,25 @@ import { supabase } from '../lib/supabase';
       localStorage.setItem('space_theme_color', val);
     });
 
-    // 2. 檢查 sessionStorage 與記憶體暫存內的訪客身分（雙重防護）
+    // 2. 檢查 sessionStorage 與記憶體暫存
     let guestId = sessionStorage.getItem('space_guest_id');
     let guestName = sessionStorage.getItem('space_guest_name');
+
+    // 🛡️ 強制防呆：如果沒有 ID，代表狀態是髒的或殘缺的，直接清空全部重來
+    if (!guestId) {
+      if (guestName) {
+        console.warn("⚠️ [F12 除錯 - Header] 偵測到殘缺身分（只有名字無 ID），自動清除 sessionStorage");
+      }
+      sessionStorage.clear();
+      guestName = null;
+    }
 
     if (!guestId && window.__TEMP_GUEST_ID) {
       guestId = window.__TEMP_GUEST_ID;
       guestName = window.__TEMP_GUEST_NAME;
     }
 
-    console.log("🔍 [F12 除錯 - Header] 訪客身分檢查結果:", { guestId, guestName });
+    console.log("🔍 [F12 除錯 - Header] 修正後的訪客身分檢查結果:", { guestId, guestName });
 
     if (guestId) {
       console.log("✅ [F12 除錯 - Header] 成功識別為訪客身分，準備載入介面...");
@@ -190,7 +199,7 @@ import { supabase } from '../lib/supabase';
 
       initPresenceAndFetchData();
       setupHeaderEventListeners();
-      return; // 🛑 訪客身分直接返回，不執行下方 Auth 檢查
+      return; // 🛑 訪客身分直接返回
     }
 
     // 3. 檢查 Supabase 會員身分

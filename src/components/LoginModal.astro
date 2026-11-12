@@ -1,5 +1,5 @@
 ---
-// LoginModal 元件
+// LoginModal 元件（含身分角色選擇、分身造型與防呆寫入）
 ---
 <div style="max-width: 100%; padding: 24px; background: #262422; color: #e7e2d8; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 8px;">
 
@@ -131,6 +131,7 @@
     if (registerFormContainer) registerFormContainer.style.display = 'none';
   });
 
+  // 會員登入
   document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
@@ -141,6 +142,7 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
+  // 會員註冊（包含暱稱、角色 role 與分身造型 avatar 寫入）
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
@@ -171,14 +173,17 @@
         updated_at: new Date()
       };
 
-      await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
+      const { error: dbError } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
+      if (dbError) {
+        console.error("❌ 寫入 slowpace_members 失敗：", dbError.message);
+      }
     }
 
     alert('註冊成功！歡迎加入空間客舍。');
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
-// 訪客快速進入按鈕事件
+  // 訪客快速進入（確實寫入 DB 與 sessionStorage）
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
@@ -188,7 +193,7 @@
     let insertSuccess = false;
     let attempts = 0;
 
-    console.log("📌 [F12 訪客登入] 開始執行訪客註冊與編號生成...");
+    console.log("📌 [LoginModal] 開始建立訪客身分...");
 
     while (!insertSuccess && attempts < 5) {
       attempts++;
@@ -223,34 +228,25 @@
         updated_at: new Date()
       };
 
-      console.log(`📌 [F12 訪客登入] 嘗試寫入資料庫 (第 ${attempts} 次):`, guestData);
-
       const { error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]);
-      
       if (!insertError) {
         insertSuccess = true;
-        console.log("✅ [F12 訪客登入] 資料庫寫入成功！生成的 guestId:", guestId);
+        console.log("✅ [LoginModal] 訪客成功寫入 DB，ID:", guestId);
       } else {
-        console.warn(`⚠️ [F12 訪客登入] 寫入碰撞 (${guestName})，重試中...`, insertError);
+        console.warn(`⚠️ [LoginModal] 寫入碰撞 (${guestName})，重試中...`);
       }
     }
 
     if (!insertSuccess) {
-      console.error("❌ [F12 訪客登入] 多次嘗試寫入資料庫失敗！");
       alert('進入空間失敗：無法分配訪客編號，請稍後再試。');
       return;
     }
 
-    // 💡 關鍵：同時寫入 sessionStorage 與 window 暫存，確保絕不遺失
+    // 💡 同時寫入 sessionStorage 與記憶體防護
     sessionStorage.setItem('space_guest_id', guestId);
     sessionStorage.setItem('space_guest_name', guestName);
     window.__TEMP_GUEST_ID = guestId;
     window.__TEMP_GUEST_NAME = guestName;
-
-    console.log("📌 [F12 訪客登入] sessionStorage 寫入完畢，準備通知父層重新整理：", {
-      savedId: sessionStorage.getItem('space_guest_id'),
-      savedName: sessionStorage.getItem('space_guest_name')
-    });
 
     window.parent.postMessage({
       type: 'GUEST_LOGIN_SUCCESS',
