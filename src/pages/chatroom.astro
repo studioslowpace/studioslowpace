@@ -258,55 +258,59 @@ import Layout from '../layouts/Layout.astro';
 
             </div>
 
-            <!-- 💬 PAGE 2: 群組對話模式 -->
-            <div id="page-chat" class="hidden" style="display: flex; flex-direction: column; height: 100%; overflow: hidden; width: 100%;">
-                
-                <div class="phone-header">
-                    <button id="chat-back-btn" class="nav-link-btn">< 首頁</button>
-                    
-                    <div class="phone-header-title" id="topic-switcher-trigger">
-                        <div style="display: flex; align-items: center; gap: 3px;">
-                            <span id="current-topic-title">選擇主題</span>
-                            <span style="font-size: 0.6rem; color: #94a3b8;">▼</span>
-                        </div>
-                        <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
-                    </div>
-
-                    <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
-                </div>
-
-                <!-- 訊息捲動區：保證內容過多時上下轉動 -->
-                <div id="topic-chat-messages" class="phone-chat-messages">
-                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
-                </div>
-
-                <form id="topic-chat-form" class="phone-input-bar">
-                    <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
-                    <button type="submit" class="phone-send-btn">送出</button>
-                </form>
+           <!-- 💬 PAGE 2: 群組對話模式 -->
+<div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; min-height: 0;">
+    
+    <!-- 頂部標題列 (固定不動) -->
+    <div class="phone-header" style="flex-shrink: 0;">
+        <button id="chat-back-btn" class="nav-link-btn">< 首頁</button>
+        
+        <div class="phone-header-title" id="topic-switcher-trigger">
+            <div style="display: flex; align-items: center; gap: 3px;">
+                <span id="current-topic-title">選擇主題</span>
+                <span style="font-size: 0.6rem; color: #94a3b8;">▼</span>
             </div>
+            <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
+        </div>
 
-            <!-- 💬 PAGE 3: 單對單私訊對話模式 -->
-            <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; width: 100%;">
-                
-                <div class="phone-header" style="background: #eff6ff;">
-                    <button id="dm-back-btn" class="nav-link-btn">< 首頁</button>
-                    <div class="phone-header-title">
-                        <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
-                    </div>
-                    <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">👤 訪客</div>
-                </div>
+        <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
+    </div>
 
-                <div id="dm-chat-messages" class="phone-chat-messages">
-                    <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入私訊中...</p>
-                </div>
+    <!-- 訊息捲動區 (唯一允許上下轉動的區域，加上 min-height: 0) -->
+    <div id="topic-chat-messages" class="phone-chat-messages" style="flex: 1; overflow-y: auto; min-height: 0;">
+        <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
+    </div>
 
-                <form id="dm-chat-form" class="phone-input-bar" style="background: #eff6ff;">
-                    <input type="text" id="dm-input-content" placeholder="輸入私訊內容..." required class="phone-input-field" autocomplete="off">
-                    <button type="submit" class="btn-blue" style="padding: 0.6rem 1.1rem; font-size: 0.85rem;">送出</button>
-                </form>
-            </div>
+    <!-- 底部打字輸入列 (固定在底部不動) -->
+    <form id="topic-chat-form" class="phone-input-bar" style="flex-shrink: 0;">
+        <input type="text" id="chat-input-content" placeholder="講啲嘢..." required class="phone-input-field" autocomplete="off">
+        <button type="submit" class="phone-send-btn">送出</button>
+    </form>
+</div>
 
+<!-- 💬 PAGE 3: 單對單私訊對話模式 -->
+<div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%; min-height: 0;">
+    
+    <!-- 頂部標題列 (固定不動) -->
+    <div class="phone-header" style="background: #eff6ff; flex-shrink: 0;">
+        <button id="dm-back-btn" class="nav-link-btn">< 首頁</button>
+        <div class="phone-header-title">
+            <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
+        </div>
+        <div class="identity-badge" style="background: #eff6ff; color: #1e40af;">👤 訪客</div>
+    </div>
+
+    <!-- 訊息捲動區 (唯一允許上下轉動的區域) -->
+    <div id="dm-chat-messages" class="phone-chat-messages" style="flex: 1; overflow-y: auto; min-height: 0;">
+        <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入私訊中...</p>
+    </div>
+
+    <!-- 底部打字輸入列 (固定在底部不動) -->
+    <form id="dm-chat-form" class="phone-input-bar" style="background: #eff6ff; flex-shrink: 0;">
+        <input type="text" id="dm-input-content" placeholder="輸入私訊內容..." required class="phone-input-field" autocomplete="off">
+        <button type="submit" class="btn-blue" style="padding: 0.6rem 1.1rem; font-size: 0.85rem;">送出</button>
+    </form>
+</div>
         </div>
     </main>
 
