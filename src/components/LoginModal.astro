@@ -141,7 +141,7 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
+  document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value.trim();
@@ -154,20 +154,13 @@ document.getElementById('register-submit-btn')?.addEventListener('click', async 
     if (password !== passwordConfirm) { alert('兩次輸入的密碼不相符'); return; }
     if (password.length < 6) { alert('密碼長度至少需要 6 個字元'); return; }
 
-    console.log("📌 [F12 除錯] 開始執行會員註冊流程...", { email, name, role });
-
-    // 1. 透過 Supabase Auth 建立帳號
     const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-    
     if (authError) { 
-      console.error("❌ [F12 除錯] Supabase Auth 註冊失敗：", authError);
       alert('註冊失敗：' + authError.message); 
       return; 
     }
 
-    console.log("✅ [F12 除錯] Supabase Auth 帳號建立成功，取得 user:", authData);
     const userId = authData?.user?.id;
-
     if (userId) {
       const memberPayload = {
         user_id: userId,
@@ -178,24 +171,10 @@ document.getElementById('register-submit-btn')?.addEventListener('click', async 
         updated_at: new Date()
       };
 
-      console.log("📌 [F12 Data] 準備寫入 slowpace_members 的資料：", memberPayload);
-
-      // 2. 寫入 slowpace_members 資料表
-      const { data: dbData, error: dbError } = await supabase
-        .from(TABLE_NAME)
-        .upsert([memberPayload], { onConflict: 'user_id' });
-
-      if (dbError) {
-        console.error("❌ [F12 致命錯誤] 寫入 slowpace_members 失敗！詳細錯誤資訊如下：", dbError);
-        alert('會員帳號已建立，但同步寫入資料表失敗！請按 F12 查看 Console 錯誤。');
-      } else {
-        console.log("🎉 [F12 成功] 成功寫入 slowpace_members 資料表：", dbData);
-      }
-    } else {
-      console.warn("⚠️ [F12 警告] authData.user.id 不存在，無法寫入資料表。");
+      await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
     }
 
-    alert('註冊程序完成！');
+    alert('註冊成功！歡迎加入空間客舍。');
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
