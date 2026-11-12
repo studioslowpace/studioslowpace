@@ -2,13 +2,12 @@
 // 匯入 Layout
 import BaseLayout from '../layouts/Layout.astro';
 ---
-<BaseLayout title="客舍萬事屋 Slow Pace Skill Supermarker">
+<BaseLayout title="客舍萬事屋 Slow Pace Skill Supermarket">
     <Fragment slot="head">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     </Fragment>
     
 <style is:global>
@@ -278,8 +277,6 @@ import BaseLayout from '../layouts/Layout.astro';
             align-items: center;
             gap: 0.5rem;
         }
-
-    
 
         /* ==========================================
            5. 按鈕基本樣式 (Buttons)
@@ -1213,14 +1210,11 @@ import BaseLayout from '../layouts/Layout.astro';
 
 
 <script>
+    import { supabase } from '../lib/supabase';
     
-    const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-    const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
     const TABLE_NAME = 'skills';
     const POSTS_TABLE = 'posts';
-    
-    const supabaseInstance = window.supabase || supabase;
-    const client = supabaseInstance.createClient(supabaseUrl, supabaseKey);
+    const MEMBERS_TABLE = 'slowpace_members'; // 對齊 Layout 的會員與管理員權限表
     
     let posts = [];
     let skills = [];
@@ -1231,61 +1225,44 @@ import BaseLayout from '../layouts/Layout.astro';
     let allUserRecords = [];
     let currentTagFilter = 'all';
 
-window.onload = async function() {
-    fetchPostsFromSupabase();
-    fetchSkillsFromSupabase(); 
-    fetchAllUserRecordsFromSupabase();
-    setupRandomDefaultAvatar();
+    window.onload = async function() {
+        fetchPostsFromSupabase();
+        fetchSkillsFromSupabase(); 
+        fetchAllUserRecordsFromSupabase();
+        setupRandomDefaultAvatar();
 
-    initEventListeners();
+        initEventListeners();
 
-    // 🌟 1. 網頁一載入就「主動」檢查一次目前的登入狀態（解決時間差問題）
-    try {
-        const { data: { session } } = await client.auth.getSession();
-        if (session?.user) {
-            const { data: profile, error } = await client
-                .from('profiles')
-                .select('is_admin')
-                .eq('id', session.user.id)
-                .single();
-
-            if (!error && profile && profile.is_admin === true) {
-                isAdmin = true;
-            } else {
-                isAdmin = false;
-            }
-        } else {
+        // 🌟 1. 初始化檢查目前的登入狀態與管理員權限
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            isAdmin = await checkAdminStatus(session?.user);
+        } catch (err) {
+            console.error("檢查初始登入狀態失敗:", err);
             isAdmin = false;
         }
-    } catch (err) {
-        console.error("檢查初始登入狀態失敗:", err);
-        isAdmin = false;
-    }
-    
-    updateAdminUI();
-    refreshView();
-
-    // 🌟 2. 持續監聽後續的登入、登出動作
-    client.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user) {
-            const { data: profile, error } = await client
-                .from('profiles')
-                .select('is_admin')
-                .eq('id', session.user.id)
-                .single();
-
-            if (!error && profile && profile.is_admin === true) {
-                isAdmin = true;
-            } else {
-                isAdmin = false;
-            }
-        } else {
-            isAdmin = false;
-        }
+        
         updateAdminUI();
         refreshView();
-    });
-};
+
+        // 🌟 2. 持續監聽後續的登入、登出動作
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            isAdmin = await checkAdminStatus(session?.user);
+            updateAdminUI();
+            refreshView();
+        });
+    };
+
+    // 🔗 與 Layout 相同的管理員驗證邏輯
+    async function checkAdminStatus(user) {
+        if (!user) return false;
+        const { data: profile, error } = await supabase
+            .from(MEMBERS_TABLE)
+            .select('is_admin')
+            .eq('id', user.id)
+            .maybeSingle();
+        return !error && profile?.is_admin === true;
+    }
 
     function initEventListeners() {
         document.getElementById('banner-logo-trigger')?.addEventListener('click', toggleAdminNavbar);
@@ -1334,7 +1311,6 @@ window.onload = async function() {
         });
     }
 
-    // 在 initEventListeners 或網頁初始化時加入：
     document.getElementById('btn-open-guide')?.addEventListener('click', () => {
         document.getElementById('modal-guide')?.classList.remove('hidden');
     });
@@ -1349,7 +1325,6 @@ window.onload = async function() {
         document.getElementById('modal-disclaimer')?.classList.add('hidden');
     });
 
-    // 點擊彈窗外部半透明背景時也可以自動關閉
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -1360,7 +1335,7 @@ window.onload = async function() {
 
     async function fetchPostsFromSupabase() {
         try {
-            const { data, error } = await client.from(POSTS_TABLE).select('*').order('created_at', { ascending: false });
+            const { data, error } = await supabase.from(POSTS_TABLE).select('*').order('created_at', { ascending: false });
             if (error) throw error;
             posts = (data || []).map(post => ({ ...post, timeAgo: calculateTimeAgo(post.created_at) }));
             refreshView();
@@ -1369,21 +1344,20 @@ window.onload = async function() {
 
     async function fetchSkillsFromSupabase() {
         try {
-            const { data, error } = await client.from(TABLE_NAME).select('*').order('created_at', { ascending: false });
+            const { data, error } = await supabase.from(TABLE_NAME).select('*').order('created_at', { ascending: false });
             if (error) throw error;
             skills = data || [];
             refreshView();
         } catch (err) { console.error("讀取技能名冊失敗:", err.message); }
     }
 
-function refreshView() { 
-        // 主頁大廳只需要重新渲染列表
+    function refreshView() { 
         renderPosts(); 
     }
 
     async function fetchAllUserRecordsFromSupabase() {
         try {
-            const { data, error } = await client.from('alluser_record').select('*');
+            const { data, error } = await supabase.from('alluser_record').select('*');
             if (error) throw error;
             allUserRecords = data || [];
             refreshView();
@@ -1408,10 +1382,10 @@ function refreshView() {
         if (!contact) return;
         const cleanContact = contact.trim();
         const cleanName = (name && name !== '神祕鄰里人') ? name : null;
-        const cleanEmail = email ? email.trim() : null; // 處理 email
+        const cleanEmail = email ? email.trim() : null;
 
         try {
-            const { data: existing, error: fetchError } = await client
+            const { data: existing, error: fetchError } = await supabase
                 .from('alluser_record')
                 .select('*')
                 .eq('contact', cleanContact)
@@ -1423,9 +1397,9 @@ function refreshView() {
                 const newAmount = (existing.amount || 0) + pointChange;
                 const updateData = { amount: newAmount };
                 if (cleanName) updateData.name = cleanName;
-                if (cleanEmail) updateData.email = cleanEmail; // 如果有提供新 email 則更新
+                if (cleanEmail) updateData.email = cleanEmail;
 
-                const { error: updateError } = await client
+                const { error: updateError } = await supabase
                     .from('alluser_record')
                     .update(updateData)
                     .eq('id', existing.id);
@@ -1436,10 +1410,10 @@ function refreshView() {
                     contact: cleanContact,
                     name: cleanName || '神祕鄰里人',
                     amount: pointChange,
-                    email: cleanEmail || '' // 新增時寫入 email
+                    email: cleanEmail || ''
                 };
 
-                const { error: insertError } = await client
+                const { error: insertError } = await supabase
                     .from('alluser_record')
                     .insert([newRecord]);
 
@@ -1494,7 +1468,6 @@ function refreshView() {
 
     function formatHashtags(tagString) {
         if (!tagString || tagString === '/') return '';
-        
         return tagString
             .trim()                        
             .split(/\s+/)                  
@@ -1720,16 +1693,13 @@ function refreshView() {
         }
 
         bindDynamicElementEvents();
-        setTimeout(() => { lucide.createIcons(); }, 100);
+        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
 
-        // 🌟 修正後的卡片點擊跳轉邏輯
         document.querySelectorAll('.card-post-item').forEach(card => {
             card.addEventListener('click', (e) => {
-                // 如果點擊的目標本身是按鈕、連結或內部特定互動元件，就不執行跳轉
                 if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.tag-click-trigger')) {
                     return;
                 }
-                
                 const postId = card.getAttribute('data-post-id');
                 if (postId) {
                     window.location.href = `/posts/${postId}`;
@@ -1749,14 +1719,6 @@ function refreshView() {
         document.querySelectorAll('.filter-tag-btn').forEach(btn => {
             btn.onclick = (e) => {
                 filterByTag(e.currentTarget.getAttribute('data-tag'));
-            };
-        });
-
-        document.querySelectorAll('.card-post-item').forEach(card => {
-            card.onclick = (e) => {
-                if (!e.target.closest('button')) {
-                    goToPostDetail(card.getAttribute('data-post-id'));
-                }
             };
         });
 
@@ -1780,161 +1742,53 @@ function refreshView() {
         });
     }
 
-function goToPostDetail(postId) {
-        if (!postId) return;
-        // 🌟 直接導向獨立分頁
-        window.location.href = `/posts/${postId}`;
-    }
-
-function backToHomeList() {
-        // 如果在獨立分頁點擊返回，直接回首頁大廳
+    function backToHomeList() {
         window.location.href = '/skillsupermarket';
     }
 
-    function verifyPostPasswordInline(postId) {
+    async function handleJoinSubmit(event) {
+        event.preventDefault();
+        const postId = document.getElementById('join-post-id').value;
+        const newHero = {
+            name: document.getElementById('join-name').value.trim(),
+            contact: document.getElementById('join-ig').value.trim()
+        };
+
         const post = posts.find(p => String(p.id) === String(postId));
-        if(!post) return;
-        const inputVal = document.getElementById('inline-pwd-input').value.trim();
-        
-        if(inputVal === post.password || isAdmin) {
-            unlockedPosts[postId] = true;
-            renderSinglePostView(postId);
-        } else {
-            alert("❌ 密碼錯誤！無法解鎖管理區塊。");
-        }
-    }
+        if (!post) return;
 
-    
-
-    function openCompleteModal(postId) {
-        const post = posts.find(p => String(p.id) === String(postId));
-        if(!post) return;
-
-        document.getElementById('complete-post-id').value = postId;
-        const container = document.getElementById('heroes-select-container');
-        container.innerHTML = '';
-
-        const hList = post.heroeslist || [];
-        
-        const noOneDiv = document.createElement('label');
-        noOneDiv.className = "flex items-center space-x-3 bg-gray-50 p-3 rounded-xl border border-gray-200 cursor-pointer block hover:bg-gray-100";
-        noOneDiv.innerHTML = `
-            <input type="radio" name="selected-complete-hero" value="none" checked class="text-emerald-600 focus:ring-emerald-500">
-            <div>
-                <p class="text-xs font-bold text-gray-700">❌ 沒有人完成 / 取消此委託</p>
-                <p class="text-[10px] text-gray-400">（本案會封存，但不會發放萬事分）</p>
-            </div>
-        `;
-        container.appendChild(noOneDiv);
-
-        hList.forEach((hero, index) => {
-            const item = document.createElement('label');
-            item.className = "flex items-center space-x-3 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100 cursor-pointer block hover:bg-emerald-50";
-            item.innerHTML = `
-                <input type="radio" name="selected-complete-hero" value="${index}" class="text-emerald-600 focus:ring-emerald-500">
-                <div>
-                    <p class="text-xs font-bold text-emerald-950">🥷 英雄：${hero.name}</p>
-                    <p class="text-[10px] text-emerald-700/70">聯絡管道：${hero.contact}</p>
-                </div>
-            `;
-            container.appendChild(item);
-        });
-
-        document.getElementById('complete-modal').classList.remove('hidden');
-    }
-
-    function closeCompleteModal() { document.getElementById('complete-modal').classList.add('hidden'); }
-
-    async function submitCompleteTask() {
-        const postId = document.getElementById('complete-post-id').value;
-        const post = posts.find(p => String(p.id) === String(postId));
-        if(!post) return;
-
-        const selectedRadio = document.querySelector('input[name="selected-complete-hero"]:checked');
-        if(!selectedRadio) { alert("請選擇一項結案條件。"); return; }
-
-        let cName = null;
-        let cContact = null;
-
-        if(selectedRadio.value !== 'none') {
-            const heroIndex = parseInt(selectedRadio.value);
-            const chosenHero = post.heroeslist[heroIndex];
-            cName = chosenHero.name;
-            cContact = chosenHero.contact;
-        }
+        const updatedHeroes = [...(post.heroeslist || []), newHero];
 
         try {
-            const { error } = await client
-                .from(POSTS_TABLE)
-                .update({ 
-                    iscompleted: true,
-                    completed_by_name: cName,
-                    completed_by_contact: cContact
-                })
-                .eq('id', postId);
-            
+            const { error } = await supabase.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
             if (error) throw error;
-            
-            closeCompleteModal();
-            if(currentViewingPostId === postId) backToHomeList();
+
+            if (post.clientemail) {
+                try {
+                    await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            toEmail: post.clientemail,
+                            toName: post.clientname || "任務發起人",
+                            taskTitle: post.tasktitle || post.title || "鄰里任務",
+                            heroName: newHero.name,
+                            heroContact: newHero.contact
+                        })
+                    });
+                } catch (emailErr) {
+                    console.error("背景發信失敗：", emailErr);
+                }
+            }
+
+            closeJoinModal();
             await fetchPostsFromSupabase();
-            await updateUserPointsInSupabase(cContact, cName, 1, clientEmail);
-            if(cName) {
-                alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
-            } else {
-                alert("🏮 委託已關閉結案。");
-            }
-        } catch (err) { alert("更新結案狀態失敗: " + err.message); }
-    }
-
-    async function handleJoinSubmit(event) {
-    event.preventDefault();
-    const postId = document.getElementById('join-post-id').value;
-    const newHero = {
-        name: document.getElementById('join-name').value.trim(),
-        contact: document.getElementById('join-ig').value.trim()
-    };
-
-    const post = posts.find(p => String(p.id) === String(postId));
-    if (!post) return;
-
-    const updatedHeroes = [...(post.heroeslist || []), newHero];
-
-    try {
-        // 1. 更新 Supabase 資料庫
-        const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
-        if (error) throw error;
-
-        // ==========================================
-        // 2. 💡 加上這段：發送 Email 通知任務發起人
-        // ==========================================
-        if (post.clientemail) {
-            try {
-                await fetch('/api/send-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        toEmail: post.clientemail,
-                        toName: post.clientname || "任務發起人",
-                        taskTitle: post.tasktitle || post.title || "鄰里任務", // 兼容不同的標題欄位名稱
-                        heroName: newHero.name,
-                        heroContact: newHero.contact
-                    })
-                });
-                console.log("Email 通知請求已送出");
-            } catch (emailErr) {
-                console.error("背景發信失敗（不影響接單結果）：", emailErr);
-            }
+            alert("🎉 恭喜！您已成功接單，已自動發送通知信給發布者！");
+        } catch (err) { 
+            alert("接受委託失敗: " + err.message); 
         }
-
-        // 3. 原本的收尾動作
-        closeJoinModal();
-        await fetchPostsFromSupabase();
-        alert("🎉 恭喜！您已成功接單，已自動發送通知信給發布者！");
-    } catch (err) { 
-        alert("接受委託失敗: " + err.message); 
     }
-}
+
     async function handleFormSubmit(event) {
         event.preventDefault();
         
@@ -1972,7 +1826,7 @@ function backToHomeList() {
         };
 
         try {
-            const { error } = await client.from(POSTS_TABLE).insert([newPost]);
+            const { error } = await supabase.from(POSTS_TABLE).insert([newPost]);
             if (error) throw error;
 
             await updateUserPointsInSupabase(clientContact, clientName, -1, clientEmail);
@@ -1981,7 +1835,7 @@ function backToHomeList() {
             setupRandomDefaultAvatar();
             await fetchPostsFromSupabase();
 
-            alert(`✨ 委託發布成功！已為您扣除 1 點萬事分（您目前的萬事分為 ${userScore - 1} 分）。請記好您的管理密碼！`);
+            alert(`✨ 委託發布成功！已為您扣除 1 點萬事分（您目前的萬事分為 ${userScore - 1} 分）。`);
         } catch (err) { 
             alert("發布新委託失敗: " + err.message); 
         }
@@ -2006,7 +1860,7 @@ function backToHomeList() {
         }
 
         try {
-            const { error } = await client.from(TABLE_NAME).insert([data]);
+            const { error } = await supabase.from(TABLE_NAME).insert([data]);
             if (error) throw error;
             
             await updateUserPointsInSupabase(data.contact, data.name, +1, data.email);
@@ -2021,33 +1875,11 @@ function backToHomeList() {
         }
     }
 
-    function copyContactInfo(text) {
-        if(!text) return;
-        let cleanText = text.trim();
-        const textArea = document.createElement("textarea");
-        textArea.value = cleanText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        showToast(`📋 已成功複製聯絡資訊：「${cleanText}」`);
-        document.body.removeChild(textArea);
-    }
-
-    function showToast(message) {
-        const toast = document.getElementById('toast-message');
-        if(!toast) return;
-        toast.innerText = message;
-        toast.classList.remove('hidden');
-        toast.classList.add('toast-popup');
-        setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('toast-popup'); }, 2300);
-    }
-
     async function deletePost(postId) { 
         if (confirm("確定要從資料庫中永久刪除此委託嗎？")) { 
             try {
-                const { error } = await client.from(POSTS_TABLE).delete().eq('id', postId);
+                const { error } = await supabase.from(POSTS_TABLE).delete().eq('id', postId);
                 if (error) throw error;
-                if (currentViewingPostId === postId) backToHomeList();
                 await fetchPostsFromSupabase();
             } catch (err) { alert("刪除委託失敗: " + err.message); }
         } 
@@ -2056,7 +1888,7 @@ function backToHomeList() {
     async function deleteSkill(skillId) { 
         if (confirm("確定要移除此鄰里人技能檔案嗎？")) { 
             try {
-                const { error } = await client.from(TABLE_NAME).delete().eq('id', skillId);
+                const { error } = await supabase.from(TABLE_NAME).delete().eq('id', skillId);
                 if (error) throw error;
                 await fetchSkillsFromSupabase();
             } catch (err) { alert("移除技能失敗: " + err.message); }
@@ -2096,7 +1928,7 @@ function backToHomeList() {
             return;
         }
 
-        const { error } = await client.auth.signInWithPassword({ 
+        const { error } = await supabase.auth.signInWithPassword({ 
             email: 'admin@studio.local', 
             password: inputPwd 
         });
@@ -2112,7 +1944,7 @@ function backToHomeList() {
 
     async function handleAdminLogout() { 
         try {
-            await client.auth.signOut();
+            await supabase.auth.signOut();
             isAdmin = false;
             updateAdminUI();
             switchTab(currentTab);
@@ -2183,6 +2015,5 @@ function backToHomeList() {
             alert("調整萬事分失敗: " + err.message);
         }
     }
-
 </script>
 </BaseLayout>
