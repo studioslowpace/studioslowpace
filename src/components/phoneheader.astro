@@ -130,7 +130,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 </style>
 
 <script>
-  import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
   const TABLE_NAME = 'slowpace_members';
 
   let currentUserId = '';
@@ -161,11 +161,16 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       localStorage.setItem('space_theme_color', val);
     });
 
-    // 2. 檢查 sessionStorage 內的訪客身分
-    const guestId = sessionStorage.getItem('space_guest_id');
-    const guestName = sessionStorage.getItem('space_guest_name');
+    // 2. 檢查 sessionStorage 與記憶體暫存內的訪客身分（雙重防護）
+    let guestId = sessionStorage.getItem('space_guest_id');
+    let guestName = sessionStorage.getItem('space_guest_name');
 
-    console.log("🔍 [F12 除錯 - Header] sessionStorage 檢查結果:", { guestId, guestName });
+    if (!guestId && window.__TEMP_GUEST_ID) {
+      guestId = window.__TEMP_GUEST_ID;
+      guestName = window.__TEMP_GUEST_NAME;
+    }
+
+    console.log("🔍 [F12 除錯 - Header] 訪客身分檢查結果:", { guestId, guestName });
 
     if (guestId) {
       console.log("✅ [F12 除錯 - Header] 成功識別為訪客身分，準備載入介面...");
@@ -313,6 +318,22 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   }
 
   function setupHeaderEventListeners() {
+    // 綁定線上與總數點擊事件
+    document.getElementById('online-count-trigger-home')?.addEventListener('click', () => openUserListModal('online'));
+    document.getElementById('total-count-trigger-home')?.addEventListener('click', () => openUserListModal('total'));
+    document.getElementById('user-list-close-btn')?.addEventListener('click', closeUserListModal);
+    document.getElementById('user-search-input')?.addEventListener('input', (e) => renderUserListModalContent(e.target.value.trim()));
+
+    document.getElementById('user-list-container')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.header-dm-action-btn');
+      if (btn) {
+        const targetId = btn.getAttribute('data-target-id');
+        const targetName = encodeURIComponent(btn.getAttribute('data-target-name'));
+        closeUserListModal();
+        window.location.href = `/?dm=${targetId}&name=${targetName}`;
+      }
+    });
+
     // 監聽來自 LoginModal 的訊息
     window.addEventListener('message', async (event) => {
       console.log("📥 [F12 除錯 - Header] 收到 window.message 事件：", event.data);
@@ -322,6 +343,10 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
         sessionStorage.setItem('space_guest_id', event.data.guestId);
         sessionStorage.setItem('space_guest_name', event.data.name);
         
+        // 記憶體暫存防護
+        window.__TEMP_GUEST_ID = event.data.guestId;
+        window.__TEMP_GUEST_NAME = event.data.name;
+        
         const modal = document.getElementById('rpg-modal');
         if (modal) modal.style.display = 'none';
         
@@ -329,6 +354,8 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
         window.location.reload();
       }
       if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+        const modal = document.getElementById('rpg-modal');
+        if (modal) modal.style.display = 'none';
         window.location.reload();
       }
     });
