@@ -121,7 +121,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
   let currentUserName = '';
   let presenceChannel = null;
 
- async function initAuthHeader() {
+  async function initAuthHeader() {
     const nameEl = document.getElementById('hud-name');
     const tierEl = document.getElementById('hud-tier-tag');
     const modal = document.getElementById('rpg-modal');
@@ -140,7 +140,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       localStorage.setItem('space_theme_color', val);
     });
 
-    // 1. 【最重要】優先檢查 sessionStorage 是否有訪客身分
+    // 1. 【最強防護】第一步優先攔截 sessionStorage 內的訪客身分
     const guestId = sessionStorage.getItem('space_guest_id');
     const guestName = sessionStorage.getItem('space_guest_name');
 
@@ -150,17 +150,21 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl) tierEl.textContent = '☁️ 訪客';
       
-      // 強制關閉登入彈窗
+      // 強制關閉並隱藏登入彈窗，絕不允許它跳出來
       if (modal) modal.style.display = 'none';
 
       window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
         detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
       }));
       initPresenceTracker();
-      return; // 🛑 訪客身分確認完畢，直接返回，絕不向下執行 Supabase 檢查！
+      
+      // 監聽來自 Modal 的跨視窗訊息
+      setupMessageListener(modal);
+      setupLogoutHandlers();
+      return; // 🛑 立即終止，不往下執行 Supabase Auth 檢查，徹底解決跳回登入框的問題！
     }
 
-    // 2. 若非訪客，才檢查正式會員的 Supabase Auth Session
+    // 2. 若沒有訪客身分，才檢查正式會員的 Supabase Auth Session
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       const { data: member } = await supabase
@@ -184,14 +188,18 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       currentUserName = '訪客';
       if (nameEl) nameEl.textContent = '訪客';
       if (tierEl) tierEl.textContent = '👤 未登入';
-      if (modal) modal.style.display = 'flex'; // 既不是訪客也沒有登入才開彈窗
+      if (modal) modal.style.display = 'flex'; // 只有在既不是訪客又沒登入時才開彈窗
     }
 
-    // 監聽來自 LoginModal 的訊息
+    setupMessageListener(modal);
+    setupLogoutHandlers();
+  }
+
+  function setupMessageListener(modal) {
     window.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
         sessionStorage.setItem('space_guest_id', event.data.guestId);
-        sessionStorage.setItem('space_guest_name', event.data.name); // 儲存訪客名稱
+        sessionStorage.setItem('space_guest_name', event.data.name); // 完整儲存訪客名稱
         if (modal) modal.style.display = 'none';
         window.location.reload();
       }
@@ -200,7 +208,9 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
         window.location.reload();
       }
     });
+  }
 
+  function setupLogoutHandlers() {
     const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
     const logoutModal = document.getElementById('logout-confirm-modal');
     const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
