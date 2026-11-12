@@ -142,7 +142,7 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-  // 會員註冊（包含暱稱、角色 role 與分身造型 avatar 寫入）
+  // 會員註冊
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
@@ -183,7 +183,7 @@
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
-  // 訪客快速進入（確實寫入 DB 與 sessionStorage，並增加 user_id / 名字撞號防護）
+  // 訪客快速進入（確實寫入 DB 與本機儲存）
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
@@ -198,21 +198,19 @@
     while (!insertSuccess && attempts < 5) {
       attempts++;
 
-      // 1. 先抓取現有訪客以計算流水號編號 (訪客 #1, 訪客 #2...)
+      // 1. 取得現有訪客以計算流水號編號 (訪客 #1, 訪客 #2...)
       const { data: existingGuests, error: fetchError } = await supabase
         .from(TABLE_NAME)
         .select('user_id, name')
         .like('name', '訪客 #%');
 
       let nextIndex = 1;
-      let existingNames = new Set();
       let existingUserIds = new Set();
 
       if (!fetchError && existingGuests) {
         existingGuests.forEach(g => {
-          if (g.name) existingNames.add(g.name);
           if (g.user_id) existingUserIds.add(g.user_id);
-          const match = g.name.match(/訪客 #(\d+)/);
+          const match = g.name?.match(/訪客 #(\d+)/);
           if (match) {
             const num = parseInt(match[1], 10);
             if (num >= nextIndex) nextIndex = num + 1;
@@ -227,20 +225,16 @@
         guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
       } while (existingUserIds.has(guestId));
 
+      // 3. 僅寫入基本的必要欄位（不帶入 id，交由資料庫自增）
       const guestData = {
         user_id: guestId,
         name: guestName,
         role: '☁️ 訪客',
         tier: '鄰里人',
         avatar: avatarVal,
-        room: 'study',
-        gx: 2,
-        gy: 2,
-        reading_log: [],
         updated_at: new Date()
       };
 
-      // 3. 嘗試寫入 DB
       const { error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]);
       
       if (!insertError) {
@@ -252,13 +246,13 @@
     }
 
     if (!insertSuccess) {
-      alert('進入空間失敗：無法分配訪客編號或資料庫寫入受阻，請稍後再試。');
+      alert('進入空間失敗：無法分配訪客編號或資料庫寫入受阻，請檢查網路或 RLS 權限。');
       return;
     }
 
-    // 💡 同時寫入 sessionStorage 與記憶體防護
-    sessionStorage.setItem('space_guest_id', guestId);
-    sessionStorage.setItem('space_guest_name', guestName);
+    // 💡 同時寫入 localStorage 與記憶體防護（確保跨頁面與重新整理不遺失）
+    localStorage.setItem('space_guest_id', guestId);
+    localStorage.setItem('space_guest_name', guestName);
     window.__TEMP_GUEST_ID = guestId;
     window.__TEMP_GUEST_NAME = guestName;
 
@@ -271,10 +265,11 @@
   });
 
   window.addEventListener('beforeunload', () => {
-    const guestId = sessionStorage.getItem('space_guest_id');
+    const guestId = localStorage.getItem('space_guest_id');
     if (!guestId) return;
     supabase.from(TABLE_NAME).delete().eq('user_id', guestId).then();
-    sessionStorage.removeItem('space_guest_id');
+    localStorage.removeItem('space_guest_id');
+    localStorage.removeItem('space_guest_name');
   });
 
   document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {

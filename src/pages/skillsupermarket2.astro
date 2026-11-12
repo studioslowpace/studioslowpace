@@ -19,14 +19,10 @@ import BaseLayout from '../layouts/Layout.astro';
             margin: 0;
             padding: 0;
         }
+        /* 修正：移除 body 的 min-height 限制，改交由 Layout 的 app-main 掌控 */
         body {
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-            background-color: #fdfbf7;
-            min-height: 100vh;
             color: #3A2E2B;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 3rem;
         }
         .hidden {
             display: none !important;
@@ -205,23 +201,6 @@ import BaseLayout from '../layouts/Layout.astro';
         /* ==========================================
            4. 頁首與導覽區塊 (Header)
            ========================================== */
-        .header-bar {
-            width: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid #fef3c7;
-            padding: 0.75rem 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 40;
-        }
-        .header-container {
-            max-width: 56rem;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         .banner-logo-group {
             display: flex;
             align-items: center;
@@ -272,12 +251,6 @@ import BaseLayout from '../layouts/Layout.astro';
             margin-top: -1.1rem;
         }
 
-        .header-action-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
         /* ==========================================
            5. 按鈕基本樣式 (Buttons)
            ========================================== */
@@ -320,11 +293,8 @@ import BaseLayout from '../layouts/Layout.astro';
             width: 100%;
             max-width: 56rem;
             margin: 0 auto;
-            padding: 2rem 1rem 2rem 1rem;
+            padding: 1.5rem 1rem;
             flex: 1 1 0%;
-        }
-        @media (min-width: 768px) {
-            .main-layout { padding-left: 1.5rem; padding-right: 1.5rem; }
         }
         
         .single-layout {
@@ -718,7 +688,7 @@ import BaseLayout from '../layouts/Layout.astro';
         .btn-form-submit-stone:hover { background-color: #0c0a09; }
 
         /* ==========================================
-           11. 精準對齊圖片規格的卡片樣式
+           11. 卡片樣式
            ========================================== */
         .task-card {
             background-color: #ffffff;
@@ -815,23 +785,6 @@ import BaseLayout from '../layouts/Layout.astro';
             font-weight: 700;
         }
 
-        .btn-card-orange {
-            background-color: #ea580c;
-            color: #ffffff;
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 0.625rem 1.25rem;
-            border-radius: 0.875rem;
-            border: none;
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.2);
-            transition: background-color 0.2s;
-        }
-        .btn-card-orange:hover {
-            background-color: #c2410c;
-        }
-
         .badge-status-success {
             font-size: 0.875rem;
             font-weight: 700;
@@ -883,7 +836,7 @@ import BaseLayout from '../layouts/Layout.astro';
         📋 聯絡資訊已複製到您的剪貼簿！
     </div>
 
-    <!-- 管理端導覽列 -->
+    <!-- 管理端導覽列 (透過 is_admin 驗證控制顯示) -->
     <div id="admin-navbar" class="hidden admin-nav">
         <div class="admin-nav-container">
             <div class="admin-title-row">
@@ -896,22 +849,12 @@ import BaseLayout from '../layouts/Layout.astro';
                 </button>
             </div>
             
-            <div id="admin-logged-out" class="admin-logout-row">
-                <p class="admin-hint-text">
-                    萬事屋主理人專用登入密碼：<code class="admin-password-code"></code>
-                </p>
-                <div class="admin-input-group-wrapper">
-                    <input type="password" id="admin-password-input" placeholder="輸入管理密碼" class="admin-password-input">
-                    <button id="btn-admin-login" class="btn-admin-login">認證登入</button>
-                </div>
-            </div>
-            
-            <div id="admin-logged-in" class="hidden admin-login-row">
+            <div class="admin-login-row" style="display: flex; flex-direction: column; gap: 1rem;">
                 <div class="admin-success-badge">
                     <i data-lucide="check-circle" class="admin-success-icon"></i>
-                    <span class="admin-success-text">主理人模式已啟用：您不受個案密碼限制，可任意刪除/變更狀態。</span>
+                    <span class="admin-success-text">主理人權限已驗證：您可直接進行全域刪除與管理。</span>
                 </div>
-                <div id="admin-points-control" style="margin-top: 15px; padding: 12px; background: #fff3ed; border-radius: 12px; border: 1px solid #ffd8c2;">
+                <div id="admin-points-control" style="margin-top: 5px; padding: 12px; background: #fff3ed; border-radius: 12px; border: 1px solid #ffd8c2;">
                     <h4 style="font-size: 0.9rem; font-weight: bold; color: #c2410c; margin-bottom: 8px;">⚙️ 管理員手動調整萬事分</h4>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <input type="text" id="admin-target-contact" placeholder="目標聯絡方式 (IG/電話)" class="input-field" style="flex: 1; min-width: 150px; font-size: 0.85rem;">
@@ -919,10 +862,6 @@ import BaseLayout from '../layouts/Layout.astro';
                         <button id="btn-admin-point-plus" class="btn-base btn-orange" style="padding: 4px 12px; font-size: 0.85rem;">+1 分</button>
                         <button id="btn-admin-point-minus" style="padding: 4px 12px; font-size: 0.85rem; background: #ef4444; color: white; border-radius: 8px; border: none; cursor: pointer;">-1 分</button>
                     </div>
-                </div>
-
-                <div class="admin-logout-wrapper">
-                    <button id="btn-admin-logout" class="btn-admin-logout">登出主理人</button>
                 </div>
             </div>
         </div>
@@ -951,6 +890,12 @@ import BaseLayout from '../layouts/Layout.astro';
 
             <div class="layout-action-row">
                 <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem;">
+                
+                <!-- 💡 新增：萬事屋因由按鈕 -->
+                <button id="btn-open-origin" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
+                    💡 萬事屋因由
+                </button>
+
                 <!-- 📖 萬事屋使用與規則說明按鈕 -->
                 <button id="btn-open-guide" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
                     📖 萬事屋使用與規則說明
@@ -962,7 +907,7 @@ import BaseLayout from '../layouts/Layout.astro';
                 </button>
 
                 <!-- 原有的互動按鈕 -->
-                <button id="header-chatroom-btn" class="btn-base btn-blue" style="background-color: #55a9d3; color: #ffffff; border: none;">鄰里人交流區 💬</button>
+                <button id="header-chatroom-btn" class="btn-base" style="background-color: #55a9d3; color: #ffffff; border: none;">鄰里人交流區 💬</button>
                 <button id="header-skill-btn" class="hidden btn-base btn-stone">+ 新增鄰里人技能</button>
                 <button id="header-upload-btn" class="btn-base btn-orange">+ 發布新委託</button>
             </div>
@@ -993,16 +938,6 @@ import BaseLayout from '../layouts/Layout.astro';
             <div id="skill-filter-bar-container" class="hidden" style="width: 100%; margin-bottom: 16px;"></div>
             <div id="posts-container" class="card-grid"></div>
         </div>
-    </main>
-
-    <main id="single-post-layout" class="hidden single-layout">
-        <div style="margin-bottom: 1rem;">
-            <button id="btn-back-home" class="btn-back">
-                <i data-lucide="arrow-left" class="btn-back-icon"></i>
-                <span>返回看板首頁</span>
-            </button>
-        </div>
-        <div id="single-post-render-target"></div>
     </main>
 
     <!-- 接單彈窗 -->
@@ -1154,6 +1089,22 @@ import BaseLayout from '../layouts/Layout.astro';
         </div>
     </div>
 
+    <!-- 💡 萬事屋因由文青風彈窗 -->
+    <div id="modal-origin" class="hidden modal-overlay" style="position: fixed; inset: 0; background-color: rgba(62, 53, 47, 0.4); backdrop-filter: blur(4px); z-index: 50; display: flex; justify-content: center; align-items: center; padding: 1rem;">
+        <div style="background-color: #fdfbf7; width: 100%; max-width: 32rem; border-radius: 1.25rem; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #fde68a; display: flex; flex-direction: column; gap: 1rem; position: relative; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: #451a03; display: flex; align-items: center; gap: 0.5rem;">
+                    💡 萬事屋因由
+                </h3>
+                <button id="btn-close-origin" style="color: #9ca3af; background: transparent; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+            </div>
+            <div style="font-size: 0.85rem; color: #78350f; line-height: 1.8; display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                <p>生活中總會遇到各種奇難雜務。受到日本專門幫助人們解決生活難題的「萬事屋」所啟發，我們希望客舍能成為一個技能交換的平台，以「萬事分」作為代幣。需求技能的人也能同時分享自己的專長，讓技能分享成為一種循環的力量。</p>
+                <p>在過去一年的運營中，我們意識到周圍的人擁有無限的潛力。有熱愛畫畫的人、創作歌詞的人、研究歷史和考古的人、攝影的人，甚至從事文字工作的朋友。這些來自不同背景的鄰里人，分享各自的經驗與見解，讓我們得以完整討論和互相啟發。轉念一想，技能分享不只是學術或領域上的專業，很多時候，各人的分享也可以解決彼此生活當中的小難題。</p>
+            </div>
+        </div>
+    </div>
+
     <!-- 📖 使用說明文青風彈窗 -->
     <div id="modal-guide" class="hidden modal-overlay" style="position: fixed; inset: 0; background-color: rgba(62, 53, 47, 0.4); backdrop-filter: blur(4px); z-index: 50; display: flex; justify-content: center; align-items: center; padding: 1rem;">
         <div style="background-color: #fdfbf7; width: 100%; max-width: 32rem; border-radius: 1.25rem; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #fde68a; display: flex; flex-direction: column; gap: 1rem; position: relative; max-height: 85vh; overflow-y: auto;">
@@ -1214,14 +1165,12 @@ import BaseLayout from '../layouts/Layout.astro';
     
     const TABLE_NAME = 'skills';
     const POSTS_TABLE = 'posts';
-    const MEMBERS_TABLE = 'slowpace_members'; // 對齊 Layout 的會員與管理員權限表
+    const MEMBERS_TABLE = 'slowpace_members';
     
     let posts = [];
     let skills = [];
     let isAdmin = false;
-    let currentViewingPostId = null;
     let currentTab = 'active';
-    let unlockedPosts = {};
     let allUserRecords = [];
     let currentTagFilter = 'all';
 
@@ -1233,7 +1182,7 @@ import BaseLayout from '../layouts/Layout.astro';
 
         initEventListeners();
 
-        // 🌟 1. 初始化檢查目前的登入狀態與管理員權限
+        // 🌟 1. 初始化檢查目前的登入狀態與管理員權限 (透過 is_admin 驗證)
         try {
             const { data: { session } } = await supabase.auth.getSession();
             isAdmin = await checkAdminStatus(session?.user);
@@ -1265,10 +1214,15 @@ import BaseLayout from '../layouts/Layout.astro';
     }
 
     function initEventListeners() {
-        document.getElementById('banner-logo-trigger')?.addEventListener('click', toggleAdminNavbar);
+        // 主理人控制面板的開關 (點擊 Logo 觸發，需配合 is_admin 驗證)
+        document.getElementById('banner-logo-trigger')?.addEventListener('click', () => {
+            if (isAdmin) {
+                toggleAdminNavbar();
+            } else {
+                alert("🔒 此功能僅限客舍主理人使用。");
+            }
+        });
         document.getElementById('btn-admin-close-nav')?.addEventListener('click', toggleAdminNavbar);
-        document.getElementById('btn-admin-login')?.addEventListener('click', handleAdminLogin);
-        document.getElementById('btn-admin-logout')?.addEventListener('click', handleAdminLogout);
         document.getElementById('btn-admin-point-plus')?.addEventListener('click', () => adminAdjustPoints(1));
         document.getElementById('btn-admin-point-minus')?.addEventListener('click', () => adminAdjustPoints(-1));
 
@@ -1286,7 +1240,6 @@ import BaseLayout from '../layouts/Layout.astro';
         });
 
         document.getElementById('btn-query-points')?.addEventListener('click', queryPersonalPoints);
-        document.getElementById('btn-back-home')?.addEventListener('click', backToHomeList);
 
         document.getElementById('btn-close-join')?.addEventListener('click', closeJoinModal);
         document.getElementById('btn-close-complete')?.addEventListener('click', closeCompleteModal);
@@ -1311,6 +1264,15 @@ import BaseLayout from '../layouts/Layout.astro';
         });
     }
 
+    // 💡 萬事屋因由彈窗事件
+    document.getElementById('btn-open-origin')?.addEventListener('click', () => {
+        document.getElementById('modal-origin')?.classList.remove('hidden');
+    });
+    document.getElementById('btn-close-origin')?.addEventListener('click', () => {
+        document.getElementById('modal-origin')?.classList.add('hidden');
+    });
+
+    // 📖 使用說明彈窗事件
     document.getElementById('btn-open-guide')?.addEventListener('click', () => {
         document.getElementById('modal-guide')?.classList.remove('hidden');
     });
@@ -1318,6 +1280,7 @@ import BaseLayout from '../layouts/Layout.astro';
         document.getElementById('modal-guide')?.classList.add('hidden');
     });
 
+    // ⚖️ 免責聲明彈窗事件
     document.getElementById('btn-open-disclaimer')?.addEventListener('click', () => {
         document.getElementById('modal-disclaimer')?.classList.remove('hidden');
     });
@@ -1742,10 +1705,6 @@ import BaseLayout from '../layouts/Layout.astro';
         });
     }
 
-    function backToHomeList() {
-        window.location.href = '/skillsupermarket';
-    }
-
     async function handleJoinSubmit(event) {
         event.preventDefault();
         const postId = document.getElementById('join-post-id').value;
@@ -1921,53 +1880,13 @@ import BaseLayout from '../layouts/Layout.astro';
         document.getElementById('admin-navbar')?.classList.toggle('hidden'); 
     }
 
-    async function handleAdminLogin() { 
-        const inputPwd = document.getElementById('admin-password-input').value.trim(); 
-        if (!inputPwd) {
-            alert("請輸入管理密碼！");
-            return;
-        }
-
-        const { error } = await supabase.auth.signInWithPassword({ 
-            email: 'admin@studio.local', 
-            password: inputPwd 
-        });
-
-        if (error) {
-            alert("❌ 認證登入失敗：" + error.message);
-        } else {
-            alert("🟢 主理人認證成功！");
-            document.getElementById('admin-password-input').value = '';
-            document.getElementById('admin-navbar')?.classList.remove('hidden');
-        }
-    }
-
-    async function handleAdminLogout() { 
-        try {
-            await supabase.auth.signOut();
-            isAdmin = false;
-            updateAdminUI();
-            switchTab(currentTab);
-            alert("已成功登出主理人模式。");
-        } catch (err) {
-            console.error("登出失敗:", err.message);
-        }
-    }
-
     function updateAdminUI() {
-        const loggedOut = document.getElementById('admin-logged-out');
-        const loggedIn = document.getElementById('admin-logged-in');
         const globalBadge = document.getElementById('global-admin-badge');
         const adminNavbar = document.getElementById('admin-navbar');
 
         if (isAdmin) { 
-            loggedOut?.classList.add('hidden'); 
-            loggedIn?.classList.remove('hidden'); 
             globalBadge?.classList.remove('hidden'); 
-            adminNavbar?.classList.remove('hidden'); 
         } else { 
-            loggedOut?.classList.remove('hidden'); 
-            loggedIn?.classList.add('hidden'); 
             globalBadge?.classList.add('hidden'); 
             adminNavbar?.classList.add('hidden');
         }
