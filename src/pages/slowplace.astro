@@ -504,21 +504,35 @@ import Layout from '../layouts/Layout.astro';
       selectEl.innerHTML = html;
     }
 
-    async function syncMyStateToDB() {
-      if (!userId) return;
-      await supabase.from(TABLE_NAME).upsert({
-        user_id: userId,
-        name: playerName,
-        is_admin: isAdmin,
-        avatar: playerAvatar,
-        room: currentRoom,
-        gx: playerGx,
-        gy: playerGy,
-        is_dnd: isDND,
-        task: currentTask,
-        updated_at: new Date()
-      }, { onConflict: 'user_id' });
-    }
+async function syncMyStateToDB() {
+  if (!userId) {
+    console.warn("尚未取得 userId，無法同步狀態！");
+    return;
+  }
+
+  const payload = {
+    user_id: userId,
+    name: playerName,
+    is_admin: isAdmin,
+    avatar: playerAvatar,
+    room: currentRoom,
+    gx: playerGx,
+    gy: playerGy,
+    is_dnd: isDND,
+    task: currentTask,
+    updated_at: new Date()
+  };
+
+  console.log("正在同步狀態到 Supabase:", payload);
+
+  const { data, error } = await supabase.from(TABLE_NAME).upsert(payload, { onConflict: 'user_id' });
+
+  if (error) {
+    console.error("Supabase 同步失敗詳細原因:", error);
+  } else {
+    console.log("Supabase 同步成功！");
+  }
+}
 
     async function fetchOnlinePlayers() {
       const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString();
