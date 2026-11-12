@@ -306,20 +306,7 @@ import Layout from '../layouts/Layout.astro';
     <!-- 📱 手機應用主容器 -->
     <main>
         
-        <!-- 頂部標題列 -->
-        <div class="phone-title-bar">
-            <div class="main-title-box">
-                <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
-                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
-                </span>
-                <span>鄰里人交流區</span>
-            </div>
-            <div style="display: flex; gap: 4px; align-items: center;">
-                <a href="/slowplace" class="nav-link-btn" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe;">🏠 回空間</a>
-                <div id="my-identity-badge-top" class="identity-badge" style="font-size: 0.65rem; padding: 0.2rem 0.4rem;">👤 載入中</div>
-                <button id="logout-btn" class="nav-link-btn" style="background:#ef4444; color:#fff; border-color:#dc2626;">🚪 登出</button>
-            </div>
-        </div>
+
 
         <!-- 🔓 交流區主視窗 -->
         <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
@@ -327,11 +314,7 @@ import Layout from '../layouts/Layout.astro';
             <!-- 🏠 PAGE 1: 交流區首頁 (主題與私訊列表) -->
             <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem;">
                 
-                <div class="phone-sub-bar" style="border-radius: 0.75rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0;">
-                    <span>🟢 在線：<strong id="online-count-trigger-home"><span id="online-users-count-home">1</span> 人</strong></span>
-                    <span>|</span>
-                    <span>📜 鄰里人總數：<strong id="total-count-trigger-home"><span id="total-users-count-home">0</span> 人</strong></span>
-                </div>
+
 
                 <div class="info-card-grid">
                     <div class="info-trigger-btn" id="modal-origin-btn">
@@ -383,9 +366,11 @@ import Layout from '../layouts/Layout.astro';
                     </div>
 
                     <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
-                                        <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
+                    <div class="main-title-box">
+                    <span id="logo-toggle-btn" class="logo-btn" title="點擊切換主理人模式">
                     <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;" />
                    </span>
+                   </div>
                 </div>
 
                 <div class="phone-sub-bar">
