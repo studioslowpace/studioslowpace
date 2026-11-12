@@ -140,29 +140,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       localStorage.setItem('space_theme_color', val);
     });
 
-    async function updateUserData(user) {
-      currentUserId = user.id;
-      const { data: member } = await supabase
-        .from(TABLE_NAME)
-        .select('name, tier')
-        .eq('user_id', user.id)
-        .single();
-
-      currentUserName = member?.name || user.email || '訪客';
-
-      if (nameEl) nameEl.textContent = currentUserName;
-      if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
-      
-      if (modal) modal.style.display = 'none';
-
-      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
-        detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
-      }));
-
-      initPresenceTracker();
-    }
-
-    // 1. 優先檢查是否為訪客身分 (來自 sessionStorage)
+    // 1. 【最重要】優先檢查 sessionStorage 是否有訪客身分
     const guestId = sessionStorage.getItem('space_guest_id');
     const guestName = sessionStorage.getItem('space_guest_name');
 
@@ -172,31 +150,48 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       if (nameEl) nameEl.textContent = currentUserName;
       if (tierEl) tierEl.textContent = '☁️ 訪客';
       
-      // 確保訪客狀態下絕對關閉登入彈窗
+      // 強制關閉登入彈窗
       if (modal) modal.style.display = 'none';
 
       window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
         detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
       }));
       initPresenceTracker();
-      return; // 💡 訪客身分載入完成直接返回，不往下執行 Supabase Auth 檢查，避免被彈窗攔截
+      return; // 🛑 訪客身分確認完畢，直接返回，絕不向下執行 Supabase 檢查！
     }
 
-    // 2. 若不是訪客，才檢查真實會員的 Supabase Auth Session
+    // 2. 若非訪客，才檢查正式會員的 Supabase Auth Session
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      await updateUserData(session.user);
+      const { data: member } = await supabase
+        .from(TABLE_NAME)
+        .select('name, tier')
+        .eq('user_id', session.user.id)
+        .single();
+
+      currentUserId = session.user.id;
+      currentUserName = member?.name || session.user.email || '鄰里人';
+
+      if (nameEl) nameEl.textContent = currentUserName;
+      if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
+      if (modal) modal.style.display = 'none';
+
+      window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
+        detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
+      }));
+      initPresenceTracker();
     } else {
       currentUserName = '訪客';
       if (nameEl) nameEl.textContent = '訪客';
       if (tierEl) tierEl.textContent = '👤 未登入';
-      if (modal) modal.style.display = 'flex';
+      if (modal) modal.style.display = 'flex'; // 既不是訪客也沒有登入才開彈窗
     }
 
+    // 監聽來自 LoginModal 的訊息
     window.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
         sessionStorage.setItem('space_guest_id', event.data.guestId);
-        sessionStorage.setItem('space_guest_name', event.data.name);
+        sessionStorage.setItem('space_guest_name', event.data.name); // 儲存訪客名稱
         if (modal) modal.style.display = 'none';
         window.location.reload();
       }
