@@ -1,128 +1,394 @@
 ---
-const { title = "預設標題" } = Astro.props;
-import Footer from '../components/phonefooter.astro';
-import Header from '../components/phoneheader.astro';
+import LoginModal from '../components/LoginModal.astro';
+
+const { onlineCount = 1, totalCount = 0 } = Astro.props;
 ---
 
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-  </head>
-<body>
-    <!-- 確保外層 viewport 絕對置中，且禁止全頁滾動 -->
-    <div class="app-viewport">
-      <div class="rpg-container">
-        <Header />
-        <!-- 內容區：如果內部有超出的內容，讓它在內部滾動而不撐開外框 -->
-        <main class="app-main">
-          <slot />
-        </main>
+<header class="rpg-hud" id="rpg-hud">
+<!-- 第一列：品牌與使用者控制區 -->
+<div class="hud-top-row">
+<div class="hud-brand-group">
+<span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
+</div>
 
-        <!-- 底部共用導覽列 -->
-        <div class="app-footer-wrapper">
-          <Footer />
-        </div>
-      </div>
+<!-- 右側：身分顯示與登出按鈕 (統一由 Header 管理) -->
+<div class="hud-right-group">
+<div class="hud-user-profile">
+<span class="user-tag" id="hud-tier-tag">👤 載入中</span>
+<strong id="hud-name">載入中...</strong>
+</div>
 
-    </div>
-  </body>
-</html>
+<button id="logout-trigger-btn" class="rpg-btn-logout">🚪 登出</button>
+</div>
+</div>
 
-<style is:global>
-  :root {
-    --bg-main: #faf6ee;
-    --bg-card: rgba(255, 255, 255, 0.9);
-    --bg-input: #f4efe6;
-    --border-color: #e6dcc8;
-    --text-color: #2c241d;
-    --accent-hover: #52796f;
-    --text-muted: #8c7a6b;
-    --danger-color: #e07a5f;
-    --success-color: #81b29a;
-  }
+<!-- 第二列：在線 | 調色盤 | 總數 -->
+<div class="phone-sub-bar-clean">
+<div class="sub-bar-left">
+<span>🟢 在線：<strong id="online-count-trigger-home" style="cursor: pointer;"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
+</div>
 
-  * { 
-    -webkit-tap-highlight-color: transparent; 
-    -webkit-touch-callout: none; 
-    box-sizing: border-box; 
-  }
+<div class="sub-bar-center">
+<div class="hud-theme-picker" title="自選主要區域配色">
+<span class="theme-label">🎨 主題</span>
+<input type="color" id="custom-color-picker" value="#faf6ee" />
+</div>
+</div>
 
-  /* 鎖死全頁，絕對不允許出現視窗捲軸 */
-  html, body {
-    background-color: var(--bg-main);
-    color: var(--text-color);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-    margin: 0; 
-    padding: 0; 
-    width: 100vw; 
-    height: 100vh; 
-    height: 100dvh; 
-    overflow: hidden; 
-  }
+<div class="sub-bar-right">
+<span>📜 總數：<strong id="total-count-trigger-home" style="cursor: pointer;"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
+</div>
+</div>
+</header>
 
-  /* 外層視窗：強迫置中所有內容 */
-  .app-viewport { 
-    width: 100vw; 
-    height: 100vh; 
-    height: 100dvh; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    background: var(--bg-main); 
-    overflow: hidden;
-  }
-  
-  /* 核心容器：限制最大寬度為 430px，並強制隱藏所有超出範圍的捲軸 */
-  .rpg-container {
-    width: 100%;
-    max-width: 430px; 
-    height: 100vh;
-    height: 100dvh;
-    max-height: 880px;
-    display: flex; 
-    flex-direction: column; 
-    justify-content: space-between; 
-    background-color: var(--bg-main); 
-    border: 1px solid var(--border-color); 
-    border-radius: 0;
-    box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); 
-    overflow: hidden; /* 關鍵：切掉任何跑出卡片外面的東西，防止出現捲軸 */
-  }
+<!-- 身分驗證 Modal -->
+<div id="rpg-modal" class="rpg-modal-overlay" style="display: none;">
+<div class="rpg-window embed-window" style="width: 100%; max-width: 420px; height: 520px; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--border-color, #e6dcc8); box-shadow: 0 16px 48px rgba(44, 36, 29, 0.15);">
+<div style="background: #0f172a; color: #38bdf8; padding: 12px 16px; font-size: 13px; font-weight: 500; display:flex; justify-content:space-between; align-items:center;">
+<span>◆ 空間客舍 · 身分認證 ◆</span>
+</div>
+<div class="embed-frame-wrapper" style="flex:1; overflow-y: auto; padding: 16px; background: var(--bg-main, #faf6ee);">
+<LoginModal />
+</div>
+</div>
+</div>
 
-  /* 在桌機版時顯示漂亮的圓角卡片外框 */
-  @media (min-width: 480px) {
-    .rpg-container {
-      border-radius: 28px;
-      height: 96vh;
-      height: 96dvh;
-    }
-  }
+<!-- 登出確認彈窗 -->
+<div id="logout-confirm-modal" class="rpg-modal-overlay" style="display: none;">
+<div class="rpg-logout-window">
+<div class="logout-window-header">
+<span>◆ 空間客舍 · 離席確認 ◆</span>
+</div>
+<div class="logout-window-body">
+<p class="logout-quote">「聚散終有時，此處暫歇，他日再會。」</p>
+<p class="logout-desc">您目前正在空間客舍中，請問是否要登出或切換帳號？</p>
 
-  /* 主內容區：允許內部滾動，但隱藏醜陋的捲軸 */
-  .app-main {
-    flex: 1; 
-    display: flex;
-    overflow-y: auto; 
-    overflow-x: auto;
-    padding: 0px;
-    min-height: 0;
-    width: 100%;
-  }
+<div class="logout-actions">
+<button id="cancel-logout-btn" class="btn-secondary">留在此處</button>
+<button id="confirm-logout-btn" class="btn-primary">確認登出 / 切換</button>
+</div>
+</div>
+</div>
+</div>
 
-  /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
-  .app-main::-webkit-scrollbar {
-    display: none;
-  }
-  /* 隱藏 Firefox 捲軸 */
-  .app-main {
-    scrollbar-width: none; 
-  }
+<!-- 全站共用的成員列表 Modal (點擊線上/總數時彈出) -->
+<div id="user-list-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1250; padding:1rem;">
+<div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:340px; display:flex; flex-direction:column; gap:0.75rem; max-height:80vh;">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 id="user-list-modal-title" style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">👥 成員列表</h3>
+<button id="user-list-close-btn" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+</div>
+<input type="text" id="user-search-input" placeholder="🔍 搜尋鄰里人名字..." style="width: 100%; padding: 0.5rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.75rem; outline: none;" />
+<div id="user-list-container" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:4px; max-height:240px;">
+<p style="font-size:0.7rem; color:#94a3b8; text-align:center; padding:1rem;">載入中...</p>
+</div>
+</div>
+</div>
 
-  .app-footer-wrapper {
-    padding: 0px;
-    width: 100%;
-  }
+<style>
+.hidden { display: none !important; }
+.rpg-hud {
+width: 100%;
+background: var(--bg-card, rgba(255, 255, 255, 0.85));
+border-bottom: 1px solid var(--border-color, #e6dcc8);
+padding: 10px 16px 8px 16px;
+box-sizing: border-box;
+backdrop-filter: blur(8px);
+display: flex;
+flex-direction: column;
+gap: 6px;
+flex-shrink: 0;
+z-index: 20;
+}
+.hud-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px; }
+.hud-brand-group { display: flex; align-items: center; }
+.hud-brand { font-size: 15px; font-weight: 600; color: var(--text-color, #2c241d); letter-spacing: 0.5px; }
+.hud-right-group { display: flex; align-items: center; gap: 10px; }
+.hud-user-profile { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.user-tag { font-size: 11px; color: var(--text-muted, #8c7a6b); }
+#hud-name { color: var(--accent-hover, #52796f); font-weight: 600; }
+.rpg-btn-logout { background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 4px 8px; border-radius: 8px; font-size: 11px; cursor: pointer; transition: opacity 0.2s; }
+.rpg-btn-logout:hover { opacity: 0.9; }
+.phone-sub-bar-clean { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted, #8c7a6b); width: 100%; padding: 2px 4px; }
+.phone-sub-bar-clean strong { color: var(--text-color, #2c241d); }
+.sub-bar-left { text-align: left; flex: 1; }
+.sub-bar-center { text-align: center; flex: 1; display: flex; justify-content: center; }
+.sub-bar-right { text-align: right; flex: 1; }
+.hud-theme-picker { display: flex; align-items: center; gap: 4px; cursor: pointer; background: var(--bg-input, #f4efe6); padding: 2px 8px; border-radius: 8px; border: 1px solid var(--border-color, #e6dcc8); }
+.theme-label { font-size: 10px; font-weight: 600; }
+.hud-theme-picker input[type="color"] { width: 16px; height: 16px; border: none; background: transparent; cursor: pointer; padding: 0; }
+.rpg-modal-overlay { position: fixed; inset: 0; background: rgba(44, 36, 29, 0.4); backdrop-filter: blur(4px); z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 16px; }
+.rpg-logout-window { width: 100%; max-width: 320px; background: var(--bg-main, #faf6ee); border: 1px solid var(--border-color, #e6dcc8); border-radius: 16px; box-shadow: 0 12px 36px rgba(44, 36, 29, 0.15); overflow: hidden; animation: modalPop 0.25s ease-out; }
+@keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.logout-window-header { background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); padding: 10px 14px; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border-color, #e6dcc8); text-align: center; letter-spacing: 1px; }
+.logout-window-body { padding: 20px 16px; text-align: center; }
+.logout-quote { font-size: 12px; color: var(--accent-hover, #52796f); font-style: italic; margin-bottom: 10px; line-height: 1.5; }
+.logout-desc { font-size: 12px; color: var(--text-muted, #8c7a6b); margin-bottom: 20px; line-height: 1.4; }
+.logout-actions { display: flex; gap: 10px; justify-content: center; }
+.btn-secondary { flex: 1; background: var(--bg-input, #f4efe6); color: var(--text-color, #2c241d); border: 1px solid var(--border-color, #e6dcc8); padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
+.btn-primary { flex: 1; background: var(--danger-color, #e07a5f); color: #fff; border: none; padding: 8px 12px; border-radius: 10px; font-size: 12px; cursor: pointer; }
 </style>
+
+<script>
+import { supabase } from '../lib/supabase';
+const TABLE_NAME = 'slowpace_members';
+
+let currentUserId = '';
+let currentUserName = '';
+let isGuest = false;
+let presenceChannel = null;
+let onlineUsersMap = {};
+let allUserRecords = [];
+
+async function initAuthHeader() {
+console.log("🔍 [F12 除錯 - Header] 開始初始化 Header 身分檢查...");
+
+const nameEl = document.getElementById('hud-name');
+const tierEl = document.getElementById('hud-tier-tag');
+const modal = document.getElementById('rpg-modal');
+const colorPicker = document.getElementById('custom-color-picker');
+
+// 1. 調色盤即時變色功能
+const savedColor = localStorage.getItem('space_theme_color');
+if (savedColor && colorPicker) {
+colorPicker.value = savedColor;
+document.documentElement.style.setProperty('--bg-main', savedColor);
+}
+
+colorPicker?.addEventListener('input', (e) => {
+const val = e.target.value;
+document.documentElement.style.setProperty('--bg-main', val);
+localStorage.setItem('space_theme_color', val);
+});
+
+// 2. 檢查 sessionStorage 與記憶體暫存
+let guestId = sessionStorage.getItem('space_guest_id');
+let guestName = sessionStorage.getItem('space_guest_name');
+
+// 🛡️ 強制防呆：如果沒有 ID，代表狀態是髒的或殘缺的，直接清空全部重來
+if (!guestId) {
+if (guestName) {
+console.warn("⚠️ [F12 除錯 - Header] 偵測到殘缺身分（只有名字無 ID），自動清除 sessionStorage");
+}
+sessionStorage.clear();
+guestName = null;
+}
+
+if (!guestId && window.__TEMP_GUEST_ID) {
+guestId = window.__TEMP_GUEST_ID;
+guestName = window.__TEMP_GUEST_NAME;
+}
+
+console.log("🔍 [F12 除錯 - Header] 修正後的訪客身分檢查結果:", { guestId, guestName });
+
+if (guestId) {
+console.log("✅ [F12 除錯 - Header] 成功識別為訪客身分，準備載入介面...");
+currentUserId = guestId;
+currentUserName = guestName || '訪客';
+isGuest = true;
+if (nameEl) nameEl.textContent = currentUserName;
+if (tierEl) tierEl.textContent = '☁️ 訪客';
+if (modal) {
+modal.style.display = 'none';
+console.log("✅ [F12 除錯 - Header] 已強制將登入彈窗隱藏 (display: none)");
+}
+
+window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
+detail: { userId: currentUserId, userName: currentUserName, isGuest: true } 
+}));
+
+initPresenceAndFetchData();
+setupHeaderEventListeners();
+return; // 🛑 訪客身分直接返回
+}
+
+// 3. 檢查 Supabase 會員身分
+console.log("🔍 [F12 除錯 - Header] 沒有找到訪客身分，開始檢查 Supabase Auth Session...");
+const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+if (sessionError) {
+console.error("❌ [F12 除錯 - Header] 取得 Session 發生錯誤：", sessionError);
+}
+
+console.log("🔍 [F12 除錯 - Header] Supabase Session 檢查結果:", session);
+
+if (session?.user) {
+const { data: member } = await supabase
+.from(TABLE_NAME)
+.select('name, tier')
+.eq('user_id', session.user.id)
+.single();
+
+currentUserId = session.user.id;
+currentUserName = member?.name || session.user.email || '鄰里人';
+isGuest = false;
+
+if (nameEl) nameEl.textContent = currentUserName;
+if (tierEl) tierEl.textContent = member?.tier ? `👤 ${member.tier}` : '👤 鄰里人';
+if (modal) modal.style.display = 'none';
+
+window.dispatchEvent(new CustomEvent('USER_AUTH_READY', { 
+detail: { userId: currentUserId, userName: currentUserName, isGuest: false } 
+}));
+
+initPresenceAndFetchData();
+} else {
+console.warn("⚠️ [F12 除錯 - Header] 既不是訪客也沒有登入 Session，準備彈出登入視窗！");
+currentUserName = '訪客';
+if (nameEl) nameEl.textContent = '訪客';
+if (tierEl) tierEl.textContent = '👤 未登入';
+if (modal) modal.style.display = 'flex';
+}
+
+setupHeaderEventListeners();
+}
+
+// 初始化線上追蹤與抓取所有成員紀錄（供在線/總數彈窗共用）
+async function initPresenceAndFetchData() {
+try {
+const { data, count } = await supabase.from(TABLE_NAME).select('*', { count: 'exact' });
+allUserRecords = data || [];
+const totalCount = count !== null ? count : allUserRecords.length;
+const totalEl = document.getElementById('total-users-count-home');
+if (totalEl) totalEl.textContent = totalCount;
+} catch (err) {
+console.error("載入成員失敗:", err);
+}
+
+if (presenceChannel) supabase.removeChannel(presenceChannel);
+
+presenceChannel = supabase.channel('community-online-room', {
+config: { presence: { key: currentUserId || currentUserName } }
+});
+
+presenceChannel
+.on('presence', { event: 'sync' }, () => {
+const state = presenceChannel.presenceState();
+onlineUsersMap = {};
+Object.keys(state).forEach(key => { onlineUsersMap[key] = true; });
+const onlineCount = Object.keys(state).length || 1;
+
+const onlineEl = document.getElementById('online-users-count-home');
+if (onlineEl) onlineEl.textContent = onlineCount;
+})
+.subscribe(async (status) => {
+if (status === 'SUBSCRIBED') {
+await presenceChannel.track({ name: currentUserName, online_at: new Date().toISOString() });
+}
+});
+}
+
+let currentUserListMode = 'online';
+function openUserListModal(mode) {
+currentUserListMode = mode;
+const modalBox = document.getElementById('user-list-modal');
+document.getElementById('user-list-modal-title').textContent = mode === 'online' ? "🟢 在線鄰里人名單" : "📜 全部鄰里人名單";
+document.getElementById('user-search-input').value = '';
+renderUserListModalContent('');
+modalBox.classList.remove('hidden');
+}
+
+function closeUserListModal() {
+document.getElementById('user-list-modal').classList.add('hidden');
+}
+
+function renderUserListModalContent(filter = '') {
+const container = document.getElementById('user-list-container');
+if (!container) return;
+
+let list = currentUserListMode === 'online' 
+? Object.keys(onlineUsersMap).map(key => {
+const record = allUserRecords.find(u => u.user_id === key || u.name === key);
+return { id: record ? record.user_id : key, name: record ? record.name : key };
+})
+: allUserRecords.map(u => ({ id: u.user_id, name: u.name })).filter(u => u.name);
+
+if (filter) list = list.filter(item => item.name.toLowerCase().includes(filter.toLowerCase()));
+
+if (list.length === 0) {
+container.innerHTML = `<p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">沒有找到符合的成員</p>`;
+return;
+}
+
+container.innerHTML = list.map(item => {
+const isSelf = (item.id === currentUserId || item.name === currentUserName);
+const badge = isSelf ? '<span style="font-size:0.6rem; background:#eff6ff; color:#2563eb; padding:1px 4px; border-radius:3px;">我</span>' : '';
+// 點擊私訊按鈕：自動跳轉回主頁並開啟對應的私訊
+let actionBtn = (!isSelf && !isGuest && !item.id?.includes('guest_')) 
+? `<button data-target-id="${item.id}" data-target-name="${item.name}" class="header-dm-action-btn" style="background:#2563eb; color:white; border:none; padding:2px 8px; font-size:0.65rem; border-radius:4px; cursor:pointer;">私訊</button>` : '';
+
+return `
+<div style="background:#f8fafc; border:1px solid #e2e8f0; padding:0.5rem 0.75rem; border-radius:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+<span style="font-size:0.75rem; font-weight:bold; color:#1e293b;">👤 ${item.name} ${badge}</span>
+${actionBtn}
+</div>
+`;
+}).join('');
+}
+
+function setupHeaderEventListeners() {
+// 綁定線上與總數點擊事件
+document.getElementById('online-count-trigger-home')?.addEventListener('click', () => openUserListModal('online'));
+document.getElementById('total-count-trigger-home')?.addEventListener('click', () => openUserListModal('total'));
+document.getElementById('user-list-close-btn')?.addEventListener('click', closeUserListModal);
+document.getElementById('user-search-input')?.addEventListener('input', (e) => renderUserListModalContent(e.target.value.trim()));
+
+document.getElementById('user-list-container')?.addEventListener('click', (e) => {
+const btn = e.target.closest('.header-dm-action-btn');
+if (btn) {
+const targetId = btn.getAttribute('data-target-id');
+const targetName = encodeURIComponent(btn.getAttribute('data-target-name'));
+closeUserListModal();
+        window.location.href = `/?dm=${targetId}&name=${targetName}`;
+        window.location.href = `/chatroom?dm=${targetId}&name=${targetName}`;
+}
+});
+
+// 監聽來自 LoginModal 的訊息
+window.addEventListener('message', async (event) => {
+console.log("📥 [F12 除錯 - Header] 收到 window.message 事件：", event.data);
+
+if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
+console.log("✅ [F12 除錯 - Header] 收到 GUEST_LOGIN_SUCCESS，正在寫入 sessionStorage...");
+sessionStorage.setItem('space_guest_id', event.data.guestId);
+sessionStorage.setItem('space_guest_name', event.data.name);
+
+// 記憶體暫存防護
+window.__TEMP_GUEST_ID = event.data.guestId;
+window.__TEMP_GUEST_NAME = event.data.name;
+
+const modal = document.getElementById('rpg-modal');
+if (modal) modal.style.display = 'none';
+
+console.log("🔄 [F12 除錯 - Header] 準備重新整理頁面...");
+window.location.reload();
+}
+if (event.data && event.data.type === 'LOGIN_SUCCESS') {
+const modal = document.getElementById('rpg-modal');
+if (modal) modal.style.display = 'none';
+window.location.reload();
+}
+});
+
+// 登出按鈕邏輯
+const logoutTriggerBtn = document.getElementById('logout-trigger-btn');
+const logoutModal = document.getElementById('logout-confirm-modal');
+const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
+const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
+
+logoutTriggerBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'flex'; });
+cancelLogoutBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'none'; });
+
+confirmLogoutBtn?.addEventListener('click', async () => {
+const currentGuestId = sessionStorage.getItem('space_guest_id');
+if (currentGuestId) {
+await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
+sessionStorage.clear();
+}
+await supabase.auth.signOut();
+localStorage.clear();
+window.location.reload();
+});
+}
+
+initAuthHeader();
