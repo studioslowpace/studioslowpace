@@ -7,7 +7,7 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
 <header class="rpg-hud" id="rpg-hud">
   <!-- 第一列：品牌與使用者控制區 -->
   <div class="hud-top-row">
-    <!-- 左側：品牌標誌 (點擊可切換/檢查主理人身分) -->
+    <!-- 左側：品牌標誌 (點擊可檢查主理人身分) -->
     <div class="hud-brand-group">
       <span class="hud-brand" id="logo-toggle-btn" style="cursor: pointer;" title="點擊檢查主理人身分">☁️ 空間客舍</span>
     </div>
@@ -19,19 +19,16 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
         <strong id="hud-name">載入中...</strong>
       </div>
 
-      <!-- 登出按鈕 (觸發文青確認視窗) -->
       <button id="logout-trigger-btn" class="rpg-btn-logout">🚪 登出</button>
     </div>
   </div>
 
-  <!-- 第二列：無框線、無背景。左：在線 | 中：調色盤 | 右：總數 -->
+  <!-- 第二列：左：在線 | 中：調色盤 | 右：總數 -->
   <div class="phone-sub-bar-clean">
-    <!-- 左側：在線人數 -->
     <div class="sub-bar-left">
       <span>🟢 在線：<strong id="online-count-trigger-home" style="cursor: pointer;"><span id="online-users-count-home">{onlineCount}</span> 人</strong></span>
     </div>
 
-    <!-- 中間：主題自選色盤 -->
     <div class="sub-bar-center">
       <div class="hud-theme-picker" title="自選主要區域配色">
         <span class="theme-label">🎨 主題</span>
@@ -39,7 +36,6 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       </div>
     </div>
 
-    <!-- 右側：總數 -->
     <div class="sub-bar-right">
       <span>📜 總數：<strong id="total-count-trigger-home" style="cursor: pointer;"><span id="total-users-count-home">{totalCount}</span> 人</strong></span>
     </div>
@@ -131,6 +127,20 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     const nameEl = document.getElementById('hud-name');
     const tierEl = document.getElementById('hud-tier-tag');
     const modal = document.getElementById('rpg-modal');
+    const colorPicker = document.getElementById('custom-color-picker');
+
+    // 恢復儲存的主題顏色
+    const savedColor = localStorage.getItem('space_theme_color');
+    if (savedColor && colorPicker) {
+      colorPicker.value = savedColor;
+      document.documentElement.style.setProperty('--bg-main', savedColor);
+    }
+
+    colorPicker?.addEventListener('input', (e) => {
+      const val = e.target.value;
+      document.documentElement.style.setProperty('--bg-main', val);
+      localStorage.setItem('space_theme_color', val);
+    });
 
     async function updateUserData(user) {
       currentUserId = user.id;

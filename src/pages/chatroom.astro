@@ -19,8 +19,8 @@ import Layout from '../layouts/Layout.astro';
         }
         .btn-blue:hover { background-color: #1d4ed8; }
 
-        /* 頂部管理員與導航列 */
-        .admin-nav { background-color: #0f172a; color: #ffffff; padding: 0.5rem 1rem; border-bottom: 2px solid #2563eb; flex-shrink: 0; z-index: 25; }
+        /* 管理員面板 */
+        .admin-nav { background-color: #0f172a; color: #ffffff; padding: 0.5rem 1rem; border-bottom: 2px solid #2563eb; flex-shrink: 0; z-index: 25; width: 100%; }
         
         .phone-header {
             flex-shrink: 0;
@@ -32,6 +32,7 @@ import Layout from '../layouts/Layout.astro';
             justify-content: space-between;
             user-select: none;
             z-index: 10;
+            width: 100%;
         }
         .phone-header-title {
             font-size: 0.85rem;
@@ -58,12 +59,13 @@ import Layout from '../layouts/Layout.astro';
             border-radius: 9999px;
         }
 
-        /* 資訊卡片 */
+        /* 資訊卡片格 */
         .info-card-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0.5rem;
             margin-bottom: 0.75rem;
+            width: 100%;
         }
         .info-trigger-btn {
             background: #f8fafc;
@@ -78,10 +80,11 @@ import Layout from '../layouts/Layout.astro';
         .info-trigger-btn h5 { font-size: 0.8rem; font-weight: 800; color: #1e293b; }
         .info-trigger-btn span { font-size: 0.65rem; color: #64748b; }
 
-        /* 對話訊息捲動區 */
+        /* 對話訊息捲動區：保證 overflow-y: auto 且 flex: 1 絕不被擋住 */
         .phone-chat-messages {
             flex: 1;
-            overflow-y: auto;
+            overflow-y: auto !important;
+            overflow-x: hidden;
             padding: 1rem;
             display: flex;
             flex-direction: column;
@@ -89,7 +92,7 @@ import Layout from '../layouts/Layout.astro';
             background-color: #f8fafc;
             background-image: radial-gradient(#e2e8f0 0.8px, transparent 0.8px);
             background-size: 10px 10px;
-            overscroll-behavior: contain;
+            width: 100%;
         }
 
         .msg-bubble {
@@ -101,16 +104,29 @@ import Layout from '../layouts/Layout.astro';
             box-shadow: 0 1px 2px rgba(0,0,0,0.03);
             word-break: break-word;
         }
-        .msg-row-other { display: flex; justify-content: flex-start; }
+        .msg-row-other { display: flex; justify-content: flex-start; width: 100%; }
         .msg-bubble-other { background-color: #ffffff; color: #1e293b; border: 1px solid #e2e8f0; border-top-left-radius: 0.1rem; }
 
-        .msg-row-self { display: flex; justify-content: flex-end; }
+        .msg-row-self { display: flex; justify-content: flex-end; width: 100%; }
         .msg-bubble-self { background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-top-right-radius: 0.1rem; }
 
         .msg-sender-name { font-size: 0.7rem; font-weight: 700; color: #2563eb; margin-bottom: 0.15rem; display: block; }
         .msg-time-stamp { font-size: 0.6rem; color: #94a3b8; float: right; margin-left: 0.5rem; margin-top: 0.2rem; display: inline-block; }
 
-        /* 底部打字輸入列 (防阻擋調整) */
+        /* 日期分隔線樣式 */
+        .chat-date-divider {
+            text-align: center;
+            margin: 0.75rem 0;
+            font-size: 0.7rem;
+            color: #64748b;
+            background: #e2e8f0;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            align-self: center;
+            font-weight: bold;
+        }
+
+        /* 底部打字輸入列 */
         .phone-input-bar {
             flex-shrink: 0;
             padding: 0.6rem 0.75rem;
@@ -119,6 +135,7 @@ import Layout from '../layouts/Layout.astro';
             display: flex;
             gap: 0.5rem;
             align-items: center;
+            width: 100%;
         }
         .phone-input-field {
             flex: 1;
@@ -151,6 +168,7 @@ import Layout from '../layouts/Layout.astro';
             margin-bottom: 0.5rem;
             cursor: pointer;
             transition: 0.2s;
+            width: 100%;
         }
         .topic-select-card:hover { border-color: #2563eb; background: #fafcfd; }
         .input-field { width: 100%; padding: 0.625rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.75rem; font-size: 0.875rem; outline: none; }
@@ -162,6 +180,7 @@ import Layout from '../layouts/Layout.astro';
             border-radius: 0.75rem;
             padding: 3px;
             margin-bottom: 0.5rem;
+            width: 100%;
         }
         .tab-btn {
             flex: 1;
@@ -182,9 +201,9 @@ import Layout from '../layouts/Layout.astro';
         }
     </style>
 
-    <!-- 🏮 主理人控制面板 (點擊 phoneheader 的 Logo 展開) -->
+    <!-- 主理人控制面板 (點擊 phoneheader 的 Logo 展開) -->
     <div id="admin-navbar" class="hidden admin-nav">
-        <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+        <div style="max-width: 420px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <div style="display: flex; gap: 0.35rem; color: #60a5fa; align-items: center; font-size: 0.8rem;">
                 <strong>主理人模式</strong>
             </div>
@@ -195,14 +214,14 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </div>
 
-    <!-- 📱 手機應用主容器：保證內部 flex 排版，防止輸入框被 Footer 遮擋 -->
-    <main style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+    <!-- 手機應用主容器：填滿 100% 寬度且內部正確彈性滾動 -->
+    <main style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
 
         <!-- 🔓 交流區主視窗 -->
-        <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+        <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
 
             <!-- 🏠 PAGE 1: 交流區首頁 (主題與私訊列表) -->
-            <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem; min-height: 0;">
+            <div id="page-home" style="flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 0.85rem; min-height: 0; width: 100%;">
                 
                 <div class="info-card-grid">
                     <div class="info-trigger-btn" id="modal-origin-btn">
@@ -222,17 +241,17 @@ import Layout from '../layouts/Layout.astro';
                 </div>
 
                 <!-- 討論主題列表 -->
-                <div id="home-section-topics" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                <div id="home-section-topics" style="flex: 1; display: flex; flex-direction: column; min-height: 0; width: 100%;">
                     <div style="display:flex; justify-content:flex-end; margin-bottom:0.25rem;">
                         <button id="btn-add-topic" class="hidden btn-blue" style="padding: 2px 8px; font-size: 0.7rem;">+ 新增主題</button>
                     </div>
-                    <div id="topics-list-container" style="overflow-y: auto; flex: 1;"></div>
+                    <div id="topics-list-container" style="overflow-y: auto; flex: 1; width: 100%;"></div>
                 </div>
 
                 <!-- 私訊對話列表 -->
-                <div id="home-section-dms" class="hidden" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0;">
+                <div id="home-section-dms" class="hidden" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 0; width: 100%;">
                     <input type="text" id="dm-search-input" placeholder="🔍 搜尋私訊對象..." class="input-field" style="padding: 0.5rem; font-size: 0.75rem; margin-bottom: 0.25rem;">
-                    <div id="dm-conversations-list-container" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.35rem;">
+                    <div id="dm-conversations-list-container" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.35rem; width: 100%;">
                         <p style="font-size:0.75rem; color:#94a3b8; text-align:center; padding:1rem;">載入私訊紀錄中...</p>
                     </div>
                 </div>
@@ -240,7 +259,7 @@ import Layout from '../layouts/Layout.astro';
             </div>
 
             <!-- 💬 PAGE 2: 群組對話模式 -->
-            <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+            <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
                 <div class="phone-header">
                     <button id="chat-back-btn" class="nav-link-btn">< 首頁</button>
@@ -256,6 +275,7 @@ import Layout from '../layouts/Layout.astro';
                     <div id="my-identity-badge-chat" class="identity-badge">👤 訪客</div>
                 </div>
 
+                <!-- 訊息捲動區：保證內容過多時上下轉動 -->
                 <div id="topic-chat-messages" class="phone-chat-messages">
                     <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: auto;">載入對話中...</p>
                 </div>
@@ -267,7 +287,7 @@ import Layout from '../layouts/Layout.astro';
             </div>
 
             <!-- 💬 PAGE 3: 單對單私訊對話模式 -->
-            <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+            <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
                 <div class="phone-header" style="background: #eff6ff;">
                     <button id="dm-back-btn" class="nav-link-btn">< 首頁</button>
@@ -342,10 +362,13 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </div>
 
-    <!-- 📌 新增主題 Modal -->
+    <!-- 📌 完整新增主題 Modal (含加密密碼與 24小時限時匿名功能) -->
     <div id="topic-modal" class="hidden" style="position: fixed; inset:0; background: rgba(15,23,42,0.6); display:flex; align-items:center; justify-content:center; z-index:1100; padding:1rem;">
         <div style="background:white; padding:1.25rem; border-radius:1rem; width:100%; max-width:320px; display:flex; flex-direction:column; gap:0.75rem;">
-            <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📌 新增討論主題</h3>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">📌 新增討論主題</h3>
+                <button id="topic-modal-close" style="border:none; background:none; font-size:1.1rem; cursor:pointer; color:#888;">✕</button>
+            </div>
             <form id="create-topic-form" style="display:flex; flex-direction:column; gap:0.6rem;">
                 <div>
                     <label style="font-size:0.7rem; font-weight:bold; color:#64748b;">主題名稱</label>
@@ -356,7 +379,7 @@ import Layout from '../layouts/Layout.astro';
                     <input type="text" id="new-topic-desc" class="input-field" placeholder="簡短描述">
                 </div>
                 <div>
-                    <label style="font-size:0.7rem; font-weight:bold; color:#2563eb;">進入密碼 (選填)</label>
+                    <label style="font-size:0.7rem; font-weight:bold; color:#2563eb;">進入密碼 (選填加密)</label>
                     <input type="password" id="new-topic-password" class="input-field" placeholder="留空代表公開">
                 </div>
                 <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.25rem;">
@@ -378,7 +401,7 @@ import Layout from '../layouts/Layout.astro';
         import { supabase } from '../lib/supabase';
 
         const TABLE_NAME = 'slowpace_members';
-        const PROFILES_TABLE = 'profiles'; // 查詢 is_admin 的資料表
+        const PROFILES_TABLE = 'profiles';
         let allUserRecords = [];
         let onlineUsersMap = {};
         let topics = [];
@@ -402,9 +425,7 @@ import Layout from '../layouts/Layout.astro';
 
                 document.getElementById('my-identity-badge-chat').textContent = `👤 ${currentUserName}`;
 
-                // 自動檢查 profiles 或 members 表的 is_admin 權限
                 await checkAdminPermission(currentUserId);
-
                 fetchAllUserRecordsFromSupabase();
                 fetchTopics();
                 fetchUserDmConversations();
@@ -432,18 +453,15 @@ import Layout from '../layouts/Layout.astro';
             initEventListeners();
         };
 
-        // 自動從 profiles / members 檢查 is_admin
         async function checkAdminPermission(userId) {
             if (!userId || isGuest) return;
             try {
-                // 先查 profiles 表
                 let { data, error } = await supabase
                     .from(PROFILES_TABLE)
                     .select('is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
-                // 如果 profiles 找不到，改查 slowpace_members 表
                 if (error || !data) {
                     const memberRes = await supabase
                         .from(TABLE_NAME)
@@ -600,14 +618,24 @@ import Layout from '../layouts/Layout.astro';
                 return;
             }
 
+            let lastDateStr = '';
             container.innerHTML = messages.map(msg => {
-                const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const isSelf = (msg.sender_id === currentUserId);
-                if (isSelf) {
-                    return `<div class="msg-row-self"><div class="msg-bubble msg-bubble-self"><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`;
-                } else {
-                    return `<div class="msg-row-other"><div class="msg-bubble msg-bubble-other"><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`;
+                const msgDate = new Date(msg.created_at);
+                const dateStr = msgDate.toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' });
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                let dateDividerHtml = '';
+                if (dateStr !== lastDateStr) {
+                    lastDateStr = dateStr;
+                    dateDividerHtml = `<div class="chat-date-divider">📅 ${dateStr}</div>`;
                 }
+
+                const isSelf = (msg.sender_id === currentUserId);
+                const bubbleHtml = isSelf 
+                    ? `<div class="msg-row-self"><div class="msg-bubble msg-bubble-self"><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`
+                    : `<div class="msg-row-other"><div class="msg-bubble msg-bubble-other"><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`;
+
+                return dateDividerHtml + bubbleHtml;
             }).join('');
             container.scrollTop = container.scrollHeight;
         }
@@ -716,6 +744,9 @@ import Layout from '../layouts/Layout.astro';
             const switcherContainer = document.getElementById('topics-switcher-list-container');
             
             const html = topics.length === 0 ? `<p style="font-size:0.75rem; color:#a09587; text-align:center; padding:1rem;">尚無討論主題</p>` : topics.map((topic, index) => {
+                const hasPassword = topic.password && topic.password.trim() !== '';
+                const lockIcon = hasPassword ? '🔒 ' : (topic.is_anonymous ? '⏳ ' : '💬 ');
+
                 let adminControls = '';
                 if (isAdmin) {
                     const upBtn = index > 0 ? `<button data-topic-id="${topic.id}" data-direction="up" class="topic-up-btn" style="background:#e2e8f0; border:none; padding:1px 4px; border-radius:3px; font-size:0.6rem; cursor:pointer;">⬆️</button>` : '';
@@ -727,7 +758,7 @@ import Layout from '../layouts/Layout.astro';
                 return `
                     <div data-topic-id="${topic.id}" class="topic-card-item topic-select-card" style="display:flex; flex-direction:column; gap:4px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4 style="font-size: 0.85rem; font-weight: 800; color: #1e293b;">💬 ${topic.title}</h4>
+                            <h4 style="font-size: 0.85rem; font-weight: 800; color: #1e293b;">${lockIcon}${topic.title}</h4>
                             ${adminControls}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -741,6 +772,24 @@ import Layout from '../layouts/Layout.astro';
             if (container) container.innerHTML = html;
             if (switcherContainer) switcherContainer.innerHTML = html;
             bindDynamicTopicEvents();
+        }
+
+        function trySelectTopic(topicId) {
+            const topic = topics.find(t => String(t.id) === String(topicId));
+            if (!topic) return;
+
+            if (topic.password && topic.password.trim() !== '' && !unlockedTopics[topicId]) {
+                const inputPwd = prompt(`🔒 主題「${topic.title}」需要密碼：`);
+                if (inputPwd === null) return;
+                if (inputPwd.trim() === topic.password.trim()) {
+                    unlockedTopics[topicId] = true;
+                    enterTopicChat(topic);
+                } else {
+                    alert("❌ 密碼錯誤！");
+                }
+            } else {
+                enterTopicChat(topic);
+            }
         }
 
         function enterTopicChat(topic) {
@@ -768,14 +817,24 @@ import Layout from '../layouts/Layout.astro';
                 return;
             }
 
+            let lastDateStr = '';
             container.innerHTML = messages.map(msg => {
-                const timeStr = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const isSelf = (msg.sender_name === currentUserName);
-                if (isSelf) {
-                    return `<div class="msg-row-self"><div class="msg-bubble msg-bubble-self"><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`;
-                } else {
-                    return `<div class="msg-row-other"><div class="msg-bubble msg-bubble-other"><span class="msg-sender-name">${msg.sender_name}</span><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`;
+                const msgDate = new Date(msg.created_at);
+                const dateStr = msgDate.toLocaleDateString('zh-HK', { year: 'numeric', month: 'long', day: 'numeric' });
+                const timeStr = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                let dateDividerHtml = '';
+                if (dateStr !== lastDateStr) {
+                    lastDateStr = dateStr;
+                    dateDividerHtml = `<div class="chat-date-divider">📅 ${dateStr}</div>`;
                 }
+
+                const isSelf = (msg.sender_name === currentUserName);
+                const bubbleHtml = isSelf 
+                    ? `<div class="msg-row-self"><div class="msg-bubble msg-bubble-self"><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`
+                    : `<div class="msg-row-other"><div class="msg-bubble msg-bubble-other"><span class="msg-sender-name">${msg.sender_name}</span><div>${msg.content}</div><span class="msg-time-stamp">${timeStr}</span></div></div>`;
+
+                return dateDividerHtml + bubbleHtml;
             }).join('');
             container.scrollTop = container.scrollHeight;
         }
@@ -803,8 +862,45 @@ import Layout from '../layouts/Layout.astro';
                 .subscribe();
         }
 
+        async function handleCreateTopic(event) {
+            event.preventDefault();
+            const title = document.getElementById('new-topic-title').value.trim();
+            const desc = document.getElementById('new-topic-desc').value.trim();
+            const password = document.getElementById('new-topic-password').value.trim();
+            const isAnon = document.getElementById('new-topic-anonymous').checked;
+
+            if (!title) return;
+
+            let expiresAt = null;
+            if (isAnon) {
+                const now = new Date();
+                now.setHours(now.getHours() + 24);
+                expiresAt = now.toISOString();
+            }
+
+            try {
+                const { error } = await supabase.from('chat_topics').insert([{ 
+                    title: isAnon ? `⏳ [限時] ${title}` : title, 
+                    description: desc, 
+                    password: password,
+                    is_anonymous: isAnon,
+                    expires_at: expiresAt,
+                    sort_order: topics.length
+                }]);
+                if (error) throw error;
+
+                document.getElementById('topic-modal').classList.add('hidden');
+                document.getElementById('new-topic-title').value = '';
+                document.getElementById('new-topic-desc').value = '';
+                document.getElementById('new-topic-password').value = '';
+                document.getElementById('new-topic-anonymous').checked = false;
+                
+                fetchTopics();
+                alert(isAnon ? "⏳ 已成功發起匿名限時討論區！" : "📌 成功建立新討論主題！");
+            } catch (err) { alert("建立失敗: " + err.message); }
+        }
+
         function initEventListeners() {
-            // 點擊 phoneheader 的 Logo 開啟管理員驗證狀態面板
             document.getElementById('logo-toggle-btn')?.addEventListener('click', () => {
                 const nav = document.getElementById('admin-navbar');
                 nav.classList.toggle('hidden');
@@ -844,17 +940,16 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('topic-chat-form').addEventListener('submit', handleSendTopicMessage);
             document.getElementById('dm-chat-form').addEventListener('submit', handleSendDmMessage);
 
-            // 新增主題按鈕
+            // 新增主題 Modal 觸發
             const btnAddTopic = document.getElementById('btn-add-topic');
             if (btnAddTopic) {
-                btnAddTopic.addEventListener('click', async () => {
-                    const title = prompt("請輸入新討論主題名稱：");
-                    if (!title) return;
-                    const desc = prompt("請輸入主題簡介 (可留空)：") || '';
-                    await supabase.from('chat_topics').insert([{ title, description: desc, sort_order: topics.length }]);
-                    fetchTopics();
+                btnAddTopic.addEventListener('click', () => {
+                    document.getElementById('topic-modal').classList.remove('hidden');
                 });
             }
+            document.getElementById('topic-modal-close')?.addEventListener('click', () => document.getElementById('topic-modal').classList.add('hidden'));
+            document.getElementById('topic-modal-cancel')?.addEventListener('click', () => document.getElementById('topic-modal').classList.add('hidden'));
+            document.getElementById('create-topic-form')?.addEventListener('submit', handleCreateTopic);
 
             document.getElementById('user-list-container').addEventListener('click', (e) => {
                 const btn = e.target.closest('.dm-action-btn');
@@ -875,10 +970,9 @@ import Layout from '../layouts/Layout.astro';
         function bindDynamicTopicEvents() {
             document.querySelectorAll('.topic-card-item').forEach(card => {
                 card.addEventListener('click', (e) => {
-                    if (e.target.closest('button')) return; // 避免點擊管理按鈕時觸發進入
+                    if (e.target.closest('button')) return;
                     const topicId = card.getAttribute('data-topic-id');
-                    const topic = topics.find(t => String(t.id) === String(topicId));
-                    if (topic) enterTopicChat(topic);
+                    trySelectTopic(topicId);
                 });
             });
 
