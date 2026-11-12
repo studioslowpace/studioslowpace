@@ -223,7 +223,7 @@ import Layout from '../layouts/Layout.astro';
   <!-- 主介面 容器整頁100%且垂直置中 -->
   <main style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; align-items:center;">
     
-    <!-- 頂端中央：自修室下拉選單 (附帶和散步按鈕一樣的框線與背景) 與店主專用刪除按鈕 -->
+    <!-- 頂端中央：自修室下拉選單與刪除按鈕 -->
     <div class="room-control-bar" style="width:100%; padding: 12px 16px; background: transparent; display: flex; justify-content: center; align-items: center; position: relative; flex-shrink: 0; box-sizing:border-box;">
       <div class="room-selector-wrapper footer-tab-outline-btn" style="padding: 2px 8px; background: var(--bg-card); display: flex; align-items: center;">
         <select id="room-select-dropdown" class="clean-room-dropdown" style="padding:4px 8px; font-weight:600; font-size:13px; background:transparent; border:none; outline:none; cursor:pointer; color:var(--text-color); text-align:center;">
@@ -546,6 +546,7 @@ import Layout from '../layouts/Layout.astro';
     }
 
     function initDatabaseRealtime() {
+      // 監聽 members 資料表變更以即時更新玩家位置
       supabase.channel('db-changes').on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, () => {
         fetchOnlinePlayers();
       }).subscribe();
@@ -634,10 +635,9 @@ import Layout from '../layouts/Layout.astro';
       return false;
     }
 
-    // 實作自動繞路尋路演算法 (BFS 最短路徑)
+    // 自動繞路尋路演算法 (BFS)
     function findPath(startX: number, startY: number, targetX: number, targetY: number): { gx: number; gy: number }[] {
       if (isCellSolidBlocked(targetX, targetY)) {
-        // 如果目標點被佔用，找目標周圍最近的空格
         const neighbors = [
           { gx: targetX + 1, gy: targetY },
           { gx: targetX - 1, gy: targetY },
@@ -800,6 +800,7 @@ import Layout from '../layouts/Layout.astro';
         }
       });
 
+      // 繪製其他線上玩家
       Object.values(onlinePlayers).forEach((op: any) => {
         const px = op.gx * tileSize + tileSize / 2;
         const py = op.gy * tileSize + tileSize / 2;
@@ -815,6 +816,7 @@ import Layout from '../layouts/Layout.astro';
         drawSpeechBubble(ctx, opStatusText, px, py - 18, Boolean(op.is_dnd));
       });
 
+      // 繪製自己的角色
       const pScreenX = playerGx * tileSize + tileSize / 2;
       const pScreenY = playerGy * tileSize + tileSize / 2;
       const playerImg = getLoadedImage(playerAvatar);
@@ -1245,7 +1247,7 @@ import Layout from '../layouts/Layout.astro';
       } else {
         const { error } = await supabase.from(ITEMS_TABLE).insert([{
           room: currentRoom,
-          type: itemType,
+          type: cleanTypeKey,
           label: name,
           img_src: img,
           link: link,
@@ -1587,7 +1589,7 @@ import Layout from '../layouts/Layout.astro';
           }
         }
 
-        // 使用自動繞路尋路功能計算移動軌跡
+        // 呼叫自動繞路尋路功能
         moveQueue = findPath(playerGx, playerGy, targetGx, targetGy);
       }
     });
