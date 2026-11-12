@@ -223,10 +223,10 @@ import Layout from '../layouts/Layout.astro';
   <!-- 主介面 容器整頁100%且垂直置中 -->
   <main style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; align-items:center;">
     
-    <!-- 頂端中央：自修室下拉選單 (無框線、無背景) 與店主專用管理按鈕 -->
+    <!-- 頂端中央：自修室下拉選單 (附帶和散步按鈕一樣的框線與背景) 與店主專用刪除按鈕 -->
     <div class="room-control-bar" style="width:100%; padding: 12px 16px; background: transparent; display: flex; justify-content: center; align-items: center; position: relative; flex-shrink: 0; box-sizing:border-box;">
-      <div class="room-selector-wrapper">
-        <select id="room-select-dropdown" class="clean-room-dropdown" style="padding:4px 8px; font-weight:600; font-size:14px; background:transparent; border:none; outline:none; cursor:pointer; color:var(--text-color); text-align:center;">
+      <div class="room-selector-wrapper footer-tab-outline-btn" style="padding: 2px 8px; background: var(--bg-card); display: flex; align-items: center;">
+        <select id="room-select-dropdown" class="clean-room-dropdown" style="padding:4px 8px; font-weight:600; font-size:13px; background:transparent; border:none; outline:none; cursor:pointer; color:var(--text-color); text-align:center;">
           <option value="study">📖 自修室</option>
         </select>
       </div>
@@ -244,13 +244,13 @@ import Layout from '../layouts/Layout.astro';
     <!-- 底部功能與操作列 -->
     <footer class="rpg-footer-nav" id="rpg-footer" style="width:100%; background:transparent; border:none;">
       
-      <!-- 向上展開的手札指南抽屜 -->
-      <div id="guide-drawer" class="guide-drawer-content" style="display: none; width:100%; max-width:430px; margin:0 auto;">
-        <div class="drawer-header">
+      <!-- 向上展開的手札指南抽屜 (無框線和背景) -->
+      <div id="guide-drawer" class="guide-drawer-content" style="display: none; width:100%; max-width:430px; margin:0 auto; background: transparent; border: none; backdrop-filter: none;">
+        <div class="drawer-header" style="background: var(--bg-card); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border-color);">
           <span>📖 客舍手札 · 物件與空間指南</span>
           <button id="drawer-close-btn" class="rpg-btn-sm" style="padding:3px 8px;">✕ 收起</button>
         </div>
-        <div id="guide-content-box" class="guide-list-box"></div>
+        <div id="guide-content-box" class="guide-list-box" style="margin-top: 6px;"></div>
       </div>
 
       <div style="display:flex; justify-content:center; width:100%; padding:10px 14px; box-sizing:border-box;">
@@ -278,17 +278,17 @@ import Layout from '../layouts/Layout.astro';
             <!-- 新增物件 (店主專用) -->
             <button id="open-cf-modal-btn" class="shopkeeper-only-btn footer-tab-outline-btn" style="display:none; background:transparent; border:1px solid var(--border-color); cursor:pointer; flex-direction:column; align-items:center; color:var(--accent-hover); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
               <span style="font-size:16px;">➕</span>
-              <span>新物件</span>
+              <span>物件</span>
             </button>
 
-            <!-- 新房間 (店主專用，放在新物件右邊) -->
+            <!-- 新房間 (店主專用) -->
             <button id="open-room-modal-btn" class="shopkeeper-only-btn footer-tab-outline-btn" style="display:none; background:transparent; border:1px solid var(--border-color); cursor:pointer; flex-direction:column; align-items:center; color:var(--accent-hover); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
-              <span style="font-size:16px;">🏠</span>
-              <span>新房間</span>
+              <span style="font-size:16px;">➕</span>
+              <span>房間</span>
             </button>
 
-            <!-- 🚶 起立按鈕 -->
-            <button id="btn-leave-seat" class="footer-tab-outline-btn" style="background:transparent; border:1px solid var(--border-color); cursor:not-allowed; display:flex; flex-direction:column; align-items:center; color:var(--text-muted); font-size:11px; gap:2px; padding:6px 10px; border-radius:12px; opacity:0.5;" disabled>
+            <!-- 🚶 起立按鈕 (預設隱藏) -->
+            <button id="btn-leave-seat" class="footer-tab-outline-btn" style="display:none; background:transparent; border:1px solid var(--border-color); cursor:pointer; flex-direction:column; align-items:center; color:var(--danger-color); font-weight:bold; font-size:11px; gap:2px; padding:6px 10px; border-radius:12px;">
               <span style="font-size:16px;">🚶</span>
               <span>起立</span>
             </button>
@@ -328,17 +328,11 @@ import Layout from '../layouts/Layout.astro';
     }
 
     .guide-drawer-content {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border-color);
-      border-bottom: 1px solid var(--border-color);
       max-height: 46vh;
       min-height: 190px;
       display: flex;
       flex-direction: column;
       padding: 14px 18px;
-      border-top-left-radius: 24px;
-      border-top-right-radius: 24px;
       animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       box-sizing: border-box;
     }
@@ -350,10 +344,10 @@ import Layout from '../layouts/Layout.astro';
 
     .drawer-header {
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 13px; font-weight: 700; color: var(--accent-hover); margin-bottom: 10px; flex-shrink: 0;
+      font-size: 13px; font-weight: 700; color: var(--accent-hover); flex-shrink: 0;
     }
 
-    .guide-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+    .guide-list-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 10px; }
 
     .rpg-title-bar { background: var(--bg-input); color: var(--accent-hover); padding: 14px 18px; font-size: 13px; font-weight: 700; border-top-left-radius: 24px; border-top-right-radius: 24px; border-bottom: 1px solid var(--border-color); }
     .rpg-content { padding: 20px; }
@@ -374,7 +368,7 @@ import Layout from '../layouts/Layout.astro';
       border: none !important;
       outline: none !important;
       box-shadow: none !important;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
       color: var(--text-color);
       cursor: pointer;
@@ -606,21 +600,9 @@ import Layout from '../layouts/Layout.astro';
     const ctx = canvas?.getContext('2d');
     const leaveSeatBtn = document.getElementById('btn-leave-seat') as HTMLButtonElement;
 
-    function setLeaveSeatButtonState(active: boolean) {
+    function setLeaveSeatButtonVisible(visible: boolean) {
       if (!leaveSeatBtn) return;
-      if (active) {
-        leaveSeatBtn.disabled = false;
-        leaveSeatBtn.style.opacity = '1';
-        leaveSeatBtn.style.cursor = 'pointer';
-        leaveSeatBtn.style.color = 'var(--danger-color)';
-        leaveSeatBtn.style.fontWeight = 'bold';
-      } else {
-        leaveSeatBtn.disabled = true;
-        leaveSeatBtn.style.opacity = '0.5';
-        leaveSeatBtn.style.cursor = 'not-allowed';
-        leaveSeatBtn.style.color = 'var(--text-muted)';
-        leaveSeatBtn.style.fontWeight = 'normal';
-      }
+      leaveSeatBtn.style.display = visible ? 'flex' : 'none';
     }
 
     const imageCache: Record<string, HTMLImageElement> = {};
@@ -650,6 +632,63 @@ import Layout from '../layouts/Layout.astro';
         if (gx >= item.gx && gx < item.gx + iw && gy >= item.gy && gy < item.gy + ih) return true;
       }
       return false;
+    }
+
+    // 實作自動繞路尋路演算法 (BFS 最短路徑)
+    function findPath(startX: number, startY: number, targetX: number, targetY: number): { gx: number; gy: number }[] {
+      if (isCellSolidBlocked(targetX, targetY)) {
+        // 如果目標點被佔用，找目標周圍最近的空格
+        const neighbors = [
+          { gx: targetX + 1, gy: targetY },
+          { gx: targetX - 1, gy: targetY },
+          { gx: targetX, gy: targetY + 1 },
+          { gx: targetX, gy: targetY - 1 }
+        ];
+        const validNeighbor = neighbors.find(n => !isCellSolidBlocked(n.gx, n.gy));
+        if (validNeighbor) {
+          targetX = validNeighbor.gx;
+          targetY = validNeighbor.gy;
+        } else {
+          return [];
+        }
+      }
+
+      const queue: { gx: number; gy: number; path: { gx: number; gy: number }[] }[] = [];
+      const visited = new Set<string>();
+
+      queue.push({ gx: startX, gy: startY, path: [] });
+      visited.add(`${startX},${startY}`);
+
+      const dirs = [
+        { dx: 0, dy: -1 },
+        { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 },
+        { dx: 1, dy: 0 }
+      ];
+
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        if (curr.gx === targetX && curr.gy === targetY) {
+          return curr.path;
+        }
+
+        for (const dir of dirs) {
+          const nextX = curr.gx + dir.dx;
+          const nextY = curr.gy + dir.dy;
+          const key = `${nextX},${nextY}`;
+
+          if (!visited.has(key) && !isCellSolidBlocked(nextX, nextY)) {
+            visited.add(key);
+            queue.push({
+              gx: nextX,
+              gy: nextY,
+              path: [...curr.path, { gx: nextX, gy: nextY }]
+            });
+          }
+        }
+      }
+
+      return [];
     }
 
     function drawSpeechBubble(c: CanvasRenderingContext2D, text: string, x: number, y: number, isDndActive = false) {
@@ -1119,7 +1158,7 @@ import Layout from '../layouts/Layout.astro';
       updateCurrentRoomConfig();
       isDND = false;
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
-      setLeaveSeatButtonState(false);
+      setLeaveSeatButtonVisible(false);
       playerGx = 1; playerGy = 1;
       moveQueue = [];
       renderRoomDropdown();
@@ -1206,7 +1245,7 @@ import Layout from '../layouts/Layout.astro';
       } else {
         const { error } = await supabase.from(ITEMS_TABLE).insert([{
           room: currentRoom,
-          type: cleanTypeKey,
+          type: itemType,
           label: name,
           img_src: img,
           link: link,
@@ -1548,12 +1587,8 @@ import Layout from '../layouts/Layout.astro';
           }
         }
 
-        if (!isCellSolidBlocked(targetGx, targetGy)) {
-          moveQueue = [];
-          let currX = playerGx; let currY = playerGy;
-          while (currX !== targetGx) { currX += currX < targetGx ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-          while (currY !== targetGy) { currY += currY < targetGy ? 1 : -1; moveQueue.push({ gx: currX, gy: currY }); }
-        }
+        // 使用自動繞路尋路功能計算移動軌跡
+        moveQueue = findPath(playerGx, playerGy, targetGx, targetGy);
       }
     });
 
@@ -1576,7 +1611,7 @@ import Layout from '../layouts/Layout.astro';
         if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
-        setLeaveSeatButtonState(true);
+        setLeaveSeatButtonVisible(true);
         await syncMyStateToDB();
 
         const { error } = await supabase.from(ITEMS_TABLE).update({
@@ -1621,7 +1656,6 @@ import Layout from '../layouts/Layout.astro';
     seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
 
     leaveSeatBtn?.addEventListener('click', () => {
-      if (leaveSeatBtn.disabled) return;
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
         if (currentReadingRecordId) {
@@ -1646,7 +1680,7 @@ import Layout from '../layouts/Layout.astro';
 
       isDND = false;
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
-      setLeaveSeatButtonState(false);
+      setLeaveSeatButtonVisible(false);
       if (seatModal) seatModal.style.display = 'none';
       
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);

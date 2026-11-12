@@ -95,6 +95,11 @@ import Layout from '../layouts/Layout.astro';
             width: 100%;
         }
 
+          /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
+  .phone-chat-messages::-webkit-scrollbar {
+    display: none;
+  }
+
         .msg-bubble {
             max-width: 78%;
             padding: 0.5rem 0.75rem 0.35rem 0.75rem;
