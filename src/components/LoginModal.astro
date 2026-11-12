@@ -183,7 +183,7 @@
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
-  // 訪客快速進入（確實寫入 DB 與本機儲存）
+// 訪客快速進入（加強版錯誤捕捉與寫入診斷）
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
@@ -198,7 +198,7 @@
     while (!insertSuccess && attempts < 5) {
       attempts++;
 
-      // 1. 取得現有訪客以計算流水號編號 (訪客 #1, 訪客 #2...)
+      // 1. 取得現有訪客以計算流水號編號
       const { data: existingGuests, error: fetchError } = await supabase
         .from(TABLE_NAME)
         .select('user_id, name')
@@ -225,32 +225,38 @@
         guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
       } while (existingUserIds.has(guestId));
 
-      // 3. 僅寫入基本的必要欄位（不帶入 id，交由資料庫自增）
+      // 3. 準備寫入資料（將 new Date() 改為 ISO 字串，避免前端物件序列化問題）
       const guestData = {
         user_id: guestId,
         name: guestName,
         role: '☁️ 訪客',
         tier: '鄰里人',
         avatar: avatarVal,
-        updated_at: new Date()
+        updated_at: new Date().toISOString()
       };
 
-      const { error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]);
-      
-      if (!insertError) {
-        insertSuccess = true;
-        console.log("✅ [LoginModal] 訪客成功寫入 DB，ID:", guestId, "名稱:", guestName);
-      } else {
-        console.warn(`⚠️ [LoginModal] 寫入碰撞或失敗 (嘗試次數 ${attempts})：`, insertError.message);
+      console.log(`📌 [LoginModal] 嘗試第 ${attempts} 次寫入 DB...`, guestData);
+
+      try {
+        const { data, error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]).select();
+        
+        if (!insertError) {
+          insertSuccess = true;
+          console.log("✅ [LoginModal] 訪客成功寫入 DB，回傳資料：", data);
+        } else {
+          console.error(`❌ [LoginModal] 第 ${attempts} 次寫入被 Supabase 拒絕：`, insertError);
+        }
+      } catch (err) {
+        console.error(`❌ [LoginModal] 執行寫入時發生例外錯誤：`, err);
       }
     }
 
     if (!insertSuccess) {
-      alert('進入空間失敗：無法分配訪客編號或資料庫寫入受阻，請檢查網路或 RLS 權限。');
+      alert('進入空間失敗：資料庫寫入受阻，請查看 F12 主控台的詳細錯誤訊息。');
       return;
     }
 
-    // 💡 同時寫入 localStorage 與記憶體防護（確保跨頁面與重新整理不遺失）
+    // 💡 寫入 localStorage 與記憶體防護
     localStorage.setItem('space_guest_id', guestId);
     localStorage.setItem('space_guest_name', guestName);
     window.__TEMP_GUEST_ID = guestId;
