@@ -238,7 +238,10 @@
       console.log(`📌 [LoginModal] 嘗試第 ${attempts} 次寫入 DB...`, guestData);
 
       try {
-        const { data, error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]).select();
+        const { data, error: insertError } = await supabase
+  .from(TABLE_NAME)
+  .upsert([guestData], { onConflict: 'user_id' })
+  .select();
         
         if (!insertError) {
           insertSuccess = true;
