@@ -1,5 +1,7 @@
-// 匯入 Layout
+---
+// 匯入 Layout 與 Supabase 實例
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { supabase } from '../lib/supabase';
 ---
 <BaseLayout title="客舍萬事屋 Slow Pace Skill Supermarket">
     <Fragment slot="head">
@@ -7,7 +9,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     </Fragment>
     
 <style is:global>
@@ -278,8 +279,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             gap: 0.5rem;
         }
 
-    
-
         /* ==========================================
            5. 按鈕基本樣式 (Buttons)
            ========================================== */
@@ -297,6 +296,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         .btn-stone:hover { background-color: #0c0a09; }
         .btn-orange { background-color: #ea580c; color: #ffffff; }
         .btn-orange:hover { background-color: #c2410c; }
+        .btn-approve { background-color: #059669; color: #ffffff; }
+        .btn-approve:hover { background-color: #047857; }
         .btn-back {
             display: inline-flex;
             align-items: center;
@@ -763,6 +764,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             flex-shrink: 0;
         }
 
+        .avatar-circle-stone {
+            width: 3.25rem;
+            height: 3.25rem;
+            border-radius: 50%;
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
         .task-card-title {
             font-size: 1rem;
             font-weight: 800;
@@ -856,6 +869,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             top: 1.25rem;
             right: 1.25rem;
             z-index: 10;
+            display: flex;
+            gap: 0.5rem;
         }
 
         input::placeholder,
@@ -878,6 +893,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .pending-badge {
+            background-color: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-weight: bold;
         }
     </style>
 
@@ -911,7 +936,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div id="admin-logged-in" class="hidden admin-login-row">
                 <div class="admin-success-badge">
                     <i data-lucide="check-circle" class="admin-success-icon"></i>
-                    <span class="admin-success-text">主理人模式已啟用：您不受個案密碼限制，可任意刪除/變更狀態。</span>
+                    <span class="admin-success-text">主理人模式已啟用：您不受個案密碼限制，可任意刪除/審核/變更狀態。</span>
                 </div>
                 <div id="admin-points-control" style="margin-top: 15px; padding: 12px; background: #fff3ed; border-radius: 12px; border: 1px solid #ffd8c2;">
                     <h4 style="font-size: 0.9rem; font-weight: bold; color: #c2410c; margin-bottom: 8px;">⚙️ 管理員手動調整萬事分</h4>
@@ -965,7 +990,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                 <!-- 原有的互動按鈕 -->
                 <button id="header-chatroom-btn" class="btn-base btn-blue" style="background-color: #55a9d3; color: #ffffff; border: none;">鄰里人交流區 💬</button>
-                <button id="header-skill-btn" class="hidden btn-base btn-stone">+ 新增鄰里人技能</button>
+                <button id="header-skill-btn" class="btn-base btn-stone">+ 登記鄰里人技能</button>
                 <button id="header-upload-btn" class="btn-base btn-orange">+ 發布新委託</button>
             </div>
 
@@ -1152,7 +1177,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     <label class="input-label">社會認可的資格</label>
                     <textarea id="skillDescInput" required rows="3" class="input-field input-field-stone input-field-textarea" placeholder="一些認可的資格" autocomplete="off"></textarea>
                 </div>
-                <button type="submit" class="btn-form-submit-stone">新增至鄰里人技能名冊</button>
+                <button type="submit" class="btn-form-submit-stone">提交並等待主理人審核</button>
             </form>
         </div>
     </div>
@@ -1181,7 +1206,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <div>
                     <h4 style="font-weight: 700; color: #92400e; margin-bottom: 0.25rem;">3. 鄰里人名冊與認證規範</h4>
                     <ul style="margin-left: 1.25rem; list-style-type: disc;">
-                        <li><strong>登記技能加分 (+1 點)</strong>：填寫並登記您的鄰里人技能表，獲批後可加 1 點萬事分。</li>
+                        <li><strong>登記技能加分 (+1 點)</strong>：填寫並登記您的鄰里人技能表，經主理人審核通過後可加 1 點萬事分。</li>
                         <li><strong>信賴與刪除機制</strong>：鄰里人名冊是獲客舍認證的人員；若有違規或破壞社群信賴的行為，主理人將會刪除其資格。</li>
                     </ul>
                 </div>
@@ -1213,20 +1238,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 
 <script>
-    
-    const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-    const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+    import { supabase as client } from '../lib/supabase';
+
     const TABLE_NAME = 'skills';
     const POSTS_TABLE = 'posts';
-    
-    const supabaseInstance = window.supabase || supabase;
-    const client = supabaseInstance.createClient(supabaseUrl, supabaseKey);
     
     let posts = [];
     let skills = [];
     let isAdmin = false;
     let currentViewingPostId = null;
-    let currentTab = 'no-reward'; // 預設改為沒有額外報酬
+    let currentTab = 'no-reward';
     let unlockedPosts = {};
     let allUserRecords = [];
     let currentTagFilter = 'all';
@@ -1239,7 +1260,7 @@ window.onload = async function() {
 
     initEventListeners();
 
-    // 🌟 1. 網頁一載入就「主動」檢查一次目前的登入狀態（解決時間差問題）
+    // 🌟 1. 網頁一載入就「主動」檢查一次目前的登入狀態
     try {
         const { data: { session } } = await client.auth.getSession();
         if (session?.user) {
@@ -1334,7 +1355,6 @@ window.onload = async function() {
         });
     }
 
-    // 在 initEventListeners 或網頁初始化時加入：
     document.getElementById('btn-open-guide')?.addEventListener('click', () => {
         document.getElementById('modal-guide')?.classList.remove('hidden');
     });
@@ -1349,7 +1369,6 @@ window.onload = async function() {
         document.getElementById('modal-disclaimer')?.classList.add('hidden');
     });
 
-    // 點擊彈窗外部半透明背景時也可以自動關閉
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
@@ -1480,14 +1499,8 @@ window.onload = async function() {
         const lbSection = document.getElementById('skills-leaderboard-section');
         if (tabName === 'skills') {
             lbSection?.classList.remove('hidden');
-            if (isAdmin) {
-                document.getElementById('header-skill-btn')?.classList.remove('hidden');
-                document.getElementById('header-upload-btn')?.classList.add('hidden');
-            }
         } else {
             lbSection?.classList.add('hidden');
-            document.getElementById('header-skill-btn')?.classList.add('hidden');
-            document.getElementById('header-upload-btn')?.classList.remove('hidden');
         }
         renderPosts();
     }
@@ -1510,7 +1523,6 @@ window.onload = async function() {
         renderPosts();
     }
 
-    // 判斷委託是否有額外報酬（檢查 reward 欄位是否為空、'/' 或無效值）
     function hasReward(rewardStr) {
         if (!rewardStr) return false;
         const cleaned = rewardStr.trim();
@@ -1549,14 +1561,17 @@ window.onload = async function() {
         const filterBarContainer = document.getElementById('skill-filter-bar-container');
 
         if (currentTab === 'skills') {
-            if (skills.length === 0) {
+            // 一般使用者只看已審核的；主理人看全部
+            const visibleSkills = skills.filter(skill => isAdmin || skill.is_approved === true);
+
+            if (visibleSkills.length === 0) {
                 if(filterBarContainer) filterBarContainer.innerHTML = '';
                 container.innerHTML = '<p class="container-empty-hint">目前尚無登記鄰里人技能。</p>';
                 return;
             }
 
             let allTagsSet = new Set();
-            skills.forEach(skill => {
+            visibleSkills.forEach(skill => {
                 if (skill.skilltag) {
                     skill.skilltag.trim().split(/\s+/).forEach(t => allTagsSet.add(t.startsWith('#') ? t : `#${t}`));
                 }
@@ -1579,7 +1594,7 @@ window.onload = async function() {
                 filterBarContainer.innerHTML = filterHtml;
             }
 
-            const filteredSkills = skills.filter(skill => {
+            const filteredSkills = visibleSkills.filter(skill => {
                 if (currentTagFilter === 'all') return true;
                 const tText = (skill.skilltag || '') + ' ' + (skill.learning || '');
                 return tText.includes(currentTagFilter.replace('#', ''));
@@ -1594,10 +1609,15 @@ window.onload = async function() {
                 const card = document.createElement('div');
                 card.className = "task-card";
                 
-                const adminTools = isAdmin ? `
-                    <div class="card-admin-tools">
-                        <button class="btn-card-delete" data-skill-id="${skill.id}">🗑️</button>
-                    </div>` : '';
+                let adminTools = '';
+                if (isAdmin) {
+                    const approveBtn = !skill.is_approved ? `<button class="btn-base btn-approve btn-approve-skill" data-approve-skill-id="${skill.id}">🟢 批准通過</button>` : '';
+                    adminTools = `
+                        <div class="card-admin-tools">
+                            ${approveBtn}
+                            <button class="btn-card-delete" data-skill-id="${skill.id}">🗑️</button>
+                        </div>`;
+                }
                 
                 const myPoint = allScores[skill.contact?.trim()]?.points || 0;
 
@@ -1608,6 +1628,7 @@ window.onload = async function() {
                     `<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; display: inline-block; margin-Top: 0.5rem">📜 應用中：${formattedTags}</span>` : '';
                 const learningBadge = skill.learning && skill.learning !== '/' ? 
                     `<span style="background: #f3f4f6; color: #4b5563; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; display: inline-block; margin-Top: 0.5rem;">📚 研習中：${formattedLearning}</span>` : '';
+                const pendingBadge = (!skill.is_approved && isAdmin) ? `<span class="pending-badge">⏳ 待主理人審核</span>` : '';
 
                 card.innerHTML = `
                     <div>
@@ -1617,6 +1638,7 @@ window.onload = async function() {
                                 <div class="title-with-badge">
                                     <h3 class="task-card-title">${skill.name}</h3> 
                                     <span class="point-badge">🪙 ${myPoint}</span>
+                                    ${pendingBadge}
                                 </div>
                             </div>
                         </div>
@@ -1632,7 +1654,6 @@ window.onload = async function() {
                 container.appendChild(card);
             });
         } else {
-            // 根據分頁過濾：no-reward (沒有額外報酬且未完成), has-reward (有額外報酬且未完成), completed (已完成)
             const baseFilteredPosts = posts.filter(post => {
                 const compVal = post.iscompleted !== undefined ? post.iscompleted : post.isCompleted;
                 const hasRwd = hasReward(post.reward);
@@ -1642,7 +1663,6 @@ window.onload = async function() {
                 } else if (currentTab === 'has-reward') {
                     return !compVal && hasRwd;
                 } else {
-                    // 預設 'no-reward'
                     return !compVal && !hasRwd;
                 }
             });
@@ -1783,6 +1803,12 @@ window.onload = async function() {
         document.querySelectorAll('[data-skill-id]').forEach(btn => {
             btn.onclick = (e) => {
                 deleteSkill(e.currentTarget.getAttribute('data-skill-id'));
+            };
+        });
+
+        document.querySelectorAll('[data-approve-skill-id]').forEach(btn => {
+            btn.onclick = (e) => {
+                approveSkill(e.currentTarget.getAttribute('data-approve-skill-id'));
             };
         });
 
@@ -2002,7 +2028,8 @@ window.onload = async function() {
             contact: document.getElementById('skillContactInput').value.trim(),
             description: document.getElementById('skillDescInput').value.trim(),
             emoji: document.getElementById('skill-selected-emoji').value.trim(),
-            email: document.getElementById('skillEmailInput').value
+            email: document.getElementById('skillEmailInput').value.trim(),
+            is_approved: false // 新提交時預設為未審核
         };
 
         if (!data.name || !data.contact) {
@@ -2013,16 +2040,38 @@ window.onload = async function() {
         try {
             const { error } = await client.from(TABLE_NAME).insert([data]);
             if (error) throw error;
-            
-            await updateUserPointsInSupabase(data.contact, data.name, +1, data.email);
 
             closeSkillModal();
             await fetchSkillsFromSupabase();
-            await fetchAllUserRecordsFromSupabase();
 
-            alert(`✨ 成功登記技能名冊！已同步您的資料並為您增加 1 點萬事分！`);
+            alert(`✨ 技能資料已順利提交！請等待主理人審核通過，屆時將會為您增加 1 點萬事分並公開發布！`);
         } catch (err) { 
             alert("儲存技能失敗: " + err.message); 
+        }
+    }
+
+    async function approveSkill(skillId) {
+        const skill = skills.find(s => String(s.id) === String(skillId));
+        if (!skill) return;
+
+        if (confirm(`確定要批准【${skill.name}】的技能申請並為其發放 1 點萬事分嗎？`)) {
+            try {
+                const { error } = await client
+                    .from(TABLE_NAME)
+                    .update({ is_approved: true })
+                    .eq('id', skillId);
+                
+                if (error) throw error;
+
+                // 批准審核時才替使用者加 1 分
+                await updateUserPointsInSupabase(skill.contact, skill.name, +1, skill.email);
+
+                await fetchSkillsFromSupabase();
+                await fetchAllUserRecordsFromSupabase();
+                alert(`✅ 已成功批准【${skill.name}】的技能申請！`);
+            } catch (err) {
+                alert("批准失敗: " + err.message);
+            }
         }
     }
 
