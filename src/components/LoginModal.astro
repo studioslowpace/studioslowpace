@@ -1,4 +1,4 @@
-<!-- LoginModal 元件（含雙表寫入、聯絡資料、密碼顯示切換、造型高亮與忘記密碼介面） -->
+<!-- LoginModal 元件（含 Trigger 註冊、聯絡資料、密碼顯示、造型高亮與忘記密碼介面） -->
 <div style="max-width: 440px; margin: 0 auto; padding: 32px; background: #fdfbf7; color: #3c3835; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #efece6;">
 
   <!-- 頂部文青 Logo 與返回首頁 -->
@@ -291,7 +291,7 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-// 會員註冊（強化錯誤偵測與雙表寫入）
+  // 會員註冊（透過 options.data 傳遞資料，交由 Supabase Trigger 自動寫入雙表）
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
@@ -314,54 +314,26 @@
     if (password !== passwordConfirm) { alert('兩次輸入的密碼不相符'); return; }
     if (password.length < 6) { alert('密碼長度至少需要 6 個字元'); return; }
 
-    console.log("正在送出註冊請求...", { email, name });
-
-    // 呼叫 Supabase 註冊
     const { data: authData, error: authError } = await supabase.auth.signUp({ 
       email, 
       password,
       options: {
         data: {
-          name: name // 同步帶入 metadata 確保萬無一失
+          name: name,
+          role: role,
+          avatar: avatarVal,
+          phone: phone,
+          ig: ig
         }
       }
     });
 
     if (authError) { 
-      console.error("❌ Supabase Auth 註冊失敗細節：", authError);
       alert('註冊失敗：' + authError.message); 
       return; 
     }
 
-    console.log("✅ Supabase Auth 註冊成功，回傳資料：", authData);
-
-    const userId = authData?.user?.id;
-    if (userId) {
-      // 1. 寫入 slowpace_members
-      const memberPayload = {
-        user_id: userId,
-        name: name,
-        role: role,
-        tier: '鄰里人',
-        avatar: avatarVal,
-        updated_at: new Date()
-      };
-      const { error: dbError1 } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
-      if (dbError1) { console.error("❌ 寫入 slowpace_members 失敗：", dbError1.message); }
-
-      // 2. 寫入 member_contacts
-      const contactPayload = {
-        user_id: userId,
-        name: name,
-        email: email,
-        phone: phone,
-        ig: ig
-      };
-      const { error: dbError2 } = await supabase.from('member_contacts').upsert([contactPayload], { onConflict: 'user_id' });
-      if (dbError2) { console.error("❌ 寫入 member_contacts 失敗：", dbError2.message); }
-    }
-
-    alert('註冊成功！若有啟用 Email 驗證，請至您的信箱收取驗證信。');
+    alert('註冊成功！驗證信已寄出，請至您的信箱收取驗證信完成開通。');
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
