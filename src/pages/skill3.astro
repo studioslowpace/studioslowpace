@@ -969,23 +969,18 @@ import { supabase } from '../lib/supabase';
                 <span class="hero-title-sub">Slow Pace Skill Supermarket</span>
             </div>
             
-            <div class="hero-desc-wrapper">
-                <p>生活中總會遇到各種奇難雜務。受到日本專門幫助人們解決生活難題的「萬事屋」所啟發，我們希望客舍能成為一個技能交換的平台，以「萬事分」作為代幣。需求技能的人也能同時分享自己的專長，讓技能分享成為一種循環的力量。</p>
-                <hr class="border-stone-200 my-4" />
-                <p2>在過去一年的運營中，我們意識到周圍的人擁有無限的潛力。有熱愛畫畫的人、創作歌詞的人、研究歷史和考古的人、攝影的人，甚至從事文字工作的朋友。這些來自不同背景的鄰里人，分享各自的經驗與見解，讓我們得以完整討論和互相啟發。轉念一想，技能分享不只是學術或領域上的專業，很多時候，各人的分享也可以解決彼此生活當中的小難題。</p2>
-            </div>
         </div>
 
             <div class="layout-action-row">
                 <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem;">
                 <!-- 💡 原本在主橫幅內的引言文字改放在此，並維持與說明按鈕相同的文青風格設計 -->
                 <div style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center;">
-                    💡 生活中總會遇到各種奇難雜務，以「萬事分」作為互助連結。
+                    💡 因由
                 </div>
 
                 <!-- 📖 萬事屋使用與規則說明按鈕 -->
                 <button id="btn-open-guide" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
-                    📖 萬事屋使用與規則說明
+                    📖 使用與規則說明
                 </button>
 
                 <!-- ⚖️ 免責聲明按鈕 -->
@@ -1027,7 +1022,7 @@ import { supabase } from '../lib/supabase';
             
             <!-- 🔍 改為參考相片風格的即時搜尋列 -->
             <div id="skill-filter-bar-container" style="width: 100%; margin-bottom: 16px;">
-                <div style="background-color: #f7f3e8; border: 1px solid #fde68a; padding: 0.625rem 1rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                <div style="background-color: #f7f3e8; border: 1px solid #fde68a; padding: 4rem 4rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                     <i data-lucide="search" style="width: 1rem; height: 1rem; color: #8b5cf6;"></i>
                     <input type="text" id="global-keyword-search" placeholder="搜尋委託標題、內容或標籤..." style="border: none; background: transparent; width: 100%; font-size: 0.75rem; color: #451a03; outline: none;" autocomplete="off">
                 </div>
