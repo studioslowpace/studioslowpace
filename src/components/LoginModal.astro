@@ -1,4 +1,4 @@
-<!-- LoginModal 元件（含聯絡資料必填防呆、密碼顯示切換、造型高亮與忘記密碼獨立介面） -->
+<!-- LoginModal 元件（含雙表寫入、聯絡資料、密碼顯示切換、造型高亮與忘記密碼介面） -->
 <div style="max-width: 440px; margin: 0 auto; padding: 32px; background: #fdfbf7; color: #3c3835; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #efece6;">
 
   <!-- 頂部文青 Logo 與返回首頁 -->
@@ -83,11 +83,18 @@
       <input type="email" id="register-email" placeholder="your@email.com" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
     </div>
 
-    <!-- 聯絡資料（改為必填：電話 / IG 帳號） -->
-    <div style="margin-bottom: 12px;">
-      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">聯絡資料 (必填：電話 / IG 帳號)</label>
-      <input type="text" id="register-contact" placeholder="例如：0912-345-678 或 @instagram_id" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    <!-- 聯絡資料區塊：電話與 IG -->
+    <div style="display: flex; gap: 10px; margin-bottom: 4px;">
+      <div style="flex: 1;">
+        <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">聯絡電話</label>
+        <input type="text" id="register-phone" placeholder="0912-345-678" style="width:100%; padding:11px 12px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.85rem;" />
+      </div>
+      <div style="flex: 1;">
+        <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">IG 帳號</label>
+        <input type="text" id="register-ig" placeholder="@instagram_id" style="width:100%; padding:11px 12px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.85rem;" />
+      </div>
     </div>
+    <div style="font-size: 0.75rem; color: #8c8275; margin-bottom: 12px;">💡 兩者擇一填寫即可，若填寫一個，另一個將自動帶入相同內容。</div>
 
     <div style="margin-bottom: 12px;">
       <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">設定密碼 (至少 6 碼)</label>
@@ -284,18 +291,27 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-  // 會員註冊（聯絡資料改為必填）
+  // 會員註冊（同時寫入 slowpace_members 與 member_contacts 兩張表）
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
-    const contact = document.getElementById('register-contact').value.trim();
+    let phone = document.getElementById('register-phone').value.trim();
+    let ig = document.getElementById('register-ig').value.trim();
     const password = document.getElementById('register-password').value.trim();
     const passwordConfirm = document.getElementById('register-password-confirm').value.trim();
     const role = document.getElementById('register-role').value;
     const selectedAvatar = document.querySelector('input[name="register-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
 
-    if (!name || !email || !contact || !password || !passwordConfirm) { alert('請完整填寫所有必填註冊欄位（包含聯絡資料）'); return; }
+    if (!name || !email || (!phone && !ig) || !password || !passwordConfirm) { 
+      alert('請完整填寫必填欄位（聯絡電話與 IG 帳號至少需填寫其中一項）'); 
+      return; 
+    }
+
+    // 防呆機制：若只填寫其中一個，另一個自動帶入相同內容
+    if (phone && !ig) { ig = phone; }
+    else if (!phone && ig) { phone = ig; }
+
     if (password !== passwordConfirm) { alert('兩次輸入的密碼不相符'); return; }
     if (password.length < 6) { alert('密碼長度至少需要 6 個字元'); return; }
 
@@ -307,20 +323,28 @@
 
     const userId = authData?.user?.id;
     if (userId) {
+      // 1. 寫入公開/大廳用的 slowpace_members
       const memberPayload = {
         user_id: userId,
         name: name,
-        contact: contact, // 寫入必填聯絡資料
         role: role,
         tier: '鄰里人',
         avatar: avatarVal,
         updated_at: new Date()
       };
+      const { error: dbError1 } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
+      if (dbError1) { console.error("❌ 寫入 slowpace_members 失敗：", dbError1.message); }
 
-      const { error: dbError } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
-      if (dbError) {
-        console.error("❌ 寫入 slowpace_members 失敗：", dbError.message);
-      }
+      // 2. 寫入私密的 member_contacts（受 RLS 保護，其他人無法看見）
+      const contactPayload = {
+        user_id: userId,
+        name: name,
+        email: email,
+        phone: phone,
+        ig: ig
+      };
+      const { error: dbError2 } = await supabase.from('member_contacts').upsert([contactPayload], { onConflict: 'user_id' });
+      if (dbError2) { console.error("❌ 寫入 member_contacts 失敗：", dbError2.message); }
     }
 
     alert('註冊成功！歡迎加入空間客舍。');
