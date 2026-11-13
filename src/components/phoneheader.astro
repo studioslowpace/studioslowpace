@@ -161,16 +161,27 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       localStorage.setItem('space_theme_color', val);
     });
 
-    // 2. 檢查 sessionStorage 與記憶體暫存
-    let guestId = sessionStorage.getItem('space_guest_id');
-    let guestName = sessionStorage.getItem('space_guest_name');
+    // 2. 從 localStorage 檢查訪客身分與 24 小時（86400000 ms）時效
+    let guestId = localStorage.getItem('space_guest_id');
+    let guestName = localStorage.getItem('space_guest_name');
+    const guestCreatedAt = localStorage.getItem('space_guest_created_at');
 
-    if (!guestId) {
-      if (guestName) {
-        console.warn("⚠️ [F12 除錯 - Header] 偵測到殘缺身分（只有名字無 ID），自動清除 sessionStorage");
+    const EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24小時
+    const now = new Date().getTime();
+
+    // 🛡️ 檢查是否過期或資料殘缺
+    if (guestId) {
+      if (!guestCreatedAt || (now - parseInt(guestCreatedAt, 10) > EXPIRE_TIME)) {
+        console.warn("⏰ [Header] 訪客身分已超過 24 小時，自動清除本地訪客資料");
+        // 異步刪除資料庫舊訪客
+        supabase.from(TABLE_NAME).delete().eq('user_id', guestId).then();
+        
+        localStorage.removeItem('space_guest_id');
+        localStorage.removeItem('space_guest_name');
+        localStorage.removeItem('space_guest_created_at');
+        guestId = null;
+        guestName = null;
       }
-      sessionStorage.clear();
-      guestName = null;
     }
 
     if (!guestId && window.__TEMP_GUEST_ID) {
@@ -329,11 +340,14 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
       }
     });
 
-    // 監聽來自 LoginModal 的訊息 (已補上 REGISTER_SUCCESS 支援)
+    // 監聽來自 LoginModal 的訊息 (支援訪客、登入與註冊)
     window.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'GUEST_LOGIN_SUCCESS') {
-        sessionStorage.setItem('space_guest_id', event.data.guestId);
-        sessionStorage.setItem('space_guest_name', event.data.name);
+        const now = new Date().getTime();
+        localStorage.setItem('space_guest_id', event.data.guestId);
+        localStorage.setItem('space_guest_name', event.data.name);
+        localStorage.setItem('space_guest_created_at', now.toString());
+
         window.__TEMP_GUEST_ID = event.data.guestId;
         window.__TEMP_GUEST_NAME = event.data.name;
         
@@ -357,10 +371,12 @@ const { onlineCount = 1, totalCount = 0 } = Astro.props;
     cancelLogoutBtn?.addEventListener('click', () => { if (logoutModal) logoutModal.style.display = 'none'; });
 
     confirmLogoutBtn?.addEventListener('click', async () => {
-      const currentGuestId = sessionStorage.getItem('space_guest_id');
+      const currentGuestId = localStorage.getItem('space_guest_id');
       if (currentGuestId) {
         await supabase.from(TABLE_NAME).delete().eq('user_id', currentGuestId);
-        sessionStorage.clear();
+        localStorage.removeItem('space_guest_id');
+        localStorage.removeItem('space_guest_name');
+        localStorage.removeItem('space_guest_created_at');
       }
       await supabase.auth.signOut();
       localStorage.clear();

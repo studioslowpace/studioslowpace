@@ -170,7 +170,7 @@
         role: role,
         tier: '鄰里人',
         avatar: avatarVal,
-        updated_at: new Date().toISOString()
+        updated_at: new Date()
       };
 
       const { error: dbError } = await supabase.from(TABLE_NAME).upsert([memberPayload], { onConflict: 'user_id' });
@@ -183,7 +183,7 @@
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
-// 訪客快速進入（加強版錯誤捕捉與寫入診斷）
+  // 訪客快速進入（24 小時保存版）
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
@@ -193,75 +193,56 @@
     let insertSuccess = false;
     let attempts = 0;
 
-    console.log("📌 [LoginModal] 開始建立訪客身分...");
-
     while (!insertSuccess && attempts < 5) {
       attempts++;
-
-      // 1. 取得現有訪客以計算流水號編號
       const { data: existingGuests, error: fetchError } = await supabase
         .from(TABLE_NAME)
-        .select('user_id, name')
+        .select('name')
         .like('name', '訪客 #%');
 
       let nextIndex = 1;
-      let existingUserIds = new Set();
-
-      if (!fetchError && existingGuests) {
-        existingGuests.forEach(g => {
-          if (g.user_id) existingUserIds.add(g.user_id);
-          const match = g.name?.match(/訪客 #(\d+)/);
-          if (match) {
-            const num = parseInt(match[1], 10);
-            if (num >= nextIndex) nextIndex = num + 1;
-          }
+      if (!fetchError && existingGuests && existingGuests.length > 0) {
+        const numbers = existingGuests.map(g => {
+          const match = g.name.match(/訪客 #(\d+)/);
+          return match ? parseInt(match[1], 10) : 0;
         });
+        const maxIndex = Math.max(...numbers, 0);
+        nextIndex = maxIndex + 1;
       }
 
       guestName = `訪客 #${nextIndex}`;
+      guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
 
-      // 2. 確保隨機產生的 guestId 絕對不與資料庫現有 user_id 撞號
-      do {
-        guestId = 'guest_' + Math.random().toString(36).substring(2, 11);
-      } while (existingUserIds.has(guestId));
-
-      // 3. 準備寫入資料（將 new Date() 改為 ISO 字串，避免前端物件序列化問題）
       const guestData = {
         user_id: guestId,
         name: guestName,
         role: '☁️ 訪客',
         tier: '鄰里人',
         avatar: avatarVal,
-        updated_at: new Date().toISOString()
+        room: 'study',
+        gx: 2,
+        gy: 2,
+        reading_log: [],
+        updated_at: new Date()
       };
 
-      console.log(`📌 [LoginModal] 嘗試第 ${attempts} 次寫入 DB...`, guestData);
-
-      try {
-        const { data, error: insertError } = await supabase
-  .from(TABLE_NAME)
-  .upsert([guestData], { onConflict: 'user_id' })
-  .select();
-        
-        if (!insertError) {
-          insertSuccess = true;
-          console.log("✅ [LoginModal] 訪客成功寫入 DB，回傳資料：", data);
-        } else {
-          console.error(`❌ [LoginModal] 第 ${attempts} 次寫入被 Supabase 拒絕：`, insertError);
-        }
-      } catch (err) {
-        console.error(`❌ [LoginModal] 執行寫入時發生例外錯誤：`, err);
+      const { error: insertError } = await supabase.from(TABLE_NAME).insert([guestData]);
+      if (!insertError) {
+        insertSuccess = true;
       }
     }
 
     if (!insertSuccess) {
-      alert('進入空間失敗：資料庫寫入受阻，請查看 F12 主控台的詳細錯誤訊息。');
+      alert('進入空間失敗：無法分配訪客編號，請稍後再試。');
       return;
     }
 
-    // 💡 寫入 localStorage 與記憶體防護
+    // 💡 改寫入 localStorage 並記錄寫入時間戳
+    const now = new Date().getTime();
     localStorage.setItem('space_guest_id', guestId);
     localStorage.setItem('space_guest_name', guestName);
+    localStorage.setItem('space_guest_created_at', now.toString());
+
     window.__TEMP_GUEST_ID = guestId;
     window.__TEMP_GUEST_NAME = guestName;
 
@@ -273,13 +254,7 @@
     }, '*');
   });
 
-  window.addEventListener('beforeunload', () => {
-    const guestId = localStorage.getItem('space_guest_id');
-    if (!guestId) return;
-    supabase.from(TABLE_NAME).delete().eq('user_id', guestId).then();
-    localStorage.removeItem('space_guest_id');
-    localStorage.removeItem('space_guest_name');
-  });
+  // ⚠️ 註：原有的 beforeunload 事件監聽已徹底刪除，避免重新整理時清除訪客紀錄
 
   document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
