@@ -26,6 +26,7 @@ import Layout from '../layouts/Layout.astro';
           <p class="rpg-text">此桌目前為空桌，由你來發起一場新的共讀活動：</p>
           <input type="text" id="table-book" placeholder="共讀書名" style="margin-bottom:8px;" />
           <input type="text" id="table-author" placeholder="作者" style="margin-bottom:8px;" />
+          <input type="text" id="table-reason" placeholder="發起共讀的因由/書本的介紹" style="margin-bottom:8px;" />
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">限制參加人數：</div>
           <input type="number" id="table-max" value="3" min="1" max="10" style="margin-bottom:8px;" />
           <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">預定完讀日期：</div>
@@ -1115,6 +1116,7 @@ async function startAppSession() {
     const tableInfoView = document.getElementById('table-info-view');
     const tableBook = document.getElementById('table-book') as HTMLInputElement;
     const tableAuthor = document.getElementById('table-author') as HTMLInputElement;
+    const tableReason = document.getElementById('table-reason') as HTMLInputElement;
     const tableMax = document.getElementById('table-max') as HTMLInputElement;
     const tableDate = document.getElementById('table-date') as HTMLInputElement;
     const tableCreateBtn = document.getElementById('table-create-btn');
@@ -1329,6 +1331,7 @@ async function startAppSession() {
       if (!activeTableData || !userId) return;
       const title = tableBook?.value.trim();
       const author = tableAuthor?.value.trim() || '佚名';
+      const reason = tableReason?.value.trim() || '好看';
       const maxM = parseInt(tableMax?.value) || 3;
       const dateStr = tableDate?.value || '';
 
@@ -1338,6 +1341,7 @@ async function startAppSession() {
       await supabase.from(ITEMS_TABLE).update({
         book_title: title,
         author: author,
+        reason: reason,
         max_members: maxM,
         finish_date: dateStr,
         host_id: userId,

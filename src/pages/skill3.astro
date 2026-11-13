@@ -206,29 +206,14 @@ import { supabase } from '../lib/supabase';
         /* ==========================================
            4. 頁首與導覽區塊 (Header)
            ========================================== */
-        .header-bar {
-            width: 100%;
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid #fef3c7;
-            padding: 0.75rem 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 40;
-        }
-        .header-container {
-            max-width: 56rem;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
         .banner-logo-group {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.75rem;
             cursor: pointer;
             user-select: none;
+            margin-bottom: 0.5rem;
         }
         .banner-logo-img {
             width: 50px;
@@ -248,23 +233,33 @@ import { supabase } from '../lib/supabase';
 
         .hero-banner {
             text-align: center;
+            display: flex;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            background: linear-gradient(to bottom right, #fde68a, #ffedd5);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
-
-        .hero-banner h1 {
+        @media (min-width: 768px) { .hero-banner { padding: 1.5rem; } }
+        
+        .hero-title {
             font-size: 34px;
-            color: #4d361d;
-            display: block;
             font-weight: bold;
+            color: #4d361d;
             letter-spacing: 10px;
+            margin: 0;
+            display: block;
         }
-
         .hero-title-sub {
             font-size: 20px;
-            color: #4d361d;
-            display: block;
             font-weight: bold;
-            margin-top: -1.1rem;
+            color: #4d361d;
+            margin-top: 0.25rem;
+            display: block;
         }
 
         /* ==========================================
@@ -340,32 +335,6 @@ import { supabase } from '../lib/supabase';
             border-radius: 0.75rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
-        }
-        
-        .hero-banner {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 1.5rem;
-            padding: 1.5rem;
-            border-radius: 1.5rem;
-            background: linear-gradient(to bottom right, #fde68a, #ffedd5);
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        }
-        @media (min-width: 768px) { .hero-banner { padding: 1rem; } }
-        
-        .hero-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.05rem;
-            color: #451a03;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         /* ==========================================
@@ -807,23 +776,6 @@ import { supabase } from '../lib/supabase';
             font-weight: 700;
         }
 
-        .btn-card-orange {
-            background-color: #ea580c;
-            color: #ffffff;
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 0.625rem 1.25rem;
-            border-radius: 0.875rem;
-            border: none;
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.2);
-            transition: background-color 0.2s;
-        }
-        .btn-card-orange:hover {
-            background-color: #c2410c;
-        }
-
         .badge-status-success {
             font-size: 0.875rem;
             font-weight: 700;
@@ -921,6 +873,7 @@ import { supabase } from '../lib/supabase';
         
         <div class="layout-spacing">
         
+        <!-- Logo 與標題已置中 -->
         <div class="hero-banner">
             <div id="banner-logo-trigger" class="banner-logo-group">
               <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;">
@@ -933,7 +886,7 @@ import { supabase } from '../lib/supabase';
 
             <div class="layout-action-row">
                 <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem;">
-                <!-- 💡 「因由」按鈕 (取代原本的橫幅文字) -->
+                <!-- 💡 「因由」按鈕 -->
                 <button id="btn-open-reason" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
                     💡 因由
                 </button>
@@ -961,7 +914,7 @@ import { supabase } from '../lib/supabase';
                 <button id="tab-skills" data-tab="skills" class="tab-btn tab-btn-flex"><span>✨ 鄰里人名冊與積分榜</span></button>
             </div>
     
-            <!-- 個人萬事分快速查詢 (已加開上下與其他元件的間距空間) -->
+            <!-- 個人萬事分快速查詢 -->
             <div id="skills-leaderboard-section" class="hidden leaderboard-panel">
                 <div class="search-box-card">
                     <div>
@@ -980,18 +933,23 @@ import { supabase } from '../lib/supabase';
                 </div>
             </div>
             
-            <!-- 🔍 搜尋列 (已調整上方與下方之空間距離) -->
+            <!-- 🔍 搜尋列 (附帶「確定」與「X」清除按鈕，點擊確定後跳轉頁面並自動清除) -->
             <div id="skill-filter-bar-container" style="width: 100%; margin-top: 1.5rem; margin-bottom: 1.5rem;">
-                <!-- 全部委託底下的子分類過濾按鈕列 (義助的委託、有額外報酬的委託) -->
                 <div id="sub-filter-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 0.875rem;">
                     <button id="filter-sub-all" class="sub-filter-btn" data-sub="all" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #ea580c; color: white; border: none; cursor: pointer;">全部未完成</button>
                     <button id="filter-sub-noreward" class="sub-filter-btn" data-sub="no-reward" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; cursor: pointer;">義助的委託</button>
                     <button id="filter-sub-reward" class="sub-filter-btn" data-sub="has-reward" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; cursor: pointer;">有額外報酬的委託</button>
                 </div>
 
-                <div style="background-color: #f7f3e8; border: 1px solid #fde68a; padding: 0.625rem 1rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                    <i data-lucide="search" style="width: 1rem; height: 1rem; color: #8b5cf6;"></i>
+                <div style="background-color: #f7f3e8; border: 1px solid #fde68a; padding: 0.375rem 0.5rem 0.375rem 1rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <i data-lucide="search" style="width: 1rem; height: 1rem; color: #8b5cf6; flex-shrink: 0;"></i>
                     <input type="text" id="global-keyword-search" placeholder="搜尋委託標題、內容或標籤..." style="border: none; background: transparent; width: 100%; font-size: 0.75rem; color: #451a03; outline: none;" autocomplete="off">
+                    
+                    <!-- 確定按鈕 -->
+                    <button id="btn-search-submit" style="background-color: #ea580c; color: white; border: none; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap;">確定</button>
+                    
+                    <!-- 清除 X 按鈕 -->
+                    <button id="btn-search-clear" style="background-color: #e7e5e4; color: #57534e; border: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; white-space: nowrap;" title="清除搜尋">✕</button>
                 </div>
             </div>
 
@@ -1328,8 +1286,36 @@ window.onload = async function() {
             });
         });
 
-        document.getElementById('global-keyword-search')?.addEventListener('input', (e) => {
-            searchQuery = e.target.value.trim().toLowerCase();
+        // 搜尋列「確定」按鈕與 Enter 觸發事件（跳轉頁面並自動清除搜尋內容）
+        const searchInput = document.getElementById('global-keyword-search');
+        const btnSearchSubmit = document.getElementById('btn-search-submit');
+        const btnSearchClear = document.getElementById('btn-search-clear');
+
+        const executeSearchAndRedirect = () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                // 模擬跳轉頁面（或重新導向至搜尋檢視/重新整理並清空輸入框）
+                searchQuery = query.toLowerCase();
+                renderPosts();
+                // 自動清除搜尋內容並跳轉/回到頂部
+                searchInput.value = '';
+                searchQuery = '';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast("🔍 已跳轉並送出搜尋！");
+            }
+        };
+
+        btnSearchSubmit?.addEventListener('click', executeSearchAndRedirect);
+        searchInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                executeSearchAndRedirect();
+            }
+        });
+
+        // 「X」清除按鈕事件
+        btnSearchClear?.addEventListener('click', () => {
+            if(searchInput) searchInput.value = '';
+            searchQuery = '';
             renderPosts();
         });
 
@@ -1359,7 +1345,6 @@ window.onload = async function() {
         });
     }
 
-    // 💡 因由彈窗開關事件
     document.getElementById('btn-open-reason')?.addEventListener('click', () => {
         document.getElementById('modal-reason')?.classList.remove('hidden');
     });
