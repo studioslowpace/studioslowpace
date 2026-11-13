@@ -2,7 +2,7 @@
 const { title = "預設標題" } = Astro.props;
 import Footer from '../components/phonefooter.astro';
 import Header from '../components/phoneheader.astro';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase'; // 統一從共用 lib 引入
 
 const TABLE_NAME = 'slowpace_members';
 ---
@@ -132,16 +132,12 @@ const TABLE_NAME = 'slowpace_members';
 
 <!-- 讓這段 JS 在客戶端（瀏覽器）執行 -->
 <script>
-  import { createClient } from '@supabase/supabase-js';
+  import { supabase } from '../lib/supabase'; // 客戶端也統一引入
 
-  const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-  const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-  const client = createClient(supabaseUrl, supabaseKey);
-
-  // 統一的權限檢查（已將 .eq('id', user.id) 修正為 .eq('user_id', user.id)）
+  // 統一的權限檢查（使用正確的 user_id 欄位）
   async function checkLayoutAdminStatus(user) {
     if (!user) return false;
-    const { data: profile, error } = await client
+    const { data: profile, error } = await supabase
         .from('slowpace_members')
         .select('is_admin')
         .eq('user_id', user.id)
@@ -152,7 +148,7 @@ const TABLE_NAME = 'slowpace_members';
   // 初始化 Layout 的管理員狀態
   async function initLayoutAuth() {
     try {
-      const { data: { session } } = await client.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const isAdmin = await checkLayoutAdminStatus(session?.user);
       
       const adminLink = document.getElementById('admin-link');
@@ -164,7 +160,7 @@ const TABLE_NAME = 'slowpace_members';
     }
 
     // 實時監聽
-    client.auth.onAuthStateChange(async (event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       const isAdmin = await checkLayoutAdminStatus(session?.user);
       const adminLink = document.getElementById('admin-link');
       if (adminLink) {
