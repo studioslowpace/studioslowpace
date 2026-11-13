@@ -13,7 +13,7 @@ import Layout from '../layouts/BaseLayout.astro';
       <div id="loading-state" class="state-msg">正在載入會員資料...</div>
 
       <div id="profile-content" style="display: none;">
-        <!-- 基本身分資訊 -->
+        <!-- 基本身分預覽與檢視區塊 -->
         <div class="avatar-preview-box">
           <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" />
           <div>
@@ -22,10 +22,28 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <hr class="divider" />
+        <!-- 帳號與聯絡資訊檢視卡片 -->
+        <div class="info-display-card">
+          <div class="info-row">
+            <span class="info-label">電子信箱</span>
+            <span id="display-email" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">聯絡電話</span>
+            <span id="display-phone" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">IG 帳號</span>
+            <span id="display-ig" class="info-value">-</span>
+          </div>
+        </div>
 
-        <!-- 修改個人資料表單 -->
-        <form id="profile-form" class="profile-form">
+        <!-- 切換修改個人資料按鈕 -->
+        <button type="button" id="toggle-edit-profile-btn" class="secondary-toggle-btn">✏️ 修改個人資料</button>
+
+        <!-- 修改個人資料表單（預設隱藏，按鈕展開） -->
+        <form id="profile-form" class="profile-form" style="display: none;">
+          <h3 class="section-title">編輯個人資料</h3>
           <div>
             <label class="form-label">客舍稱號</label>
             <input type="text" id="edit-name" maxlength="12" required placeholder="請輸入您的稱號" />
@@ -38,6 +56,17 @@ import Layout from '../layouts/BaseLayout.astro';
               <option value="🍃 散文漫遊">🍃 散文漫遊</option>
               <option value="✍️ 靜心寫作">✍️ 靜心寫作</option>
             </select>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+              <label class="form-label">聯絡電話</label>
+              <input type="text" id="edit-phone" placeholder="0912-345-678" />
+            </div>
+            <div style="flex: 1;">
+              <label class="form-label">IG 帳號</label>
+              <input type="text" id="edit-ig" placeholder="@instagram_id" />
+            </div>
           </div>
 
           <div>
@@ -61,19 +90,30 @@ import Layout from '../layouts/BaseLayout.astro';
 
         <hr class="divider" />
 
-        <!-- 個人歷史閱讀記錄 -->
-        <div class="logs-section">
-          <h3>📚 我的個人閱讀清單 (<span id="logs-count">0</span>)</h3>
-          <div id="logs-container" class="logs-container"></div>
-        </div>
+        <!-- 切換修改密碼按鈕 -->
+        <button type="button" id="toggle-edit-password-btn" class="secondary-toggle-btn">🔒 修改密碼</button>
 
-        <hr class="divider" />
+        <!-- 修改密碼區塊（預設隱藏，按鈕展開） -->
+        <div id="password-form-container" class="profile-form" style="display: none;">
+          <h3 class="section-title">變更您的密碼</h3>
+          
+          <div>
+            <label class="form-label">新密碼 (至少 6 位數)</label>
+            <div style="position: relative;">
+              <input type="password" id="new-password" placeholder="••••••••" style="padding-right: 40px;" />
+              <button type="button" id="toggle-pwd-1" class="eye-btn">👁️</button>
+            </div>
+          </div>
 
-        <!-- 修改密碼區塊 -->
-        <div class="profile-form">
-          <label class="form-label">修改密碼 (至少 6 位數)</label>
-          <input type="password" id="new-password" placeholder="••••••••" />
-          <button type="button" id="update-password-btn" class="secondary-btn">更新密碼</button>
+          <div>
+            <label class="form-label">確認新密碼</label>
+            <div style="position: relative;">
+              <input type="password" id="new-password-confirm" placeholder="••••••••" style="padding-right: 40px;" />
+              <button type="button" id="toggle-pwd-2" class="eye-btn">👁️</button>
+            </div>
+          </div>
+
+          <button type="button" id="update-password-btn" class="secondary-btn">確認更新密碼</button>
         </div>
 
         <button id="profile-logout-btn" class="danger-btn">🚪 登出帳號</button>
@@ -84,7 +124,7 @@ import Layout from '../layouts/BaseLayout.astro';
   <style>
     .profile-viewport {
       min-height: 100vh;
-      background: #78716c; /* 與卡片外背景呼應的中性灰棕色 */
+      background: #78716c;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -138,7 +178,7 @@ import Layout from '../layouts/BaseLayout.astro';
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .avatar-preview-box img {
       width: 56px;
@@ -164,21 +204,54 @@ import Layout from '../layouts/BaseLayout.astro';
       border-radius: 12px;
       color: #6e655b;
     }
+    .info-display-card {
+      background: #f7f4ee;
+      border: 1px solid #e5dfd5;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+    .info-label {
+      color: #8c8275;
+    }
+    .info-value {
+      color: #3c3835;
+      font-weight: 500;
+    }
     .divider {
       border: 0;
       border-top: 1px solid #efece6;
-      margin: 20px 0;
+      margin: 18px 0;
+    }
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #3c3835;
+      margin: 0 0 4px 0;
     }
     .profile-form {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
+      background: #f7f4ee;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #e5dfd5;
+      margin-top: 10px;
     }
     .form-label {
       display: block;
       font-size: 0.8rem;
       color: #6e655b;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .profile-form input[type="text"], 
     .profile-form input[type="password"], 
@@ -186,7 +259,7 @@ import Layout from '../layouts/BaseLayout.astro';
       background: #ffffff;
       border: 1px solid #e5dfd5;
       color: #3c3835;
-      padding: 11px 14px;
+      padding: 10px 12px;
       border-radius: 8px;
       font-size: 0.9rem;
       outline: none;
@@ -201,7 +274,7 @@ import Layout from '../layouts/BaseLayout.astro';
       flex: 1;
       background: #ffffff;
       border: 1px solid #e5dfd5;
-      padding: 10px;
+      padding: 8px;
       border-radius: 8px;
       text-align: center;
       cursor: pointer;
@@ -209,19 +282,34 @@ import Layout from '../layouts/BaseLayout.astro';
       color: #8c8275;
       transition: all 0.2s;
     }
-    .submit-btn {
-      background: #3c3835;
-      color: #fdfbf7;
-      border: none;
-      padding: 13px;
+    .secondary-toggle-btn {
+      background: #f7f4ee;
+      color: #3c3835;
+      border: 1px solid #e5dfd5;
+      padding: 11px;
       border-radius: 8px;
       font-weight: 500;
       cursor: pointer;
       width: 100%;
-      font-size: 0.95rem;
-      box-shadow: 0 4px 12px rgba(60,56,53,0.15);
+      font-size: 0.9rem;
+      transition: all 0.2s;
       margin-top: 6px;
-      transition: opacity 0.2s;
+    }
+    .secondary-toggle-btn:hover {
+      background: #efece6;
+    }
+    .submit-btn {
+      background: #3c3835;
+      color: #fdfbf7;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(60,56,53,0.15);
+      margin-top: 4px;
     }
     .submit-btn:hover { opacity: 0.9; }
     
@@ -249,29 +337,20 @@ import Layout from '../layouts/BaseLayout.astro';
       cursor: pointer;
       width: 100%;
       font-size: 0.9rem;
-      margin-top: 20px;
+      margin-top: 24px;
     }
     .danger-btn:hover { opacity: 0.9; }
 
-    .logs-section h3 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #3c3835;
-      margin: 0 0 10px 0;
-    }
-    .logs-container {
-      max-height: 180px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .log-card {
-      background: #ffffff;
-      border: 1px solid #e5dfd5;
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+    .eye-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #8c8275;
+      font-size: 0.9rem;
     }
   </style>
 
@@ -291,6 +370,45 @@ import Layout from '../layouts/BaseLayout.astro';
     const logoutBtn = document.getElementById('profile-logout-btn');
     const form = document.getElementById('profile-form') as HTMLFormElement;
 
+    const toggleEditProfileBtn = document.getElementById('toggle-edit-profile-btn');
+    const toggleEditPasswordBtn = document.getElementById('toggle-edit-password-btn');
+    const passwordFormContainer = document.getElementById('password-form-container');
+
+    // 切換修改個人資料表單顯示/隱藏
+    toggleEditProfileBtn?.addEventListener('click', () => {
+      if (form) {
+        const isHidden = form.style.display === 'none';
+        form.style.display = isHidden ? 'flex' : 'none';
+        toggleEditProfileBtn.textContent = isHidden ? '✕ 收起個人資料修改' : '✏️ 修改個人資料';
+      }
+    });
+
+    // 切換修改密碼表單顯示/隱藏
+    toggleEditPasswordBtn?.addEventListener('click', () => {
+      if (passwordFormContainer) {
+        const isHidden = passwordFormContainer.style.display === 'none';
+        passwordFormContainer.style.display = isHidden ? 'flex' : 'none';
+        toggleEditPasswordBtn.textContent = isHidden ? '✕ 收起修改密碼' : '🔒 修改密碼';
+      }
+    });
+
+    // 密碼顯示/隱藏切換功能
+    function setupPasswordToggle(inputId: string, btnId: string) {
+      const input = document.getElementById(inputId) as HTMLInputElement;
+      const btn = document.getElementById(btnId);
+      btn?.addEventListener('click', () => {
+        if (input.type === 'password') {
+          input.type = 'text';
+          btn.textContent = '🔒';
+        } else {
+          input.type = 'password';
+          btn.textContent = '👁️';
+        }
+      });
+    }
+    setupPasswordToggle('new-password', 'toggle-pwd-1');
+    setupPasswordToggle('new-password-confirm', 'toggle-pwd-2');
+
     // 登出
     logoutBtn?.addEventListener('click', async () => {
       await supabase.auth.signOut();
@@ -298,7 +416,7 @@ import Layout from '../layouts/BaseLayout.astro';
       window.location.href = '/';
     });
 
-    // 初始化：檢查登入狀態與載入個人資料（整合 Supabase Auth 與 slowpace_members）
+    // 初始化：載入 Auth 與雙表資料
     async function initProfile() {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -309,19 +427,27 @@ import Layout from '../layouts/BaseLayout.astro';
       }
 
       currentUserId = session.user.id;
-      const authUserMeta = session.user.user_metadata || {};
+      const userEmail = session.user.email || '';
 
-      // 取得 slowpace_members 資料
+      // 1. 取得 slowpace_members 資料
       const { data: profile } = await supabase
         .from(TABLE_NAME)
         .select('*')
         .eq('user_id', currentUserId)
         .single();
 
-      // 結合 Auth metadata 的名稱優先（若無則fallback至table）
+      // 2. 取得 member_contacts 私密資料（電話、IG）
+      const { data: contact } = await supabase
+        .from('member_contacts')
+        .select('phone, ig')
+        .eq('user_id', currentUserId)
+        .single();
+
       currentProfile = {
         ...(profile || {}),
-        name: authUserMeta.name || profile?.name || '旅人',
+        email: userEmail,
+        phone: contact?.phone || '',
+        ig: contact?.ig || ''
       };
 
       renderProfileData();
@@ -329,24 +455,35 @@ import Layout from '../layouts/BaseLayout.astro';
       if (profileContent) profileContent.style.display = 'block';
     }
 
-    // 將資料渲染至 UI 與表單
+    // 渲染資料至 UI 與表單
     function renderProfileData() {
       const avatarImg = document.getElementById('profile-avatar-img') as HTMLImageElement;
       const nameDisplay = document.getElementById('profile-name-display');
       const tierBadge = document.getElementById('profile-tier-badge');
+      
+      const displayEmail = document.getElementById('display-email');
+      const displayPhone = document.getElementById('display-phone');
+      const displayIg = document.getElementById('display-ig');
+
       const editName = document.getElementById('edit-name') as HTMLInputElement;
       const editRole = document.getElementById('edit-role') as HTMLSelectElement;
-      const logsCount = document.getElementById('logs-count');
-      const logsContainer = document.getElementById('logs-container');
+      const editPhone = document.getElementById('edit-phone') as HTMLInputElement;
+      const editIg = document.getElementById('edit-ig') as HTMLInputElement;
 
       if (avatarImg) avatarImg.src = currentProfile.avatar || '/assets/player1.png';
       if (nameDisplay) nameDisplay.textContent = currentProfile.name;
       if (tierBadge) tierBadge.textContent = currentProfile.tier === '店主' ? '👑 店主' : '🌱 鄰里人';
+
+      if (displayEmail) displayEmail.textContent = currentProfile.email;
+      if (displayPhone) displayPhone.textContent = currentProfile.phone || '未填寫';
+      if (displayIg) displayIg.textContent = currentProfile.ig || '未填寫';
       
       if (editName) editName.value = currentProfile.name;
       if (editRole) editRole.value = currentProfile.role || '☁️ 晴空選書';
+      if (editPhone) editPhone.value = currentProfile.phone;
+      if (editIg) editIg.value = currentProfile.ig;
 
-      // 設定分身選取高亮狀態
+      // 分身造型選取高亮
       const radios = document.querySelectorAll('input[name="edit-avatar"]') as NodeListOf<HTMLInputElement>;
       radios.forEach(radio => {
         if (radio.value === currentProfile.avatar) {
@@ -357,30 +494,8 @@ import Layout from '../layouts/BaseLayout.astro';
           updateAvatarLabelStyle(radio.closest('.avatar-option'), false);
         }
       });
-
-      // 渲染歷史閱讀紀錄
-      const logs = currentProfile.reading_log || [];
-      if (logsCount) logsCount.textContent = String(logs.length);
-      
-      if (logsContainer) {
-        if (logs.length === 0) {
-          logsContainer.innerHTML = '<div style="color:#8c8275; text-align:center; padding: 10px;">尚無閱讀紀錄</div>';
-        } else {
-          let html = '';
-          logs.forEach((log: any) => {
-            html += `
-              <div class="log-card">
-                <div style="font-weight:600; color:#3c3835;">《${log.book}》 / ${log.author}</div>
-                <div style="color:#8c8275; font-size:0.75rem; margin-top:2px;">進度：第 ${log.current}/${log.total} 頁 (${log.date || ''})</div>
-              </div>
-            `;
-          });
-          logsContainer.innerHTML = html;
-        }
-      }
     }
 
-    // 分身造型點擊互動效果
     function updateAvatarLabelStyle(label: HTMLElement | null, isSelected: boolean) {
       if (!label) return;
       const span = label.querySelector('span');
@@ -404,31 +519,26 @@ import Layout from '../layouts/BaseLayout.astro';
       });
     });
 
-    // 儲存表單修改（同時更新 Supabase Auth metadata 與 slowpace_members）
+    // 儲存個人資料修改（同時更新 slowpace_members 與 member_contacts）
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentUserId) return;
 
       const newName = (document.getElementById('edit-name') as HTMLInputElement).value.trim();
       const newRole = (document.getElementById('edit-role') as HTMLSelectElement).value;
+      const newPhone = (document.getElementById('edit-phone') as HTMLInputElement).value.trim();
+      const newIg = (document.getElementById('edit-ig') as HTMLInputElement).value.trim();
       const selectedAvatar = (document.querySelector('input[name="edit-avatar"]:checked') as HTMLInputElement)?.value || '/assets/player1.png';
 
-      if (!newName) {
-        alert('請輸入有效的稱號');
+      if (!newName || (!newPhone && !newIg)) {
+        alert('請填寫稱號，且聯絡電話與 IG 帳號至少需填寫其中一項');
         return;
       }
 
-      // 1. 同步更新 Supabase Auth (auth.users) 的 metadata 名稱
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { name: newName }
-      });
+      // 同步 Auth metadata
+      await supabase.auth.updateUser({ data: { name: newName, avatar: selectedAvatar } });
 
-      if (authError) {
-        alert('更新 Auth 帳號名稱失敗：' + authError.message);
-        return;
-      }
-
-      // 2. 更新 slowpace_members 資料表
+      // 更新 slowpace_members
       const { error: dbError } = await supabase
         .from(TABLE_NAME)
         .update({
@@ -439,23 +549,42 @@ import Layout from '../layouts/BaseLayout.astro';
         })
         .eq('user_id', currentUserId);
 
-      if (dbError) {
-        alert('儲存至資料表失敗：' + dbError.message);
+      // 更新 member_contacts
+      const { error: contactError } = await supabase
+        .from('member_contacts')
+        .update({
+          name: newName,
+          phone: newPhone,
+          ig: newIg
+        })
+        .eq('user_id', currentUserId);
+
+      if (dbError || contactError) {
+        alert('儲存失敗：' + (dbError?.message || contactError?.message));
       } else {
         alert('個人資料已成功更新！');
         currentProfile.name = newName;
         currentProfile.role = newRole;
+        currentProfile.phone = newPhone;
+        currentProfile.ig = newIg;
         currentProfile.avatar = selectedAvatar;
         renderProfileData();
+        form.style.display = 'none';
+        if (toggleEditProfileBtn) toggleEditProfileBtn.textContent = '✏️ 修改個人資料';
       }
     });
 
-    // 更新密碼
+    // 更新密碼（含重複輸入驗證）
     document.getElementById('update-password-btn')?.addEventListener('click', async () => {
       const newPassword = (document.getElementById('new-password') as HTMLInputElement).value.trim();
+      const newPasswordConfirm = (document.getElementById('new-password-confirm') as HTMLInputElement).value.trim();
 
       if (!newPassword || newPassword.length < 6) {
         alert('新密碼長度至少需要 6 個字元');
+        return;
+      }
+      if (newPassword !== newPasswordConfirm) {
+        alert('兩次輸入的新密碼不相符，請重新確認');
         return;
       }
 
@@ -468,6 +597,9 @@ import Layout from '../layouts/BaseLayout.astro';
       } else {
         alert('密碼已成功更新！');
         (document.getElementById('new-password') as HTMLInputElement).value = '';
+        (document.getElementById('new-password-confirm') as HTMLInputElement).value = '';
+        if (passwordFormContainer) passwordFormContainer.style.display = 'none';
+        if (toggleEditPasswordBtn) toggleEditPasswordBtn.textContent = '🔒 修改密碼';
       }
     });
 
