@@ -187,6 +187,8 @@
 </style>
 
 <script>
+    import { supabase } from '../lib/supabase';
+
     declare global {
         interface Window {
             supabase: any;
@@ -194,9 +196,8 @@
         }
     }
 
-    const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-    const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-    window.client = window.client || (window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null);
+    // 將全域 client 指向共用的 supabase 實例
+    window.client = supabase;
 
     const setupHeaderAuth = () => {
         const authBtn = document.getElementById('auth-btn');
@@ -208,33 +209,56 @@
 
         if (!authBtn || !passwordModal || !window.client) return;
 
+        // 🔍 檢查全域登入狀態以及 profiles 表中的 is_admin 權限
         const checkGlobalLoginState = async () => {
             const { data: { session } } = await window.client.auth.getSession();
             const addBlock = document.getElementById('clubGlobalAddBlock');
             
-            if (session) {
-                authBtn.classList.add('logged-in');
-                body.classList.add('admin-mode-active');
-                if (addBlock) addBlock.style.display = 'flex';
-                authBtn.title = "管理員已登入 (點擊登出)";
-            } else {
-                authBtn.classList.remove('logged-in');
-                body.classList.remove('admin-mode-active');
-                if (addBlock) addBlock.style.display = 'none';
-                authBtn.title = "管理員登入";
+            if (session && session.user) {
+                // 查詢 profiles 資料表確認 is_admin 狀態
+                const { data: profile, error } = await window.client
+                    .from('profiles')
+                    .select('is_admin')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (!error && profile && profile.is_admin === true) {
+                    authBtn.classList.add('logged-in');
+                    body.classList.add('admin-mode-active');
+                    if (addBlock) addBlock.style.display = 'flex';
+                    authBtn.title = "管理員已登入 (點擊登出)";
+                    return;
+                }
             }
+
+            // 若未登入或不是管理員，清除狀態
+            authBtn.classList.remove('logged-in');
+            body.classList.remove('admin-mode-active');
+            if (addBlock) addBlock.style.display = 'none';
+            authBtn.title = "管理員登入";
         };
 
         authBtn.addEventListener('click', async () => {
             const { data: { session } } = await window.client.auth.getSession();
-            if (session) {
+            let isAdmin = false;
+            if (session && session.user) {
+                const { data: profile } = await window.client
+                    .from('profiles')
+                    .select('is_admin')
+                    .eq('id', session.user.id)
+                    .single();
+                if (profile && profile.is_admin === true) isAdmin = true;
+            }
+
+            if (isAdmin) {
                 if (confirm("確定要登出管理員模式嗎？")) {
                     await window.client.auth.signOut();
                     alert("🔒 已安全登出管理員模式");
-                    checkGlobalLoginState();
+                    await checkGlobalLoginState();
                     window.location.reload();
                 }
             } else {
+                await window.client.auth.signOut();
                 passwordModal.style.display = 'flex';
                 if (adminPwdInput) adminPwdInput.focus();
             }
@@ -246,16 +270,34 @@
         };
         if (closePasswordModalBtn) closePasswordModalBtn.onclick = closeModal;
 
+        // 🔐 驗證邏輯：先登入 Auth，再檢查 profiles.is_admin
         const verifyAdminPassword = async () => {
             if (!adminPwdInput) return;
             const pwd = adminPwdInput.value.trim();
             if (!pwd) return;
 
             const formattedEmail = `${pwd}@studio.local`;
-            const { error } = await window.client.auth.signInWithPassword({ email: formattedEmail, password: pwd });
+
+            const { data: authData, error: authError } = await window.client.auth.signInWithPassword({ 
+                email: formattedEmail, 
+                password: pwd 
+            });
             
-            if (error) {
-                alert("❌ 通行密碼錯誤，拒絕存取。");
+            if (authError || !authData.user) {
+                alert("❌ 帳號或通行密碼錯誤，拒絕存取。");
+                return;
+            }
+
+            // 查詢 profiles 資料表驗證 is_admin 欄位
+            const { data: profile, error: profileError } = await window.client
+                .from('profiles')
+                .select('is_admin')
+                .eq('id', authData.user.id)
+                .single();
+
+            if (profileError || !profile || profile.is_admin !== true) {
+                await window.client.auth.signOut();
+                alert("❌ 此帳號並非管理員身分（is_admin 不為 true），拒絕存取。");
             } else {
                 closeModal();
                 alert("🔓 驗證成功！已開啟管理員權限。");
@@ -272,7 +314,7 @@
         checkGlobalLoginState();
     };
 
-   const setupHeaderMenu = () => {
+    const setupHeaderMenu = () => {
         const toggleButton = document.querySelector('.menu-toggle') as HTMLButtonElement | null;
         const navLinks = document.querySelector('.header-nav-links') as HTMLElement | null;
 
@@ -336,7 +378,6 @@
             resizeTimeout = window.setTimeout(adjustNavItems, 100);
         });
 
-        // 🔍 Supabase 資料庫即時模糊搜尋
         const searchModal = document.getElementById('searchModal');
         const closeSearchModalBtn = document.getElementById('closeSearchModalBtn');
         const globalSearchInput = document.getElementById('globalSearchInput') as HTMLInputElement | null;
@@ -364,7 +405,6 @@
             };
         }
 
-        // 🔍 多資料表並行搜尋
         let searchTimer: number;
         if (globalSearchInput && searchResults) {
             globalSearchInput.oninput = (e) => {
@@ -381,7 +421,6 @@
                 searchTimer = window.setTimeout(async () => {
                     let matches: { title: string; snippet: string; url: string }[] = [];
 
-                    // 1. 先比對導覽列選單
                     allLinks.forEach(link => {
                         const title = link.textContent?.trim() || '';
                         const url = link.getAttribute('href') || '#';
@@ -390,7 +429,6 @@
                         }
                     });
 
-                    // 2. 同時從多個 Supabase 資料表查詢
                     if (window.client) {
                         try {
                             const queries = [
@@ -399,40 +437,36 @@
                                 window.client.from('events').select('title, details').or(`title.ilike.%${query}%,details.ilike.%${query}%`).limit(5)
                             ];
 
-                            // 使用 Promise.all 同時發送所有查詢
                             const results = await Promise.all(queries);
 
                             results.forEach(({ data, error }, index) => {
                                 if (!error && data) {
                                     data.forEach((item: any) => {
                                         if (index === 0) {
-                                            // 第一張表：posts (萬事屋任務)
                                             const details = item.taskdetails || '';
                                             const taskTitle = item.tasktitle || '未命名任務';
                                             matches.push({
                                                 title: taskTitle,
                                                 snippet: `${details.length > 40 ? details.substring(0, 40) + '...' : details} | 報酬: ${item.reward || '無'}`,
-                                                url: `/posts/${postId}`
+                                                url: `/posts/${item.id}`
                                             });
                                         } else if (index === 1) {
-                                            // 第二張表：reading_clubs (讀書會 - 使用 [title].astro 動態路由)
                                             const content = item.content || '';
                                             const titleStr = item.title || '無標題';
                                             const encodedTitle = encodeURIComponent(titleStr);
                                             matches.push({
                                                 title: titleStr,
                                                 snippet: content.length > 50 ? content.substring(0, 50) + '...' : content,
-                                                url: `/clubs/${encodedTitle}` // 👈 請根據你的實際資料夾路徑修改
+                                                url: `/clubs/${encodedTitle}`
                                             });
                                         } else {
-                                            // 第三張表：events (活動)
                                             const details = item.details || '';
                                             const titleStr = item.title || '無標題';
                                             const encodedTitle = encodeURIComponent(titleStr);
                                             matches.push({
                                                 title: titleStr,
                                                 snippet: details.length > 50 ? details.substring(0, 50) + '...' : details,
-                                                url: `/events/${encodedTitle}` // 👈 請根據你的實際資料夾路徑修改
+                                                url: `/events/${encodedTitle}`
                                             });
                                         }
                                     });
