@@ -978,6 +978,11 @@ import { supabase } from '../lib/supabase';
 
             <div class="layout-action-row">
                 <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem;">
+                <!-- 💡 原本在主橫幅內的引言文字改放在此，並維持與說明按鈕相同的文青風格設計 -->
+                <div style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center;">
+                    💡 生活中總會遇到各種奇難雜務，以「萬事分」作為互助連結。
+                </div>
+
                 <!-- 📖 萬事屋使用與規則說明按鈕 -->
                 <button id="btn-open-guide" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
                     📖 萬事屋使用與規則說明
@@ -990,12 +995,13 @@ import { supabase } from '../lib/supabase';
 
                 <!-- 原有的互動按鈕 -->
                 <button id="header-chatroom-btn" class="btn-base btn-blue" style="background-color: #55a9d3; color: #ffffff; border: none;">鄰里人交流區 💬</button>
-                <button id="header-skill-btn" class="btn-base btn-stone">+ 登記鄰里人技能</button>
+                <button id="header-skill-btn" class="hidden btn-base btn-stone">+ 登記鄰里人技能</button>
                 <button id="header-upload-btn" class="btn-base btn-orange">+ 發布新委託</button>
             </div>
 
             <div class="tabs-row">
-                <button id="tab-no-reward" data-tab="no-reward" class="tab-btn tab-active-orange">沒有額外報酬的委託</button>
+                <button id="tab-all-posts" data-tab="all-posts" class="tab-btn tab-active-orange">全部委託</button>
+                <button id="tab-no-reward" data-tab="no-reward" class="tab-btn">義助的委託</button>
                 <button id="tab-has-reward" data-tab="has-reward" class="tab-btn">有額外報酬的委託</button>
                 <button id="tab-completed" data-tab="completed" class="tab-btn">已完成的委託</button>
                 <button id="tab-skills" data-tab="skills" class="tab-btn tab-btn-flex"><span>✨ 鄰里人名冊與積分榜</span></button>
@@ -1018,7 +1024,15 @@ import { supabase } from '../lib/supabase';
                     <div id="leaderboard-target" class="leaderboard-container"></div>
                 </div>
             </div>
-            <div id="skill-filter-bar-container" class="hidden" style="width: 100%; margin-bottom: 16px;"></div>
+            
+            <!-- 🔍 改為參考相片風格的即時搜尋列 -->
+            <div id="skill-filter-bar-container" style="width: 100%; margin-bottom: 16px;">
+                <div style="background-color: #f7f3e8; border: 1px solid #fde68a; padding: 0.625rem 1rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <i data-lucide="search" style="width: 1rem; height: 1rem; color: #8b5cf6;"></i>
+                    <input type="text" id="global-keyword-search" placeholder="搜尋委託標題、內容或標籤..." style="border: none; background: transparent; width: 100%; font-size: 0.75rem; color: #451a03; outline: none;" autocomplete="off">
+                </div>
+            </div>
+
             <div id="posts-container" class="card-grid"></div>
         </div>
     </main>
@@ -1247,10 +1261,10 @@ import { supabase } from '../lib/supabase';
     let skills = [];
     let isAdmin = false;
     let currentViewingPostId = null;
-    let currentTab = 'no-reward';
+    let currentTab = 'all-posts'; // 預設改為顯示全部委託
     let unlockedPosts = {};
     let allUserRecords = [];
-    let currentTagFilter = 'all';
+    let searchQuery = ''; // 用於即時關鍵字搜尋
 
 window.onload = async function() {
     fetchPostsFromSupabase();
@@ -1260,7 +1274,6 @@ window.onload = async function() {
 
     initEventListeners();
 
-    // 🌟 1. 網頁一載入就「主動」檢查一次目前的登入狀態
     try {
         const { data: { session } } = await client.auth.getSession();
         if (session?.user) {
@@ -1286,7 +1299,6 @@ window.onload = async function() {
     updateAdminUI();
     refreshView();
 
-    // 🌟 2. 持續監聽後續的登入、登出動作
     client.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
             const { data: profile, error } = await client
@@ -1327,6 +1339,12 @@ window.onload = async function() {
                 const tabName = e.currentTarget.getAttribute('data-tab');
                 if (tabName) switchTab(tabName);
             });
+        });
+
+        // 綁定即時關鍵字搜尋事件
+        document.getElementById('global-keyword-search')?.addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim().toLowerCase();
+            renderPosts();
         });
 
         document.getElementById('btn-query-points')?.addEventListener('click', queryPersonalPoints);
@@ -1485,22 +1503,33 @@ window.onload = async function() {
 
     function switchTab(tabName) {
         currentTab = tabName;
-        currentTagFilter = 'all';
-        ['tab-no-reward', 'tab-has-reward', 'tab-completed', 'tab-skills'].forEach(t => {
+        searchQuery = '';
+        const searchInput = document.getElementById('global-keyword-search');
+        if (searchInput) searchInput.value = '';
+
+        ['tab-all-posts', 'tab-no-reward', 'tab-has-reward', 'tab-completed', 'tab-skills'].forEach(t => {
             const el = document.getElementById(t);
             if(el) el.className = "tab-btn";
         });
         
+        if(tabName === 'all-posts') document.getElementById('tab-all-posts').className = "tab-btn tab-active-orange";
         if(tabName === 'no-reward') document.getElementById('tab-no-reward').className = "tab-btn tab-active-orange";
         if(tabName === 'has-reward') document.getElementById('tab-has-reward').className = "tab-btn tab-active-orange";
         if(tabName === 'completed') document.getElementById('tab-completed').className = "tab-btn tab-active-orange";
         if(tabName === 'skills') document.getElementById('tab-skills').className = "tab-btn tab-active-orange tab-btn-flex";
         
         const lbSection = document.getElementById('skills-leaderboard-section');
+        const skillBtn = document.getElementById('header-skill-btn');
+        const searchBarContainer = document.getElementById('skill-filter-bar-container');
+
         if (tabName === 'skills') {
             lbSection?.classList.remove('hidden');
+            skillBtn?.classList.remove('hidden'); // 只有在鄰里人名冊分頁顯示登記技能按鈕
+            searchBarContainer?.style.setProperty('display', 'none'); // 技能分頁隱藏搜尋列
         } else {
             lbSection?.classList.add('hidden');
+            skillBtn?.classList.add('hidden'); // 其他分頁隱藏登記技能按鈕
+            searchBarContainer?.style.setProperty('display', 'block');
         }
         renderPosts();
     }
@@ -1519,7 +1548,9 @@ window.onload = async function() {
     }
 
     function filterByTag(tag) {
-        currentTagFilter = tag;
+        searchQuery = tag.replace('#', '').toLowerCase();
+        const searchInput = document.getElementById('global-keyword-search');
+        if (searchInput) searchInput.value = searchQuery;
         renderPosts();
     }
 
@@ -1556,52 +1587,22 @@ window.onload = async function() {
                     `).join('');
                 }
             }
-        }
 
-        const filterBarContainer = document.getElementById('skill-filter-bar-container');
-
-        if (currentTab === 'skills') {
-            // 一般使用者只看已審核的；主理人看全部
             const visibleSkills = skills.filter(skill => isAdmin || skill.is_approved === true);
 
             if (visibleSkills.length === 0) {
-                if(filterBarContainer) filterBarContainer.innerHTML = '';
                 container.innerHTML = '<p class="container-empty-hint">目前尚無登記鄰里人技能。</p>';
                 return;
             }
 
-            let allTagsSet = new Set();
-            visibleSkills.forEach(skill => {
-                if (skill.skilltag) {
-                    skill.skilltag.trim().split(/\s+/).forEach(t => allTagsSet.add(t.startsWith('#') ? t : `#${t}`));
-                }
-                if (skill.learning && skill.learning !== '/') {
-                    skill.learning.trim().split(/\s+/).forEach(t => allTagsSet.add(t.startsWith('#') ? t : `#${t}`));
-                }
-            });
-
-            if(filterBarContainer) {
-                filterBarContainer.classList.remove('hidden');
-                let filterHtml = `
-                    <div style="width: 100%; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap;">
-                        <button class="filter-tag-btn" data-tag="all" style="padding: 6px 16px; font-size: 0.85rem; border-radius: 16px; border: 1px solid #ddd; background: ${currentTagFilter === 'all' ? '#333' : '#fff'}; color: ${currentTagFilter === 'all' ? '#fff' : '#333'}; cursor: pointer;">全部顯示</button>
-                `;
-                allTagsSet.forEach(tag => {
-                    const isActive = currentTagFilter === tag;
-                    filterHtml += `<button class="filter-tag-btn" data-tag="${tag}" style="padding: 6px 16px; font-size: 0.85rem; border-radius: 16px; border: 1px solid #ddd; background: ${isActive ? '#333' : '#fff'}; color: ${isActive ? '#fff' : '#333'}; cursor: pointer;">${tag}</button>`;
-                });
-                filterHtml += `</div>`;
-                filterBarContainer.innerHTML = filterHtml;
-            }
-
             const filteredSkills = visibleSkills.filter(skill => {
-                if (currentTagFilter === 'all') return true;
-                const tText = (skill.skilltag || '') + ' ' + (skill.learning || '');
-                return tText.includes(currentTagFilter.replace('#', ''));
+                if (!searchQuery) return true;
+                const tText = ((skill.name || '') + ' ' + (skill.skilltag || '') + ' ' + (skill.learning || '') + ' ' + (skill.description || '')).toLowerCase();
+                return tText.includes(searchQuery);
             });
 
             if (filteredSkills.length === 0) {
-                container.innerHTML = '<p class="container-empty-hint">沒有找到符合此標籤的鄰里人。</p>';
+                container.innerHTML = '<p class="container-empty-hint">沒有找到符合搜尋條件的鄰里人。</p>';
                 return;
             }
 
@@ -1658,46 +1659,26 @@ window.onload = async function() {
                 const compVal = post.iscompleted !== undefined ? post.iscompleted : post.isCompleted;
                 const hasRwd = hasReward(post.reward);
 
-                if (currentTab === 'completed') {
+                if (currentTab === 'all-posts') {
+                    return !compVal; // 預設顯示所有未完成委託
+                } else if (currentTab === 'completed') {
                     return !!compVal === true;
                 } else if (currentTab === 'has-reward') {
                     return !compVal && hasRwd;
                 } else {
+                    // 'no-reward' (義助的委託)
                     return !compVal && !hasRwd;
                 }
             });
 
-            let postTagsSet = new Set();
-            baseFilteredPosts.forEach(post => {
-                if (post.tasktag) {
-                    post.tasktag.trim().split(/\s+/).forEach(t => postTagsSet.add(t.startsWith('#') ? t : `#${t}`));
-                }
-            });
-
-            if (filterBarContainer && baseFilteredPosts.length > 0) {
-                filterBarContainer.classList.remove('hidden');
-                let filterHtml = `
-                    <div style="width: 100%; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap;">
-                        <button class="filter-tag-btn" data-tag="all" style="padding: 6px 16px; font-size: 0.85rem; border-radius: 16px; border: 1px solid #ddd; background: ${currentTagFilter === 'all' ? '#333' : '#fff'}; color: ${currentTagFilter === 'all' ? '#fff' : '#333'}; cursor: pointer;">全部顯示</button>
-                `;
-                postTagsSet.forEach(tag => {
-                    const isActive = currentTagFilter === tag;
-                    filterHtml += `<button class="filter-tag-btn" data-tag="${tag}" style="padding: 6px 16px; font-size: 0.85rem; border-radius: 16px; border: 1px solid #ddd; background: ${isActive ? '#333' : '#fff'}; color: ${isActive ? '#fff' : '#333'}; cursor: pointer;">${tag}</button>`;
-                });
-                filterHtml += `</div>`;
-                filterBarContainer.innerHTML = filterHtml;
-            } else if (filterBarContainer) {
-                filterBarContainer.classList.add('hidden');
-            }
-
             const filteredPosts = baseFilteredPosts.filter(post => {
-                if (currentTagFilter === 'all') return true;
-                const tText = post.tasktag || '';
-                return tText.includes(currentTagFilter.replace('#', ''));
+                if (!searchQuery) return true;
+                const targetText = ((post.tasktitle || '') + ' ' + (post.taskdetails || '') + ' ' + (post.tasktag || '') + ' ' + (post.clientname || '')).toLowerCase();
+                return targetText.includes(searchQuery);
             });
 
             if (filteredPosts.length === 0) {
-                container.innerHTML = '<p class="container-empty-hint">此分類目前沒有符合此標籤的委託案件。</p>';
+                container.innerHTML = '<p class="container-empty-hint">此分類目前沒有符合搜尋條件的委託案件。</p>';
                 return;
             }
 
@@ -1775,12 +1756,6 @@ window.onload = async function() {
         document.querySelectorAll('.tag-click-trigger').forEach(el => {
             el.onclick = (e) => {
                 e.stopPropagation();
-                filterByTag(e.currentTarget.getAttribute('data-tag'));
-            };
-        });
-
-        document.querySelectorAll('.filter-tag-btn').forEach(btn => {
-            btn.onclick = (e) => {
                 filterByTag(e.currentTarget.getAttribute('data-tag'));
             };
         });
@@ -2029,7 +2004,7 @@ window.onload = async function() {
             description: document.getElementById('skillDescInput').value.trim(),
             emoji: document.getElementById('skill-selected-emoji').value.trim(),
             email: document.getElementById('skillEmailInput').value.trim(),
-            is_approved: false // 新提交時預設為未審核
+            is_approved: false
         };
 
         if (!data.name || !data.contact) {
@@ -2063,7 +2038,6 @@ window.onload = async function() {
                 
                 if (error) throw error;
 
-                // 批准審核時才替使用者加 1 分
                 await updateUserPointsInSupabase(skill.contact, skill.name, +1, skill.email);
 
                 await fetchSkillsFromSupabase();
