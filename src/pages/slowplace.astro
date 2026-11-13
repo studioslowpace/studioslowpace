@@ -504,8 +504,28 @@ import Layout from '../layouts/Layout.astro';
       await startAppSession();
     }
 
-    async function startAppSession() {
+async function startAppSession() {
       await fetchRooms();
+      
+      // 🛡️ 防呆修復：如果重新整理時還佔著椅子，自動幫玩家起立釋放座位
+      if (userId) {
+        const { data: stuckSeat } = await supabase
+          .from(ITEMS_TABLE)
+          .select('*')
+          .eq('type', 'seat')
+          .eq('host_id', userId)
+          .maybeSingle();
+
+        if (stuckSeat) {
+          console.log("椅子還被卡住，執行自動起立釋放...");
+          await supabase.from(ITEMS_TABLE).update({
+            host_id: '',
+            host_name: '',
+            book_title: ''
+          }).eq('id', stuckSeat.id);
+        }
+      }
+
       await syncMyStateToDB();
       await fetchOnlinePlayers();
       await fetchRoomItems();

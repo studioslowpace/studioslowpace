@@ -263,9 +263,7 @@ import Layout from '../layouts/Layout.astro';
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
                 <!-- 固定標題 -->
-                <div class="phone-header">
-                    <button id="chat-back-btn" class="nav-link-btn">< 首頁</button>
-                    
+                <div class="phone-header">                   
                     <div class="phone-header-title" id="topic-switcher-trigger">
                         <div style="display: flex; align-items: center; gap: 3px;">
                             <span id="current-topic-title">選擇主題</span>
@@ -294,7 +292,6 @@ import Layout from '../layouts/Layout.astro';
                 
                 <!-- 固定標題 -->
                 <div class="phone-header" style="background: #eff6ff;">
-                    <button id="dm-back-btn" class="nav-link-btn">< 首頁</button>
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
@@ -889,9 +886,6 @@ import Layout from '../layouts/Layout.astro';
             document.getElementById('topic-switcher-close').addEventListener('click', () => document.getElementById('topic-switcher-modal').classList.add('hidden'));
 
             document.getElementById('dm-search-input').addEventListener('input', (e) => renderDmConversationsList(allDmRecords, e.target.value.trim()));
-
-            document.getElementById('chat-back-btn').addEventListener('click', backToHome);
-            document.getElementById('dm-back-btn').addEventListener('click', backToHome);
 
             document.getElementById('topic-chat-form').addEventListener('submit', handleSendTopicMessage);
             document.getElementById('dm-chat-form').addEventListener('submit', handleSendDmMessage);
