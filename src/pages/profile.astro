@@ -6,8 +6,8 @@ import Layout from '../layouts/BaseLayout.astro';
   <div class="profile-viewport">
     <div class="profile-card">
       <div class="profile-header">
-        <button id="back-to-sanctuary" class="rpg-btn-sm">🏠 返回客舍空間</button>
-        <h2>👤 會員個人專區</h2>
+        <a href="/" class="back-link">← 返回客舍空間</a>
+        <div class="brand-title">會員個人專區</div>
       </div>
 
       <div id="loading-state" class="state-msg">正在載入會員資料...</div>
@@ -26,29 +26,37 @@ import Layout from '../layouts/BaseLayout.astro';
 
         <!-- 修改個人資料表單 -->
         <form id="profile-form" class="profile-form">
-          <label>客舍稱號：</label>
-          <input type="text" id="edit-name" maxlength="12" required />
-
-          <label>身份標籤：</label>
-          <select id="edit-role">
-            <option value="☁️ 晴空選書">☁️ 晴空選書</option>
-            <option value="🍃 散文漫遊">🍃 散文漫遊</option>
-            <option value="✍️ 靜心寫作">✍️ 靜心寫作</option>
-          </select>
-
-          <label>分身造型：</label>
-          <div class="avatar-options">
-            <label class="avatar-option">
-              <input type="radio" name="edit-avatar" value="/assets/player1.png" />
-              <span>分身一號</span>
-            </label>
-            <label class="avatar-option">
-              <input type="radio" name="edit-avatar" value="/assets/player2.png" />
-              <span>分身二號</span>
-            </label>
+          <div>
+            <label class="form-label">客舍稱號</label>
+            <input type="text" id="edit-name" maxlength="12" required placeholder="請輸入您的稱號" />
           </div>
 
-          <button type="submit" class="rpg-btn" style="margin-top: 15px;">💾 儲存修改</button>
+          <div>
+            <label class="form-label">身份標籤</label>
+            <select id="edit-role">
+              <option value="☁️ 晴空選書">☁️ 晴空選書</option>
+              <option value="🍃 散文漫遊">🍃 散文漫遊</option>
+              <option value="✍️ 靜心寫作">✍️ 靜心寫作</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">分身造型</label>
+            <div class="avatar-options" id="edit-avatar-group">
+              <label class="avatar-option edit-avatar-label">
+                <input type="radio" name="edit-avatar" value="/assets/player1.png" style="display:none;" />
+                <img src="/assets/player1.png" alt="P1" style="width:24px; height:24px; vertical-align:middle; margin-right:4px;" />
+                <span>分身一號</span>
+              </label>
+              <label class="avatar-option edit-avatar-label">
+                <input type="radio" name="edit-avatar" value="/assets/player2.png" style="display:none;" />
+                <img src="/assets/player2.png" alt="P2" style="width:24px; height:24px; vertical-align:middle; margin-right:4px;" />
+                <span>分身二號</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">💾 儲存修改</button>
         </form>
 
         <hr class="divider" />
@@ -59,14 +67,16 @@ import Layout from '../layouts/BaseLayout.astro';
           <div id="logs-container" class="logs-container"></div>
         </div>
 
-        <div class="profile-form" style="margin-top: 20px;">
-  <h3>🔒 修改密碼</h3>
-  <label>新密碼 (至少 6 位數)：</label>
-  <input type="password" id="new-password" placeholder="輸入新密碼" />
-  <button id="update-password-btn" class="rpg-btn" style="background: #0284c7; margin-top: 8px;">更新密碼</button>
-</div>
+        <hr class="divider" />
 
-        <button id="profile-logout-btn" class="rpg-btn rpg-btn-danger" style="margin-top: 20px;">🚪 登出帳號</button>
+        <!-- 修改密碼區塊 -->
+        <div class="profile-form">
+          <label class="form-label">修改密碼 (至少 6 位數)</label>
+          <input type="password" id="new-password" placeholder="••••••••" />
+          <button type="button" id="update-password-btn" class="secondary-btn">更新密碼</button>
+        </div>
+
+        <button id="profile-logout-btn" class="danger-btn">🚪 登出帳號</button>
       </div>
     </div>
   </div>
@@ -74,90 +84,114 @@ import Layout from '../layouts/BaseLayout.astro';
   <style>
     .profile-viewport {
       min-height: 100vh;
-      background: #020617;
-      color: #cbd5e1;
+      background: #78716c; /* 與卡片外背景呼應的中性灰棕色 */
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 20px;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     .profile-card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 12px;
+      background: #fdfbf7;
+      color: #3c3835;
+      border: 1px solid #efece6;
+      border-radius: 20px;
       width: 100%;
-      max-width: 420px;
-      padding: 24px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      max-width: 440px;
+      padding: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      box-sizing: border-box;
     }
     .profile-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #efece6;
     }
-    .profile-header h2 {
-      margin: 0;
-      font-size: 1.2rem;
-      color: #38bdf8;
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #3c3835;
+    }
+    .back-link {
+      font-size: 0.75rem;
+      color: #8c8275;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #e5dfd5;
+      border-radius: 6px;
+      transition: all 0.2s;
+      background: #f7f4ee;
+    }
+    .back-link:hover {
+      background: #efece6;
     }
     .state-msg {
       text-align: center;
-      color: #94a3b8;
+      color: #8c8275;
       padding: 40px 0;
+      font-size: 0.9rem;
     }
     .avatar-preview-box {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     .avatar-preview-box img {
       width: 56px;
       height: 56px;
-      background: #0f172a;
-      border: 2px solid #38bdf8;
-      border-radius: 8px;
+      background: #f4efe6;
+      border: 2px solid #3c3835;
+      border-radius: 12px;
       padding: 4px;
       object-fit: contain;
     }
     .profile-name {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: #f8fafc;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #3c3835;
     }
     .profile-badge {
       display: inline-block;
       margin-top: 4px;
-      font-size: 0.8rem;
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 2px 8px;
+      font-size: 0.75rem;
+      background: #f4efe6;
+      border: 1px solid #e5dfd5;
+      padding: 2px 10px;
       border-radius: 12px;
-      color: #38bdf8;
+      color: #6e655b;
     }
     .divider {
       border: 0;
-      border-top: 1px solid #334155;
+      border-top: 1px solid #efece6;
       margin: 20px 0;
     }
     .profile-form {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
     }
-    .profile-form label {
-      font-size: 0.85rem;
-      color: #94a3b8;
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      color: #6e655b;
+      margin-bottom: 6px;
     }
-    .profile-form input[type="text"], .profile-form select {
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #fff;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 0.95rem;
+    .profile-form input[type="text"], 
+    .profile-form input[type="password"], 
+    .profile-form select {
+      background: #ffffff;
+      border: 1px solid #e5dfd5;
+      color: #3c3835;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      box-sizing: border-box;
+      width: 100%;
     }
     .avatar-options {
       display: flex;
@@ -165,53 +199,78 @@ import Layout from '../layouts/BaseLayout.astro';
     }
     .avatar-option {
       flex: 1;
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 8px;
-      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid #e5dfd5;
+      padding: 10px;
+      border-radius: 8px;
       text-align: center;
       cursor: pointer;
       font-size: 0.85rem;
+      color: #8c8275;
+      transition: all 0.2s;
     }
-    .avatar-option:has(input:checked) {
-      border-color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
-    }
-    .rpg-btn {
-      background: #0284c7;
-      color: #fff;
+    .submit-btn {
+      background: #3c3835;
+      color: #fdfbf7;
       border: none;
-      padding: 10px;
-      border-radius: 6px;
-      font-weight: bold;
+      padding: 13px;
+      border-radius: 8px;
+      font-weight: 500;
       cursor: pointer;
       width: 100%;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 12px rgba(60,56,53,0.15);
+      margin-top: 6px;
+      transition: opacity 0.2s;
     }
-    .rpg-btn:hover { background: #0369a1; }
-    .rpg-btn-danger { background: #ef4444; }
-    .rpg-btn-danger:hover { background: #dc2626; }
-    .rpg-btn-sm {
-      background: #0f172a;
-      color: #cbd5e1;
-      border: 1px solid #334155;
-      padding: 6px 12px;
-      border-radius: 6px;
+    .submit-btn:hover { opacity: 0.9; }
+    
+    .secondary-btn {
+      background: #557263;
+      color: #fdfbf7;
+      border: none;
+      padding: 11px;
+      border-radius: 8px;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 0.85rem;
+      width: 100%;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    .secondary-btn:hover { opacity: 0.9; }
+
+    .danger-btn {
+      background: #b94a48;
+      color: #fdfbf7;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      font-size: 0.9rem;
+      margin-top: 20px;
+    }
+    .danger-btn:hover { opacity: 0.9; }
+
+    .logs-section h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #3c3835;
+      margin: 0 0 10px 0;
     }
     .logs-container {
-      max-height: 200px;
+      max-height: 180px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 10px;
     }
     .log-card {
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 10px;
-      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid #e5dfd5;
+      padding: 10px 12px;
+      border-radius: 8px;
       font-size: 0.85rem;
     }
   </style>
@@ -229,14 +288,8 @@ import Layout from '../layouts/BaseLayout.astro';
 
     const loadingState = document.getElementById('loading-state');
     const profileContent = document.getElementById('profile-content');
-    const backBtn = document.getElementById('back-to-sanctuary');
     const logoutBtn = document.getElementById('profile-logout-btn');
     const form = document.getElementById('profile-form') as HTMLFormElement;
-
-    // 返回 2D 空間頁面
-    backBtn?.addEventListener('click', () => {
-      window.location.href = '/';
-    });
 
     // 登出
     logoutBtn?.addEventListener('click', async () => {
@@ -245,7 +298,7 @@ import Layout from '../layouts/BaseLayout.astro';
       window.location.href = '/';
     });
 
-    // 初始化：檢查登入狀態與載入個人資料
+    // 初始化：檢查登入狀態與載入個人資料（整合 Supabase Auth 與 slowpace_members）
     async function initProfile() {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -256,21 +309,24 @@ import Layout from '../layouts/BaseLayout.astro';
       }
 
       currentUserId = session.user.id;
-      const { data: profile, error } = await supabase
+      const authUserMeta = session.user.user_metadata || {};
+
+      // 取得 slowpace_members 資料
+      const { data: profile } = await supabase
         .from(TABLE_NAME)
         .select('*')
         .eq('user_id', currentUserId)
         .single();
 
-      if (profile) {
-        currentProfile = profile;
-        renderProfileData();
-        if (loadingState) loadingState.style.display = 'none';
-        if (profileContent) profileContent.style.display = 'block';
-      } else {
-        alert('找不到對應的會員資料。');
-        window.location.href = '/';
-      }
+      // 結合 Auth metadata 的名稱優先（若無則fallback至table）
+      currentProfile = {
+        ...(profile || {}),
+        name: authUserMeta.name || profile?.name || '旅人',
+      };
+
+      renderProfileData();
+      if (loadingState) loadingState.style.display = 'none';
+      if (profileContent) profileContent.style.display = 'block';
     }
 
     // 將資料渲染至 UI 與表單
@@ -290,9 +346,17 @@ import Layout from '../layouts/BaseLayout.astro';
       if (editName) editName.value = currentProfile.name;
       if (editRole) editRole.value = currentProfile.role || '☁️ 晴空選書';
 
-      // 設定分身選取
-      const avatarRadio = document.querySelector(`input[name="edit-avatar"][value="${currentProfile.avatar}"]`) as HTMLInputElement;
-      if (avatarRadio) avatarRadio.checked = true;
+      // 設定分身選取高亮狀態
+      const radios = document.querySelectorAll('input[name="edit-avatar"]') as NodeListOf<HTMLInputElement>;
+      radios.forEach(radio => {
+        if (radio.value === currentProfile.avatar) {
+          radio.checked = true;
+          updateAvatarLabelStyle(radio.closest('.avatar-option'), true);
+        } else {
+          radio.checked = false;
+          updateAvatarLabelStyle(radio.closest('.avatar-option'), false);
+        }
+      });
 
       // 渲染歷史閱讀紀錄
       const logs = currentProfile.reading_log || [];
@@ -300,14 +364,14 @@ import Layout from '../layouts/BaseLayout.astro';
       
       if (logsContainer) {
         if (logs.length === 0) {
-          logsContainer.innerHTML = '<div style="color:#64748b; text-align:center;">尚無閱讀紀錄</div>';
+          logsContainer.innerHTML = '<div style="color:#8c8275; text-align:center; padding: 10px;">尚無閱讀紀錄</div>';
         } else {
           let html = '';
           logs.forEach((log: any) => {
             html += `
               <div class="log-card">
-                <div style="font-weight:bold; color:#38bdf8;">《${log.book}》 / ${log.author}</div>
-                <div style="color:#94a3b8; font-size:0.8rem; margin-top:2px;">進度：第 ${log.current}/${log.total} 頁 (${log.date || ''})</div>
+                <div style="font-weight:600; color:#3c3835;">《${log.book}》 / ${log.author}</div>
+                <div style="color:#8c8275; font-size:0.75rem; margin-top:2px;">進度：第 ${log.current}/${log.total} 頁 (${log.date || ''})</div>
               </div>
             `;
           });
@@ -316,7 +380,31 @@ import Layout from '../layouts/BaseLayout.astro';
       }
     }
 
-    // 儲存表單修改
+    // 分身造型點擊互動效果
+    function updateAvatarLabelStyle(label: HTMLElement | null, isSelected: boolean) {
+      if (!label) return;
+      const span = label.querySelector('span');
+      if (isSelected) {
+        label.style.background = '#f4efe6';
+        label.style.border = '2px solid #3c3835';
+        if (span) { span.style.color = '#3c3835'; span.style.fontWeight = '500'; }
+      } else {
+        label.style.background = '#ffffff';
+        label.style.border = '1px solid #e5dfd5';
+        if (span) { span.style.color = '#8c8275'; span.style.fontWeight = '400'; }
+      }
+    }
+
+    document.querySelectorAll('.edit-avatar-label').forEach(label => {
+      label.addEventListener('click', () => {
+        document.querySelectorAll('.edit-avatar-label').forEach(l => updateAvatarLabelStyle(l as HTMLElement, false));
+        updateAvatarLabelStyle(label as HTMLElement, true);
+        const radio = label.querySelector('input[type="radio"]') as HTMLInputElement;
+        if (radio) radio.checked = true;
+      });
+    });
+
+    // 儲存表單修改（同時更新 Supabase Auth metadata 與 slowpace_members）
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentUserId) return;
@@ -330,53 +418,59 @@ import Layout from '../layouts/BaseLayout.astro';
         return;
       }
 
-      // 如果名稱更改為 Mi 或 店主，自動提升權限
-      const isOwner = newName === 'Mi' || newName === '店主';
-      const newTier = isOwner ? '店主' : currentProfile.tier;
+      // 1. 同步更新 Supabase Auth (auth.users) 的 metadata 名稱
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { name: newName }
+      });
 
-      const { error } = await supabase
+      if (authError) {
+        alert('更新 Auth 帳號名稱失敗：' + authError.message);
+        return;
+      }
+
+      // 2. 更新 slowpace_members 資料表
+      const { error: dbError } = await supabase
         .from(TABLE_NAME)
         .update({
           name: newName,
           role: newRole,
           avatar: selectedAvatar,
-          tier: newTier,
           updated_at: new Date()
         })
         .eq('user_id', currentUserId);
 
-      if (error) {
-        alert('儲存失敗：' + error.message);
+      if (dbError) {
+        alert('儲存至資料表失敗：' + dbError.message);
       } else {
         alert('個人資料已成功更新！');
         currentProfile.name = newName;
         currentProfile.role = newRole;
         currentProfile.avatar = selectedAvatar;
-        currentProfile.tier = newTier;
         renderProfileData();
       }
     });
 
-    initProfile();
-
+    // 更新密碼
     document.getElementById('update-password-btn')?.addEventListener('click', async () => {
-  const newPassword = (document.getElementById('new-password') as HTMLInputElement).value.trim();
+      const newPassword = (document.getElementById('new-password') as HTMLInputElement).value.trim();
 
-  if (!newPassword || newPassword.length < 6) {
-    alert('新密碼長度至少需要 6 個字元');
-    return;
-  }
+      if (!newPassword || newPassword.length < 6) {
+        alert('新密碼長度至少需要 6 個字元');
+        return;
+      }
 
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword
-  });
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
 
-  if (error) {
-    alert('修改密碼失敗：' + error.message);
-  } else {
-    alert('密碼已成功更新！');
-    (document.getElementById('new-password') as HTMLInputElement).value = '';
-  }
-});
+      if (error) {
+        alert('修改密碼失敗：' + error.message);
+      } else {
+        alert('密碼已成功更新！');
+        (document.getElementById('new-password') as HTMLInputElement).value = '';
+      }
+    });
+
+    initProfile();
   </script>
 </Layout>
