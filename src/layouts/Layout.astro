@@ -2,6 +2,9 @@
 const { title = "預設標題" } = Astro.props;
 import Footer from '../components/phonefooter.astro';
 import Header from '../components/phoneheader.astro';
+import { supabase } from '../lib/supabase';
+
+const TABLE_NAME = 'slowpace_members';
 ---
 
 <!doctype html>
@@ -126,3 +129,61 @@ import Header from '../components/phoneheader.astro';
     width: 100%;
   }
 </style>
+
+<!-- 讓這段 JS 在客戶端（瀏覽器）執行 -->
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
+  const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
+  const client = createClient(supabaseUrl, supabaseKey);
+
+  // 統一的權限檢查（已將 .eq('id', user.id) 修正為 .eq('user_id', user.id)）
+  async function checkLayoutAdminStatus(user) {
+    if (!user) return false;
+    const { data: profile, error } = await client
+        .from('slowpace_members')
+        .select('is_admin')
+        .eq('user_id', user.id)
+        .maybeSingle();
+    return !error && profile?.is_admin === true;
+  }
+
+  // 初始化 Layout 的管理員狀態
+  async function initLayoutAuth() {
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      const isAdmin = await checkLayoutAdminStatus(session?.user);
+      
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) {
+        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
+      }
+    } catch (err) {
+      console.error("Layout 權限檢查失敗:", err);
+    }
+
+    // 實時監聽
+    client.auth.onAuthStateChange(async (event, session) => {
+      const isAdmin = await checkLayoutAdminStatus(session?.user);
+      const adminLink = document.getElementById('admin-link');
+      if (adminLink) {
+        adminLink.style.display = isAdmin ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  // 顯示登入彈窗
+  function showLoginModal() {
+    const modal = document.getElementById('rpg-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  // 隱藏登入彈窗
+  function hideLoginModal() {
+    const modal = document.getElementById('rpg-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  initLayoutAuth();
+</script>
