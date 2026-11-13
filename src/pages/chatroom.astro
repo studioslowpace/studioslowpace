@@ -407,40 +407,73 @@ import Layout from '../layouts/Layout.astro';
         let currentUserId = null;
         let currentUserName = '訪客';
         let isGuest = false;
+        let isInitialized = false; // 🛡️ 防重複初始化保護開關
+
+        // 🚀 核心載入與初始化共用函式
+        async function handleUserSessionReady(userId, userName, guestFlag) {
+            if (isInitialized && currentUserId === userId) return;
+            isInitialized = true;
+
+            currentUserId = userId;
+            currentUserName = userName;
+            isGuest = guestFlag;
+
+            console.log("🟢 [ChatPage] 身分初始化成功，使用者:", currentUserId, currentUserName, "是否為訪客:", isGuest);
+
+            await checkAdminPermission(currentUserId);
+            fetchAllUserRecordsFromSupabase();
+            fetchTopics();
+            fetchUserDmConversations();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetDmId = urlParams.get('dm');
+            const targetDmName = urlParams.get('name');
+            if (targetDmId) {
+                setTimeout(() => {
+                    startDirectChat(targetDmId, targetDmName ? decodeURIComponent(targetDmName) : targetDmId);
+                }, 400);
+            }
+        }
 
         window.onload = function() {
-            // 接收來自 Header 的共用身分就緒事件
+            // 1. 接收來自 Header 的共用身分就緒事件
             window.addEventListener('USER_AUTH_READY', async (e) => {
-                currentUserId = e.detail.userId;
-                currentUserName = e.detail.userName;
-                isGuest = e.detail.isGuest;
-
-                await checkAdminPermission(currentUserId);
-                fetchAllUserRecordsFromSupabase();
-                fetchTopics();
-                fetchUserDmConversations();
-
-                const urlParams = new URLSearchParams(window.location.search);
-                const targetDmId = urlParams.get('dm');
-                const targetDmName = urlParams.get('name');
-                if (targetDmId) {
-                    setTimeout(() => {
-                        startDirectChat(targetDmId, targetDmName ? decodeURIComponent(targetDmName) : targetDmId);
-                    }, 400);
-                }
+                await handleUserSessionReady(e.detail.userId, e.detail.userName, e.detail.isGuest);
             });
 
-            // 支援直接從 sessionStorage 讀取（防止事件尚未綁定前遺漏）
-            const guestId = sessionStorage.getItem('space_guest_id');
-            const guestName = sessionStorage.getItem('space_guest_name');
+            // 2. 主動檢查 localStorage（支援 24 小時訪客與重新整理保持狀態）
+            const guestId = localStorage.getItem('space_guest_id');
+            const guestName = localStorage.getItem('space_guest_name');
+            const guestCreatedAt = localStorage.getItem('space_guest_created_at');
+            const EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24小時
+            const now = new Date().getTime();
+
             if (guestId) {
-                currentUserId = guestId;
-                currentUserName = guestName || '訪客';
-                isGuest = true;
-                fetchAllUserRecordsFromSupabase();
-                fetchTopics();
-                fetchUserDmConversations();
+                // 檢查是否超過 24 小時
+                if (guestCreatedAt && (now - parseInt(guestCreatedAt, 10) <= EXPIRE_TIME)) {
+                    handleUserSessionReady(guestId, guestName || '訪客', true);
+                    initEventListeners();
+                    return;
+                } else {
+                    // 已過期，清除
+                    localStorage.removeItem('space_guest_id');
+                    localStorage.removeItem('space_guest_name');
+                    localStorage.removeItem('space_guest_created_at');
+                }
             }
+
+            // 3. 若無本地訪客，主動檢查 Supabase 正式會員 Session
+            supabase.auth.getSession().then(async ({ data: { session } }) => {
+                if (session?.user && !isInitialized) {
+                    const userId = session.user.id;
+                    const { data: member } = await supabase.from(TABLE_NAME).select('name').eq('user_id', userId).maybeSingle();
+                    const userName = member?.name || session.user.email || '鄰里人';
+                    handleUserSessionReady(userId, userName, false);
+                } else if (!isInitialized) {
+                    // 真的完全未登入或無身分時的預設狀態
+                    handleUserSessionReady(null, '訪客', true);
+                }
+            });
 
             initEventListeners();
         };

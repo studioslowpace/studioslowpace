@@ -212,7 +212,7 @@ import Layout from '../layouts/Layout.astro';
     .modal-content { padding: 20px; overflow-y: auto; max-height: 80vh; }
   </style>
 
-  <script>
+<script>
     import { supabase } from '../lib/supabase';
 
     const ITEMS_TABLE = 'slowplace_items'; // 請依你的共讀桌資料表名稱調整
@@ -239,36 +239,51 @@ import Layout from '../layouts/Layout.astro';
     const tableActionButtons = document.getElementById('table-action-buttons');
 
     async function initCoRead() {
+      // 1. 優先檢查 localStorage 的 24 小時訪客身分
+      const guestId = localStorage.getItem('space_guest_id');
+      const guestName = localStorage.getItem('space_guest_name');
+      const guestCreatedAt = localStorage.getItem('space_guest_created_at');
+      const EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24小時
+      const now = new Date().getTime();
+
+      if (guestId) {
+        if (guestCreatedAt && (now - parseInt(guestCreatedAt, 10) <= EXPIRE_TIME)) {
+          userId = guestId;
+          playerName = guestName || '訪客';
+          isGuest = true;
+          await fetchRoomItems();
+          return;
+        } else {
+          // 逾時清除
+          localStorage.removeItem('space_guest_id');
+          localStorage.removeItem('space_guest_name');
+          localStorage.removeItem('space_guest_created_at');
+        }
+      }
+
+      // 2. 檢查 Supabase Auth 正式會員 Session
       const { data: { session } } = await supabase.auth.getSession();
-      const guestId = sessionStorage.getItem('space_guest_id');
 
       if (session && session.user) {
         userId = session.user.id;
         isGuest = false;
-      } else if (guestId) {
-        userId = guestId;
-        isGuest = true;
-      } else {
-        window.location.href = '/login';
-        return;
-      }
 
-      // 抓取會員真實姓名
-      const loginUserId = session?.user?.id || guestId;
-      if (loginUserId && !isGuest) {
+        // 3. 抓取會員真實姓名（💡 修正：改用 user_id 查詢）
         const { data: memberData } = await supabase
           .from(MEMBERS_TABLE)
           .select('name')
-          .eq('id', loginUserId)
-          .single();
+          .eq('user_id', userId)
+          .maybeSingle();
 
         if (memberData && memberData.name) {
           playerName = memberData.name;
-        } else if (session?.user) {
+        } else {
           playerName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || '會員';
         }
       } else {
-        playerName = '訪客';
+        // 既不是訪客也沒有 Session，引導至登入或首頁
+        window.location.href = '/';
+        return;
       }
 
       await fetchRoomItems();
@@ -329,7 +344,6 @@ import Layout from '../layouts/Layout.astro';
                 <span style="font-weight: bold; color: #8c8275; font-size: 15px;">📖 空白共讀桌</span>
                 <span class="action-btn primary" style="padding: 6px 14px; font-size: 12px;">➕ 發起共讀</span>
               </div>
-             
             </div>
           `;
         } else {
