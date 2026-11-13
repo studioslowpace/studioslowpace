@@ -231,34 +231,28 @@ import { supabase } from '../lib/supabase';
             user-select: none;
         }
         .banner-logo-img {
-            width: 35px;
-            height: 35px;
+            width: 50px;
+            height: 50px;
             object-fit: cover;
             transition: opacity 0.2s;
         }
 
         @media (max-width: 768px) {
             .banner-logo-img {
-                width: 35px;
-                height: 35px;
+                width: 40px;
+                height: 40px;
             }
         }
 
         .banner-logo-group:hover .banner-logo-img { opacity: 0.8; }
-        .banner-title-main {
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: #1f2937;
-            letter-spacing: 0.05em;
-            display: block;
-        }
 
         .hero-banner {
             text-align: center;
+            align-items: center;
         }
 
         .hero-banner h1 {
-            font-size: 30px;
+            font-size: 34px;
             color: #4d361d;
             display: block;
             font-weight: bold;
@@ -266,17 +260,11 @@ import { supabase } from '../lib/supabase';
         }
 
         .hero-title-sub {
-            font-size: 18px;
+            font-size: 20px;
             color: #4d361d;
             display: block;
             font-weight: bold;
             margin-top: -1.1rem;
-        }
-
-        .header-action-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         /* ==========================================
@@ -379,21 +367,6 @@ import { supabase } from '../lib/supabase';
             align-items: center;
             gap: 0.5rem;
         }
-        .hero-desc-wrapper {
-            font-size: 1rem;
-            color: #78350f;
-            line-height: 1.625;
-            letter-spacing: 0.12em;
-            max-width: 48rem;
-            width: 100%;
-            text-align: left;
-        }
-
-        .hero-desc-wrapper p2 {
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
-        }
-        @media (min-width: 768px) { .hero-desc-wrapper { font-size: 0.875rem; } }
 
         /* ==========================================
            7. 標籤分頁與資訊看板 (Tabs & Leaderboard)
@@ -435,6 +408,8 @@ import { supabase } from '../lib/supabase';
             padding: 1rem;
             border-radius: 1rem;
             border: 1px solid #fde68a;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
         }
         @media (min-width: 768px) { .leaderboard-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
         
@@ -509,7 +484,7 @@ import { supabase } from '../lib/supabase';
         }
 
         /* ==========================================
-           8. 卡片網格與元件 (Cards Grid) - 改為單列一欄
+           8. 卡片網格與元件 (Cards Grid)
            ========================================== */
         .card-grid {
             display: flex;
@@ -807,6 +782,8 @@ import { supabase } from '../lib/supabase';
             line-height: 1.6;
             margin: 0.5rem 0 0.25rem 0;
             white-space: pre-line;
+            overflow: visible;
+            display: block;
         }
 
         .task-card-footer {
@@ -877,22 +854,6 @@ import { supabase } from '../lib/supabase';
         textarea::placeholder {
             font-size: 0.75rem;
             color: #99ca9a;
-        }
-
-        .text-ellipsis-2line {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .text-ellipsis-5line {
-            display: -webkit-box;
-            -webkit-line-clamp: 5;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .pending-badge {
@@ -968,19 +929,18 @@ import { supabase } from '../lib/supabase';
                 <h1 class="hero-title">客舍萬事屋</h1>
                 <span class="hero-title-sub">Slow Pace Skill Supermarket</span>
             </div>
-            
         </div>
 
             <div class="layout-action-row">
                 <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem;">
-                <!-- 💡 原本在主橫幅內的引言文字改放在此，並維持與說明按鈕相同的文青風格設計 -->
-                <div style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; align-items: center;">
+                <!-- 💡 「因由」按鈕 (取代原本的橫幅文字) -->
+                <button id="btn-open-reason" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
                     💡 因由
-                </div>
+                </button>
 
                 <!-- 📖 萬事屋使用與規則說明按鈕 -->
                 <button id="btn-open-guide" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
-                    📖 使用與規則說明
+                    📖 萬事屋使用與規則說明
                 </button>
 
                 <!-- ⚖️ 免責聲明按鈕 -->
@@ -994,14 +954,14 @@ import { supabase } from '../lib/supabase';
                 <button id="header-upload-btn" class="btn-base btn-orange">+ 發布新委託</button>
             </div>
 
+            <!-- 主標籤列 -->
             <div class="tabs-row">
                 <button id="tab-all-posts" data-tab="all-posts" class="tab-btn tab-active-orange">全部委託</button>
-                <button id="tab-no-reward" data-tab="no-reward" class="tab-btn">義助的委託</button>
-                <button id="tab-has-reward" data-tab="has-reward" class="tab-btn">有額外報酬的委託</button>
                 <button id="tab-completed" data-tab="completed" class="tab-btn">已完成的委託</button>
                 <button id="tab-skills" data-tab="skills" class="tab-btn tab-btn-flex"><span>✨ 鄰里人名冊與積分榜</span></button>
             </div>
     
+            <!-- 個人萬事分快速查詢 (已加開上下與其他元件的間距空間) -->
             <div id="skills-leaderboard-section" class="hidden leaderboard-panel">
                 <div class="search-box-card">
                     <div>
@@ -1020,8 +980,15 @@ import { supabase } from '../lib/supabase';
                 </div>
             </div>
             
-            <!-- 🔍 改為參考相片風格的即時搜尋列 -->
-            <div id="skill-filter-bar-container" style="width: 100%; margin-bottom: 16px; padding: 4rem;">
+            <!-- 🔍 搜尋列 (已調整上方與下方之空間距離) -->
+            <div id="skill-filter-bar-container" style="width: 100%; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                <!-- 全部委託底下的子分類過濾按鈕列 (義助的委託、有額外報酬的委託) -->
+                <div id="sub-filter-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 0.875rem;">
+                    <button id="filter-sub-all" class="sub-filter-btn" data-sub="all" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #ea580c; color: white; border: none; cursor: pointer;">全部未完成</button>
+                    <button id="filter-sub-noreward" class="sub-filter-btn" data-sub="no-reward" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; cursor: pointer;">義助的委託</button>
+                    <button id="filter-sub-reward" class="sub-filter-btn" data-sub="has-reward" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; cursor: pointer;">有額外報酬的委託</button>
+                </div>
+
                 <div style="background-color: #f7f3e8; border: 1px solid #fde68a; padding: 0.625rem 1rem; border-radius: 9999px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
                     <i data-lucide="search" style="width: 1rem; height: 1rem; color: #8b5cf6;"></i>
                     <input type="text" id="global-keyword-search" placeholder="搜尋委託標題、內容或標籤..." style="border: none; background: transparent; width: 100%; font-size: 0.75rem; color: #451a03; outline: none;" autocomplete="off">
@@ -1191,6 +1158,23 @@ import { supabase } from '../lib/supabase';
         </div>
     </div>
 
+    <!-- 💡 「因由」詳細說明文青風彈窗 -->
+    <div id="modal-reason" class="hidden modal-overlay" style="position: fixed; inset: 0; background-color: rgba(62, 53, 47, 0.4); backdrop-filter: blur(4px); z-index: 50; display: flex; justify-content: center; align-items: center; padding: 1rem;">
+        <div style="background-color: #fdfbf7; width: 100%; max-width: 32rem; border-radius: 1.25rem; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #fde68a; display: flex; flex-direction: column; gap: 1rem; position: relative; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: #451a03; display: flex; align-items: center; gap: 0.5rem;">
+                    💡 萬事屋｜因由
+                </h3>
+                <button id="btn-close-reason" style="color: #9ca3af; background: transparent; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+            </div>
+            <div style="font-size: 0.85rem; color: #78350f; line-height: 1.8; display: flex; flex-direction: column; gap: 1rem; text-align: left;">
+                <p>生活中總會遇到各種奇難雜務。受到日本專門幫助人們解決生活難題的「萬事屋」所啟發，我們希望客舍能成為一個技能交換的平台，以「萬事分」作為代幣。需求技能的人也能同時分享自己的專長，讓技能分享成為一種循環的力量。</p>
+                <hr style="border: 0; border-top: 1px solid #e7e5e4; margin: 0.5rem 0;" />
+                <p style="font-size: 0.75rem; letter-spacing: 0.05em;">在過去一年的運營中，我們意識到周圍的人擁有無限的潛力。有熱愛畫畫的人、創作歌詞的人、研究歷史和考古的人、攝影的人，甚至從事文字工作的朋友。這些來自不同背景的鄰里人，分享各自的經驗與見解，讓我們得以完整討論和互相啟發。轉念一想，技能分享不只是學術或領域上的專業，很多時候，各人的分享也可以解決彼此生活當中的小難題。</p>
+            </div>
+        </div>
+    </div>
+
     <!-- 📖 使用說明文青風彈窗 -->
     <div id="modal-guide" class="hidden modal-overlay" style="position: fixed; inset: 0; background-color: rgba(62, 53, 47, 0.4); backdrop-filter: blur(4px); z-index: 50; display: flex; justify-content: center; align-items: center; padding: 1rem;">
         <div style="background-color: #fdfbf7; width: 100%; max-width: 32rem; border-radius: 1.25rem; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border: 1px solid #fde68a; display: flex; flex-direction: column; gap: 1rem; position: relative; max-height: 85vh; overflow-y: auto;">
@@ -1256,10 +1240,11 @@ import { supabase } from '../lib/supabase';
     let skills = [];
     let isAdmin = false;
     let currentViewingPostId = null;
-    let currentTab = 'all-posts'; // 預設改為顯示全部委託
+    let currentTab = 'all-posts';
+    let currentSubFilter = 'all';
     let unlockedPosts = {};
     let allUserRecords = [];
-    let searchQuery = ''; // 用於即時關鍵字搜尋
+    let searchQuery = '';
 
 window.onload = async function() {
     fetchPostsFromSupabase();
@@ -1336,7 +1321,13 @@ window.onload = async function() {
             });
         });
 
-        // 綁定即時關鍵字搜尋事件
+        document.querySelectorAll('.sub-filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const sub = e.currentTarget.getAttribute('data-sub');
+                if (sub) switchSubFilter(sub);
+            });
+        });
+
         document.getElementById('global-keyword-search')?.addEventListener('input', (e) => {
             searchQuery = e.target.value.trim().toLowerCase();
             renderPosts();
@@ -1367,6 +1358,14 @@ window.onload = async function() {
             });
         });
     }
+
+    // 💡 因由彈窗開關事件
+    document.getElementById('btn-open-reason')?.addEventListener('click', () => {
+        document.getElementById('modal-reason')?.classList.remove('hidden');
+    });
+    document.getElementById('btn-close-reason')?.addEventListener('click', () => {
+        document.getElementById('modal-reason')?.classList.add('hidden');
+    });
 
     document.getElementById('btn-open-guide')?.addEventListener('click', () => {
         document.getElementById('modal-guide')?.classList.remove('hidden');
@@ -1502,30 +1501,57 @@ window.onload = async function() {
         const searchInput = document.getElementById('global-keyword-search');
         if (searchInput) searchInput.value = '';
 
-        ['tab-all-posts', 'tab-no-reward', 'tab-has-reward', 'tab-completed', 'tab-skills'].forEach(t => {
+        ['tab-all-posts', 'tab-completed', 'tab-skills'].forEach(t => {
             const el = document.getElementById(t);
             if(el) el.className = "tab-btn";
         });
         
         if(tabName === 'all-posts') document.getElementById('tab-all-posts').className = "tab-btn tab-active-orange";
-        if(tabName === 'no-reward') document.getElementById('tab-no-reward').className = "tab-btn tab-active-orange";
-        if(tabName === 'has-reward') document.getElementById('tab-has-reward').className = "tab-btn tab-active-orange";
         if(tabName === 'completed') document.getElementById('tab-completed').className = "tab-btn tab-active-orange";
         if(tabName === 'skills') document.getElementById('tab-skills').className = "tab-btn tab-active-orange tab-btn-flex";
         
         const lbSection = document.getElementById('skills-leaderboard-section');
         const skillBtn = document.getElementById('header-skill-btn');
         const searchBarContainer = document.getElementById('skill-filter-bar-container');
+        const subFilterContainer = document.getElementById('sub-filter-buttons');
 
         if (tabName === 'skills') {
             lbSection?.classList.remove('hidden');
-            skillBtn?.classList.remove('hidden'); // 只有在鄰里人名冊分頁顯示登記技能按鈕
-            searchBarContainer?.style.setProperty('display', 'none'); // 技能分頁隱藏搜尋列
+            skillBtn?.classList.remove('hidden');
+            searchBarContainer?.style.setProperty('display', 'none');
         } else {
             lbSection?.classList.add('hidden');
-            skillBtn?.classList.add('hidden'); // 其他分頁隱藏登記技能按鈕
+            skillBtn?.classList.add('hidden');
             searchBarContainer?.style.setProperty('display', 'block');
+            
+            if (tabName === 'all-posts') {
+                subFilterContainer?.style.setProperty('display', 'flex');
+            } else {
+                subFilterContainer?.style.setProperty('display', 'none');
+            }
         }
+        renderPosts();
+    }
+
+    function switchSubFilter(sub) {
+        currentSubFilter = sub;
+        
+        const btnAll = document.getElementById('filter-sub-all');
+        const btnNoReward = document.getElementById('filter-sub-noreward');
+        const btnReward = document.getElementById('filter-sub-reward');
+
+        if (btnAll) btnAll.style.cssText = "padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; cursor: pointer;";
+        if (btnNoReward) btnNoReward.style.cssText = "padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; cursor: pointer;";
+        if (btnReward) btnReward.style.cssText = "padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; cursor: pointer;";
+
+        if (sub === 'all' && btnAll) {
+            btnAll.style.cssText = "padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #ea580c; color: white; border: none; cursor: pointer;";
+        } else if (sub === 'no-reward' && btnNoReward) {
+            btnNoReward.style.cssText = "padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #ea580c; color: white; border: none; cursor: pointer;";
+        } else if (sub === 'has-reward' && btnReward) {
+            btnReward.style.cssText = "padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #ea580c; color: white; border: none; cursor: pointer;";
+        }
+
         renderPosts();
     }
 
@@ -1654,15 +1680,18 @@ window.onload = async function() {
                 const compVal = post.iscompleted !== undefined ? post.iscompleted : post.isCompleted;
                 const hasRwd = hasReward(post.reward);
 
-                if (currentTab === 'all-posts') {
-                    return !compVal; // 預設顯示所有未完成委託
-                } else if (currentTab === 'completed') {
+                if (currentTab === 'completed') {
                     return !!compVal === true;
-                } else if (currentTab === 'has-reward') {
-                    return !compVal && hasRwd;
                 } else {
-                    // 'no-reward' (義助的委託)
-                    return !compVal && !hasRwd;
+                    if (!!compVal === true) return false;
+
+                    if (currentSubFilter === 'no-reward') {
+                        return !hasRwd;
+                    } else if (currentSubFilter === 'has-reward') {
+                        return hasRwd;
+                    } else {
+                        return true;
+                    }
                 }
             });
 
@@ -1703,7 +1732,7 @@ window.onload = async function() {
                         <div class="task-card-header">
                             <div class="avatar-circle-orange">${cEmoji}</div>
                             <div style="flex: 1; min-width: 0;">
-                                <h3 class="task-card-title text-ellipsis-2line">${tTitle}</h3>
+                                <h3 class="task-card-title">${tTitle}</h3>
                                 <p class="task-card-subtitle">委託人：${cName} • ${count}人已接單</p>
                             </div>
                         </div>
@@ -1711,7 +1740,7 @@ window.onload = async function() {
                         <div style="margin-bottom: 0.5rem;">
                             <span class="tag-orange">${tTag}</span>
                         </div>
-                        <p class="task-card-description text-ellipsis-5line">${tDetails}</p>
+                        <p class="task-card-description">${tDetails}</p>
                     </div>
                     <div class="task-card-footer">
                         <div class="reward-info-text">
@@ -1796,19 +1825,6 @@ window.onload = async function() {
 
     function backToHomeList() {
         window.location.href = '/skillsupermarket';
-    }
-
-    function verifyPostPasswordInline(postId) {
-        const post = posts.find(p => String(p.id) === String(postId));
-        if(!post) return;
-        const inputVal = document.getElementById('inline-pwd-input').value.trim();
-        
-        if(inputVal === post.password || isAdmin) {
-            unlockedPosts[postId] = true;
-            renderSinglePostView(postId);
-        } else {
-            alert("❌ 密碼錯誤！無法解鎖管理區塊。");
-        }
     }
 
     function openCompleteModal(postId) {
@@ -1922,9 +1938,8 @@ window.onload = async function() {
                             heroContact: newHero.contact
                         })
                     });
-                    console.log("Email 通知請求已送出");
                 } catch (emailErr) {
-                    console.error("背景發信失敗（不影響接單結果）：", emailErr);
+                    console.error("背景發信失敗：", emailErr);
                 }
             }
 
@@ -2042,27 +2057,6 @@ window.onload = async function() {
                 alert("批准失敗: " + err.message);
             }
         }
-    }
-
-    function copyContactInfo(text) {
-        if(!text) return;
-        let cleanText = text.trim();
-        const textArea = document.createElement("textarea");
-        textArea.value = cleanText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        showToast(`📋 已成功複製聯絡資訊：「${cleanText}」`);
-        document.body.removeChild(textArea);
-    }
-
-    function showToast(message) {
-        const toast = document.getElementById('toast-message');
-        if(!toast) return;
-        toast.innerText = message;
-        toast.classList.remove('hidden');
-        toast.classList.add('toast-popup');
-        setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('toast-popup'); }, 2300);
     }
 
     async function deletePost(postId) { 
