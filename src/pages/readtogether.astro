@@ -40,6 +40,9 @@ import Layout from '../layouts/Layout.astro';
             <div><label>作者</label><input type="text" id="table-author-input" placeholder="賈西亞·馬奎斯" /></div>
             <div><label>人數上限</label><input type="number" id="table-max-input" value="3" min="2" max="10" /></div>
           </div>
+          <div class="form-row-3">
+            <div><label>發起共讀的因由/書本的介紹</label><input type="test" id="table-reason-input" placeholder="好看"/></div>
+          </div>
           <div class="form-row"><label>預定完成日期</label><input type="date" id="table-date-input" /></div>
         </div>
         <button id="table-create-btn" class="action-btn primary" style="margin-top: 16px; width: 100%;">確認發起共讀</button>
@@ -50,7 +53,7 @@ import Layout from '../layouts/Layout.astro';
         <div class="detail-grid">
           <div class="detail-line"><strong>共讀書名</strong> <span id="view-table-book" class="line-content"></span></div>
           <div class="detail-line"><strong>作者</strong> <span id="view-table-author" class="line-content"></span></div>
-          <!-- 獨立一行的主辦人，方便控制顯示/隱藏 -->
+          <div class="detail-line"><strong>因由/介紹</strong> <span id="view-table-reason" class="line-content"></span></div>
           <div class="detail-line" id="host-row-container"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>
           <div class="detail-row-2">
             <div class="detail-line"><strong>人數限制</strong> <span id="view-table-max" class="line-content"></span></div>
@@ -233,6 +236,7 @@ import Layout from '../layouts/Layout.astro';
 
     const tableBook = document.getElementById('table-book-input') as HTMLInputElement;
     const tableAuthor = document.getElementById('table-author-input') as HTMLInputElement;
+     const tableReason = document.getElementById('table-reason-input') as HTMLInputElement;
     const tableMax = document.getElementById('table-max-input') as HTMLInputElement;
     const tableDate = document.getElementById('table-date-input') as HTMLInputElement;
     const tableCreateBtn = document.getElementById('table-create-btn');
@@ -329,6 +333,7 @@ import Layout from '../layouts/Layout.astro';
       tables.forEach((table) => {
         const title = table.book_title;
         const author = table.author || '佚名';
+        const reason = table.reason || '好看';
         const maxM = table.max_members || 3;
         const members = table.members || [];
         const isHosting = table.host_id === userId;
@@ -357,6 +362,7 @@ import Layout from '../layouts/Layout.astro';
               <div class="book-meta">
                 <span>作者：${author}</span>
                 <span>主辦人：${table.host_name || '未知'}</span>
+                <span>因由/介紹：${table.reason || '好看'}</span>
               </div>
               <div style="font-size: 12px; color: #555; background: #f4efe6; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px;">
                 👥 成員 (${members.length}/${maxM})：${memberNames}
@@ -394,6 +400,7 @@ import Layout from '../layouts/Layout.astro';
         if (viewTableContainer) viewTableContainer.style.display = 'none';
         if (tableBook) tableBook.value = '';
         if (tableAuthor) tableAuthor.value = '';
+        if (tableReason) tableReason.value = '';
         if (tableMax) tableMax.value = '3';
         if (tableDate) tableDate.value = '';
       } else {
@@ -404,6 +411,7 @@ import Layout from '../layouts/Layout.astro';
 
         (document.getElementById('view-table-book') as HTMLElement).textContent = `《${table.book_title}》`;
         (document.getElementById('view-table-author') as HTMLElement).textContent = table.author || '佚名';
+        (document.getElementById('view-table-reason') as HTMLElement).textContent = table.reason || '好看';
         
         // 精準控制獨立行容器的顯示與隱藏
         const hostRowContainer = document.getElementById('host-row-container');
@@ -454,6 +462,7 @@ import Layout from '../layouts/Layout.astro';
       if (!activeTableData || !userId) return;
       const title = tableBook?.value.trim();
       const author = tableAuthor?.value.trim() || '佚名';
+      const reason = tableReason?.value.trim() || '好看';
       const maxM = parseInt(tableMax?.value) || 3;
       const dateStr = tableDate?.value || '';
 
@@ -463,6 +472,7 @@ import Layout from '../layouts/Layout.astro';
       const { error } = await supabase.from(ITEMS_TABLE).update({
         book_title: title,
         author: author,
+        reason: reason,
         max_members: maxM,
         finish_date: dateStr,
         host_id: userId,
@@ -512,6 +522,7 @@ import Layout from '../layouts/Layout.astro';
         const { error } = await supabase.from(ITEMS_TABLE).update({
           book_title: '',
           author: '',
+          reason: '',
           max_members: 3,
           finish_date: '',
           host_id: '',
