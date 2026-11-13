@@ -1,94 +1,128 @@
----
-// LoginModal 元件（含身分角色選擇、分身造型與防呆寫入）
----
-<div style="max-width: 100%; padding: 24px; background: #262422; color: #e7e2d8; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 8px;">
+<!-- LoginModal 元件（含身分角色選擇、分身造型與防呆寫入） -->
+<div style="max-width: 440px; margin: 0 auto; padding: 32px; background: #fdfbf7; color: #3c3835; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #efece6;">
 
   <!-- 頂部文青 Logo 與返回首頁 -->
-  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #3c3835;">
-    <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #f5f2eb;">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #efece6;">
+    <a href="/" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #3c3835;">
       <span style="font-size: 1.25rem;">☕</span>
       <div style="display: flex; flex-direction: column;">
         <span style="font-size: 0.95rem; font-weight: 500; letter-spacing: 0.05em;">空間客舍</span>
-        <span style="font-size: 0.7rem; color: #a39b90; letter-spacing: 0.1em;">Slow Pace Skill</span>
+        <span style="font-size: 0.7rem; color: #8c8275; letter-spacing: 0.1em;">Slow Pace Skill</span>
       </div>
     </a>
-    <a href="/" style="font-size: 0.75rem; color: #a39b90; text-decoration: none; padding: 4px 8px; border: 1px solid #3c3835; border-radius: 4px; transition: all 0.2s;">
+    <a href="/" style="font-size: 0.75rem; color: #8c8275; text-decoration: none; padding: 4px 10px; border: 1px solid #e5dfd5; border-radius: 6px; transition: all 0.2s; background: #f7f4ee;">
       ← 回到首頁
     </a>
   </div>
 
   <!-- 切換登入、註冊與訪客模式分頁 -->
-  <div style="display: flex; gap: 8px; margin-bottom: 20px;">
-    <button id="tab-login-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; cursor:pointer; font-weight:500; font-size:0.9rem;">會員登入</button>
-    <button id="tab-register-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#262422; color:#a39b90; border:1px solid #3c3835; border-radius:6px; cursor:pointer; font-size:0.9rem;">會員註冊</button>
-    <button id="tab-guest-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#262422; color:#a39b90; border:1px solid #3c3835; border-radius:6px; cursor:pointer; font-size:0.9rem;">👤 訪客模式</button>
+  <div style="display: flex; gap: 8px; margin-bottom: 24px; background: #f4efe6; padding: 4px; border-radius: 10px;">
+    <button id="tab-login-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#3c3835; color:#fdfbf7; border:none; border-radius:8px; cursor:pointer; font-weight:500; font-size:0.9rem; transition: all 0.2s;">會員登入</button>
+    <button id="tab-register-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:transparent; color:#8c8275; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; transition: all 0.2s;">註冊帳號</button>
+    <button id="tab-guest-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:transparent; color:#8c8275; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; transition: all 0.2s;">訪客快速進入</button>
   </div>
 
   <!-- 會員登入表單區塊 -->
   <div id="login-form-container">
-    <input type="email" id="login-email" placeholder="電子信箱 (Email)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
-    <input type="password" id="login-password" placeholder="密碼" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    <div style="margin-bottom: 20px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: #3c3835; margin: 0 0 4px 0;">歡迎回來，旅人</h2>
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">電子信箱 (Email)</label>
+      <input type="email" id="login-email" placeholder="your@email.com" style="width:100%; padding:12px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
+
+    <div style="margin-bottom: 18px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">密碼</label>
+      <input type="password" id="login-password" placeholder="••••••••" style="width:100%; padding:12px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
     
-    <button id="login-submit-btn" style="width:100%; padding:12px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer; margin-bottom: 14px;">登入空間</button>
+    <button id="login-submit-btn" style="width:100%; padding:13px; background:#3c3835; color:#fdfbf7; border:none; border-radius:8px; font-weight:500; cursor:pointer; margin-bottom: 16px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(60,56,53,0.15);">登入空間</button>
     
-    <div style="text-align: right;">
-      <button id="forgot-password-btn" style="background: none; border: none; color: #b8aea3; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
+    <div style="text-align: center;">
+      <button id="forgot-password-btn" style="background: none; border: none; color: #8c8275; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
     </div>
   </div>
 
   <!-- 會員註冊表單區塊 -->
   <div id="register-form-container" style="display: none;">
-    <input type="text" id="register-name" placeholder="鄰里人稱呼 / 暱稱 (Name)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
-    <input type="email" id="register-email" placeholder="電子信箱 (Email)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
-    <input type="password" id="register-password" placeholder="設定密碼 (至少 6 碼)" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
-    <input type="password" id="register-password-confirm" placeholder="確認密碼" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none;" />
+    <div style="margin-bottom: 20px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: #3c3835; margin: 0 0 4px 0;">加入空間客舍</h2>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">您的稱呼</label>
+      <input type="text" id="register-name" placeholder="例如：阿明" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
+
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">電子信箱 (Email)</label>
+      <input type="email" id="register-email" placeholder="your@email.com" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
+
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">設定密碼 (至少 6 碼)</label>
+      <input type="password" id="register-password" placeholder="••••••••" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
+
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">確認密碼</label>
+      <input type="password" id="register-password-confirm" placeholder="••••••••" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
     
     <!-- 角色選擇 (role) -->
-    <div style="font-size: 0.8rem; color: #a39b90; margin-bottom: 6px;">選擇你的身分角色 (Role)：</div>
-    <select id="register-role" style="width:100%; padding:12px; margin-bottom:12px; background:#1e1c1a; color:#f5f2eb; border:1px solid #3c3835; border-radius:6px; box-sizing:border-box; outline:none; cursor:pointer;">
-      <option value="漫步者">漫步者</option>
-      <option value="探索者">探索者</option>
-      <option value="實踐者">實踐者</option>
-      <option value="觀察者">觀察者</option>
-    </select>
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">身分角色</label>
+      <select id="register-role" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; cursor:pointer; font-size: 0.9rem;">
+        <option value="鄰里人">🌱 鄰里人</option>
+        <option value="漫步者">漫步者</option>
+        <option value="探索者">探索者</option>
+        <option value="實踐者">實踐者</option>
+        <option value="觀察者">觀察者</option>
+      </select>
+    </div>
 
     <!-- 分身造型選擇 -->
-    <div style="font-size: 0.8rem; color: #a39b90; margin-bottom: 6px;">選擇分身造型：</div>
-    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:8px; text-align:center; border-radius:8px; cursor:pointer;">
+    <div style="font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">選擇分身造型：</div>
+    <div style="display: flex; gap: 12px; margin-bottom: 18px;">
+      <label style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:10px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
         <input type="radio" name="register-avatar" value="/assets/player1.png" checked style="display:none;" />
-        <img src="/assets/player1.png" alt="P1" style="width:28px; height:28px; margin-bottom: 2px;" />
-        <div style="font-size:0.7rem; color:#f5f2eb;">分身一號</div>
+        <img src="/assets/player1.png" alt="P1" style="width:24px; height:24px;" />
+        <span style="font-size:0.8rem; color:#3c3835;">分身一號</span>
       </label>
-      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:8px; text-align:center; border-radius:8px; cursor:pointer;">
+      <label style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:10px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
         <input type="radio" name="register-avatar" value="/assets/player2.png" style="display:none;" />
-        <img src="/assets/player2.png" alt="P2" style="width:28px; height:28px; margin-bottom: 2px;" />
-        <div style="font-size:0.7rem; color:#f5f2eb;">分身二號</div>
+        <img src="/assets/player2.png" alt="P2" style="width:24px; height:24px;" />
+        <span style="font-size:0.8rem; color:#3c3835;">分身二號</span>
       </label>
     </div>
     
-    <button id="register-submit-btn" style="width:100%; padding:12px; background:#4a443f; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer;">註冊新帳號</button>
+    <button id="register-submit-btn" style="width:100%; padding:13px; background:#3c3835; color:#fdfbf7; border:none; border-radius:8px; font-weight:500; cursor:pointer; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(60,56,53,0.15);">註冊並建立身分</button>
   </div>
 
   <!-- 訪客快速進入表單區塊 -->
   <div id="guest-form-container" style="display: none;">
-    <p style="font-size: 0.8rem; color: #a39b90; margin-bottom: 16px; line-height: 1.5;">訪客將依序自動指派編號（如 訪客 #1），離開空間後資料將自動清除，享受一段寧靜的短暫停留。</p>
+    <div style="margin-bottom: 16px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: #3c3835; margin: 0 0 6px 0;">以訪客身分探索</h2>
+      <p style="font-size: 0.8rem; color: #8c8275; margin: 0; line-height: 1.5;">無需註冊，直接選擇造型進入客舍互動。</p>
+    </div>
     
-    <div style="font-size: 0.8rem; color: #a39b90; margin-bottom: 8px;">選擇分身造型：</div>
-    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:10px; text-align:center; border-radius:8px; cursor:pointer;">
+    <div style="font-size: 0.8rem; color: #6e655b; margin-bottom: 8px;">選擇分身造型：</div>
+    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+      <label style="flex:1; background:#ffffff; border:1px solid #5a7364; padding:12px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
         <input type="radio" name="guest-avatar" value="/assets/player1.png" checked style="display:none;" />
-        <img src="/assets/player1.png" alt="P1" style="width:32px; height:32px; margin-bottom: 4px;" />
-        <div style="font-size:0.75rem; color:#f5f2eb;">分身一號</div>
+        <img src="/assets/player1.png" alt="P1" style="width:28px; height:28px;" />
+        <span style="font-size:0.85rem; color:#3c3835; font-weight: 500;">預設旅人</span>
       </label>
-      <label style="flex:1; background:#1e1c1a; border:1px solid #3c3835; padding:10px; text-align:center; border-radius:8px; cursor:pointer;">
+      <label style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:12px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
         <input type="radio" name="guest-avatar" value="/assets/player2.png" style="display:none;" />
-        <img src="/assets/player2.png" alt="P2" style="width:32px; height:32px; margin-bottom: 4px;" />
-        <div style="font-size:0.75rem; color:#f5f2eb;">分身二號</div>
+        <img src="/assets/player2.png" alt="P2" style="width:28px; height:28px;" />
+        <span style="font-size:0.85rem; color:#3c3835;">探索者</span>
       </label>
     </div>
 
-    <button id="guest-submit-btn" style="width:100%; padding:12px; background:#5c534d; color:#f5f2eb; border:none; border-radius:6px; font-weight:500; cursor:pointer;">🍵 快速進入客舍空間</button>
+    <button id="guest-submit-btn" style="width:100%; padding:13px; background:#557263; color:#fdfbf7; border:none; border-radius:8px; font-weight:500; cursor:pointer; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(85,114,99,0.2);">快速進入客舍空間</button>
   </div>
 </div>
 
@@ -104,28 +138,36 @@
   const registerFormContainer = document.getElementById('register-form-container');
   const guestFormContainer = document.getElementById('guest-form-container');
 
+  // 切換樣式 Helper
+  function updateTabs(activeTab) {
+    [tabLoginMode, tabRegisterMode, tabGuestMode].forEach(tab => {
+      if (!tab) return;
+      if (tab === activeTab) {
+        tab.style.background = '#3c3835';
+        tab.style.color = '#fdfbf7';
+      } else {
+        tab.style.background = 'transparent';
+        tab.style.color = '#8c8275';
+      }
+    });
+  }
+
   tabLoginMode?.addEventListener('click', () => {
-    tabLoginMode.style.background = '#4a443f'; tabLoginMode.style.color = '#f5f2eb'; tabLoginMode.style.border = 'none';
-    if (tabRegisterMode) { tabRegisterMode.style.background = '#262422'; tabRegisterMode.style.color = '#a39b90'; tabRegisterMode.style.border = '1px solid #3c3835'; }
-    if (tabGuestMode) { tabGuestMode.style.background = '#262422'; tabGuestMode.style.color = '#a39b90'; tabGuestMode.style.border = '1px solid #3c3835'; }
+    updateTabs(tabLoginMode);
     if (loginFormContainer) loginFormContainer.style.display = 'block';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
   });
 
   tabRegisterMode?.addEventListener('click', () => {
-    tabRegisterMode.style.background = '#4a443f'; tabRegisterMode.style.color = '#f5f2eb'; tabRegisterMode.style.border = 'none';
-    if (tabLoginMode) { tabLoginMode.style.background = '#262422'; tabLoginMode.style.color = '#a39b90'; tabLoginMode.style.border = '1px solid #3c3835'; }
-    if (tabGuestMode) { tabGuestMode.style.background = '#262422'; tabGuestMode.style.color = '#a39b90'; tabGuestMode.style.border = '1px solid #3c3835'; }
+    updateTabs(tabRegisterMode);
     if (registerFormContainer) registerFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
   });
 
   tabGuestMode?.addEventListener('click', () => {
-    tabGuestMode.style.background = '#4a443f'; tabGuestMode.style.color = '#f5f2eb'; tabGuestMode.style.border = 'none';
-    if (tabLoginMode) { tabLoginMode.style.background = '#262422'; tabLoginMode.style.color = '#a39b90'; tabLoginMode.style.border = '1px solid #3c3835'; }
-    if (tabRegisterMode) { tabRegisterMode.style.background = '#262422'; tabRegisterMode.style.color = '#a39b90'; tabRegisterMode.style.border = '1px solid #3c3835'; }
+    updateTabs(tabGuestMode);
     if (guestFormContainer) guestFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
@@ -237,7 +279,6 @@
       return;
     }
 
-    // 💡 改寫入 localStorage 並記錄寫入時間戳
     const now = new Date().getTime();
     localStorage.setItem('space_guest_id', guestId);
     localStorage.setItem('space_guest_name', guestName);
@@ -253,8 +294,6 @@
       avatar: avatarVal
     }, '*');
   });
-
-  // ⚠️ 註：原有的 beforeunload 事件監聽已徹底刪除，避免重新整理時清除訪客紀錄
 
   document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('login-email').value.trim();
