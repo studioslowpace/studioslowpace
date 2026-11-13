@@ -1,4 +1,4 @@
-<!-- LoginModal 元件（含身分角色選擇、分身造型與防呆寫入） -->
+<!-- LoginModal 元件（含聯絡資料必填防呆、密碼顯示切換、造型高亮與忘記密碼獨立介面） -->
 <div style="max-width: 440px; margin: 0 auto; padding: 32px; background: #fdfbf7; color: #3c3835; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #efece6;">
 
   <!-- 頂部文青 Logo 與返回首頁 -->
@@ -15,8 +15,8 @@
     </a>
   </div>
 
-  <!-- 切換登入、註冊與訪客模式分頁 -->
-  <div style="display: flex; gap: 8px; margin-bottom: 24px; background: #f4efe6; padding: 4px; border-radius: 10px;">
+  <!-- 切換登入、註冊與訪客模式分頁 (忘記密碼時隱藏) -->
+  <div id="mode-tabs-container" style="display: flex; gap: 8px; margin-bottom: 24px; background: #f4efe6; padding: 4px; border-radius: 10px;">
     <button id="tab-login-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:#3c3835; color:#fdfbf7; border:none; border-radius:8px; cursor:pointer; font-weight:500; font-size:0.9rem; transition: all 0.2s;">會員登入</button>
     <button id="tab-register-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:transparent; color:#8c8275; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; transition: all 0.2s;">註冊帳號</button>
     <button id="tab-guest-mode" class="auth-tab-btn" style="flex:1; padding:10px; background:transparent; color:#8c8275; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; transition: all 0.2s;">訪客快速進入</button>
@@ -35,13 +35,35 @@
 
     <div style="margin-bottom: 18px;">
       <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">密碼</label>
-      <input type="password" id="login-password" placeholder="••••••••" style="width:100%; padding:12px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+      <div style="position: relative;">
+        <input type="password" id="login-password" placeholder="••••••••" style="width:100%; padding:12px 40px 12px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+        <button type="button" id="toggle-login-pwd" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8c8275; font-size: 0.9rem;">👁️</button>
+      </div>
     </div>
     
     <button id="login-submit-btn" style="width:100%; padding:13px; background:#3c3835; color:#fdfbf7; border:none; border-radius:8px; font-weight:500; cursor:pointer; margin-bottom: 16px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(60,56,53,0.15);">登入空間</button>
     
     <div style="text-align: center;">
-      <button id="forgot-password-btn" style="background: none; border: none; color: #8c8275; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
+      <button id="forgot-password-link" style="background: none; border: none; color: #8c8275; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">忘記密碼？</button>
+    </div>
+  </div>
+
+  <!-- 忘記密碼獨立介面 -->
+  <div id="forgot-form-container" style="display: none;">
+    <div style="margin-bottom: 20px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: #3c3835; margin: 0 0 4px 0;">重設您的密碼</h2>
+      <p style="font-size: 0.8rem; color: #8c8275; margin: 0; line-height: 1.5;">請輸入您註冊時使用的電子信箱，我們將發送重設密碼連結給您。</p>
+    </div>
+
+    <div style="margin-bottom: 18px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">電子信箱 (Email)</label>
+      <input type="email" id="forgot-email" placeholder="your@email.com" style="width:100%; padding:12px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
+
+    <button id="forgot-submit-btn" style="width:100%; padding:13px; background:#3c3835; color:#fdfbf7; border:none; border-radius:8px; font-weight:500; cursor:pointer; margin-bottom: 12px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(60,56,53,0.15);">發送重設密碼信</button>
+    
+    <div style="text-align: center;">
+      <button id="back-to-login-btn" style="background: none; border: none; color: #8c8275; cursor: pointer; font-size: 0.85rem; text-decoration: underline; padding: 0;">← 返回登入</button>
     </div>
   </div>
 
@@ -61,14 +83,26 @@
       <input type="email" id="register-email" placeholder="your@email.com" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
     </div>
 
+    <!-- 聯絡資料（改為必填：電話 / IG 帳號） -->
+    <div style="margin-bottom: 12px;">
+      <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">聯絡資料 (必填：電話 / IG 帳號)</label>
+      <input type="text" id="register-contact" placeholder="例如：0912-345-678 或 @instagram_id" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+    </div>
+
     <div style="margin-bottom: 12px;">
       <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">設定密碼 (至少 6 碼)</label>
-      <input type="password" id="register-password" placeholder="••••••••" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+      <div style="position: relative;">
+        <input type="password" id="register-password" placeholder="••••••••" style="width:100%; padding:11px 40px 11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+        <button type="button" id="toggle-reg-pwd" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8c8275; font-size: 0.9rem;">👁️</button>
+      </div>
     </div>
 
     <div style="margin-bottom: 12px;">
       <label style="display: block; font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">確認密碼</label>
-      <input type="password" id="register-password-confirm" placeholder="••••••••" style="width:100%; padding:11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+      <div style="position: relative;">
+        <input type="password" id="register-password-confirm" placeholder="••••••••" style="width:100%; padding:11px 40px 11px 14px; background:#ffffff; color:#3c3835; border:1px solid #e5dfd5; border-radius:8px; box-sizing:border-box; outline:none; font-size: 0.9rem;" />
+        <button type="button" id="toggle-reg-confirm-pwd" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #8c8275; font-size: 0.9rem;">👁️</button>
+      </div>
     </div>
     
     <!-- 角色選擇 (role) -->
@@ -85,16 +119,16 @@
 
     <!-- 分身造型選擇 -->
     <div style="font-size: 0.8rem; color: #6e655b; margin-bottom: 6px;">選擇分身造型：</div>
-    <div style="display: flex; gap: 12px; margin-bottom: 18px;">
-      <label style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:10px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <div style="display: flex; gap: 12px; margin-bottom: 18px;" id="register-avatar-group">
+      <label class="avatar-label reg-avatar-label" style="flex:1; background:#f4efe6; border:2px solid #3c3835; padding:10px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: all 0.2s;">
         <input type="radio" name="register-avatar" value="/assets/player1.png" checked style="display:none;" />
         <img src="/assets/player1.png" alt="P1" style="width:24px; height:24px;" />
-        <span style="font-size:0.8rem; color:#3c3835;">分身一號</span>
+        <span style="font-size:0.8rem; color:#3c3835; font-weight: 500;">分身一號</span>
       </label>
-      <label style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:10px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <label class="avatar-label reg-avatar-label" style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:10px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: all 0.2s;">
         <input type="radio" name="register-avatar" value="/assets/player2.png" style="display:none;" />
         <img src="/assets/player2.png" alt="P2" style="width:24px; height:24px;" />
-        <span style="font-size:0.8rem; color:#3c3835;">分身二號</span>
+        <span style="font-size:0.8rem; color:#8c8275;">分身二號</span>
       </label>
     </div>
     
@@ -109,16 +143,16 @@
     </div>
     
     <div style="font-size: 0.8rem; color: #6e655b; margin-bottom: 8px;">選擇分身造型：</div>
-    <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-      <label style="flex:1; background:#ffffff; border:1px solid #5a7364; padding:12px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <div style="display: flex; gap: 12px; margin-bottom: 24px;" id="guest-avatar-group">
+      <label class="avatar-label guest-avatar-label" style="flex:1; background:#f0f5f2; border:2px solid #557263; padding:12px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: all 0.2s;">
         <input type="radio" name="guest-avatar" value="/assets/player1.png" checked style="display:none;" />
         <img src="/assets/player1.png" alt="P1" style="width:28px; height:28px;" />
         <span style="font-size:0.85rem; color:#3c3835; font-weight: 500;">預設旅人</span>
       </label>
-      <label style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:12px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <label class="avatar-label guest-avatar-label" style="flex:1; background:#ffffff; border:1px solid #e5dfd5; padding:12px; text-align:center; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition: all 0.2s;">
         <input type="radio" name="guest-avatar" value="/assets/player2.png" style="display:none;" />
         <img src="/assets/player2.png" alt="P2" style="width:28px; height:28px;" />
-        <span style="font-size:0.85rem; color:#3c3835;">探索者</span>
+        <span style="font-size:0.85rem; color:#8c8275;">探索者</span>
       </label>
     </div>
 
@@ -134,9 +168,11 @@
   const tabRegisterMode = document.getElementById('tab-register-mode');
   const tabGuestMode = document.getElementById('tab-guest-mode');
 
+  const modeTabsContainer = document.getElementById('mode-tabs-container');
   const loginFormContainer = document.getElementById('login-form-container');
   const registerFormContainer = document.getElementById('register-form-container');
   const guestFormContainer = document.getElementById('guest-form-container');
+  const forgotFormContainer = document.getElementById('forgot-form-container');
 
   // 切換樣式 Helper
   function updateTabs(activeTab) {
@@ -154,24 +190,88 @@
 
   tabLoginMode?.addEventListener('click', () => {
     updateTabs(tabLoginMode);
+    modeTabsContainer.style.display = 'flex';
     if (loginFormContainer) loginFormContainer.style.display = 'block';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
+    if (forgotFormContainer) forgotFormContainer.style.display = 'none';
   });
 
   tabRegisterMode?.addEventListener('click', () => {
     updateTabs(tabRegisterMode);
+    modeTabsContainer.style.display = 'flex';
     if (registerFormContainer) registerFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (guestFormContainer) guestFormContainer.style.display = 'none';
+    if (forgotFormContainer) forgotFormContainer.style.display = 'none';
   });
 
   tabGuestMode?.addEventListener('click', () => {
     updateTabs(tabGuestMode);
+    modeTabsContainer.style.display = 'flex';
     if (guestFormContainer) guestFormContainer.style.display = 'block';
     if (loginFormContainer) loginFormContainer.style.display = 'none';
     if (registerFormContainer) registerFormContainer.style.display = 'none';
+    if (forgotFormContainer) forgotFormContainer.style.display = 'none';
   });
+
+  // 忘記密碼介面切換
+  document.getElementById('forgot-password-link')?.addEventListener('click', () => {
+    modeTabsContainer.style.display = 'none';
+    if (loginFormContainer) loginFormContainer.style.display = 'none';
+    if (registerFormContainer) registerFormContainer.style.display = 'none';
+    if (guestFormContainer) guestFormContainer.style.display = 'none';
+    if (forgotFormContainer) forgotFormContainer.style.display = 'block';
+  });
+
+  document.getElementById('back-to-login-btn')?.addEventListener('click', () => {
+    modeTabsContainer.style.display = 'flex';
+    updateTabs(tabLoginMode);
+    if (loginFormContainer) loginFormContainer.style.display = 'block';
+    if (forgotFormContainer) forgotFormContainer.style.display = 'none';
+  });
+
+  // 密碼顯示/隱藏切換功能
+  function setupPasswordToggle(inputId, toggleBtnId) {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(toggleBtnId);
+    btn?.addEventListener('click', () => {
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🔒';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    });
+  }
+  setupPasswordToggle('login-password', 'toggle-login-pwd');
+  setupPasswordToggle('register-password', 'toggle-reg-pwd');
+  setupPasswordToggle('register-password-confirm', 'toggle-reg-confirm-pwd');
+
+  // 分身造型點擊高亮選取效果
+  function setupAvatarSelection(groupId, labelClass, activeBg, activeBorder, activeText) {
+    const group = document.getElementById(groupId);
+    const labels = group?.querySelectorAll('.' + labelClass);
+    labels?.forEach(label => {
+      label.addEventListener('click', () => {
+        labels.forEach(l => {
+          l.style.background = '#ffffff';
+          l.style.border = '1px solid #e5dfd5';
+          const span = l.querySelector('span');
+          if(span) { span.style.color = '#8c8275'; span.style.fontWeight = '400'; }
+        });
+        label.style.background = activeBg;
+        label.style.border = activeBorder;
+        const activeSpan = label.querySelector('span');
+        if(activeSpan) { activeSpan.style.color = activeText; activeSpan.style.fontWeight = '500'; }
+        const radio = label.querySelector('input[type="radio"]');
+        if(radio) radio.checked = true;
+      });
+    });
+  }
+  setupAvatarSelection('register-avatar-group', 'reg-avatar-label', '#f4efe6', '2px solid #3c3835', '#3c3835');
+  setupAvatarSelection('guest-avatar-group', 'guest-avatar-label', '#f0f5f2', '2px solid #557263', '#3c3835');
 
   // 會員登入
   document.getElementById('login-submit-btn')?.addEventListener('click', async () => {
@@ -184,17 +284,18 @@
     else { window.parent.postMessage({ type: 'LOGIN_SUCCESS' }, '*'); }
   });
 
-  // 會員註冊
+  // 會員註冊（聯絡資料改為必填）
   document.getElementById('register-submit-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('register-name').value.trim();
     const email = document.getElementById('register-email').value.trim();
+    const contact = document.getElementById('register-contact').value.trim();
     const password = document.getElementById('register-password').value.trim();
     const passwordConfirm = document.getElementById('register-password-confirm').value.trim();
     const role = document.getElementById('register-role').value;
     const selectedAvatar = document.querySelector('input[name="register-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
 
-    if (!name || !email || !password || !passwordConfirm) { alert('請完整填寫所有註冊欄位'); return; }
+    if (!name || !email || !contact || !password || !passwordConfirm) { alert('請完整填寫所有必填註冊欄位（包含聯絡資料）'); return; }
     if (password !== passwordConfirm) { alert('兩次輸入的密碼不相符'); return; }
     if (password.length < 6) { alert('密碼長度至少需要 6 個字元'); return; }
 
@@ -209,6 +310,7 @@
       const memberPayload = {
         user_id: userId,
         name: name,
+        contact: contact, // 寫入必填聯絡資料
         role: role,
         tier: '鄰里人',
         avatar: avatarVal,
@@ -225,7 +327,7 @@
     window.parent.postMessage({ type: 'REGISTER_SUCCESS' }, '*');
   });
 
-  // 訪客快速進入（24 小時保存版）
+  // 訪客快速進入
   document.getElementById('guest-submit-btn')?.addEventListener('click', async () => {
     const selectedAvatar = document.querySelector('input[name="guest-avatar"]:checked');
     const avatarVal = selectedAvatar ? selectedAvatar.value : '/assets/player1.png';
@@ -295,13 +397,17 @@
     }, '*');
   });
 
-  document.getElementById('forgot-password-btn')?.addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value.trim();
-    if (!email) { alert('請先在上方欄位輸入您的電子信箱 (Email)'); return; }
+  // 發送重設密碼信
+  document.getElementById('forgot-submit-btn')?.addEventListener('click', async () => {
+    const email = document.getElementById('forgot-email').value.trim();
+    if (!email) { alert('請輸入您的電子信箱 (Email)'); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/profile`,
     });
     if (error) { alert('發送重設密碼信失敗：' + error.message); } 
-    else { alert('重設密碼信已發送！'); }
+    else { 
+      alert('重設密碼信已發送！請檢查您的信箱。'); 
+      document.getElementById('back-to-login-btn').click();
+    }
   });
 </script>
