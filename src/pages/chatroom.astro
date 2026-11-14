@@ -416,6 +416,18 @@ import Layout from '../layouts/Layout.astro';
             isGuest = guestFlag;
 
             console.log("🟢 [ChatPage] 身分初始化成功，使用者:", currentUserId, currentUserName, "是否為訪客:", isGuest);
+            
+            // ==========================================
+    // 💡 貼上這段程式碼：初始化時檢查已授權的解鎖主題
+    // ==========================================
+    const savedUnlocked = localStorage.getItem('unlocked_topics');
+    if (savedUnlocked) {
+      try {
+        const parsed = JSON.parse(savedUnlocked);
+        Object.assign(unlockedTopics, parsed);
+      } catch (e) {}
+    }
+    // ==========================================
 
             await checkAdminPermission(currentUserId);
             fetchAllUserRecordsFromSupabase();
@@ -686,6 +698,19 @@ import Layout from '../layouts/Layout.astro';
             const { data } = await supabase.from('chat_topics').select('*').order('sort_order', { ascending: true });
             topics = data || [];
             renderTopicsList();
+            // ==========================================
+    // 💡 貼上這段程式碼：當主題載入完成後，檢查網址是否有 ?topic=xxx
+    // ==========================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTopicId = urlParams.get('topic');
+
+    if (targetTopicId && topics.length > 0) {
+      // 稍微延遲確保 DOM 與狀態完全就緒後自動嘗試進入
+      setTimeout(() => {
+        trySelectTopic(targetTopicId);
+      }, 200);
+    }
+    // ==========================================
         }
 
         async function moveTopicOrder(topicId, direction) {
