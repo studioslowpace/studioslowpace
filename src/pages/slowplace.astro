@@ -1326,6 +1326,7 @@ async function startAppSession() {
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
+    // 發起共讀 (同步建立加密聊天室)
     tableCreateBtn?.addEventListener('click', async () => {
       if (isGuest) { alert('訪客無法發起共讀活動，請登入完整會員！'); return; }
       if (!activeTableData || !userId) return;
@@ -1337,8 +1338,27 @@ async function startAppSession() {
 
       if (!title) { alert('請輸入共讀書名！'); return; }
 
+      const roomPassword = Math.random().toString(36).substring(2, 10);
+      const topicTitle = `📖 共讀：《${title}》`;
+
+      const { data: topicData, error: topicError } = await supabase
+        .from('chat_topics')
+        .insert([{
+          title: topicTitle,
+          description: `《${title}》共讀成員專屬討論區 (發起人：${playerName})`,
+          password: roomPassword,
+          sort_order: 0
+        }])
+        .select()
+        .single();
+
+      if (topicError) {
+        alert('建立共讀聊天室失敗：' + topicError.message);
+        return;
+      }
+
       const newMembers = [{ user_id: userId, name: playerName }];
-      await supabase.from(ITEMS_TABLE).update({
+      const { error } = await supabase.from(ITEMS_TABLE).update({
         book_title: title,
         author: author,
         reason: reason,
@@ -1346,12 +1366,18 @@ async function startAppSession() {
         finish_date: dateStr,
         host_id: userId,
         host_name: playerName,
-        members: newMembers
+        members: newMembers,
+        topic_id: topicData.id,
+        topic_password: roomPassword
       }).eq('id', activeTableData.id);
 
-      if (tableModal) tableModal.style.display = 'none';
-      await fetchRoomItems();
-      alert('成功發起共讀活動！');
+      if (error) {
+        alert('發起失敗：' + error.message);
+      } else {
+        if (tableModal) tableModal.style.display = 'none';
+        await fetchRoomItems();
+        alert('成功發起共讀活動並已為你開啟專屬聊天室！');
+      }
     });
 
     tableJoinBtn?.addEventListener('click', async () => {
@@ -1374,21 +1400,35 @@ async function startAppSession() {
       alert('成功加入共讀！');
     });
 
-    tableEndBtn?.addEventListener('click', async () => {
+    // 結束共讀 (同步刪除聊天室)
+    async function endTableAction() {
       if (!activeTableData) return;
-      if (confirm('確定要結束這場共讀活動嗎？')) {
-        await supabase.from(ITEMS_TABLE).update({
+      if (confirm('確定要結束這場共讀活動嗎？相關的專屬聊天室也會一併關閉。')) {
+        if (activeTableData.topic_id) {
+          await supabase.from('chat_topics').delete().eq('id', activeTableData.topic_id);
+        }
+
+        const { error } = await supabase.from(ITEMS_TABLE).update({
           book_title: '',
           author: '',
+          reason: '',
+          max_members: 3,
           finish_date: '',
           host_id: '',
           host_name: '',
-          members: []
+          members: [],
+          topic_id: null,
+          topic_password: null
         }).eq('id', activeTableData.id);
-        if (tableModal) tableModal.style.display = 'none';
-        await fetchRoomItems();
+
+        if (error) {
+          alert('結束失敗：' + error.message);
+        } else {
+          if (tableModal) tableModal.style.display = 'none';
+          await fetchRoomItems();
+        }
       }
-    });
+    }
 
     canvas?.addEventListener('click', async (e) => {
       if (isDND) return;

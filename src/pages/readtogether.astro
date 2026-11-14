@@ -439,7 +439,7 @@ import Layout from '../layouts/Layout.astro';
             const unlocked = JSON.parse(localStorage.getItem('unlocked_topics') || '{}');
             unlocked[table.topic_id] = table.topic_password;
             localStorage.setItem('unlocked_topics', JSON.stringify(unlocked));
-            window.location.href = `/chat?topic=${table.topic_id}`;
+            window.location.href = `/chatroom?topic=${table.topic_id}`;
           }
         });
         document.getElementById('modal-end-btn')?.addEventListener('click', endTableAction);
