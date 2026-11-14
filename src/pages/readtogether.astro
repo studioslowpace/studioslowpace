@@ -51,8 +51,9 @@ import Layout from '../layouts/Layout.astro';
         <div class="detail-grid">
           <div class="detail-line"><strong>共讀書名</strong> <span id="view-table-book" class="line-content"></span></div>
           <div class="detail-line"><strong>作者</strong> <span id="view-table-author" class="line-content"></span></div>
+         
+          <div class="detail-line" id="host-row-container"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>          
           <div class="detail-line"><strong>因由/介紹</strong> <span id="view-table-reason" class="line-content"></span></div>
-          <div class="detail-line" id="host-row-container"><strong>主辦人</strong> <span id="view-table-host" class="line-content" style="color: #6b8e23;"></span></div>
           <div class="detail-row-2">
             <div class="detail-line"><strong>人數限制</strong> <span id="view-table-max" class="line-content"></span></div>
             <div class="detail-line"><strong>完成期限</strong> <span id="view-table-date" class="line-content"></span></div>
@@ -347,6 +348,7 @@ import Layout from '../layouts/Layout.astro';
               <div class="book-meta">
                 <span>作者：${author}</span>
                 <span>主辦人：${table.host_name || '未知'}</span>
+                <br>
                 <span>因由/介紹：${reason}</span>
               </div>
               <div style="font-size: 12px; color: #555; background: #f4efe6; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px;">
