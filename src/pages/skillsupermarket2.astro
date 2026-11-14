@@ -1,6 +1,6 @@
 ---
 // 匯入 Layout 與 Supabase 實例
-import BaseLayout from '../layouts/Layout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { supabase } from '../lib/supabase';
 ---
 <BaseLayout title="客舍萬事屋 Slow Pace Skill Supermarket">
@@ -204,7 +204,7 @@ import { supabase } from '../lib/supabase';
         .btn-admin-logout:hover { background-color: #dc2626; color: #ffffff; }
 
         /* ==========================================
-           4. 頁首與導覽區塊 (Header - Logo 與中英名並列置中)
+           4. 頁首與導覽區塊 (Header - Logo 縮小、整體並列置中)
            ========================================== */
         .hero-banner {
             text-align: center;
@@ -212,8 +212,8 @@ import { supabase } from '../lib/supabase';
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 1.25rem;
-            padding: 1.5rem;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
             border-radius: 1.5rem;
             background: linear-gradient(to bottom right, #fde68a, #ffedd5);
             position: relative;
@@ -223,7 +223,7 @@ import { supabase } from '../lib/supabase';
         @media (max-width: 640px) {
             .hero-banner {
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 0.5rem;
                 text-align: center;
             }
         }
@@ -236,15 +236,15 @@ import { supabase } from '../lib/supabase';
             user-select: none;
         }
         .banner-logo-img {
-            width: 55px;
-            height: 55px;
+            width: 42px;
+            height: 42px;
             object-fit: cover;
             transition: opacity 0.2s;
         }
         @media (max-width: 768px) {
             .banner-logo-img {
-                width: 45px;
-                height: 45px;
+                width: 36px;
+                height: 36px;
             }
         }
         .banner-logo-group:hover .banner-logo-img { opacity: 0.8; }
@@ -263,20 +263,21 @@ import { supabase } from '../lib/supabase';
         }
 
         .hero-title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
             color: #4d361d;
-            letter-spacing: 8px;
+            letter-spacing: 6px;
             margin: 0;
             display: block;
+            line-height: 1.2;
         }
         .hero-title-sub {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             color: #4d361d;
-            margin-top: 0.15rem;
+            margin-top: 0.1rem;
             display: block;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         /* ==========================================
@@ -890,7 +891,7 @@ import { supabase } from '../lib/supabase';
         
         <div class="layout-spacing">
         
-        <!-- Logo 與中英名並列置中 -->
+        <!-- Logo 縮小、中英名並列置中 -->
         <div class="hero-banner">
             <div id="banner-logo-trigger" class="banner-logo-group">
               <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;">
@@ -950,7 +951,7 @@ import { supabase } from '../lib/supabase';
                 </div>
             </div>
             
-            <!-- 🔍 全域共用搜尋列 (所有頁面皆可見、支援即時與按確定/標籤跳轉清空) -->
+            <!-- 🔍 搜尋列 (即時呈現，切換分頁/分類時自動真正 reset 內容) -->
             <div id="skill-filter-bar-container" style="width: 100%; margin-top: 1.5rem; margin-bottom: 1.5rem;">
                 <div id="sub-filter-buttons" style="display: flex; gap: 0.5rem; margin-bottom: 0.875rem;">
                     <button id="filter-sub-all" class="sub-filter-btn" data-sub="all" style="padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; background: #ea580c; color: white; border: none; cursor: pointer;">全部未完成</button>
@@ -965,7 +966,7 @@ import { supabase } from '../lib/supabase';
                     <!-- 確定按鈕 -->
                     <button id="btn-search-submit" style="background-color: #ea580c; color: white; border: none; padding: 0.375rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap;">確定</button>
                     
-                    <!-- 清除 X 按鈕 -->
+                    <!-- 清除 X 按鈕 (點擊才會真正清空) -->
                     <button id="btn-search-clear" style="background-color: #e7e5e4; color: #57534e; border: none; width: 1.75rem; height: 1.75rem; border-radius: 50%; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; white-space: nowrap;" title="清除搜尋">✕</button>
                 </div>
             </div>
@@ -1275,6 +1276,12 @@ window.onload = async function() {
     });
 };
 
+    function clearSearchAndInput() {
+        searchQuery = '';
+        const searchInput = document.getElementById('global-keyword-search');
+        if (searchInput) searchInput.value = '';
+    }
+
     function initEventListeners() {
         document.getElementById('banner-logo-trigger')?.addEventListener('click', toggleAdminNavbar);
         document.getElementById('btn-admin-close-nav')?.addEventListener('click', toggleAdminNavbar);
@@ -1292,14 +1299,20 @@ window.onload = async function() {
         document.querySelectorAll('.tabs-row .tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tabName = e.currentTarget.getAttribute('data-tab');
-                if (tabName) switchTab(tabName);
+                if (tabName) {
+                    clearSearchAndInput(); // 切換分頁時完全重置搜尋內容
+                    switchTab(tabName);
+                }
             });
         });
 
         document.querySelectorAll('.sub-filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const sub = e.currentTarget.getAttribute('data-sub');
-                if (sub) switchSubFilter(sub);
+                if (sub) {
+                    clearSearchAndInput(); // 切換子分類時完全重置搜尋內容
+                    switchSubFilter(sub);
+                }
             });
         });
 
@@ -1308,22 +1321,17 @@ window.onload = async function() {
         const btnSearchSubmit = document.getElementById('btn-search-submit');
         const btnSearchClear = document.getElementById('btn-search-clear');
 
-        // 1. 即時輸入時立即套用搜尋
         searchInput?.addEventListener('input', (e) => {
             searchQuery = e.target.value.trim().toLowerCase();
             renderPosts();
         });
 
-        // 2. 點擊「確定」或按 Enter：送出搜尋、自動清空輸入框並平滑捲動至頂部
         const executeSearchAndRedirect = () => {
             const query = searchInput.value.trim();
             if (query) {
                 searchQuery = query.toLowerCase();
                 renderPosts();
-                searchInput.value = '';
-                searchQuery = '';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                showToast("🔍 已送出並跳轉搜尋！");
             }
         };
 
@@ -1334,10 +1342,9 @@ window.onload = async function() {
             }
         });
 
-        // 3. 點擊「X」按鈕：清除搜尋內容
+        // 點擊「X」按鈕才真正清空搜尋內容
         btnSearchClear?.addEventListener('click', () => {
-            if(searchInput) searchInput.value = '';
-            searchQuery = '';
+            clearSearchAndInput();
             renderPosts();
         });
 
@@ -1504,9 +1511,7 @@ window.onload = async function() {
 
     function switchTab(tabName) {
         currentTab = tabName;
-        searchQuery = '';
-        const searchInput = document.getElementById('global-keyword-search');
-        if (searchInput) searchInput.value = '';
+        clearSearchAndInput();
 
         ['tab-all-posts', 'tab-completed', 'tab-skills'].forEach(t => {
             const el = document.getElementById(t);
@@ -1540,6 +1545,7 @@ window.onload = async function() {
 
     function switchSubFilter(sub) {
         currentSubFilter = sub;
+        clearSearchAndInput();
         
         const btnAll = document.getElementById('filter-sub-all');
         const btnNoReward = document.getElementById('filter-sub-noreward');
@@ -1576,7 +1582,7 @@ window.onload = async function() {
     function filterByTag(tag) {
         searchQuery = tag.replace('#', '').toLowerCase();
         const searchInput = document.getElementById('global-keyword-search');
-        if (searchInput) searchInput.value = ''; // 點擊標籤後自動清除搜尋列文字並跳轉/篩選
+        if (searchInput) searchInput.value = searchQuery; // 保留標籤文字於搜尋框中讓使用者看見
         renderPosts();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
