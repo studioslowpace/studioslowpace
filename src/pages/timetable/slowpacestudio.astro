@@ -60,8 +60,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         /* 標題與年月份並列區塊 */
         .title-area { 
             display: flex; 
-            align-items: right; 
-            justify-content: space-between; 
+            align-items: baseline;
+            justify-content: flex-end;
             width: 100%;
             gap: 15px;
         }
@@ -207,7 +207,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             /* 標題與年月份維持左右並列 */
             .title-area { 
                 flex-direction: row !important;
-                justify-content: space-between;
                 align-items: center;
                 width: 100%;
                 gap: 8px;
@@ -283,10 +282,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 margin-bottom: 1px;
                 margin-top: 2px;  
             }
-
-            .evt-text { 
-                display: none !important;
-            }
+    .evt-text { 
+        display: block !important;      /* 💡 取消原本的 none，改為顯示 */
+        font-size: 8px !important;      /* 縮小字體以適應手機畫面 */
+        width: 100%;
+        text-align: right;
+        word-break: break-all;
+    }
 
             .row { 
                 flex-direction: column;
