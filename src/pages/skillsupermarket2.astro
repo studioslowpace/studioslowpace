@@ -209,7 +209,7 @@ import { supabase } from '../lib/supabase';
         .hero-banner {
             text-align: center;
             display: flex;
-            flex-direction: row;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 1rem;
@@ -894,17 +894,21 @@ import { supabase } from '../lib/supabase';
         </div>
     </div>
 
-        <!-- Logo 縮小、中英名並列置中 -->
-        <div class="hero-banner">
-            <div id="banner-logo-trigger" class="banner-logo-group">
-              <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;">
-            </div>
-            <div class="hero-title-group">
-                <h1 class="hero-title">客舍萬事屋</h1>
-                <span class="hero-title-sub">Shall We Help</span> 
-            </div>
-            <h2 class="hero-title-sub2">I help you, you help me — 讓互相成為日常</h2>
+ <div class="hero-banner">
+    <!-- 上方區塊：Logo 與主副標題並排 -->
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div id="banner-logo-trigger" class="banner-logo-group">
+            <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;">
         </div>
+        <div class="hero-title-group" >
+            <h1 class="hero-title">客舍萬事屋</h1>
+            <span class="hero-title-sub">Shall We Help</span> 
+        </div>
+    </div>
+
+    <!-- 下方區塊：強制換行到新的一列 -->
+    <h2 class="hero-title-sub2">I help you, you help me — 讓互相成為日常</h2>
+</div>
 
             <div class="layout-action-row">
                 <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem;">
