@@ -3,6 +3,9 @@
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 
+// 💡 改為直接引入共用的 supabase 實例
+import { supabase } from '../lib/supabase';
+
 // 2. 接收從各頁面傳進來的網頁標題（Title）
 const { title = "預設標題" } = Astro.props;
 ---
@@ -39,11 +42,7 @@ const { title = "預設標題" } = Astro.props;
 
 <!-- 讓這段 JS 在客戶端（瀏覽器）執行 -->
 <script>
-  import { createClient } from '@supabase/supabase-js';
-
-  const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-  const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-  const client = createClient(supabaseUrl, supabaseKey);
+  import { supabase as client } from '../lib/supabase';
 
   // 統一的權限檢查
   async function checkLayoutAdminStatus(user) {
