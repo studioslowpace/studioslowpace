@@ -4,10 +4,9 @@ import DesktopLayout from '../layouts/BaseLayout.astro';    // 電腦版 Layout
 import Shallwehelp from '../components/shallwehelp-code.astro';
 ---
 
-<!-- 📱 手機版容器 -->
-<div class="mobile-view">
+<!-- 📱 手機版容器（給它一個專屬 ID 方便 JS 辨識與移除） -->
+<div id="mobile-view-wrapper" class="device-view-container">
     <MobileLayout title="客舍萬事屋 Shall We Help">
-        <!-- 所有的 head 標籤與頁面內容，都要乖乖包在 Layout 裡面 -->
         <Fragment slot="head">
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,8 +17,8 @@ import Shallwehelp from '../components/shallwehelp-code.astro';
     </MobileLayout>
 </div>
 
-<!-- 💻 電腦版容器 -->
-<div class="desktop-view">
+<!-- 💻 電腦版容器（給它一個專屬 ID 方便 JS 辨識與移除） -->
+<div id="desktop-view-wrapper" class="device-view-container" style="display: none;">
     <DesktopLayout title="客舍萬事屋 Shall We Help">
         <Fragment slot="head">
             <meta charset="UTF-8">
@@ -31,22 +30,24 @@ import Shallwehelp from '../components/shallwehelp-code.astro';
     </DesktopLayout>
 </div>
 
-<style>
-    /* 預設（手機）：顯示手機版，隱藏電腦版 */
-    .desktop-view {
-        display: none;
-    }
-    .mobile-view {
-        display: block;
-    }
+<script>
+    // 💡 在頁面載入的第一瞬間，根據螢幕寬度把「沒用到的那套 Layout」整個從 DOM 拔除！
+    // 這樣 DOM 裡面就永遠只有一套 ID，絕對不會發生抓錯對象或載入不到資料的問題。
+    const isDesktop = window.innerWidth >= 768;
 
-    /* 當螢幕寬度大於 768px（電腦）：顯示電腦版，隱藏手機版 */
-    @media (min-width: 768px) {
-        .mobile-view {
-            display: none;
-        }
-        .desktop-view {
-            display: block;
-        }
+    if (isDesktop) {
+        // 如果是電腦版：移除手機版節點，顯示電腦版節點
+        const mobileEl = document.getElementById('mobile-view-wrapper');
+        if (mobileEl) mobileEl.remove();
+
+        const desktopEl = document.getElementById('desktop-view-wrapper');
+        if (desktopEl) desktopEl.style.display = 'block';
+    } else {
+        // 如果是手機版：移除電腦版節點，顯示手機版節點
+        const desktopEl = document.getElementById('desktop-view-wrapper');
+        if (desktopEl) desktopEl.remove();
+
+        const mobileEl = document.getElementById('mobile-view-wrapper');
+        if (mobileEl) mobileEl.style.display = 'block';
     }
-</style>
+</script>
