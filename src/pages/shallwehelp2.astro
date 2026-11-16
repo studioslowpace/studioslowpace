@@ -6,50 +6,43 @@ import { supabase } from '../lib/supabase';
 ---
 
 <!-- 📱 手機版容器 -->
-<div class="mobile-view">
+<div id="mobile-view-wrapper" class="device-view-container">
     <MobileLayout title="客舍萬事屋 Shall We Help">
-        <!-- 所有的 head 標籤與頁面內容，都要乖乖包在 Layout 裡面 -->
         <Fragment slot="head">
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <script src="https://cdn.tailwindcss.com"></script>
             <script src="https://unpkg.com/lucide@latest"></script>
         </Fragment>
-        
         <Shallwehelp />
     </MobileLayout>
 </div>
 
 <!-- 💻 電腦版容器 -->
-<div class="desktop-view">
+<div id="desktop-view-wrapper" class="device-view-container" style="display: none;">
     <DesktopLayout title="客舍萬事屋 Shall We Help">
         <Fragment slot="head">
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <script src="https://cdn.tailwindcss.com"></script>
             <script src="https://unpkg.com/lucide@latest"></script>
         </Fragment>
-        
         <Shallwehelp />
     </DesktopLayout>
 </div>
 
-<style>
-    /* 預設（手機）：顯示手機版，隱藏電腦版 */
-    .desktop-view {
-        display: none;
+<script>
+    // 在頁面載入的「第一瞬間」，根據寬度直接把沒用到的那套 Layout 整個從 DOM 拔除！
+    // 這樣就能 100% 避免 ID 衝突、CORS 或 JS 抓錯對象的問題
+    const isDesktop = window.innerWidth >= 768;
+    
+    if (isDesktop) {
+        const mobileEl = document.getElementById('mobile-view-wrapper');
+        if (mobileEl) mobileEl.remove(); // 直接移除手機版，釋放所有 ID 與記憶體衝突
+        const desktopEl = document.getElementById('desktop-view-wrapper');
+        if (desktopEl) desktopEl.style.display = 'block';
+    } else {
+        const desktopEl = document.getElementById('desktop-view-wrapper');
+        if (desktopEl) desktopEl.remove(); // 直接移除電腦版
+        const mobileEl = document.getElementById('mobile-view-wrapper');
+        if (mobileEl) mobileEl.style.display = 'block';
     }
-    .mobile-view {
-        display: block;
-    }
-
-    /* 當螢幕寬度大於 768px（電腦）：顯示電腦版，隱藏手機版 */
-    @media (min-width: 768px) {
-        .mobile-view {
-            display: none;
-        }
-        .desktop-view {
-            display: block;
-        }
-    }
-</style>
+</script>
