@@ -36,16 +36,16 @@
             <a href="/newsletter">客舍電子報</a>
             <a href="/skillsupermarket">客舍萬事屋</a>
             <a href="/slowplace">客舍空間</a>
-            <a href="https://linktr.ee/Slowpace_studio" class="nav-icon-link" aria-label="活動報名<" title="活動報名<">
+            <a href="https://linktr.ee/Slowpace_studio" class="nav-icon-link" aria-label="活動報名" data-tooltip="活動報名">
                 <i class="fa-solid fa-pen-to-square" style="color: rgb(60, 160, 236);"></i>
             </a>
-            <a href="/timetable/slowpacestudio" class="nav-icon-link" aria-label="客舍時間表<" title="客舍時間表<">
+            <a href="/timetable/slowpacestudio" class="nav-icon-link" aria-label="客舍時間表" data-tooltip="客舍時間表">
                 <i class="fa-solid fa-calendar-days" style="color: rgb(60, 160, 236);"></i>
             </a>
-             <a href="/gaming" class="nav-icon-link" aria-label="悠閒小遊戲" title="悠閒小遊戲">
+             <a href="/gaming" class="nav-icon-link" aria-label="悠閒小遊戲" data-tooltip="悠閒小遊戲">
                   <i class="fa-solid fa-gamepad" style="color: rgb(60, 160, 236);"></i>
             </a>
-            <a href="/login" class="nav-icon-link" aria-label="會員登入" title="會員登入">
+            <a href="/login" class="nav-icon-link custom-tooltip" data-tooltip="會員登入">
                   <i class="fa-solid fa-user" style="color: rgb(60, 160, 236);"></i>
             </a>
             
@@ -249,6 +249,58 @@
 .nav-icon-link:hover {
     transform: scale(1.1);
     opacity: 0.85;
+}
+
+/* 設定父層為相對定位，讓提示框能夠對齊圖示定位 */
+.custom-tooltip {
+    position: relative;
+}
+
+/* 使用擬似元素 ::after 建立提示框 */
+.custom-tooltip::after {
+    content: attr(data-tooltip); /* 自動讀取 data-tooltip 裡的文字 */
+    position: absolute;
+    bottom: -35px; /* 顯示在圖示正下方（若要顯示在上方可改為 top: -35px） */
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background-color: #333333; /* 沉穩的深色背景，或改為 #FAF9F6 配合米杏風 */
+    color: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 400;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 6px; /* 圓角設計 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* 柔和陰影 */
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); /*滑順的淡入淡出動畫 */
+    z-index: 10000;
+    pointer-events: none; /* 避免滑鼠干擾 */
+}
+
+/* 小三角形箭頭裝飾 */
+.custom-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #333333 transparent; /* 箭頭朝上指著圖示 */
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 10000;
+    pointer-events: none;
+}
+
+/* 當滑鼠移上去時顯示 */
+.custom-tooltip:hover::after,
+.custom-tooltip:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0); /* 帶有一點往上浮現的微動畫 */
 }
 
 @media (max-width: 768px) {
