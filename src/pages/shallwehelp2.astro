@@ -1,6 +1,6 @@
 ---
-import MobileLayout from '../layouts/BaseLayout.astro';   // 你的手機版 Layout
-import DesktopLayout from '../layouts/Layout.astro';     // 你的電腦版 Layout
+import MobileLayout from '../layouts/Layout.astro';   // 你的手機版 Layout
+import DesktopLayout from '../layouts/BaseLayout.astro';     // 你的電腦版 Layout
 import Shallwehelp from '../components/shallwehelp-code.astro';
 ---
 
@@ -9,6 +9,12 @@ import Shallwehelp from '../components/shallwehelp-code.astro';
     <!-- 預設先放手機版內容防閃爍 -->
     <div class="mobile-only">
         <MobileLayout title="客舍萬事屋 Shall We Help">
+                <Fragment slot="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    </Fragment>
             <Shallwehelp />
         </MobileLayout>
     </div>
