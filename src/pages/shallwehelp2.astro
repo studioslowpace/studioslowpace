@@ -1,56 +1,49 @@
 ---
-// 匯入 Layout 與 Supabase 實例
-import MobileLayout from '../layouts/Layout.astro';
-import DesktopLayout from '../layouts/BaseLayout.astro';
+import MobileLayout from '../layouts/BaseLayout.astro';   // 你的手機版 Layout
+import DesktopLayout from '../layouts/Layout.astro';     // 你的電腦版 Layout
 import Shallwehelp from '../components/shallwehelp-code.astro';
-import { supabase } from '../lib/supabase';
 ---
 
-
-
-<!-- 📱 手機版 -->
-<div class="mobile-view">
-    <MobileLayout title="客舍萬事屋 Shall We Help">
-                    <Fragment slot="head">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    </Fragment>
-        <Shallwehelp />
-    </MobileLayout>
+<!-- 裝載容器 -->
+<div id="app-container">
+    <!-- 預設先放手機版內容防閃爍 -->
+    <div class="mobile-only">
+        <MobileLayout title="客舍萬事屋 Shall We Help">
+            <Shallwehelp />
+        </MobileLayout>
+    </div>
 </div>
 
+<script>
+    import MobileLayout from '../layouts/BaseLayout.astro';
+    
+    // 在客戶端執行時，根據螢幕寬度動態切換載入的 Layout
+    function checkDeviceLayout() {
+        const container = document.getElementById('app-container');
+        if (!container) return;
 
-<!-- 💻 電腦版 -->
-<div class="desktop-view">
-    <DesktopLayout title="客舍萬事屋 Shall We Help">
-            <Fragment slot="head">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    </Fragment>
-        <Shallwehelp />
-    </DesktopLayout>
-</div>
+        const isDesktop = window.innerWidth >= 768; // 768px 以上為電腦版
+
+        // 如果你想在電腦版直接顯示 DesktopLayout，可以透過動態跳轉或重載，
+        // 或者最快的方法：直接在 CSS 決定要顯示哪一個就好：
+    }
+</script>
 
 <style>
-    /* 預設（手機）：顯示手機版，隱藏電腦版 */
-    .desktop-view {
+    /* 透過純 CSS 媒體查詢，確保同一時間只有一個 Layout 在運作且不會互相污染 */
+    .desktop-layout-wrapper {
         display: none;
     }
-    .mobile-view {
+    .mobile-layout-wrapper {
         display: block;
     }
 
-    /* 當螢幕寬度大於 768px（電腦）：顯示電腦版，隱藏手機版 */
     @media (min-width: 768px) {
-        .mobile-view {
-            display: none;
+        .mobile-layout-wrapper {
+            display: none !important;
         }
-        .desktop-view {
-            display: block;
+        .desktop-layout-wrapper {
+            display: block !important;
         }
     }
 </style>
