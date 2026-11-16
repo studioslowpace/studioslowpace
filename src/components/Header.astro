@@ -1,6 +1,7 @@
 <link rel="icon" sizes="192x192" href="/images/logo-small2.png" type="image/x-icon" />
 <link rel="shortcut icon" href="/images/logo-small2.png" type="image/x-icon" />
 <link rel="apple-touch-icon" href="/images/logo-small2.png" type="image/x-icon" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -53,7 +54,7 @@
                 <div class="more-dropdown-content" id="overflow-links"></div>
             </div>
 
-            <button id="global-search-btn" class="search-icon-btn" title="全域搜尋">🔍</button>
+            <button id="global-search-btn" class="search-icon-btn" title="全域搜尋"><i class="fa-solid fa-magnifying-glass" style="color: rgb(60, 160, 236);"></i></button>
         </nav> 
     </div> 
 </header>
@@ -126,8 +127,23 @@
         filter: drop-shadow(0 0 6px rgba(20, 101, 163, 0.8));
     }
 
-    .search-icon-btn { background: none; border: none; font-size: 1.35rem; cursor: pointer; padding: 5px; color: #333333; display: flex; align-items: center; }
-    .search-icon-btn:hover { color: #1465A3; }
+.search-icon-btn { 
+    background: none; 
+    border: none; 
+    font-size: 1.1rem; /* 調整圖示大小（可依視覺效果改為 1rem ~ 1.2rem） */
+    cursor: pointer; 
+    padding: 5px; 
+    color: #333333; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.search-icon-btn:hover { 
+    color: #1465A3; 
+    transform: scale(1.05); /* 滑鼠移上去時微微放大 */
+}
     .header-nav-links { display: flex; align-items: center; gap: 35px; }
     .header-nav-links a { text-decoration: none; color: #333333; font-size: 1rem; font-weight: 500; transition: color 0.2s; }
     .header-nav-links a:hover { color: #1465A3; }
