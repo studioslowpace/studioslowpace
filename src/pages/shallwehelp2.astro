@@ -6,8 +6,10 @@ import Shallwehelp from '../components/shallwehelp-code.astro';
 import { supabase } from '../lib/supabase';
 ---
 
+
+
 <!-- 📱 手機版 -->
-<div class="block md:hidden">
+<div class="mobile-view">
     <MobileLayout title="客舍萬事屋 Shall We Help">
                     <Fragment slot="head">
     <meta charset="UTF-8">
@@ -21,7 +23,7 @@ import { supabase } from '../lib/supabase';
 
 
 <!-- 💻 電腦版 -->
-<div class="hidden md:block">
+<div class="desktop-view">
     <DesktopLayout title="客舍萬事屋 Shall We Help">
             <Fragment slot="head">
     <meta charset="UTF-8">
@@ -32,3 +34,23 @@ import { supabase } from '../lib/supabase';
         <Shallwehelp />
     </DesktopLayout>
 </div>
+
+<style>
+    /* 預設（手機）：顯示手機版，隱藏電腦版 */
+    .desktop-view {
+        display: none;
+    }
+    .mobile-view {
+        display: block;
+    }
+
+    /* 當螢幕寬度大於 768px（電腦）：顯示電腦版，隱藏手機版 */
+    @media (min-width: 768px) {
+        .mobile-view {
+            display: none;
+        }
+        .desktop-view {
+            display: block;
+        }
+    }
+</style>
