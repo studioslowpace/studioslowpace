@@ -1,0 +1,34 @@
+---
+// 匯入 Layout 與 Supabase 實例
+import MobileLayout from '../layouts/Layout.astro';
+import DesktopLayout from '../layouts/BaseLayout.astro';
+import Shallwehelp from '../components/shallwehelp-code.astro';
+import { supabase } from '../lib/supabase';
+---
+
+<!-- 📱 手機版 -->
+<div class="block md:hidden">
+    <MobileLayout title="客舍萬事屋 Shall We Help">
+                    <Fragment slot="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    </Fragment>
+        <Shallwehelp />
+    </MobileLayout>
+</div>
+
+
+<!-- 💻 電腦版 -->
+<div class="hidden md:block">
+    <DesktopLayout title="客舍萬事屋 Shall We Help">
+            <Fragment slot="head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    </Fragment>
+        <Shallwehelp />
+    </DesktopLayout>
+</div>
