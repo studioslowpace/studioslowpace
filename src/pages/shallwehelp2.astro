@@ -1,38 +1,66 @@
 ---
-// 這裡不需要在靜態頂部同時 import 兩套會打架的 Layout
+import MobileLayout from '../layouts/PhoneLayout.astro';
+import DesktopLayout from '../layouts/BaseLayout.astro';
 import Shallwehelp from '../components/shallwehelp-code.astro';
 import { supabase } from '../lib/supabase';
 ---
 
-<!-- 裝載動態 Layout 的容器 -->
-<div id="dynamic-app-root" style="min-height: 100vh; background-color: #faf6ee;">
-    <!-- 預設顯示載入中，避免畫面閃爍 -->
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #8c7a6b; font-family: sans-serif;">
+<!-- 1. 裝載動態切換內容的根容器 -->
+<div id="dynamic-app-root">
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #8c7a6b;">
         <p>✨ 空間客舍載入中...</p>
     </div>
 </div>
 
-<script>
-    import { createClient } from '@supabase/supabase-js';
+<!-- 2. 手機版樣板（包在 template 內，初始不會被瀏覽器直接渲染與衝突） -->
+<template id="mobile-layout-template">
+    <div class="mobile-wrapper">
+        <MobileLayout title="客舍萬事屋 Shall We Help">
+            <Shallwehelp />
+        </MobileLayout>
+    </div>
+</template>
 
-    // 客戶端載入時執行
-    async function initDeviceLayout() {
+<!-- 3. 電腦版樣板 -->
+<template id="desktop-layout-template">
+    <div class="desktop-wrapper">
+        <DesktopLayout title="客舍萬事屋 Shall We Help">
+            <Shallwehelp />
+        </DesktopLayout>
+    </div>
+</template>
+
+<!-- 4. 前端 JavaScript：根據螢幕寬度動態掛載對應的 Layout -->
+<script>
+    function renderDeviceLayout() {
         const root = document.getElementById('dynamic-app-root');
         if (!root) return;
 
-        // 判斷螢幕寬度 (768px 以上為電腦版)
+        // 判斷螢幕寬度（768px 以上為電腦版）
         const isDesktop = window.innerWidth >= 768;
 
+        root.innerHTML = ''; // 清空目前內容
+
         if (isDesktop) {
-            // 💻 電腦版邏輯：導向電腦版專用路由，或者動態渲染電腦版元件
-            // 如果你希望在同一個網址，也可以透過改變 innerHTML 或動態載入 DesktopLayout 的內容
-            console.log("切換為電腦版模式");
+            const template = document.getElementById('desktop-layout-template');
+            if (template) {
+                root.appendChild(template.content.cloneNode(true));
+            }
         } else {
-            // 📱 手機版邏輯
-            console.log("切換為手機版模式");
+            const template = document.getElementById('mobile-layout-template');
+            if (template) {
+                root.appendChild(template.content.cloneNode(true));
+            }
         }
     }
 
-    // 畫面載入與視窗大小改變時執行
-    window.addEventListener('DOMContentLoaded', initDeviceLayout);
+    // 頁面載入完成後執行
+    window.addEventListener('DOMContentLoaded', renderDeviceLayout);
+
+    // 視窗大小改變或旋轉時自動切換
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(renderDeviceLayout, 150);
+    });
 </script>
