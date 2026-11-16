@@ -16,7 +16,7 @@ import Shallwehelp from '../components/shallwehelp-code.astro';
     </MobileLayout>
 </div>
 
-<!-- 💻 電腦版容器 -->
+<!-- 💻 電腦版容器（我們可以為它加上專屬的電腦版外框樣式） -->
 <div id="desktop-view-wrapper" class="device-view-container" style="display: none;">
     <DesktopLayout title="客舍萬事屋 Shall We Help">
         <Fragment slot="head">
@@ -24,7 +24,11 @@ import Shallwehelp from '../components/shallwehelp-code.astro';
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <script src="https://unpkg.com/lucide@latest"></script>
         </Fragment>
-        <Shallwehelp />
+        
+        <!-- 💡 讓內容在電腦版時擁有適當的最大寬度與置中，避免被拉得太寬而走樣 -->
+        <div style="max-width: 1000px; margin: 0 auto; padding: 20px;">
+            <Shallwehelp />
+        </div>
     </DesktopLayout>
 </div>
 
