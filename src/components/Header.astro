@@ -32,13 +32,21 @@
                  <a href="https://linktr.ee/Slowpace_studio?utm_source=linktree_profile_share&ltsid=53ad2931-15a3-4c19-856e-9c90179ded10" class="img-link" target="_blank" rel="noopener noreferrer">空間歌單</a>
                 </div>
             </div>
-            <a href="https://linktr.ee/Slowpace_studio" target="_blank" rel="noopener noreferrer">活動報名</a>
-            <a href="/timetable/slowpacestudio/">客舍時間表</a>
-            <a href="/gaming">悠閒小遊戲</a>
             <a href="/newsletter">客舍電子報</a>
             <a href="/skillsupermarket">客舍萬事屋</a>
             <a href="/slowplace">客舍空間</a>
-            <a href="/login">會員登入</a>
+            <a href="https://linktr.ee/Slowpace_studio" class="nav-icon-link" aria-label="活動報名<" title="活動報名<">
+                <i class="fa-solid fa-pen-to-square" style="color: rgb(60, 160, 236);"></i>
+            </a>
+            <a href="/timetable/slowpacestudio" class="nav-icon-link" aria-label="客舍時間表<" title="客舍時間表<">
+                <i class="fa-solid fa-calendar-days" style="color: rgb(60, 160, 236);"></i>
+            </a>
+             <a href="/gaming" class="nav-icon-link" aria-label="悠閒小遊戲" title="悠閒小遊戲">
+                  <i class="fa-solid fa-gamepad" style="color: rgb(60, 160, 236);"></i>
+            </a>
+            <a href="/login" class="nav-icon-link" aria-label="會員登入" title="會員登入">
+                  <i class="fa-solid fa-user" style="color: rgb(60, 160, 236);"></i>
+            </a>
             
             <div class="more-dropdown" id="more-menu" style="display: none;">
                 <a href="#" class="more-toggle" onclick="return false;">更多 ▾</a>
@@ -208,6 +216,23 @@
 .sub-menu a:hover {
     background-color: #f5f5f5 !important;
     color: #1465A3 !important;
+}
+
+/* 會員圖示按鈕樣式 */
+.nav-icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem; /* 調整圖示大小，可依需求改為 1.1rem 或 1.3rem */
+    padding: 5px;
+    transition: transform 0.2s, opacity 0.2s;
+    text-decoration: none;
+}
+
+/* 滑鼠懸停時微微放大或改變透明度 */
+.nav-icon-link:hover {
+    transform: scale(1.1);
+    opacity: 0.85;
 }
 
 @media (max-width: 768px) {
