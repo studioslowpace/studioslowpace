@@ -1,4 +1,3 @@
----
 // 匯入 Layout
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
@@ -57,10 +56,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             margin-bottom: 18px; 
         }
 
-        /* 標題與年月份並列區塊 */
+        /* 標題與年月份並列區塊 - 垂直向下對齊 (置中) */
         .title-area { 
             display: flex; 
-            align-items: baseline;
+            align-items: center;
             justify-content: flex-end;
             width: 100%;
             gap: 15px;
@@ -71,6 +70,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             color: var(--primary-blue); 
             letter-spacing: 2px; 
             font-weight: bold; 
+            line-height: 1.2;
         }
         
         #month-display { 
@@ -83,10 +83,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             border-radius: 6px; 
             transition: all 0.2s ease; 
             user-select: none; 
+            line-height: 1.2;
         }
         #month-display:hover { 
             background-color: rgba(0, 0, 0, 0.05); 
             color: #333; 
+        }
+
+        .logo-img {
+            display: block;
         }
 
         /* 類型圖例獨立新一列 */
@@ -162,7 +167,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         .modal-card p { font-size: 16px; margin-bottom: 12px; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-/* 1. 下拉容器維持相對定位 */
+        /* 1. 下拉容器維持相對定位 */
         .month-dropdown-container {
             position: relative;
             display: inline-block;
@@ -183,22 +188,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             border-radius: 12px;
             padding: 12px;
             
-            /* 關鍵修改：改成單欄排版 (一列一個) */
-            display: flex;
+            /* 排版：單欄直向排列 */
             flex-direction: column;
             gap: 8px; 
             
             /* 限制高度並強制出現捲軸 */
             max-height: 220px; 
             overflow-y: auto; 
-            width: 180px; /* 可依需求調整選單寬度 */
+            width: 180px; 
             box-sizing: border-box;
         }
 
         /* 3. 透過 JS 切換顯示時的 class (強制覆蓋顯示) */
         .month-select-grid.show {
             display: flex !important;
-            flex-direction: column !important;
         }
 
         /* 4. 捲軸樣式美化 */
@@ -221,7 +224,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             font-size: 14px; 
             transition: all 0.2s; 
             cursor: pointer;
-            width: 100%; /* 讓按鈕填滿單欄寬度 */
+            width: 100%; 
         }
         .month-select-btn:hover { 
             background: #eef5ee; 
@@ -258,7 +261,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 margin-bottom: 12px; 
             }
 
-            /* 標題與年月份維持左右並列 */
+            /* 標題與年月份維持左右並列並置中對齊 */
             .title-area { 
                 flex-direction: row !important;
                 align-items: center;
@@ -336,13 +339,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 margin-bottom: 1px;
                 margin-top: 2px;  
             }
-    .evt-text { 
-        display: block !important;      /* 💡 取消原本的 none，改為顯示 */
-        font-size: 6px !important;      /* 縮小字體以適應手機畫面 */
-        width: 100%;
-        text-align: right;
-        word-break: break-all;
-    }
+            .evt-text { 
+                display: block !important;
+                font-size: 6px !important;
+                width: 100%;
+                text-align: right;
+                word-break: break-all;
+            }
 
             .row { 
                 flex-direction: column;
@@ -363,7 +366,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             }
             .logo-img {
                 width: 30px;
-                height: 30px;"
+                height: 30px;
             }
         }
     </style>
@@ -372,12 +375,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <div class="container">
     <div class="header-section">
-        <!-- 第一列：客舍時間表 與 年月份並列 -->
+        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (垂直置中對齊) -->
         <div class="title-area">
-            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 40px; height: 40px;" oncontextmenu="return false;" ondragstart="return false;">
+            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 50px; height: 50px;" oncontextmenu="return false;" ondragstart="return false;">
             <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
-             <!-- 改成點擊下方展開的下拉容器 -->
-            <div class="month-dropdown-container" style="position: relative; display: inline-block;">
+             <!-- 下拉選單容器 -->
+            <div class="month-dropdown-container">
                 <span id="month-display" class="rpg-btn" onclick="toggleMonthDropdown()" style="cursor: pointer;">
                     連線中... ▼
                 </span>
@@ -428,7 +431,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
     </div>
 </div>
-
 
 <div class="modal-overlay" id="typeManageModal">
     <div class="modal-card">
@@ -625,7 +627,7 @@ async function saveDB() {
     fetchData();
 }
 
-// --- 【修復】快速新增類型 ---
+// --- 快速新增類型 ---
 window.addType = async function() {
     if (!isAdmin) return;
     const nameInput = document.getElementById('new-type');
@@ -649,7 +651,7 @@ window.addType = async function() {
     await saveDB();
 };
 
-// --- 【修復】導出本月圖檔 (1080 x 1350 IG 貼文尺寸) ---
+// --- 導出本月圖檔 (1080 x 1350 IG 貼文尺寸) ---
 window.exportEventImage = function() {
     const canvas = document.getElementById('exportCanvas');
     if (!canvas) return;
@@ -679,166 +681,180 @@ window.exportEventImage = function() {
     const padX = 42;
     const padTop = 48;
 
-    // 2. 頁首第一列：客舍時間表 與 年月份並列
-    const [year, month] = currentMonth.split('-').map(Number);
-    ctx.fillStyle = '#2b579a';
-    ctx.font = 'bold 48px "Noto Sans TC", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('客舍時間表', padX, padTop + 44);
+    // 載入 Logo 圖片並與標題、月份垂直置中對齊繪製
+    const logoImgObj = new Image();
+    logoImgObj.src = '/images/logo-small2.png';
+    logoImgObj.onload = function() {
+        const logoSize = 55;
+        const headerY = padTop + 10;
+        ctx.drawImage(logoImgObj, padX, headerY, logoSize, logoSize);
 
-    ctx.font = 'bold 34px "Noto Sans TC", sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(`${year}年 ${month}月`, W - padX, padTop + 44);
+        // 2. 標題與月份
+        const [year, month] = currentMonth.split('-').map(Number);
+        ctx.fillStyle = '#2b579a';
+        ctx.font = 'bold 48px "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('客舍時間表', padX + logoSize + 15, headerY + 4);
 
-    // 3. 頁首第二列：類型圖示轉新一列（自動折行）
-    let curX = padX;
-    let curY = padTop + 72;
-    const legendFont = '20px "Noto Sans TC", sans-serif';
-    ctx.font = legendFont;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    dbData.types.forEach(t => {
-        const textWidth = ctx.measureText(t.name).width;
-        const itemWidth = 22 + 8 + textWidth + 24;
-        if (curX + itemWidth > W - padX) {
-            curX = padX;
-            curY += 34;
-        }
-        drawRoundRect(curX, curY, 22, 22, 4, t.color, 'rgba(0,0,0,0.12)');
-        ctx.fillStyle = '#333333';
-        ctx.fillText(t.name, curX + 30, curY + 12);
-        curX += itemWidth;
-    });
-
-    // 4. 星期列
-    const gridTop = curY + 46;
-    const gridW = W - padX * 2;
-    const gap = 6;
-    const colW = (gridW - gap * 6) / 7;
-    const weekdayH = 44;
-    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-
-    weekdays.forEach((dayName, i) => {
-        const x = padX + i * (colW + gap);
-        drawRoundRect(x, gridTop, colW, weekdayH, 8, '#f0d0d0');
-        ctx.fillStyle = '#333333';
-        ctx.font = 'bold 21px "Noto Sans TC", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(dayName, x + colW / 2, gridTop + weekdayH / 2 + 1);
-    });
-
-    // 5. 計算當月週數與格子高度
-    const firstDay = new Date(year, month - 1, 1).getDay();
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const totalSlots = firstDay + daysInMonth;
-    const rows = Math.ceil(totalSlots / 7);
-
-    const cellsTop = gridTop + weekdayH + gap;
-    const footerH = 38;
-    const availH = H - cellsTop - footerH - 16;
-    const rowH = (availH - gap * (rows - 1)) / rows;
-
-    // 6. 繪製每日格子與活動
-    for (let slot = 0; slot < rows * 7; slot++) {
-        const r = Math.floor(slot / 7);
-        const c = slot % 7;
-        const x = padX + c * (colW + gap);
-        const y = cellsTop + r * (rowH + gap);
-
-        drawRoundRect(x, y, colW, rowH, 10, '#f6f7e9', '#e2e6d5');
-
-        const d = slot - firstDay + 1;
-        if (d < 1 || d > daysInMonth) continue;
-
-        const dayStr = d.toString().padStart(2, '0');
-        const fullDateStr = `${currentMonth}-${dayStr}`;
-        const isHoliday = holidays.includes(fullDateStr);
-
-        // 日期數字
-        if (c === 0 || isHoliday) {
-            ctx.fillStyle = '#d9534f';
-        } else if (c === 6) {
-            ctx.fillStyle = '#2b579a';
-        } else {
-            ctx.fillStyle = '#333333';
-        }
-        ctx.font = 'bold 20px "Noto Sans TC", sans-serif';
+        ctx.font = 'bold 36px "Noto Sans TC", sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'top';
-        ctx.fillText(String(d), x + colW - 8, y + 7);
+        ctx.fillText(`${year}年 ${month}月`, W - padX, headerY + 8);
 
-        // 該日活動
-        const events = (dbData.events[currentMonth] || []).filter(e => e.day === d);
-        let evtY = y + 33;
-        const evtPadX = 5;
-        const evtW = colW - evtPadX * 2;
+        // 3. 頁首第二列：類型圖示轉新一列（自動折行）
+        let curX = padX;
+        let curY = headerY + logoSize + 25;
+        const legendFont = '20px "Noto Sans TC", sans-serif';
+        ctx.font = legendFont;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
 
-        events.forEach(e => {
-            if (evtY + 26 > y + rowH - 4) return;
-
-            const typeObj = dbData.types.find(t => t.name === e.type);
-            const bgColor = typeObj ? typeObj.color : '#dcecfc';
-
-            // 自動斷行計算活動文字
-            ctx.font = '13px "Noto Sans TC", sans-serif';
-            const lines = [];
-            let currentLine = '';
-            for (const ch of (e.text || '')) {
-                if (ctx.measureText(currentLine + ch).width > evtW - 10) {
-                    lines.push(currentLine);
-                    currentLine = ch;
-                } else {
-                    currentLine += ch;
-                }
+        dbData.types.forEach(t => {
+            const textWidth = ctx.measureText(t.name).width;
+            const itemWidth = 22 + 8 + textWidth + 24;
+            if (curX + itemWidth > W - padX) {
+                curX = padX;
+                curY += 34;
             }
-            if (currentLine) lines.push(currentLine);
+            drawRoundRect(curX, curY, 22, 22, 4, t.color, 'rgba(0,0,0,0.12)');
+            ctx.fillStyle = '#333333';
+            ctx.fillText(t.name, curX + 30, curY + 12);
+            curX += itemWidth;
+        });
 
-            const hasTime = Boolean(e.time && e.time.trim());
-            const lineH = 16;
-            const boxH = (hasTime ? 17 : 0) + lines.length * lineH + 8;
+        // 4. 星期列
+        const gridTop = curY + 42;
+        const gridW = W - padX * 2;
+        const gap = 6;
+        const colW = (gridW - gap * 6) / 7;
+        const weekdayH = 44;
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
-            if (evtY + boxH > y + rowH - 3) return;
+        weekdays.forEach((dayName, i) => {
+            const x = padX + i * (colW + gap);
+            drawRoundRect(x, gridTop, colW, weekdayH, 8, '#f0d0d0');
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 21px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(dayName, x + colW / 2, gridTop + weekdayH / 2 + 1);
+        });
 
-            drawRoundRect(x + evtPadX, evtY, evtW, boxH, 5, bgColor);
+        // 5. 計算當月週數與格子高度
+        const firstDay = new Date(year, month - 1, 1).getDay();
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const totalSlots = firstDay + daysInMonth;
+        const rows = Math.ceil(totalSlots / 7);
 
-            ctx.fillStyle = '#222222';
+        const cellsTop = gridTop + weekdayH + gap;
+        const footerH = 38;
+        const availH = H - cellsTop - footerH - 16;
+        const rowH = (availH - gap * (rows - 1)) / rows;
+
+        // 6. 繪製每日格子與活動
+        for (let slot = 0; slot < rows * 7; slot++) {
+            const r = Math.floor(slot / 7);
+            const c = slot % 7;
+            const x = padX + c * (colW + gap);
+            const y = cellsTop + r * (rowH + gap);
+
+            drawRoundRect(x, y, colW, rowH, 10, '#f6f7e9', '#e2e6d5');
+
+            const d = slot - firstDay + 1;
+            if (d < 1 || d > daysInMonth) continue;
+
+            const dayStr = d.toString().padStart(2, '0');
+            const fullDateStr = `${currentMonth}-${dayStr}`;
+            const isHoliday = holidays.includes(fullDateStr);
+
+            // 日期數字
+            if (c === 0 || isHoliday) {
+                ctx.fillStyle = '#d9534f';
+            } else if (c === 6) {
+                ctx.fillStyle = '#2b579a';
+            } else {
+                ctx.fillStyle = '#333333';
+            }
+            ctx.font = 'bold 20px "Noto Sans TC", sans-serif';
             ctx.textAlign = 'right';
             ctx.textBaseline = 'top';
-            let textY = evtY + 4;
+            ctx.fillText(String(d), x + colW - 8, y + 7);
 
-            if (hasTime) {
-                ctx.font = 'bold 13px "Noto Sans TC", sans-serif';
-                ctx.fillText(e.time, x + colW - evtPadX - 5, textY);
-                textY += 17;
-            }
+            // 該日活動
+            const events = (dbData.events[currentMonth] || []).filter(e => e.day === d);
+            let evtY = y + 33;
+            const evtPadX = 5;
+            const evtW = colW - evtPadX * 2;
 
-            ctx.font = '13px "Noto Sans TC", sans-serif';
-            lines.forEach(line => {
-                ctx.fillText(line, x + colW - evtPadX - 5, textY);
-                textY += lineH;
+            events.forEach(e => {
+                if (evtY + 26 > y + rowH - 4) return;
+
+                const typeObj = dbData.types.find(t => t.name === e.type);
+                const bgColor = typeObj ? typeObj.color : '#dcecfc';
+
+                ctx.font = '13px "Noto Sans TC", sans-serif';
+                const lines = [];
+                let currentLine = '';
+                for (const ch of (e.text || '')) {
+                    if (ctx.measureText(currentLine + ch).width > evtW - 10) {
+                        lines.push(currentLine);
+                        currentLine = ch;
+                    } else {
+                        currentLine += ch;
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+
+                const hasTime = Boolean(e.time && e.time.trim());
+                const lineH = 16;
+                const boxH = (hasTime ? 17 : 0) + lines.length * lineH + 8;
+
+                if (evtY + boxH > y + rowH - 3) return;
+
+                drawRoundRect(x + evtPadX, evtY, evtW, boxH, 5, bgColor);
+
+                ctx.fillStyle = '#222222';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'top';
+                let textY = evtY + 4;
+
+                if (hasTime) {
+                    ctx.font = 'bold 13px "Noto Sans TC", sans-serif';
+                    ctx.fillText(e.time, x + colW - evtPadX - 5, textY);
+                    textY += 17;
+                }
+
+                ctx.font = '13px "Noto Sans TC", sans-serif';
+                lines.forEach(line => {
+                    ctx.fillText(line, x + colW - evtPadX - 5, textY);
+                    textY += lineH;
+                });
+
+                evtY += boxH + 4;
             });
+        }
 
-            evtY += boxH + 4;
-        });
+        // 7. 底部浮水印
+        ctx.fillStyle = '#7a8470';
+        ctx.font = '16px "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('Slow Pace Studio 空間客舍', W - padX, H - 16);
+
+        // 8. 觸發圖片下載
+        const link = document.createElement('a');
+        link.download = `客舍時間表_${currentMonth}.png`;
+        link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // 若圖片已快取載入，觸發 onload
+    if (logoImgObj.complete) {
+        logoImgObj.onload();
     }
-
-    // 7. 底部浮水印
-    ctx.fillStyle = '#7a8470';
-    ctx.font = '16px "Noto Sans TC", sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('Slow Pace Studio 空間客舍', W - padX, H - 16);
-
-    // 8. 觸發圖片下載
-    const link = document.createElement('a');
-    link.download = `客舍時間表_${currentMonth}.png`;
-    link.href = canvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 };
 
 // 切換月份下拉選單的顯示與隱藏
