@@ -162,52 +162,66 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         .modal-card p { font-size: 16px; margin-bottom: 12px; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-/* 下拉容器 */
+/* 1. 下拉容器維持相對定位 */
         .month-dropdown-container {
             position: relative;
             display: inline-block;
         }
 
-        /* 向下展開的月份網格面板 */
+        /* 2. 月份網格選單：預設隱藏、單欄（一列一個）、固定最大高度並開啟捲軸 */
         .month-select-grid {
-            display: none; /* 預設隱藏，透過 JS 切換顯示 */
+            display: none; /* 預設不顯示，必須點擊後才展開 */
             position: absolute;
-            top: calc(100% + 8px); /* 緊貼按鈕下方並空出 8px 間距 */
+            top: calc(100% + 6px); /* 距離上方按鈕 6px */
             left: 0;
             z-index: 1000;
             
-            /* 視覺與排版 */
+            /* 視覺外觀 */
             background: #ffffff;
             border: 1px solid #e2e8f0;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 12px;
             
-            /* 網格與滾動設定 */
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
+            /* 關鍵修改：改成單欄排版 (一列一個) */
+            display: flex;
+            flex-direction: column;
             gap: 8px; 
-            max-height: 250px; 
+            
+            /* 限制高度並強制出現捲軸 */
+            max-height: 220px; 
             overflow-y: auto; 
-            width: 240px; /* 可依需求調整寬度 */
+            width: 180px; /* 可依需求調整選單寬度 */
+            box-sizing: border-box;
         }
 
-        /* 顯示狀態的 Class (透過 JS 切換) */
+        /* 3. 透過 JS 切換顯示時的 class (強制覆蓋顯示) */
         .month-select-grid.show {
-            display: grid !important;
+            display: flex !important;
+            flex-direction: column !important;
         }
 
-        /* 月份按鈕樣式 */
+        /* 4. 捲軸樣式美化 */
+        .month-select-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+        .month-select-grid::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        /* 5. 按鈕樣式 */
         .month-select-btn {
             background: #f7f5f2; 
             color: #333; 
             border: 1px solid #eee; 
-            padding: 8px 12px; 
+            padding: 10px 12px; 
             text-align: center; 
             border-radius: 6px; 
             font-size: 14px; 
             transition: all 0.2s; 
             cursor: pointer;
+            width: 100%; /* 讓按鈕填滿單欄寬度 */
         }
         .month-select-btn:hover { 
             background: #eef5ee; 
@@ -360,7 +374,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="header-section">
         <!-- 第一列：客舍時間表 與 年月份並列 -->
         <div class="title-area">
-            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 50px; height: 50px;" oncontextmenu="return false;" ondragstart="return false;">
+            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 40px; height: 40px;" oncontextmenu="return false;" ondragstart="return false;">
             <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
              <!-- 改成點擊下方展開的下拉容器 -->
             <div class="month-dropdown-container" style="position: relative; display: inline-block;">
