@@ -218,6 +218,53 @@ const { data: product, error } = await supabase
     });
   });
 
+  // 共用的加入購物車邏輯
+  function addToCart(redirect = false) {
+    const titleEl = document.querySelector('.product-title');
+    const priceTagEl = document.querySelector('.price-tag');
+    const mainImgEl = document.getElementById('current-img') as HTMLImageElement;
+
+    const title = titleEl ? titleEl.textContent?.trim() : '';
+    const priceText = priceTagEl ? priceTagEl.textContent?.trim() : '0';
+    
+    // 從價格字串中解析出數字 (例如 "HK$140.00" -> 140)
+    const priceMatch = priceText.replace(/[^0-9.]/g, '');
+    const price = priceMatch ? parseFloat(priceMatch) : 0;
+    const currency = priceText.includes('HK$') ? 'HK$' : '$';
+    const image = mainImgEl ? mainImgEl.src : '';
+    const quantity = parseInt(qtyInput?.value || '1');
+
+    if (!title) {
+      alert('無法取得商品資訊');
+      return;
+    }
+
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingIndex = cart.findIndex((item: any) => item.title === title);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += quantity;
+    } else {
+      cart.push({ title, price, currency, image, quantity });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    if (redirect) {
+      window.location.href = '/checkout';
+    } else {
+      alert('🛒 已成功加入購物車！');
+    }
+  }
+
+  // 綁定加入購物車按鈕
+  const addCartBtn = document.querySelector('.btn-add-cart');
+  addCartBtn?.addEventListener('click', () => addToCart(false));
+
+  // 綁定立即購買按鈕 (加入購物車後跳轉到結帳頁)
+  const buyNowBtn = document.querySelector('.btn-buy-now');
+  buyNowBtn?.addEventListener('click', () => addToCart(true));
+
   // 編輯 Modal 互動
   const modal = document.getElementById('productModal');
   const btnEditCurrent = document.getElementById('btn-edit-current');
@@ -248,11 +295,11 @@ const { data: product, error } = await supabase
     prodDescInput.value = dataset.description || '';
     prodShippingInput.value = dataset.shipping || '';
 
-    modal.style.display = 'flex';
+    if (modal) modal.style.display = 'flex';
   });
 
   btnCloseModal?.addEventListener('click', () => {
-    modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
   });
 
   productForm?.addEventListener('submit', async (e) => {
@@ -278,29 +325,6 @@ const { data: product, error } = await supabase
       window.location.reload();
     }
   });
-
-  // 在商品詳情頁的 script 內加入這段：
-const addCartBtn = document.querySelector('.btn-add-cart');
-addCartBtn?.addEventListener('click', () => {
-  const title = product.title;
-  const price = product.price;
-  const currency = product.currency || 'HK$';
-  const image = product.images?.[0] || '';
-  const qtyInput = document.getElementById('qty-input') as HTMLInputElement;
-  const quantity = parseInt(qtyInput?.value || '1');
-
-  let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const existingIndex = cart.findIndex((item: any) => item.title === title);
-
-  if (existingIndex > -1) {
-    cart[existingIndex].quantity += quantity;
-  } else {
-    cart.push({ title, price, currency, image, quantity });
-  }
-
-  localStorage.setItem('cart', JSON.stringify(cart));
-  alert('🛒 已成功加入購物車！');
-});
 </script>
 
 <style>
