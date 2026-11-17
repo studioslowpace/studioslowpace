@@ -75,7 +75,6 @@ import Layout from '../layouts/BaseLayout.astro';
 
     if (!tbody || !summary || !emptyView || !totalPriceEl || !headerTitleEl) return;
 
-    // 計算總件數
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     headerTitleEl.innerText = `購物車 (${totalItems} 件)`;
 
@@ -115,11 +114,8 @@ import Layout from '../layouts/BaseLayout.astro';
           </td>
           <td class="td-subtotal">${item.currency || 'HK$'}${itemTotal.toFixed(2)}</td>
           <td class="td-action">
-            <button class="remove-btn" data-index="${index}" title="刪除商品">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
+            <button class="remove-btn" data-index="${index}" title="移除商品">
+              刪除
             </button>
           </td>
         </tr>
@@ -129,7 +125,6 @@ import Layout from '../layouts/BaseLayout.astro';
     tbody.innerHTML = html;
     totalPriceEl.innerText = `HK$${total.toFixed(2)}`;
 
-    // 綁定事件
     document.querySelectorAll('.minus-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idx = Number((e.currentTarget as HTMLElement).dataset.index);
@@ -173,47 +168,48 @@ import Layout from '../layouts/BaseLayout.astro';
   .breadcrumb .sep { margin: 0 8px; color: #ccc; }
 
   /* 卡片外框 */
-  .cart-card-box { background: #fff; border: 1px solid #e5e5e5; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; margin-bottom: 40px; }
-  .cart-card-header { padding: 16px 20px; font-size: 15px; font-weight: 500; border-bottom: 1px solid #eaeaea; color: #333; background: #fafafa; }
+  .cart-card-box { background: #fff; border: 1px solid #eaeaea; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); overflow: hidden; margin-bottom: 40px; }
+  .cart-card-header { padding: 16px 24px; font-size: 14px; font-weight: 400; border-bottom: 1px solid #eaeaea; color: #444; background: #fcfcfc; letter-spacing: 0.5px; }
 
   /* 表格樣式 */
   .cart-table-wrapper { width: 100%; overflow-x: auto; }
   .cart-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-  .cart-table th { background: #fff; color: #666; font-weight: 400; padding: 14px 20px; border-bottom: 1px solid #eaeaea; }
-  .cart-table td { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  .cart-table th { background: #fff; color: #888; font-weight: 400; padding: 14px 24px; border-bottom: 1px solid #eaeaea; font-size: 12px; letter-spacing: 0.5px; }
+  .cart-table td { padding: 16px 24px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
 
-  .th-product, .td-product { width: 45%; }
-  .th-price, .td-price { width: 18%; color: #333; }
-  .th-qty, .td-qty { width: 20%; }
-  .th-subtotal, .td-subtotal { width: 12%; font-weight: 600; color: #111; }
+  .th-product, .td-product { width: 44%; }
+  .th-price, .td-price { width: 18%; color: #444; }
+  .th-qty, .td-qty { width: 18%; }
+  .th-subtotal, .td-subtotal { width: 15%; font-weight: 500; color: #222; }
   .th-action, .td-action { width: 5%; text-align: center; }
 
-  .product-info-cell { display: flex; align-items: center; gap: 15px; }
-  .cart-item-img { width: 60px; height: 75px; background: #eaeaea; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .cart-item-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
-  .cart-item-title { font-size: 13px; color: #333; line-height: 1.4; }
+  /* 商品圖縮小與標題排版 */
+  .product-info-cell { display: flex; align-items: center; gap: 16px; }
+  .cart-item-img { width: 45px; height: 60px; background: #f7f7f7; border: 1px solid #eee; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .cart-item-img img { max-width: 90%; max-height: 90%; object-fit: contain; }
+  .cart-item-title { font-size: 13px; color: #333; line-height: 1.5; font-weight: 400; }
 
-  /* 數量選擇器 (對齊截圖) */
-  .quantity-picker { display: flex; width: 110px; border: 1px solid #ddd; border-radius: 2px; background: #fff; }
-  .qty-btn { width: 32px; height: 32px; background: #fff; border: none; font-size: 14px; cursor: pointer; color: #555; }
-  .qty-btn:hover { background: #f7f7f7; }
-  .quantity-picker input { width: 46px; border: none; text-align: center; font-size: 13px; border-left: 1px solid #ddd; border-right: 1px solid #ddd; outline: none; background: #fff; }
+  /* 文青風數量選擇器 */
+  .quantity-picker { display: flex; width: 96px; border: 1px solid #e0e0e0; border-radius: 2px; background: #fff; }
+  .qty-btn { width: 28px; height: 28px; background: #fafafa; border: none; font-size: 13px; cursor: pointer; color: #666; transition: background 0.2s; }
+  .qty-btn:hover { background: #f0f0f0; color: #333; }
+  .quantity-picker input { width: 40px; border: none; text-align: center; font-size: 12px; border-left: 1px solid #e0e0e0; border-right: 1px solid #e0e0e0; outline: none; background: #fff; color: #333; }
 
-  /* 刪除按鈕 */
-  .remove-btn { background: none; border: none; color: #aaa; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
-  .remove-btn:hover { color: #ff4d4f; }
+  /* 文青風刪除按鈕 */
+  .remove-btn { background: none; border: none; color: #999; cursor: pointer; font-size: 12px; padding: 4px 6px; transition: color 0.2s; }
+  .remove-btn:hover { color: #c96b58; }
 
   /* 總結區塊靠右 */
-  .cart-summary-section { padding: 25px 30px; border-top: 1px solid #eaeaea; background: #fafafa; display: flex; justify-content: flex-end; }
+  .cart-summary-section { padding: 25px 30px; border-top: 1px solid #eaeaea; background: #fcfcfc; display: flex; justify-content: flex-end; }
   .summary-content { display: flex; flex-direction: column; align-items: flex-end; gap: 15px; min-width: 260px; }
-  .summary-row { display: flex; justify-content: space-between; width: 100%; font-size: 15px; align-items: center; }
-  .summary-label { color: #666; }
-  .total-price { font-size: 20px; font-weight: 700; color: #111; }
+  .summary-row { display: flex; justify-content: space-between; width: 100%; font-size: 14px; align-items: center; }
+  .summary-label { color: #666; font-weight: 300; }
+  .total-price { font-size: 18px; font-weight: 500; color: #111; letter-spacing: 0.5px; }
   
-  .btn { padding: 12px 35px; border: none; font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; border-radius: 2px; transition: opacity 0.2s; display: inline-block; }
-  .btn-checkout { background-color: #ff6600; color: #fff; width: 100%; }
+  .btn { padding: 11px 30px; border: none; font-size: 13px; cursor: pointer; text-decoration: none; text-align: center; border-radius: 2px; transition: opacity 0.2s; display: inline-block; letter-spacing: 0.5px; }
+  .btn-checkout { background-color: #c99e58; color: #fff; width: 100%; font-weight: 400; }
   .btn-checkout:hover { opacity: 0.9; }
 
-  .cart-empty { text-align: center; padding: 60px 0; color: #666; }
-  .btn-shop-now { background-color: #c99e58; color: #fff; margin-top: 15px; }
+  .cart-empty { text-align: center; padding: 60px 0; color: #666; font-size: 13px; }
+  .btn-shop-now { background-color: #333; color: #fff; margin-top: 15px; }
 </style>
