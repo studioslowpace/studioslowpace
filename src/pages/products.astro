@@ -1,496 +1,490 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import Layout from '../layouts/BaseLayout.astro';
+import { supabase } from '../lib/supabase';
+
+const mainCategory = Astro.url.searchParams.get('main_category') || '';
+const subCategory = Astro.url.searchParams.get('sub_category') || '';
+const sort = Astro.url.searchParams.get('sort') || 'created_at_desc';
+
+let query = supabase.from('products').select('*');
+
+if (mainCategory) {
+  query = query.eq('main_category', mainCategory);
+}
+if (subCategory) {
+  query = query.eq('sub_category', subCategory);
+}
+
+if (sort === 'price_asc') {
+  query = query.order('price', { ascending: true });
+} else if (sort === 'price_desc') {
+  query = query.order('price', { ascending: false });
+} else {
+  query = query.order('created_at', { ascending: false });
+}
+
+const { data: products, error } = await query;
+if (error) console.error('Error fetching products:', error);
+
+// 定義全新的分類架構
+const sidebarCategories = [
+  {
+    title: '全新書',
+    mainSlug: 'new-books',
+    items: [
+      { name: '小說', slug: 'fiction' },
+      { name: '散文', slug: 'prose' },
+      { name: '詩集', slug: 'poetry' },
+      { name: '非中文書', slug: 'non-chinese' },
+      { name: '簡體字書', slug: 'simplified-chinese' },
+      { name: '其他', slug: 'other-books' },
+    ]
+  },
+  {
+    title: '二手書',
+    mainSlug: 'used-books',
+    hasSub: true,
+    items: [
+      { name: '小說', slug: 'fiction' },
+      { name: '散文', slug: 'prose' },
+      { name: '詩集', slug: 'poetry' },
+      { name: '非中文書', slug: 'non-chinese' },
+      { name: '簡體字書', slug: 'simplified-chinese' },
+      { name: '其他', slug: 'other-books' }
+    ]
+  },
+  {
+    title: '小誌 (Zine)',
+    mainSlug: 'zine',
+    hasSub: true,
+    items: [
+      { name: '主打內容', slug: 'zine-content' },
+      { name: '主打設計', slug: 'zine-design' },
+      { name: '主打實驗', slug: 'zine-experimental' }
+    ]
+  },
+  {
+    title: '文創產品',
+    mainSlug: 'merchandise',
+    hasSub: true,
+    items: [
+      { name: '明信片', slug: 'postcard' },
+      { name: '文具', slug: 'stationery' },
+      { name: '日常用品', slug: 'daily-goods' },
+      { name: '飾物', slug: 'accessories' }
+    ]
+  }
+];
 ---
-<BaseLayout title="空間客舍 - 商品管理系統">
-<Fragment slot="head">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</Fragment>
 
-    <style is:global>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            height: 100%;
-        }
-        body {
-            background-color: #ebf3dd; 
-            font-family: "Noto Sans TC", sans-serif;
-            color: #4A4A4A;
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-        body.admin-mode { background: #f0f4f8; }
-
-        :root {
-            --bg-color: #f7f5f2;
-            --card-bg: #ebf3dd;
-            --text-main: #333333;
-            --text-muted: #999999;
-            --primary-green: #4CAF50;
-            --danger-red: #d9534f;
-            --primary-blue: #2b579a;
-            --border-color: #efefef;
-        }
-
-        .container { 
-            max-width: 1100px; 
-            background: var(--card-bg); 
-            padding: 25px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-            margin: 20px auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .header-section { 
-            display: flex; 
-            flex-direction: column;
-            gap: 14px; 
-            margin-bottom: 18px; 
-        }
-
-        .title-area { 
-            display: flex; 
-            align-items: baseline;
-            justify-content: flex-start;
-            width: 100%;
-            gap: 15px;
-        }
-        .title-area h1 { 
-            margin: 0; 
-            font-size: 36px; 
-            color: var(--primary-blue); 
-            letter-spacing: 2px; 
-            font-weight: bold; 
-            line-height: 1;
-        }
-
-        .logo-img {
-            display: inline-block;
-            vertical-align: baseline;
-        }
-
-        /* 工具列與篩選按鈕 */
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .filter-group, .action-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        button, select, input {
-            padding: 10px 14px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 15px;
-            box-sizing: border-box;
-        }
-        button { cursor: pointer; background: var(--primary-blue); color: white; border: none; }
-        button:hover { background: #1e3f70; }
-        .btn-secondary { background: #888; }
-        .btn-secondary:hover { background: #666; }
-        .btn-danger { background: var(--danger-red); }
-        .btn-danger:hover { background: #b52b27; }
-        .btn-success { background: var(--primary-green); }
-        .btn-success:hover { background: #388E3C; }
-
-        /* 商品表格 */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            background: #fff;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        th, td {
-            border-bottom: 1px solid var(--border-color);
-            padding: 12px 15px;
-            text-align: left;
-            font-size: 15px;
-        }
-        th { background: #f0f4f8; color: #333; font-weight: bold; }
-        tr:hover { background: #fafafa; }
-        .product-img {
-            width: 45px;
-            height: 45px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-        }
-
-        /* 彈窗樣式 */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 900;
-        }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-card {
-            background: white; padding: 25px; border-radius: 12px;
-            width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box;
-        }
-        .modal-card h3 { margin-top: 0; color: #333; font-size: 20px; margin-bottom: 15px; }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #333;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px;
-        }
-        .modal-buttons {
-            display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
-        }
-    </style>
-
-<div class="container">
-    <div class="header-section">
-        <div class="title-area">
-            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 45px; height: 45px;" oncontextmenu="return false;" ondragstart="return false;">
-            <h1>商品管理系統</h1>
+<Layout title="全部商品 - 商店主頁">
+  <div class="shop-page">
+    <div class="top-bar">
+      <div class="container top-bar-flex">
+        <!-- 點擊「全部商品」回到主頁 (確保路由正確) -->
+        <a href="/" class="current-path-link">全部商品</a>
+        <div id="clubGlobalAddBlock" style="display: none;">
+          <button id="btn-open-add-modal" class="admin-action-btn">+ 新增商品</button>
         </div>
+      </div>
     </div>
 
-    <!-- 上方工具列：大總類篩選與功能按鈕 -->
-    <div class="toolbar">
+    <div class="container main-content">
+      <aside class="sidebar">
         <div class="filter-group">
-            <button onclick="filterCategory('ALL')" class="btn-secondary">全部商品</button>
-            <button onclick="filterCategory('全新書')">全新書</button>
-            <button onclick="filterCategory('二手書')">二手書</button>
-            <button onclick="filterCategory('小誌(Zine)')">小誌(Zine)</button>
-            <button onclick="filterCategory('文創產品')">文創產品</button>
+          <h3 class="filter-title">精選商品</h3>
         </div>
-        <div class="action-group">
-            <button onclick="openAddModal()" class="btn-success">➕ 新增商品</button>
+        
+        <div class="filter-group">
+          <a href="/" class="filter-title main-category-link">全部商品</a>
+          <div class="category-tree">
+            {sidebarCategories.map(cat => (
+              <div class="category-section">
+                <div class="category-header">
+                  <span class="icon">■</span>
+                  <a href={`/?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
+                </div>
+                {cat.items.length > 0 && (
+                  <ul class="sub-category-list">
+                    {cat.items.map(item => (
+                      <li>
+                        <a href={`/?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
+                          {item.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-    </div>
+      </aside>
 
-    <!-- 商品列表表格 -->
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>圖片</th>
-                    <th>名稱</th>
-                    <th>大總類</th>
-                    <th>分類</th>
-                    <th>價格</th>
-                    <th>庫存</th>
-                    <th id="th-dynamic-col">出版日期</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="product-table-body">
-                <!-- 由 JS 動態載入 -->
-            </tbody>
-        </table>
-    </div>
-</div>
+      <main class="product-listing">
+        <div class="toolbar">
+          <div class="toolbar-right">
+            <div class="control-item">
+              <label for="sort-select">商品排序</label>
+              <select id="sort-select">
+                <option value="created_at_desc" selected={sort === 'created_at_desc'}>上架時間：由新到舊</option>
+                <option value="price_asc" selected={sort === 'price_asc'}>價格：低到高</option>
+                <option value="price_desc" selected={sort === 'price_desc'}>價格：高到低</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-<!-- 新增/編輯商品彈窗 -->
-<div class="modal-overlay" id="productModal">
+        <div class="product-grid">
+          {products && products.length > 0 ? (
+            products.map(item => (
+              <div class="product-card" data-id={item.id}>
+                <div class="card-link-wrapper">
+                  <a href={`/products/${encodeURIComponent(item.title)}`} class="card-link">
+                    <div class="image-wrapper">
+                      {item.badge && <span class="badge">{item.badge}</span>}
+                      <img src={item.images?.[0] || 'https://via.placeholder.com/300x400'} alt={item.title} loading="lazy" />
+                    </div>
+                    <div class="product-info">
+                      <h4 class="title">{item.title}</h4>
+                      <div class="price">
+                        {item.price_range ? item.price_range : `${item.currency || 'HK$'}${Number(item.price).toFixed(2)}`}
+                      </div>
+                    </div>
+                  </a>
+                  <div class="admin-card-actions">
+                    <button class="btn-edit-product" 
+                      data-id={item.id}
+                      data-title={item.title}
+                      data-author={item.author || ''}
+                      data-publisher={item.publisher || ''}
+                      data-publish_date={item.publish_date || ''}
+                      data-price={item.price}
+                      data-main_category={item.main_category || 'new-books'}
+                      data-sub_category={item.sub_category || 'fiction'}
+                      data-badge={item.badge || ''}
+                      data-image={item.images?.[0] || ''}
+                      data-description={item.description || ''}
+                      data-shipping={item.shipping_info || ''}
+                    >編輯商品</button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p class="no-products">目前沒有找到相關商品</p>
+          )}
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- 新增/編輯 Modal -->
+  <div id="productModal" class="modal-overlay" style="display: none;">
     <div class="modal-card">
-        <h3 id="modal-title">新增商品</h3>
-        <input type="hidden" id="p-id">
-
+      <h3 id="modal-title-text">新增商品</h3>
+      <form id="product-form">
+        <input type="hidden" id="prod-id" />
         <div class="form-group">
-            <label>大總類：</label>
-            <select id="p-main-category" onchange="onMainCategoryChange()">
-                <option value="全新書">全新書</option>
-                <option value="二手書">二手書</option>
-                <option value="小誌(Zine)">小誌(Zine)</option>
-                <option value="文創產品">文創產品</option>
+          <label>商品名稱 (Title)*</label>
+          <input type="text" id="prod-title" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label id="label-author">創作者 / 作者</label>
+            <input type="text" id="prod-author" />
+          </div>
+          <div class="form-group">
+            <label id="label-publisher">尺寸 / 出版社</label>
+            <input type="text" id="prod-publisher" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label id="label-date">出版日期 / 推出日期</label>
+            <input type="text" id="prod-publish_date" placeholder="例如: 2026年11月" />
+          </div>
+          <div class="form-group">
+            <label>價格 (Price)*</label>
+            <input type="number" step="0.01" id="prod-price" required />
+          </div>
+        </div>
+        
+        <!-- 下拉式分類選擇 -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>主分類 (Main Category)*</label>
+            <select id="prod-main_category" required>
+              <option value="new-books">全新書</option>
+              <option value="used-books">二手書</option>
+              <option value="zine">小誌 (Zine)</option>
+              <option value="merchandise">文創產品</option>
             </select>
-        </div>
-
-        <div class="form-group">
-            <label>分類：</label>
-            <select id="p-sub-category">
-                <!-- 動態載入子分類 -->
+          </div>
+          <div class="form-group">
+            <label>子分類 (Sub Category)*</label>
+            <select id="prod-sub_category" required>
+              <!-- 動態填充選項 -->
             </select>
+          </div>
         </div>
 
+        <div class="form-row">
+          <div class="form-group">
+            <label>右上角標籤 (Badge)</label>
+            <input type="text" id="prod-badge" placeholder="例如: 界限" />
+          </div>
+          <div class="form-group">
+            <label>圖片網址 (Image URL)</label>
+            <input type="text" id="prod-image" />
+          </div>
+        </div>
         <div class="form-group">
-            <label>商品名稱：</label>
-            <input type="text" id="p-name" placeholder="請輸入商品名稱">
+          <label>商品描述</label>
+          <textarea id="prod-description" rows="4"></textarea>
         </div>
-
         <div class="form-group">
-            <label>價格 (HKD)：</label>
-            <input type="number" id="p-price" placeholder="0">
+          <label>送貨及付款方式</label>
+          <textarea id="prod-shipping" rows="2"></textarea>
         </div>
-
-        <div class="form-group">
-            <label>庫存數量：</label>
-            <input type="number" id="p-stock" placeholder="0">
-        </div>
-
-        <div class="form-group">
-            <label id="lbl-creator">作者：</label>
-            <input type="text" id="p-creator" placeholder="請輸入作者">
-        </div>
-
-        <div class="form-group">
-            <label id="lbl-spec">出版社：</label>
-            <input type="text" id="p-spec" placeholder="請輸入出版社">
-        </div>
-
-        <div class="form-group">
-            <label id="lbl-date">出版日期：</label>
-            <input type="date" id="p-date">
-        </div>
-
-        <div class="form-group">
-            <label>圖片網址 (Image URL)：</label>
-            <input type="text" id="p-image" placeholder="/images/products/sample.jpg">
-        </div>
-
         <div class="modal-buttons">
-            <button class="btn-secondary" onclick="closeModal()">取消</button>
-            <button onclick="saveProduct()">儲存商品</button>
+          <button type="button" id="btn-close-modal" class="btn-cancel">取消</button>
+          <button type="submit" class="btn-submit">儲存變更</button>
         </div>
+      </form>
     </div>
-</div>
+  </div>
+</Layout>
 
 <script>
-// --- Supabase 設定 ---
-const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-const TABLE_NAME = 'products'; 
+  import { supabase } from '../lib/supabase';
 
-window.client = window.client || (window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null);
-const client = window.client;
+  const subCategoryOptions: Record<string, { value: string; label: string }[]> = {
+    'new-books': [
+      { value: 'fiction', label: '小說' },
+      { value: 'prose', label: '散文' },
+      { value: 'poetry', label: '詩集' },
+      { value: 'non-chinese', label: '非中文書' },
+      { value: 'simplified-chinese', label: '簡體字書' },
+      { value: 'other-books', label: '其他' }
+    ],
+    'used-books': [
+      { value: 'fiction', label: '小說' },
+      { value: 'prose', label: '散文' },
+      { value: 'poetry', label: '詩集' },
+      { value: 'non-chinese', label: '非中文書' },
+      { value: 'simplified-chinese', label: '簡體字書' },
+      { value: 'other-books', label: '其他' }
+    ],
+    'zine': [
+      { value: 'zine-content', label: '主打內容' },
+      { value: 'zine-design', label: '主打設計' },
+      { value: 'zine-experimental', label: '主打實驗' }
+    ],
+    'merchandise': [
+      { value: 'postcard', label: '明信片' },
+      { value: 'stationery', label: '文具' },
+      { value: 'daily-goods', label: '日常用品' },
+      { value: 'accessories', label: '飾物' }
+    ]
+  };
 
-let allProducts = [];
-let currentFilter = 'ALL';
+  const mainCatSelect = document.getElementById('prod-main_category') as HTMLSelectElement;
+  const subCatSelect = document.getElementById('prod-sub_category') as HTMLSelectElement;
+  const labelAuthor = document.getElementById('label-author');
+  const labelPublisher = document.getElementById('label-publisher');
+  const labelDate = document.getElementById('label-date');
 
-// --- 分類對應對照表 ---
-const categoryMap = {
-    '全新書': ['小說', '散文', '詩集', '非中文書', '簡體字書', '其他'],
-    '二手書': ['小說', '散文', '詩集', '非中文書', '簡體字書', '其他'],
-    '小誌(Zine)': ['主打內容', '主打設計', '主打實驗'],
-    '文創產品': ['明信片', '文具', '日常用品', '飾物']
-};
-
-// --- 初始化載入 ---
-async function initProducts() {
-    await fetchProducts();
-}
-
-async function fetchProducts() {
-    if (!client) {
-        allProducts = [];
-        renderTable();
-        return;
+  function updateFormLabelsAndSubcats(mainVal: string, selectedSub = '') {
+    // 更新子分類選項
+    if (subCatSelect && subCategoryOptions[mainVal]) {
+      subCatSelect.innerHTML = '';
+      subCategoryOptions[mainVal].forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub.value;
+        opt.textContent = sub.label;
+        if (sub.value === selectedSub) opt.selected = true;
+        subCatSelect.appendChild(opt);
+      });
     }
-    const { data, error } = await client.from(TABLE_NAME).select('*');
-    if (!error && data) {
-        allProducts = data;
-        renderTable();
+    // 依照主分類動態切換欄位名稱 (Zine/文創改為 創作者 / 尺寸 / 推出日期)
+    if (mainVal === 'zine' || mainVal === 'merchandise') {
+      if (labelAuthor) labelAuthor.innerText = '創作者';
+      if (labelPublisher) labelPublisher.innerText = '尺寸';
+      if (labelDate) labelDate.innerText = '推出日期';
     } else {
-        console.error("無法取得商品資料:", error);
+      if (labelAuthor) labelAuthor.innerText = '作者';
+      if (labelPublisher) labelPublisher.innerText = '出版社';
+      if (labelDate) labelDate.innerText = '出版日期';
     }
-}
+  }
 
-window.addEventListener('DOMContentLoaded', initProducts);
+  mainCatSelect?.addEventListener('change', (e) => {
+    updateFormLabelsAndSubcats((e.target as HTMLSelectElement).value);
+  });
 
-// --- 篩選與回到主頁 ---
-window.filterCategory = function(cat) {
-    if (cat === 'ALL') {
-        // 按全部商品回到 products 主頁
-        window.location.href = '/products'; 
-    } else {
-        currentFilter = cat;
-        renderTable();
-    }
-};
+  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
+  sortSelect?.addEventListener('change', (e) => {
+    const val = (e.target as HTMLSelectElement).value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', val);
+    window.location.href = url.toString();
+  });
 
-// --- 渲染表格 ---
-function renderTable() {
-    const tbody = document.getElementById('product-table-body');
-    const thDynamic = document.getElementById('th-dynamic-col');
-    
-    if (currentFilter === '小誌(Zine)' || currentFilter === '文創產品') {
-        thDynamic.innerText = "推出日期";
-    } else {
-        thDynamic.innerText = "出版日期";
-    }
+  const modal = document.getElementById('productModal');
+  const modalTitleText = document.getElementById('modal-title-text');
+  const btnOpenAdd = document.getElementById('btn-open-add-modal');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const productForm = document.getElementById('product-form') as HTMLFormElement;
 
-    const filtered = currentFilter === 'ALL' 
-        ? allProducts 
-        : allProducts.filter(p => p.main_category === currentFilter);
+  const prodIdInput = document.getElementById('prod-id') as HTMLInputElement;
+  const prodTitleInput = document.getElementById('prod-title') as HTMLInputElement;
+  const prodAuthorInput = document.getElementById('prod-author') as HTMLInputElement;
+  const prodPublisherInput = document.getElementById('prod-publisher') as HTMLInputElement;
+  const prodDateInput = document.getElementById('prod-publish_date') as HTMLInputElement;
+  const prodPriceInput = document.getElementById('prod-price') as HTMLInputElement;
+  const prodBadgeInput = document.getElementById('prod-badge') as HTMLInputElement;
+  const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+  const prodDescInput = document.getElementById('prod-description') as HTMLTextAreaElement;
+  const prodShippingInput = document.getElementById('prod-shipping') as HTMLTextAreaElement;
 
-    if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888; padding: 20px;">暫無相關商品</td></tr>`;
-        return;
-    }
+  btnOpenAdd?.addEventListener('click', () => {
+    if (modalTitleText) modalTitleText.innerText = '新增商品';
+    productForm.reset();
+    prodIdInput.value = '';
+    updateFormLabelsAndSubcats('new-books');
+    modal.style.display = 'flex';
+  });
 
-    tbody.innerHTML = filtered.map(p => `
-        <tr>
-            <td><img src="${p.image || '/images/logo-small2.png'}" class="product-img" alt="商品圖片"></td>
-            <td><strong>${p.name}</strong></td>
-            <td>${p.main_category || '全新書'}</td>
-            <td>${p.sub_category || '-'}</td>
-            <td>$${p.price || 0}</td>
-            <td>${p.stock || 0}</td>
-            <td>${p.date || '-'}</td>
-            <td>
-                <button onclick="openEditModal('${p.id}')" style="padding: 6px 12px; font-size: 13px;">編輯</button>
-                <button onclick="deleteProduct('${p.id}')" class="btn-danger" style="padding: 6px 12px; font-size: 13px; margin-left: 5px;">刪除</button>
-            </td>
-        </tr>
-    `).join('');
-}
+  btnCloseModal?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
 
-// --- 當大總類變更時，自動更新子分類與欄位名稱 ---
-window.onMainCategoryChange = function() {
-    const mainCat = document.getElementById('p-main-category').value;
-    const subSelect = document.getElementById('p-sub-category');
-    
-    const subCategories = categoryMap[mainCat] || [];
-    subSelect.innerHTML = subCategories.map(sub => `<option value="${sub}">${sub}</option>`).join('');
+  document.querySelectorAll('.btn-edit-product').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dataset = (e.currentTarget as HTMLElement).dataset;
+      
+      if (modalTitleText) modalTitleText.innerText = '編輯商品';
+      prodIdInput.value = dataset.id || '';
+      prodTitleInput.value = dataset.title || '';
+      prodAuthorInput.value = dataset.author || '';
+      prodPublisherInput.value = dataset.publisher || '';
+      prodDateInput.value = dataset.publish_date || '';
+      prodPriceInput.value = dataset.price || '';
+      
+      const mCat = dataset.main_category || 'new-books';
+      mainCatSelect.value = mCat;
+      updateFormLabelsAndSubcats(mCat, dataset.sub_category || '');
 
-    const lblCreator = document.getElementById('lbl-creator');
-    const lblSpec = document.getElementById('lbl-spec');
-    const lblDate = document.getElementById('lbl-date');
+      prodBadgeInput.value = dataset.badge || '';
+      prodImageInput.value = dataset.image || '';
+      prodDescInput.value = dataset.description || '';
+      prodShippingInput.value = dataset.shipping || '';
 
-    const inputCreator = document.getElementById('p-creator');
-    const inputSpec = document.getElementById('p-spec');
-    const inputDate = document.getElementById('p-date');
+      modal.style.display = 'flex';
+    });
+  });
 
-    if (mainCat === '小誌(Zine)' || mainCat === '文創產品') {
-        lblCreator.innerText = "創作者：";
-        inputCreator.placeholder = "請輸入創作者";
-        lblSpec.innerText = "尺寸：";
-        inputSpec.placeholder = "請輸入尺寸";
-        lblDate.innerText = "推出日期：";
-    } else {
-        lblCreator.innerText = "作者：";
-        inputCreator.placeholder = "請輸入作者";
-        lblSpec.innerText = "出版社：";
-        inputSpec.placeholder = "請輸入出版社";
-        lblDate.innerText = "出版日期：";
-    }
-};
-
-// --- 開啟新增彈窗 ---
-window.openAddModal = function() {
-    document.getElementById('modal-title').innerText = "新增商品";
-    document.getElementById('p-id').value = "";
-    document.getElementById('p-main-category').value = "全新書";
-    onMainCategoryChange();
-    document.getElementById('p-name').value = "";
-    document.getElementById('p-price').value = "";
-    document.getElementById('p-stock').value = "";
-    document.getElementById('p-creator').value = "";
-    document.getElementById('p-spec').value = "";
-    document.getElementById('p-date').value = "";
-    document.getElementById('p-image').value = "";
-
-    document.getElementById('productModal').classList.add('active');
-};
-
-// --- 開啟編輯彈窗 ---
-window.openEditModal = function(id) {
-    const product = allProducts.find(p => p.id == id);
-    if (!product) return;
-
-    document.getElementById('modal-title').innerText = "編輯商品";
-    document.getElementById('p-id').value = product.id;
-    document.getElementById('p-main-category').value = product.main_category || '全新書';
-    onMainCategoryChange(); 
-    document.getElementById('p-sub-category').value = product.sub_category || '';
-    document.getElementById('p-name').value = product.name || '';
-    document.getElementById('p-price').value = product.price || 0;
-    document.getElementById('p-stock').value = product.stock || 0;
-    document.getElementById('p-creator').value = product.creator || '';
-    document.getElementById('p-spec').value = product.spec || '';
-    document.getElementById('p-date').value = product.date || '';
-    document.getElementById('p-image').value = product.image || '';
-
-    document.getElementById('productModal').classList.add('active');
-};
-
-window.closeModal = function() {
-    document.getElementById('productModal').classList.remove('active');
-};
-
-// --- 儲存商品（新增或更新） ---
-window.saveProduct = async function() {
-    const id = document.getElementById('p-id').value;
-    const main_category = document.getElementById('p-main-category').value;
-    const sub_category = document.getElementById('p-sub-category').value;
-    const name = document.getElementById('p-name').value.trim();
-    const price = parseFloat(document.getElementById('p-price').value) || 0;
-    const stock = parseInt(document.getElementById('p-stock').value) || 0;
-    const creator = document.getElementById('p-creator').value.trim();
-    const spec = document.getElementById('p-spec').value.trim();
-    const date = document.getElementById('p-date').value;
-    const image = document.getElementById('p-image').value.trim();
-
-    if (!name) {
-        alert("請輸入商品名稱！");
-        return;
-    }
-
-    const payload = { main_category, sub_category, name, price, stock, creator, spec, date, image };
-
-    if (!client) {
-        alert("尚未連線至 Supabase 資料庫");
-        return;
-    }
+  productForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = prodIdInput.value;
+    const payload = {
+      title: prodTitleInput.value,
+      author: prodAuthorInput.value,
+      publisher: prodPublisherInput.value,
+      publish_date: prodDateInput.value,
+      price: parseFloat(prodPriceInput.value),
+      main_category: mainCatSelect.value,
+      sub_category: subCatSelect.value,
+      badge: prodBadgeInput.value,
+      images: prodImageInput.value ? [prodImageInput.value] : [],
+      description: prodDescInput.value,
+      shipping_info: prodShippingInput.value
+    };
 
     if (id) {
-        const { error } = await client.from(TABLE_NAME).update(payload).eq('id', id);
-        if (error) {
-            alert("更新失敗: " + error.message);
-            return;
-        }
+      const { error } = await supabase.from('products').update(payload).eq('id', id);
+      if (error) {
+        alert('更新失敗: ' + error.message);
+      } else {
+        alert('✅ 商品更新成功！');
+        window.location.reload();
+      }
     } else {
-        const { error } = await client.from(TABLE_NAME).insert([payload]);
-        if (error) {
-            alert("新增失敗: " + error.message);
-            return;
-        }
+      const { error } = await supabase.from('products').insert([payload]);
+      if (error) {
+        alert('新增失敗: ' + error.message);
+      } else {
+        alert('✅ 商品新增成功！');
+        window.location.reload();
+      }
     }
-
-    closeModal();
-    fetchData();
-};
-
-// --- 刪除商品 ---
-window.deleteProduct = async function(id) {
-    if (!confirm("確定要刪除此商品嗎？")) return;
-    if (!client) return;
-
-    const { error } = await client.from(TABLE_NAME).delete().eq('id', id);
-    if (!error) {
-        fetchData();
-    } else {
-        alert("刪除失敗: " + error.message);
-    }
-};
+  });
 </script>
-</BaseLayout>
+
+<style>
+  .shop-page { background-color: #fff; color: #333; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; }
+  .container { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
+  .top-bar { background-color: #f8f8f8; border-bottom: 1px solid #eee; padding: 12px 0; margin-bottom: 30px; }
+  .top-bar-flex { display: flex; justify-content: space-between; align-items: center; }
+  .current-path-link { font-size: 13px; color: #666; text-decoration: none; }
+  .current-path-link:hover { color: #c99e58; }
+  
+  .admin-action-btn { background-color: #c99e58; color: white; border: none; padding: 6px 14px; font-size: 13px; cursor: pointer; border-radius: 2px; }
+  .admin-action-btn:hover { opacity: 0.9; }
+
+  .main-content { display: flex; gap: 40px; }
+  .sidebar { width: 220px; flex-shrink: 0; }
+  .filter-group { margin-bottom: 25px; }
+  .filter-title { font-size: 14px; font-weight: 600; color: #333; margin: 0 0 15px 0; display: block; text-decoration: none; }
+  .main-category-link { font-size: 15px; margin-top: 20px; color: #333; }
+  .main-category-link:hover { color: #c99e58; }
+  .category-section { margin-bottom: 15px; }
+  .category-header { display: flex; align-items: center; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; }
+  .category-header .icon { font-size: 8px; margin-right: 6px; }
+  .cat-name-link { color: #333; text-decoration: none; }
+  .cat-name-link:hover, .cat-name-link.active { color: #c99e58; }
+
+  .sub-category-list { list-style: none; padding-left: 14px; margin: 0; }
+  .sub-category-list li { margin-bottom: 8px; }
+  .sub-category-list a { color: #888; text-decoration: none; font-size: 12px; display: block; }
+  .sub-category-list a:hover, .sub-category-list a.active { color: #c99e58; }
+  .product-listing { flex: 1; }
+  .toolbar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 25px; }
+  .control-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; }
+  .control-item select { border: 1px solid #ddd; background: #fff; padding: 4px 8px; font-size: 12px; outline: none; }
+  .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 20px; }
+  
+  .product-card { display: flex; flex-direction: column; position: relative; }
+  .card-link-wrapper { display: flex; flex-direction: column; height: 100%; }
+  .card-link { text-decoration: none; color: inherit; flex: 1; }
+  
+  .image-wrapper { position: relative; width: 100%; aspect-ratio: 1 / 1.1; background-color: #eaeaea; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 12px; }
+  .image-wrapper img { max-width: 75%; max-height: 85%; object-fit: contain; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); transition: transform 0.3s ease; }
+  .product-card:hover .image-wrapper img { transform: translateY(-4px); }
+  .badge { position: absolute; top: 10px; right: 12px; font-size: 12px; color: #333; font-weight: 500; letter-spacing: 1px; }
+  .product-info { text-align: center; padding: 0 5px; }
+  .product-info .title { font-size: 13px; font-weight: 400; color: #333; margin: 0 0 6px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; }
+  .product-info .price { font-size: 13px; font-weight: 700; color: #111; }
+
+  .admin-card-actions { display: none; margin-top: 8px; text-align: center; }
+  :global(body.admin-mode-active) .admin-card-actions { display: block; }
+  .btn-edit-product { background-color: #333; color: #fff; border: none; padding: 4px 10px; font-size: 12px; cursor: pointer; border-radius: 2px; width: 100%; }
+  .btn-edit-product:hover { background-color: #c99e58; }
+
+  .no-products { grid-column: span 3; text-align: center; color: #888; padding: 40px; }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .modal-card { background: #fff; width: 500px; max-width: 90%; padding: 30px; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+  .modal-card h3 { margin-top: 0; font-size: 18px; margin-bottom: 20px; font-weight: 500; }
+  .form-group { margin-bottom: 15px; }
+  .form-row { display: flex; gap: 15px; }
+  .form-row .form-group { flex: 1; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; background: #fff; }
+  .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+  .btn-cancel { background: #f0f0f0; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .btn-submit { background: #c99e58; color: #fff; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+</style>
