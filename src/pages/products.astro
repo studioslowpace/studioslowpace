@@ -2,11 +2,9 @@
 import Layout from '../layouts/BaseLayout.astro';
 import { supabase } from '../lib/supabase';
 
-// 取得 URL 參數 (分類與排序)
 const category = Astro.url.searchParams.get('category') || '';
 const sort = Astro.url.searchParams.get('sort') || 'created_at_desc';
 
-// 從 Supabase 查詢商品資料
 let query = supabase.from('products').select('*');
 
 if (category) {
@@ -22,12 +20,8 @@ if (sort === 'price_asc') {
 }
 
 const { data: products, error } = await query;
+if (error) console.error('Error fetching products:', error);
 
-if (error) {
-  console.error('Error fetching products:', error);
-}
-
-// 側邊欄分類選單
 const sidebarCategories = [
   {
     title: '圖書',
@@ -54,13 +48,16 @@ const sidebarCategories = [
 <Layout title="全部商品 - 商店主頁">
   <div class="shop-page">
     <div class="top-bar">
-      <div class="container">
+      <div class="container top-bar-flex">
         <span class="current-path">全部商品</span>
+        <!-- 管理員專用：新增商品按鈕區塊 (預設隱藏，登入後由 JS 轉為 flex) -->
+        <div id="clubGlobalAddBlock" style="display: none;">
+          <button id="btn-open-add-modal" class="admin-action-btn">+ 新增商品</button>
+        </div>
       </div>
     </div>
 
     <div class="container main-content">
-      <!-- 左側：分類側邊欄 -->
       <aside class="sidebar">
         <div class="filter-group">
           <h3 class="filter-title">精選商品</h3>
@@ -93,7 +90,6 @@ const sidebarCategories = [
         </div>
       </aside>
 
-      <!-- 右側：商品列表 -->
       <main class="product-listing">
         <div class="toolbar">
           <div class="toolbar-right">
@@ -111,20 +107,36 @@ const sidebarCategories = [
         <div class="product-grid">
           {products && products.length > 0 ? (
             products.map(item => (
-              <div class="product-card">
-                <!-- 點擊後導向商品詳情頁，以 encodeURIComponent 確保中文 title 路由安全 -->
-                <a href={`/products/${encodeURIComponent(item.title)}`} class="card-link">
-                  <div class="image-wrapper">
-                    {item.badge && <span class="badge">{item.badge}</span>}
-                    <img src={item.images?.[0] || 'https://via.placeholder.com/300x400'} alt={item.title} loading="lazy" />
-                  </div>
-                  <div class="product-info">
-                    <h4 class="title">{item.title}</h4>
-                    <div class="price">
-                      {item.price_range ? item.price_range : `${item.currency || 'HK$'}${Number(item.price).toFixed(2)}`}
+              <div class="product-card" data-id={item.id}>
+                <div class="card-link-wrapper">
+                  <a href={`/products/${encodeURIComponent(item.title)}`} class="card-link">
+                    <div class="image-wrapper">
+                      {item.badge && <span class="badge">{item.badge}</span>}
+                      <img src={item.images?.[0] || 'https://via.placeholder.com/300x400'} alt={item.title} loading="lazy" />
                     </div>
+                    <div class="product-info">
+                      <h4 class="title">{item.title}</h4>
+                      <div class="price">
+                        {item.price_range ? item.price_range : `${item.currency || 'HK$'}${Number(item.price).toFixed(2)}`}
+                      </div>
+                    </div>
+                  </a>
+                  <!-- 管理員專用編輯按鈕 (僅在 admin-mode-active 時顯示) -->
+                  <div class="admin-card-actions">
+                    <button class="btn-edit-product" 
+                      data-id={item.id}
+                      data-title={item.title}
+                      data-author={item.author || ''}
+                      data-publisher={item.publisher || ''}
+                      data-price={item.price}
+                      data-category={item.category || ''}
+                      data-badge={item.badge || ''}
+                      data-image={item.images?.[0] || ''}
+                      data-description={item.description || ''}
+                      data-shipping={item.shipping_info || ''}
+                    >編輯商品</button>
                   </div>
-                </a>
+                </div>
               </div>
             ))
           ) : (
@@ -134,9 +146,68 @@ const sidebarCategories = [
       </main>
     </div>
   </div>
+
+  <!-- 商品編輯/新增 Modal -->
+  <div id="productModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <h3 id="modal-title-text">新增商品</h3>
+      <form id="product-form">
+        <input type="hidden" id="prod-id" />
+        <div class="form-group">
+          <label>商品名稱 (Title)*</label>
+          <input type="text" id="prod-title" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>作者</label>
+            <input type="text" id="prod-author" />
+          </div>
+          <div class="form-group">
+            <label>出版社</label>
+            <input type="text" id="prod-publisher" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>價格 (Price)*</label>
+            <input type="number" step="0.01" id="prod-price" required />
+          </div>
+          <div class="form-group">
+            <label>分類 Slug</label>
+            <input type="text" id="prod-category" placeholder="例如: new-arrivals" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>右上角標籤 (Badge)</label>
+            <input type="text" id="prod-badge" placeholder="例如: 界限" />
+          </div>
+          <div class="form-group">
+            <label>圖片網址 (Image URL)</label>
+            <input type="text" id="prod-image" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>商品描述</label>
+          <textarea id="prod-description" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>送貨及付款方式</label>
+          <textarea id="prod-shipping" rows="2"></textarea>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" id="btn-close-modal" class="btn-cancel">取消</button>
+          <button type="submit" class="btn-submit">儲存變更</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </Layout>
 
 <script>
+  import { supabase } from '../lib/supabase';
+
+  // 排序選單邏輯
   const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
   sortSelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
@@ -144,14 +215,109 @@ const sidebarCategories = [
     url.searchParams.set('sort', val);
     window.location.href = url.toString();
   });
+
+  // 管理員新增/編輯互動邏輯
+  const modal = document.getElementById('productModal');
+  const modalTitleText = document.getElementById('modal-title-text');
+  const btnOpenAdd = document.getElementById('btn-open-add-modal');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const productForm = document.getElementById('product-form') as HTMLFormElement;
+
+  const prodIdInput = document.getElementById('prod-id') as HTMLInputElement;
+  const prodTitleInput = document.getElementById('prod-title') as HTMLInputElement;
+  const prodAuthorInput = document.getElementById('prod-author') as HTMLInputElement;
+  const prodPublisherInput = document.getElementById('prod-publisher') as HTMLInputElement;
+  const prodPriceInput = document.getElementById('prod-price') as HTMLInputElement;
+  const prodCategoryInput = document.getElementById('prod-category') as HTMLInputElement;
+  const prodBadgeInput = document.getElementById('prod-badge') as HTMLInputElement;
+  const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+  const prodDescInput = document.getElementById('prod-description') as HTMLTextAreaElement;
+  const prodShippingInput = document.getElementById('prod-shipping') as HTMLTextAreaElement;
+
+  // 開啟新增
+  btnOpenAdd?.addEventListener('click', () => {
+    if (modalTitleText) modalTitleText.innerText = '新增商品';
+    productForm.reset();
+    prodIdInput.value = '';
+    modal.style.display = 'flex';
+  });
+
+  // 關閉 Modal
+  btnCloseModal?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  // 點擊編輯按鈕
+  document.querySelectorAll('.btn-edit-product').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const dataset = (e.currentTarget as HTMLElement).dataset;
+      
+      if (modalTitleText) modalTitleText.innerText = '編輯商品';
+      prodIdInput.value = dataset.id || '';
+      prodTitleInput.value = dataset.title || '';
+      prodAuthorInput.value = dataset.author || '';
+      prodPublisherInput.value = dataset.publisher || '';
+      prodPriceInput.value = dataset.price || '';
+      prodCategoryInput.value = dataset.category || '';
+      prodBadgeInput.value = dataset.badge || '';
+      prodImageInput.value = dataset.image || '';
+      prodDescInput.value = dataset.description || '';
+      prodShippingInput.value = dataset.shipping || '';
+
+      modal.style.display = 'flex';
+    });
+  });
+
+  // 提交表單 (新增或更新)
+  productForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = prodIdInput.value;
+    const payload = {
+      title: prodTitleInput.value,
+      author: prodAuthorInput.value,
+      publisher: prodPublisherInput.value,
+      price: parseFloat(prodPriceInput.value),
+      category: prodCategoryInput.value,
+      badge: prodBadgeInput.value,
+      images: prodImageInput.value ? [prodImageInput.value] : [],
+      description: prodDescInput.value,
+      shipping_info: prodShippingInput.value
+    };
+
+    if (id) {
+      // 更新
+      const { error } = await supabase.from('products').update(payload).eq('id', id);
+      if (error) {
+        alert('更新失敗: ' + error.message);
+      } else {
+        alert('✅ 商品更新成功！');
+        window.location.reload();
+      }
+    } else {
+      // 新增
+      const { error } = await supabase.from('products').insert([payload]);
+      if (error) {
+        alert('新增失敗: ' + error.message);
+      } else {
+        alert('✅ 商品新增成功！');
+        window.location.reload();
+      }
+    }
+  });
 </script>
 
 <style>
-  /* 樣式保持簡約 UI 風格 */
   .shop-page { background-color: #fff; color: #333; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; }
   .container { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
   .top-bar { background-color: #f8f8f8; border-bottom: 1px solid #eee; padding: 12px 0; margin-bottom: 30px; }
+  .top-bar-flex { display: flex; justify-content: space-between; align-items: center; }
   .current-path { font-size: 13px; color: #666; }
+  
+  .admin-action-btn { background-color: #c99e58; color: white; border: none; padding: 6px 14px; font-size: 13px; cursor: pointer; border-radius: 2px; }
+  .admin-action-btn:hover { opacity: 0.9; }
+
   .main-content { display: flex; gap: 40px; }
   .sidebar { width: 220px; flex-shrink: 0; }
   .filter-group { margin-bottom: 25px; }
@@ -170,8 +336,11 @@ const sidebarCategories = [
   .control-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; }
   .control-item select { border: 1px solid #ddd; background: #fff; padding: 4px 8px; font-size: 12px; outline: none; }
   .product-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 20px; }
-  .product-card { display: flex; flex-direction: column; }
-  .card-link { text-decoration: none; color: inherit; }
+  
+  .product-card { display: flex; flex-direction: column; position: relative; }
+  .card-link-wrapper { display: flex; flex-direction: column; height: 100%; }
+  .card-link { text-decoration: none; color: inherit; flex: 1; }
+  
   .image-wrapper { position: relative; width: 100%; aspect-ratio: 1 / 1.1; background-color: #eaeaea; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 12px; }
   .image-wrapper img { max-width: 75%; max-height: 85%; object-fit: contain; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); transition: transform 0.3s ease; }
   .product-card:hover .image-wrapper img { transform: translateY(-4px); }
@@ -179,7 +348,28 @@ const sidebarCategories = [
   .product-info { text-align: center; padding: 0 5px; }
   .product-info .title { font-size: 13px; font-weight: 400; color: #333; margin: 0 0 6px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; }
   .product-info .price { font-size: 13px; font-weight: 700; color: #111; }
+
+  /* 管理員模式下的編輯按鈕 (預設隱藏，由 body.admin-mode-active 控管) */
+  .admin-card-actions { display: none; margin-top: 8px; text-align: center; }
+  :global(body.admin-mode-active) .admin-card-actions { display: block; }
+  .btn-edit-product { background-color: #333; color: #fff; border: none; padding: 4px 10px; font-size: 12px; cursor: pointer; border-radius: 2px; width: 100%; }
+  .btn-edit-product:hover { background-color: #c99e58; }
+
   .no-products { grid-column: span 3; text-align: center; color: #888; padding: 40px; }
+
+  /* Modal 樣式 */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .modal-card { background: #fff; width: 500px; max-width: 90%; padding: 30px; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+  .modal-card h3 { margin-top: 0; font-size: 18px; margin-bottom: 20px; font-weight: 500; }
+  .form-group { margin-bottom: 15px; }
+  .form-row { display: flex; gap: 15px; }
+  .form-row .form-group { flex: 1; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+  .form-group input, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; }
+  .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+  .btn-cancel { background: #f0f0f0; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .btn-submit { background: #c99e58; color: #fff; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+
   @media (max-width: 900px) { .product-grid { grid-template-columns: repeat(2, 1fr); } .no-products { grid-column: span 2; } }
   @media (max-width: 600px) { .main-content { flex-direction: column; } .sidebar { width: 100%; } .product-grid { grid-template-columns: 1fr; } .no-products { grid-column: span 1; } }
 </style>

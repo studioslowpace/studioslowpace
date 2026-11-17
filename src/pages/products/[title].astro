@@ -2,32 +2,41 @@
 import Layout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
 
-// 取得動態路由的 title 參數並解碼
 const rawTitle = Astro.params.title;
 const decodedTitle = rawTitle ? decodeURIComponent(rawTitle) : '';
 
-// 從 Supabase 依據 title 抓取商品資料
 const { data: product, error } = await supabase
   .from('products')
   .select('*')
   .eq('title', decodedTitle)
   .single();
-
-// 如果找不到商品，可以導向 404 或顯示找不到提示
-if (error || !product) {
-  // 你也可以用 return Astro.redirect('/404');
-}
 ---
 
 <Layout title={product ? product.title : '商品不存在'}>
   {product ? (
     <div class="shop-container">
-      <nav class="breadcrumb">
-        <a href="/">全部商品</a> <span class="sep">/</span> <span>{product.title}</span>
+      <nav class="breadcrumb-bar">
+        <div class="breadcrumb">
+          <a href="/">全部商品</a> <span class="sep">/</span> <span>{product.title}</span>
+        </div>
+        <!-- 管理員模式專用編輯按鈕 -->
+        <div class="admin-detail-action">
+          <button id="btn-edit-current" 
+            data-id={product.id}
+            data-title={product.title}
+            data-author={product.author || ''}
+            data-publisher={product.publisher || ''}
+            data-price={product.price}
+            data-category={product.category || ''}
+            data-badge={product.badge || ''}
+            data-image={product.images?.[0] || ''}
+            data-description={product.description || ''}
+            data-shipping={product.shipping_info || ''}
+          >✏️ 編輯此商品</button>
+        </div>
       </nav>
 
       <div class="product-main">
-        <!-- 左側：圖片預覽區 -->
         <div class="gallery-section">
           {product.images && product.images.length > 0 && (
             <div class="thumbnail-list">
@@ -43,7 +52,6 @@ if (error || !product) {
           </div>
         </div>
 
-        <!-- 右側：商品資訊與購買區 -->
         <div class="info-section">
           <h1 class="product-title">{product.title}</h1>
           
@@ -57,7 +65,6 @@ if (error || !product) {
             {product.price_range ? product.price_range : `${product.currency || 'HK$'}${Number(product.price).toFixed(2)}`}
           </div>
 
-          <!-- 數量選擇 -->
           <div class="field-group">
             <label>數量</label>
             <div class="quantity-picker">
@@ -67,7 +74,6 @@ if (error || !product) {
             </div>
           </div>
 
-          <!-- 按鈕區 -->
           <div class="action-buttons">
             <button class="btn btn-add-cart">加入購物車</button>
             <button class="btn btn-buy-now">
@@ -82,7 +88,6 @@ if (error || !product) {
         </div>
       </div>
 
-      <!-- 下方 Tab 頁籤區 -->
       <div class="details-section">
         <div class="tab-header">
           <button class="tab-btn active" data-tab="description">商品描述</button>
@@ -113,9 +118,67 @@ if (error || !product) {
       <a href="/">返回首頁</a>
     </div>
   )}
+
+  <!-- 編輯商品 Modal -->
+  <div id="productModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <h3>編輯商品</h3>
+      <form id="product-form">
+        <input type="hidden" id="prod-id" />
+        <div class="form-group">
+          <label>商品名稱 (Title)*</label>
+          <input type="text" id="prod-title" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>作者</label>
+            <input type="text" id="prod-author" />
+          </div>
+          <div class="form-group">
+            <label>出版社</label>
+            <input type="text" id="prod-publisher" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>價格 (Price)*</label>
+            <input type="number" step="0.01" id="prod-price" required />
+          </div>
+          <div class="form-group">
+            <label>分類 Slug</label>
+            <input type="text" id="prod-category" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>右上角標籤 (Badge)</label>
+            <input type="text" id="prod-badge" />
+          </div>
+          <div class="form-group">
+            <label>圖片網址 (Image URL)</label>
+            <input type="text" id="prod-image" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>商品描述</label>
+          <textarea id="prod-description" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>送貨及付款方式</label>
+          <textarea id="prod-shipping" rows="2"></textarea>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" id="btn-close-modal" class="btn-cancel">取消</button>
+          <button type="submit" class="btn-submit">儲存變更</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </Layout>
 
 <script>
+  import { supabase } from '../../lib/supabase';
+
   const thumbBtns = document.querySelectorAll('.thumb-btn');
   const mainImg = document.getElementById('current-img') as HTMLImageElement;
 
@@ -154,20 +217,88 @@ if (error || !product) {
       document.getElementById(`tab-${targetTab}`)?.classList.add('active');
     });
   });
+
+  // 編輯 Modal 互動
+  const modal = document.getElementById('productModal');
+  const btnEditCurrent = document.getElementById('btn-edit-current');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const productForm = document.getElementById('product-form') as HTMLFormElement;
+
+  const prodIdInput = document.getElementById('prod-id') as HTMLInputElement;
+  const prodTitleInput = document.getElementById('prod-title') as HTMLInputElement;
+  const prodAuthorInput = document.getElementById('prod-author') as HTMLInputElement;
+  const prodPublisherInput = document.getElementById('prod-publisher') as HTMLInputElement;
+  const prodPriceInput = document.getElementById('prod-price') as HTMLInputElement;
+  const prodCategoryInput = document.getElementById('prod-category') as HTMLInputElement;
+  const prodBadgeInput = document.getElementById('prod-badge') as HTMLInputElement;
+  const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+  const prodDescInput = document.getElementById('prod-description') as HTMLTextAreaElement;
+  const prodShippingInput = document.getElementById('prod-shipping') as HTMLTextAreaElement;
+
+  btnEditCurrent?.addEventListener('click', (e) => {
+    const dataset = (e.currentTarget as HTMLElement).dataset;
+    prodIdInput.value = dataset.id || '';
+    prodTitleInput.value = dataset.title || '';
+    prodAuthorInput.value = dataset.author || '';
+    prodPublisherInput.value = dataset.publisher || '';
+    prodPriceInput.value = dataset.price || '';
+    prodCategoryInput.value = dataset.category || '';
+    prodBadgeInput.value = dataset.badge || '';
+    prodImageInput.value = dataset.image || '';
+    prodDescInput.value = dataset.description || '';
+    prodShippingInput.value = dataset.shipping || '';
+
+    modal.style.display = 'flex';
+  });
+
+  btnCloseModal?.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  productForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = prodIdInput.value;
+    const payload = {
+      title: prodTitleInput.value,
+      author: prodAuthorInput.value,
+      publisher: prodPublisherInput.value,
+      price: parseFloat(prodPriceInput.value),
+      category: prodCategoryInput.value,
+      badge: prodBadgeInput.value,
+      images: prodImageInput.value ? [prodImageInput.value] : [],
+      description: prodDescInput.value,
+      shipping_info: prodShippingInput.value
+    };
+
+    const { error } = await supabase.from('products').update(payload).eq('id', id);
+    if (error) {
+      alert('更新失敗: ' + error.message);
+    } else {
+      alert('✅ 商品更新成功！');
+      window.location.reload();
+    }
+  });
 </script>
 
 <style>
   .shop-container { max-width: 1080px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; }
-  .breadcrumb { padding: 10px 0; font-size: 14px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 30px; }
+  .breadcrumb-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 30px; }
+  .breadcrumb { font-size: 14px; color: #666; }
   .breadcrumb a { color: #666; text-decoration: none; }
   .breadcrumb .sep { margin: 0 8px; color: #ccc; }
+
+  .admin-detail-action { display: none; }
+  :global(body.admin-mode-active) .admin-detail-action { display: block; }
+  #btn-edit-current { background-color: #333; color: #fff; border: none; padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 2px; }
+  #btn-edit-current:hover { background-color: #c99e58; }
+
   .product-main { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 60px; }
   @media (max-width: 768px) { .product-main { grid-template-columns: 1fr; } }
   .gallery-section { display: flex; gap: 15px; }
   .thumbnail-list { display: flex; flex-direction: column; gap: 10px; }
   .thumb-btn { width: 60px; height: 60px; border: 1px solid #e5e5e5; padding: 2px; background: none; cursor: pointer; }
   .thumb-btn.active { border-color: #cda861; }
-  .thumb-btn img { width: 100%; height: 100% object-fit: cover; }
+  .thumb-btn img { width: 100%; height: 100%; object-fit: cover; }
   .main-image { flex: 1; background-color: #f7f7f7; display: flex; align-items: center; justify-content: center; min-height: 400px; }
   .main-image img { max-width: 100%; height: auto; object-fit: contain; }
   .info-section { display: flex; flex-direction: column; }
@@ -198,7 +329,17 @@ if (error || !product) {
   .pane-body { max-width: 600px; margin: 30px auto 0 auto; text-align: left; line-height: 1.8; color: #444; font-size: 14px; }
   .whitespace-pre { white-space: pre-line; }
   .not-found { text-align: center; padding: 80px 20px; }
-  .not-found h2 { font-size: 24px; margin-bottom: 10px; }
-  .not-found p { color: #666; margin-bottom: 20px; }
-  .not-found a { color: #c99e58; text-decoration: underline; }
+
+  /* Modal 樣式 */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .modal-card { background: #fff; width: 500px; max-width: 90%; padding: 30px; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+  .modal-card h3 { margin-top: 0; font-size: 18px; margin-bottom: 20px; font-weight: 500; }
+  .form-group { margin-bottom: 15px; }
+  .form-row { display: flex; gap: 15px; }
+  .form-row .form-group { flex: 1; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+  .form-group input, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; }
+  .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+  .btn-cancel { background: #f0f0f0; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .btn-submit { background: #c99e58; color: #fff; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
 </style>
