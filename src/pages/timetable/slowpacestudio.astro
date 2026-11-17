@@ -162,22 +162,62 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         .modal-card p { font-size: 16px; margin-bottom: 12px; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-        .month-select-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-height: 250px; overflow-y: auto; margin-top: 15px; padding-right: 4px;
+/* 下拉容器 */
+        .month-dropdown-container {
+            position: relative;
+            display: inline-block;
         }
-        .month-select-btn {
-            background: #f7f5f2; color: #333; border: 1px solid #eee; padding: 12px; text-align: center; border-radius: 6px; font-size: 15px; transition: all 0.2s; cursor: pointer;
-        }
-        .month-select-btn:hover { background: #eef5ee; border-color: var(--primary-green); }
-        .month-select-btn.active { background: var(--primary-green); color: white; border-color: var(--primary-green); font-weight: bold; }
 
-        #modal-action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        /* 向下展開的月份網格面板 */
+        .month-select-grid {
+            display: none; /* 預設隱藏，透過 JS 切換顯示 */
+            position: absolute;
+            top: calc(100% + 8px); /* 緊貼按鈕下方並空出 8px 間距 */
+            left: 0;
+            z-index: 1000;
+            
+            /* 視覺與排版 */
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            
+            /* 網格與滾動設定 */
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 8px; 
+            max-height: 250px; 
+            overflow-y: auto; 
+            width: 240px; /* 可依需求調整寬度 */
         }
-        #modal-action-buttons button {
-            flex: 1;
+
+        /* 顯示狀態的 Class (透過 JS 切換) */
+        .month-select-grid.show {
+            display: grid !important;
+        }
+
+        /* 月份按鈕樣式 */
+        .month-select-btn {
+            background: #f7f5f2; 
+            color: #333; 
+            border: 1px solid #eee; 
+            padding: 8px 12px; 
+            text-align: center; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            transition: all 0.2s; 
+            cursor: pointer;
+        }
+        .month-select-btn:hover { 
+            background: #eef5ee; 
+            border-color: var(--primary-green); 
+        }
+        .month-select-btn.active { 
+            background: var(--primary-green); 
+            color: white; 
+            border-color: var(--primary-green); 
+            font-weight: bold; 
         }
 
         /* 📱 手機版專屬 RWD 覆蓋樣式 */
@@ -307,6 +347,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 align-items: center;
                 gap: 8px;
             }
+            .logo-img {
+                width: 30px;
+                height: 30px;"
+            }
         }
     </style>
 
@@ -316,9 +360,17 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <div class="header-section">
         <!-- 第一列：客舍時間表 與 年月份並列 -->
         <div class="title-area">
-            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 30px; height: 30px;" oncontextmenu="return false;" ondragstart="return false;">
+            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 50px; height: 50px;" oncontextmenu="return false;" ondragstart="return false;">
             <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
-            <span id="month-display" onclick="openModal('switchMonthModal')">連線中...</span>
+             <!-- 改成點擊下方展開的下拉容器 -->
+            <div class="month-dropdown-container" style="position: relative; display: inline-block;">
+                <span id="month-display" class="rpg-btn" onclick="toggleMonthDropdown()" style="cursor: pointer;">
+                    連線中... ▼
+                </span>
+                
+                <!-- 下降展開的月份網格面板 -->
+                <div id="popup-month-list" class="month-select-grid"></div>
+            </div>
         </div>
 
         <!-- 第二列：類型圖示轉新一列 -->
@@ -362,16 +414,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
     </div>
 </div>
-    
-<div class="modal-overlay" id="switchMonthModal">
-    <div class="modal-card">
-        <h3>請選擇月份</h3>
-        <div id="popup-month-list" class="month-select-grid"></div>
-        <div class="modal-buttons">
-            <button onclick="closeModal('switchMonthModal')" style="background:#888; width: 100%;">關閉</button>
-        </div>
-    </div>
-</div>
+
 
 <div class="modal-overlay" id="typeManageModal">
     <div class="modal-card">
@@ -784,6 +827,24 @@ window.exportEventImage = function() {
     document.body.removeChild(link);
 };
 
+// 切換月份下拉選單的顯示與隱藏
+function toggleMonthDropdown() {
+    const list = document.getElementById('popup-month-list');
+    if (list) {
+        list.classList.toggle('show');
+    }
+}
+
+// 點擊畫面其他地方時自動關閉下拉選單
+window.addEventListener('click', function(e) {
+    const container = document.querySelector('.month-dropdown-container');
+    const list = document.getElementById('popup-month-list');
+    if (container && list && !container.contains(e.target)) {
+        list.classList.remove('show');
+    }
+});
+
+// 渲染月份清單的函式
 window.renderMonthList = function() {
     const container = document.getElementById('popup-month-list');
     if (!container) return;
@@ -799,7 +860,12 @@ window.renderMonthList = function() {
 window.switchMonth = function(m) {
     currentMonth = m;
     fetchData(); 
-    window.closeModal('switchMonthModal');
+    
+    // 選擇月份後自動收合下拉選單
+    const list = document.getElementById('popup-month-list');
+    if (list) {
+        list.classList.remove('show');
+    }
 };
 
 window.submitAddMonth = function() {
