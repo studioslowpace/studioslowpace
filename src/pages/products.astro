@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
-<BaseLayout title="客舍商店管理系統">
+<BaseLayout title="空間客舍 - 商品管理系統">
 <Fragment slot="head">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,22 +9,76 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </Fragment>
 
     <style is:global>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+        }
         body {
-            background-color: #f7f5f2; 
+            background-color: #ebf3dd; 
             font-family: "Noto Sans TC", sans-serif;
             color: #4A4A4A;
-            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
         }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        body.admin-mode { background: #f0f4f8; }
+
+        :root {
+            --bg-color: #f7f5f2;
+            --card-bg: #ebf3dd;
+            --text-main: #333333;
+            --text-muted: #999999;
+            --primary-green: #4CAF50;
+            --danger-red: #d9534f;
+            --primary-blue: #2b579a;
+            --border-color: #efefef;
         }
-        h1 { color: #2b579a; margin-bottom: 20px; font-size: 28px; }
+
+        .container { 
+            max-width: 1100px; 
+            background: var(--card-bg); 
+            padding: 25px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+            margin: 20px auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header-section { 
+            display: flex; 
+            flex-direction: column;
+            gap: 14px; 
+            margin-bottom: 18px; 
+        }
+
+        .title-area { 
+            display: flex; 
+            align-items: baseline;
+            justify-content: flex-start;
+            width: 100%;
+            gap: 15px;
+        }
+        .title-area h1 { 
+            margin: 0; 
+            font-size: 36px; 
+            color: var(--primary-blue); 
+            letter-spacing: 2px; 
+            font-weight: bold; 
+            line-height: 1;
+        }
+
+        .logo-img {
+            display: inline-block;
+            vertical-align: baseline;
+        }
+
+        /* 工具列與篩選按鈕 */
         .toolbar {
             display: flex;
             justify-content: space-between;
@@ -42,58 +96,69 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             padding: 10px 14px;
             border-radius: 6px;
             border: 1px solid #ccc;
-            font-size: 14px;
-            cursor: pointer;
+            font-size: 15px;
+            box-sizing: border-box;
         }
-        button { background: #2b579a; color: white; border: none; }
+        button { cursor: pointer; background: var(--primary-blue); color: white; border: none; }
         button:hover { background: #1e3f70; }
-        .btn-secondary { background: #6c757d; }
-        .btn-secondary:hover { background: #5a6268; }
-        .btn-danger { background: #d9534f; }
-        .btn-danger:hover { background: #c9302c; }
+        .btn-secondary { background: #888; }
+        .btn-secondary:hover { background: #666; }
+        .btn-danger { background: var(--danger-red); }
+        .btn-danger:hover { background: #b52b27; }
+        .btn-success { background: var(--primary-green); }
+        .btn-success:hover { background: #388E3C; }
 
         /* 商品表格 */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
         }
         th, td {
-            border: 1px solid #eee;
-            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 15px;
             text-align: left;
-            font-size: 14px;
+            font-size: 15px;
         }
-        th { background: #f0f4f8; color: #333; }
+        th { background: #f0f4f8; color: #333; font-weight: bold; }
         tr:hover { background: #fafafa; }
         .product-img {
-            width: 50px;
-            height: 50px;
+            width: 45px;
+            height: 45px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
         }
 
         /* 彈窗樣式 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
             display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 1000;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 900;
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal-card {
             background: white; padding: 25px; border-radius: 12px;
             width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box;
         }
+        .modal-card h3 { margin-top: 0; color: #333; font-size: 20px; margin-bottom: 15px; }
         .form-group {
             margin-bottom: 15px;
         }
         .form-group label {
-            display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #555;
+            display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #333;
         }
         .form-group input, .form-group select, .form-group textarea {
-            width: 100%; box-sizing: border-box;
+            width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px;
         }
         .modal-buttons {
             display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
@@ -101,7 +166,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </style>
 
 <div class="container">
-    <h1>空間客舍 - 商品管理系統</h1>
+    <div class="header-section">
+        <div class="title-area">
+            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 45px; height: 45px;" oncontextmenu="return false;" ondragstart="return false;">
+            <h1>商品管理系統</h1>
+        </div>
+    </div>
 
     <!-- 上方工具列：大總類篩選與功能按鈕 -->
     <div class="toolbar">
@@ -113,34 +183,36 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <button onclick="filterCategory('文創產品')">文創產品</button>
         </div>
         <div class="action-group">
-            <button onclick="openAddModal()" style="background: #4CAF50;">➕ 新增商品</button>
+            <button onclick="openAddModal()" class="btn-success">➕ 新增商品</button>
         </div>
     </div>
 
     <!-- 商品列表表格 -->
-    <table>
-        <thead>
-            <tr>
-                <th>圖片</th>
-                <th>名稱</th>
-                <th>大總類</th>
-                <th>分類</th>
-                <th>價格</th>
-                <th>庫存</th>
-                <th id="th-dynamic-col3">出版日期</th> <!-- 動態欄位標題 -->
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="product-table-body">
-            <!-- 由 JS 動態載入 -->
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>圖片</th>
+                    <th>名稱</th>
+                    <th>大總類</th>
+                    <th>分類</th>
+                    <th>價格</th>
+                    <th>庫存</th>
+                    <th id="th-dynamic-col">出版日期</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="product-table-body">
+                <!-- 由 JS 動態載入 -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- 新增/編輯商品彈窗 -->
 <div class="modal-overlay" id="productModal">
     <div class="modal-card">
-        <h3 id="modal-title" style="margin-bottom: 15px; color: #2b579a;">新增商品</h3>
+        <h3 id="modal-title">新增商品</h3>
         <input type="hidden" id="p-id">
 
         <div class="form-group">
@@ -175,21 +247,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <input type="number" id="p-stock" placeholder="0">
         </div>
 
-        <!-- 動態改變欄位：作者 轉為 創作者 -->
         <div class="form-group">
-            <label id="lbl-creator">作者 / 創作者：</label>
-            <input type="text" id="p-creator" placeholder="請輸入作者或創作者">
+            <label id="lbl-creator">作者：</label>
+            <input type="text" id="p-creator" placeholder="請輸入作者">
         </div>
 
-        <!-- 動態改變欄位：出版社 轉為 尺寸 -->
         <div class="form-group">
-            <label id="lbl-spec">出版社 / 尺寸：</label>
-            <input type="text" id="p-spec" placeholder="請輸入出版社或尺寸">
+            <label id="lbl-spec">出版社：</label>
+            <input type="text" id="p-spec" placeholder="請輸入出版社">
         </div>
 
-        <!-- 動態改變欄位：出版日期 轉為 推出日期 -->
         <div class="form-group">
-            <label id="lbl-date">出版日期 / 推出日期：</label>
+            <label id="lbl-date">出版日期：</label>
             <input type="date" id="p-date">
         </div>
 
@@ -209,7 +278,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 // --- Supabase 設定 ---
 const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
 const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-const TABLE_NAME = 'products'; // 假設您的商品資料表名稱
+const TABLE_NAME = 'products'; 
 
 window.client = window.client || (window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null);
 const client = window.client;
@@ -232,7 +301,6 @@ async function initProducts() {
 
 async function fetchProducts() {
     if (!client) {
-        // 模擬測試資料（若無連線時）
         allProducts = [];
         renderTable();
         return;
@@ -251,7 +319,7 @@ window.addEventListener('DOMContentLoaded', initProducts);
 // --- 篩選與回到主頁 ---
 window.filterCategory = function(cat) {
     if (cat === 'ALL') {
-        // 按全部商品回到 products 主頁（或重新導向 / 重新載入全部）
+        // 按全部商品回到 products 主頁
         window.location.href = '/products'; 
     } else {
         currentFilter = cat;
@@ -262,9 +330,8 @@ window.filterCategory = function(cat) {
 // --- 渲染表格 ---
 function renderTable() {
     const tbody = document.getElementById('product-table-body');
-    const thDynamic = document.getElementById('th-dynamic-col3');
+    const thDynamic = document.getElementById('th-dynamic-col');
     
-    // 根據目前的篩選變更動態表格標題
     if (currentFilter === '小誌(Zine)' || currentFilter === '文創產品') {
         thDynamic.innerText = "推出日期";
     } else {
@@ -276,7 +343,7 @@ function renderTable() {
         : allProducts.filter(p => p.main_category === currentFilter);
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">暫無相關商品</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888; padding: 20px;">暫無相關商品</td></tr>`;
         return;
     }
 
@@ -290,14 +357,14 @@ function renderTable() {
             <td>${p.stock || 0}</td>
             <td>${p.date || '-'}</td>
             <td>
-                <button onclick="openEditModal('${p.id}')" style="padding: 6px 10px; font-size: 12px;">編輯</button>
-                <button onclick="deleteProduct('${p.id}')" class="btn-danger" style="padding: 6px 10px; font-size: 12px; margin-left: 5px;">刪除</button>
+                <button onclick="openEditModal('${p.id}')" style="padding: 6px 12px; font-size: 13px;">編輯</button>
+                <button onclick="deleteProduct('${p.id}')" class="btn-danger" style="padding: 6px 12px; font-size: 13px; margin-left: 5px;">刪除</button>
             </td>
         </tr>
     `).join('');
 }
 
-// --- 當大總類變更時，自動更新子分類下拉選項與動態欄位名稱 ---
+// --- 當大總類變更時，自動更新子分類與欄位名稱 ---
 window.onMainCategoryChange = function() {
     const mainCat = document.getElementById('p-main-category').value;
     const subSelect = document.getElementById('p-sub-category');
@@ -305,18 +372,25 @@ window.onMainCategoryChange = function() {
     const subCategories = categoryMap[mainCat] || [];
     subSelect.innerHTML = subCategories.map(sub => `<option value="${sub}">${sub}</option>`).join('');
 
-    // 動態修改表單標籤（作者->創作者，出版社->尺寸，出版日期->推出日期）
     const lblCreator = document.getElementById('lbl-creator');
     const lblSpec = document.getElementById('lbl-spec');
     const lblDate = document.getElementById('lbl-date');
 
+    const inputCreator = document.getElementById('p-creator');
+    const inputSpec = document.getElementById('p-spec');
+    const inputDate = document.getElementById('p-date');
+
     if (mainCat === '小誌(Zine)' || mainCat === '文創產品') {
         lblCreator.innerText = "創作者：";
+        inputCreator.placeholder = "請輸入創作者";
         lblSpec.innerText = "尺寸：";
+        inputSpec.placeholder = "請輸入尺寸";
         lblDate.innerText = "推出日期：";
     } else {
         lblCreator.innerText = "作者：";
+        inputCreator.placeholder = "請輸入作者";
         lblSpec.innerText = "出版社：";
+        inputSpec.placeholder = "請輸入出版社";
         lblDate.innerText = "出版日期：";
     }
 };
@@ -326,7 +400,7 @@ window.openAddModal = function() {
     document.getElementById('modal-title').innerText = "新增商品";
     document.getElementById('p-id').value = "";
     document.getElementById('p-main-category').value = "全新書";
-    onMainCategoryChange(); // 初始化子分類
+    onMainCategoryChange();
     document.getElementById('p-name').value = "";
     document.getElementById('p-price').value = "";
     document.getElementById('p-stock').value = "";
@@ -346,7 +420,7 @@ window.openEditModal = function(id) {
     document.getElementById('modal-title').innerText = "編輯商品";
     document.getElementById('p-id').value = product.id;
     document.getElementById('p-main-category').value = product.main_category || '全新書';
-    onMainCategoryChange(); // 載入對應子分類
+    onMainCategoryChange(); 
     document.getElementById('p-sub-category').value = product.sub_category || '';
     document.getElementById('p-name').value = product.name || '';
     document.getElementById('p-price').value = product.price || 0;
@@ -389,14 +463,12 @@ window.saveProduct = async function() {
     }
 
     if (id) {
-        // 更新
         const { error } = await client.from(TABLE_NAME).update(payload).eq('id', id);
         if (error) {
             alert("更新失敗: " + error.message);
             return;
         }
     } else {
-        // 新增
         const { error } = await client.from(TABLE_NAME).insert([payload]);
         if (error) {
             alert("新增失敗: " + error.message);
