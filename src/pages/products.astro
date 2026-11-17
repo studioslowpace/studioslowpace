@@ -96,19 +96,19 @@ const sidebarCategories = [
         </div>
         
         <div class="filter-group">
-          <a href="/" class="filter-title main-category-link">全部商品</a>
+          <a href="/products" class="filter-title main-category-link">全部商品</a>
           <div class="category-tree">
             {sidebarCategories.map(cat => (
               <div class="category-section">
                 <div class="category-header">
                   <span class="icon">■</span>
-                  <a href={`/?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
+                  <a href={`/products?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
                 </div>
                 {cat.items.length > 0 && (
                   <ul class="sub-category-list">
                     {cat.items.map(item => (
                       <li>
-                        <a href={`/?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
+                        <a href={`/products?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
                           {item.name}
                         </a>
                       </li>
