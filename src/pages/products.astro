@@ -82,7 +82,7 @@ const sidebarCategories = [
     <div class="top-bar">
       <div class="container top-bar-flex">
         <!-- 點擊「全部商品」回到主頁 (確保路由正確) -->
-        <a href="/products" class="current-path-link">全部商品</a>
+        <a href="/" class="current-path-link">全部商品</a>
         <div id="clubGlobalAddBlock" style="display: none;">
           <button id="btn-open-add-modal" class="admin-action-btn">+ 新增商品</button>
         </div>
@@ -96,19 +96,19 @@ const sidebarCategories = [
         </div>
         
         <div class="filter-group">
-          <a href="/products" class="filter-title main-category-link">全部商品</a>
+          <a href="/" class="filter-title main-category-link">全部商品</a>
           <div class="category-tree">
             {sidebarCategories.map(cat => (
               <div class="category-section">
                 <div class="category-header">
                   <span class="icon">■</span>
-                  <a href={`/products?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
+                  <a href={`/?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
                 </div>
                 {cat.items.length > 0 && (
                   <ul class="sub-category-list">
                     {cat.items.map(item => (
                       <li>
-                        <a href={`/products?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
+                        <a href={`/?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
                           {item.name}
                         </a>
                       </li>
@@ -424,7 +424,7 @@ const sidebarCategories = [
   });
 </script>
 
-<style is:global>
+<style>
   .shop-page { background-color: #fff; color: #333; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding-bottom: 80px; }
   .container { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
   .top-bar { background-color: #f8f8f8; border-bottom: 1px solid #eee; padding: 12px 0; margin-bottom: 30px; }
