@@ -490,6 +490,48 @@ import Layout from '../layouts/Layout.astro';
       return todayTotal;
     }
 
+    // 同步更新 slowpace_members 的每日閱讀秒數、今日日期與總閱讀秒數
+    async function syncMemberReadingTotals(uId: string, addedSeconds: number) {
+      if (!uId || isGuest || addedSeconds <= 0) return;
+
+      try {
+        const todayStr = getLocalTodayString();
+        const { data: member, error: fetchErr } = await supabase
+          .from(TABLE_NAME)
+          .select('daily_reading_seconds, daily_reading_date, total_reading_seconds')
+          .eq('user_id', uId)
+          .maybeSingle();
+
+        if (fetchErr || !member) {
+          console.warn('讀取 slowpace_members 時數欄位失敗:', fetchErr);
+          return;
+        }
+
+        const prevDailySec =
+          member.daily_reading_date === todayStr
+            ? Number(member.daily_reading_seconds || 0)
+            : 0;
+        const nextDailySec = prevDailySec + addedSeconds;
+        const nextTotalSec = Number(member.total_reading_seconds || 0) + addedSeconds;
+
+        const { error: updateErr } = await supabase
+          .from(TABLE_NAME)
+          .update({
+            daily_reading_seconds: nextDailySec,
+            daily_reading_date: todayStr,
+            total_reading_seconds: nextTotalSec,
+            updated_at: new Date()
+          })
+          .eq('user_id', uId);
+
+        if (updateErr) {
+          console.error('更新 slowpace_members 閱讀時數失敗:', updateErr);
+        }
+      } catch (err) {
+        console.error('同步 slowpace_members 閱讀時數發生錯誤:', err);
+      }
+    }
+
     function updateCurrentRoomConfig() {
       const r = customRooms.find(rc => rc.room_key === currentRoom);
       if (r) {
@@ -931,7 +973,6 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
       }
 
-      // 坐下專注閱讀時，氣泡顯示以小時和分鐘計算的已閱讀時間
       let myStatusText = isDND ? '📖 專注閱讀' : playerName;
       if (isDND && sessionStartTime !== null) {
         const currentElapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
@@ -1469,6 +1510,8 @@ import Layout from '../layouts/Layout.astro';
       alert('成功加入共讀！');
     });
 
+    tableEndBtn?.addEventListener('click', endTableAction);
+
     async function endTableAction() {
       if (!activeTableData) return;
       if (confirm('確定要結束這場共讀活動嗎？相關的專屬聊天室也會一併關閉。')) {
@@ -1866,7 +1909,7 @@ import Layout from '../layouts/Layout.astro';
       if (seatModal) seatModal.style.display = 'flex';
     });
 
-    // 點擊「確認並起立」：結算秒數並寫入單本書與今日閱讀紀錄
+    // 點擊「確認並起立」：結算秒數並寫入 reading_record 與 slowpace_members
     leaveConfirmBtn?.addEventListener('click', async () => {
       const curPage = parseInt(leaveCurrentPage?.value) || 1;
       const totPage = parseInt(leaveTotalPage?.value) || 100;
@@ -1907,6 +1950,10 @@ import Layout from '../layouts/Layout.astro';
           if (logErr) {
             console.error('更新閱讀時間失敗:', logErr);
           }
+        }
+
+        if (userId && elapsedSeconds > 0) {
+          await syncMemberReadingTotals(userId, elapsedSeconds);
         }
 
         await supabase.from(ITEMS_TABLE).update({
