@@ -470,27 +470,60 @@ import Layout from '../layouts/Layout.astro';
       return `${y}-${m}-${d}`;
     }
 
+    // 正規化 reading_logs 陣列為 [{ date, seconds }]
+    function normalizeReadingLogs(rawLogs: any): { date: string; seconds: number }[] {
+      let parsed = rawLogs;
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch (e) { parsed = []; }
+      }
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((item: any) => item && typeof item.date === 'string')
+        .map((item: any) => ({
+          date: item.date,
+          seconds: Math.max(0, Number(item.seconds) || 0)
+        }));
+    }
+
+    // 將本次閱讀秒數合併進 reading_logs（同一天合併累加，不同日新增一筆）
+    function appendReadingLog(existingLogs: any, dateStr: string, addedSeconds: number): { date: string; seconds: number }[] {
+      const logs = normalizeReadingLogs(existingLogs).map(entry => ({ ...entry }));
+      const safeSec = Math.max(0, Math.floor(Number(addedSeconds) || 0));
+      if (!dateStr || safeSec <= 0) return logs;
+
+      const idx = logs.findIndex(entry => entry.date === dateStr);
+      if (idx >= 0) {
+        logs[idx].seconds += safeSec;
+      } else {
+        logs.push({ date: dateStr, seconds: safeSec });
+      }
+      return logs;
+    }
+
+    // 從 reading_logs 取出指定日期秒數
+    function getSecondsFromLogsByDate(logs: { date: string; seconds: number }[], targetDate: string): number {
+      return logs
+        .filter(entry => entry.date === targetDate)
+        .reduce((sum, entry) => sum + (Number(entry.seconds) || 0), 0);
+    }
+
+    // 從 reading_logs 計算總秒數
+    function getTotalSecondsFromLogs(logs: { date: string; seconds: number }[]): number {
+      return logs.reduce((sum, entry) => sum + (Number(entry.seconds) || 0), 0);
+    }
+
     // 計算今日閱讀總秒數
     function calculateTodayTotalSeconds(records: any[]): number {
       const todayStr = getLocalTodayString();
       let todayTotal = 0;
       records.forEach(rec => {
-        let logs = rec.reading_logs || [];
-        if (typeof logs === 'string') {
-          try { logs = JSON.parse(logs); } catch (e) { logs = []; }
-        }
-        if (Array.isArray(logs)) {
-          logs.forEach((log: any) => {
-            if (log && log.date === todayStr) {
-              todayTotal += (Number(log.seconds) || 0);
-            }
-          });
-        }
+        const logs = normalizeReadingLogs(rec.reading_logs);
+        todayTotal += getSecondsFromLogsByDate(logs, todayStr);
       });
       return todayTotal;
     }
 
-    // 同步更新 slowpace_members 的每日閱讀秒數、今日日期與總閱讀秒數
+    // 同步更新 slowpace_members 的 reading_logs、daily_reading_seconds、daily_reading_date 與 total_reading_seconds
     async function syncMemberReadingTotals(uId: string, addedSeconds: number) {
       if (!uId || isGuest || addedSeconds <= 0) return;
 
@@ -498,7 +531,7 @@ import Layout from '../layouts/Layout.astro';
         const todayStr = getLocalTodayString();
         const { data: member, error: fetchErr } = await supabase
           .from(TABLE_NAME)
-          .select('daily_reading_seconds, daily_reading_date, total_reading_seconds')
+          .select('reading_logs, daily_reading_seconds, daily_reading_date, total_reading_seconds')
           .eq('user_id', uId)
           .maybeSingle();
 
@@ -507,20 +540,18 @@ import Layout from '../layouts/Layout.astro';
           return;
         }
 
-        const prevDailySec =
-          member.daily_reading_date === todayStr
-            ? Number(member.daily_reading_seconds || 0)
-            : 0;
-        const nextDailySec = prevDailySec + addedSeconds;
-        const nextTotalSec = Number(member.total_reading_seconds || 0) + addedSeconds;
+        const nextLogs = appendReadingLog(member.reading_logs, todayStr, addedSeconds);
+        const nextDailySec = getSecondsFromLogsByDate(nextLogs, todayStr);
+        const nextTotalSec = getTotalSecondsFromLogs(nextLogs);
 
         const { error: updateErr } = await supabase
           .from(TABLE_NAME)
           .update({
+            reading_logs: nextLogs,
             daily_reading_seconds: nextDailySec,
             daily_reading_date: todayStr,
             total_reading_seconds: nextTotalSec,
-            updated_at: new Date()
+            updated_at: new Date().toISOString()
           })
           .eq('user_id', uId);
 
@@ -666,7 +697,7 @@ import Layout from '../layouts/Layout.astro';
         gy: playerGy,
         is_dnd: isDND,
         task: currentTask,
-        updated_at: new Date()
+        updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
     }
 
@@ -1909,7 +1940,7 @@ import Layout from '../layouts/Layout.astro';
       if (seatModal) seatModal.style.display = 'flex';
     });
 
-    // 點擊「確認並起立」：結算秒數並寫入 reading_record 與 slowpace_members
+    // 點擊「確認並起立」：結算秒數並寫入 reading_record 與 slowpace_members.reading_logs
     leaveConfirmBtn?.addEventListener('click', async () => {
       const curPage = parseInt(leaveCurrentPage?.value) || 1;
       const totPage = parseInt(leaveTotalPage?.value) || 100;
@@ -1928,23 +1959,18 @@ import Layout from '../layouts/Layout.astro';
 
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
+        const todayStr = getLocalTodayString();
+
         if (currentReadingRecordId) {
           const matchedRec = userReadingRecords.find(r => r.id === currentReadingRecordId);
           const oldDuration = Number(matchedRec?.duration_seconds) || 0;
-          let oldLogs = matchedRec?.reading_logs || [];
-          if (typeof oldLogs === 'string') {
-            try { oldLogs = JSON.parse(oldLogs); } catch (e) { oldLogs = []; }
-          }
-          if (!Array.isArray(oldLogs)) oldLogs = [];
-
-          const todayStr = getLocalTodayString();
-          oldLogs.push({ date: todayStr, seconds: elapsedSeconds });
+          const nextBookLogs = appendReadingLog(matchedRec?.reading_logs, todayStr, elapsedSeconds);
 
           const { error: logErr } = await supabase.from(LOGS_TABLE).update({
             current_page: curPage,
             total_pages: totPage,
             duration_seconds: oldDuration + elapsedSeconds,
-            reading_logs: oldLogs
+            reading_logs: nextBookLogs
           }).eq('id', currentReadingRecordId);
 
           if (logErr) {

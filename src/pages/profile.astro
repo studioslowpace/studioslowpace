@@ -43,6 +43,15 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
+        <!-- 近 10 日閱讀足跡（由 reading_logs 整理） -->
+        <div class="history-10d-card" aria-label="近 10 日閱讀紀錄">
+          <div class="history-10d-header">
+            <span class="history-10d-title">🗓️ 近 10 日閱讀足跡</span>
+            <span id="display-10d-total" class="history-10d-summary">共 0分</span>
+          </div>
+          <div id="reading-10d-list" class="history-10d-grid"></div>
+        </div>
+
         <!-- 帳號與聯絡資訊檢視卡片 -->
         <div class="info-display-card">
           <div class="info-row">
@@ -235,7 +244,7 @@ import Layout from '../layouts/BaseLayout.astro';
       border: 1px solid #e3dacb;
       border-radius: 14px;
       padding: 12px 14px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       gap: 10px;
     }
     .reading-stat-item {
@@ -285,6 +294,60 @@ import Layout from '../layouts/BaseLayout.astro';
       height: 30px;
       background: #e3dacb;
       flex-shrink: 0;
+    }
+
+    /* 近 10 日閱讀足跡區塊 */
+    .history-10d-card {
+      background: #faf7f2;
+      border: 1px solid #e5dfd5;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .history-10d-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.78rem;
+    }
+    .history-10d-title {
+      font-weight: 600;
+      color: #5c5349;
+    }
+    .history-10d-summary {
+      color: #8c8275;
+      font-size: 0.74rem;
+    }
+    .history-10d-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .day-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fdfbf7;
+      border: 1px solid #ebe4d8;
+      border-radius: 9px;
+      padding: 6px 9px;
+      font-size: 0.74rem;
+      color: #6e655b;
+    }
+    .day-pill--active {
+      border-color: #c8beae;
+      background: #f6f1e7;
+      color: #3c3835;
+      font-weight: 500;
+    }
+    .day-pill-date {
+      color: #8c8275;
+      font-variant-numeric: tabular-nums;
+    }
+    .day-pill-time {
+      color: #3c3835;
+      font-weight: 600;
     }
 
     .info-display-card {
@@ -472,13 +535,77 @@ import Layout from '../layouts/BaseLayout.astro';
       return `${minutes}分`;
     }
 
+    // 格式化 Date 物件為 YYYY-MM-DD
+    function formatDateKey(d: Date): string {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     // 取得今日日期字串（YYYY-MM-DD）
     function getTodayDateString(): string {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return formatDateKey(new Date());
+    }
+
+    // 正規化 reading_logs 陣列
+    function normalizeReadingLogs(rawLogs: any): { date: string; seconds: number }[] {
+      let parsed = rawLogs;
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch { parsed = []; }
+      }
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((item: any) => item && typeof item.date === 'string')
+        .map((item: any) => ({
+          date: item.date,
+          seconds: Math.max(0, Number(item.seconds) || 0)
+        }));
+    }
+
+    // 取得最近 N 天日期清單（由近到遠或由遠到近）
+    function getLastNDays(days = 10): string[] {
+      const result: string[] = [];
+      const base = new Date();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(base);
+        d.setDate(base.getDate() - i);
+        result.push(formatDateKey(d));
+      }
+      return result;
+    }
+
+    // 渲染近 10 日閱讀足跡
+    function renderLast10Days(logs: { date: string; seconds: number }[]) {
+      const listEl = document.getElementById('reading-10d-list');
+      const total10dEl = document.getElementById('display-10d-total');
+      if (!listEl) return;
+
+      const dateMap = new Map<string, number>();
+      logs.forEach(entry => {
+        dateMap.set(entry.date, (dateMap.get(entry.date) || 0) + entry.seconds);
+      });
+
+      const last10Dates = getLastNDays(10).reverse();
+      let sum10dSec = 0;
+
+      const html = last10Dates.map(dateStr => {
+        const sec = dateMap.get(dateStr) || 0;
+        sum10dSec += sec;
+        const shortDate = dateStr.slice(5); // MM-DD
+        const activeClass = sec > 0 ? 'day-pill day-pill--active' : 'day-pill';
+        return `
+          <div class="${activeClass}">
+            <span class="day-pill-date">${shortDate}</span>
+            <span class="day-pill-time">${formatReadingDuration(sec)}</span>
+          </div>
+        `;
+      }).join('');
+
+      listEl.innerHTML = html;
+      if (total10dEl) {
+        total10dEl.textContent = `共 ${formatReadingDuration(sum10dSec)}`;
+      }
     }
 
     // 切換修改個人資料表單顯示/隱藏
@@ -584,16 +711,27 @@ import Layout from '../layouts/BaseLayout.astro';
       if (nameDisplay) nameDisplay.textContent = currentProfile.name;
       if (tierBadge) tierBadge.textContent = currentProfile.tier === '店主' ? '👑 店主' : '🌱 鄰里人';
 
-      // 渲染今日閱讀與累積總閱讀
       const todayStr = getTodayDateString();
-      const rawDailySec =
+      const logs = normalizeReadingLogs(currentProfile.reading_logs);
+
+      const logsTodaySec = logs
+        .filter(item => item.date === todayStr)
+        .reduce((sum, item) => sum + item.seconds, 0);
+      const logsTotalSec = logs.reduce((sum, item) => sum + item.seconds, 0);
+
+      const fallbackDailySec =
         currentProfile.daily_reading_date === todayStr
           ? Number(currentProfile.daily_reading_seconds || 0)
           : 0;
-      const rawTotalSec = Number(currentProfile.total_reading_seconds || 0);
+      const fallbackTotalSec = Number(currentProfile.total_reading_seconds || 0);
+
+      const rawDailySec = logs.length > 0 ? logsTodaySec : fallbackDailySec;
+      const rawTotalSec = logs.length > 0 ? logsTotalSec : fallbackTotalSec;
 
       if (dailyReadingEl) dailyReadingEl.textContent = formatReadingDuration(rawDailySec);
       if (totalReadingEl) totalReadingEl.textContent = formatReadingDuration(rawTotalSec);
+
+      renderLast10Days(logs);
 
       if (displayEmail) displayEmail.textContent = currentProfile.email;
       if (displayPhone) displayPhone.textContent = currentProfile.phone || '未填寫';
