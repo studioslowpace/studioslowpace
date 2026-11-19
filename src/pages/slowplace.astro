@@ -89,11 +89,11 @@ import Layout from '../layouts/Layout.astro';
 
         <div id="seat-update-view" style="display:none;">
           <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
-          
-          <!-- 新增：呈現本次閱讀時長與今日累積 -->
-          <div id="seat-session-time-info" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:12px; padding:10px; font-size:12px; margin-bottom:12px; color:var(--text-color); line-height:1.5;">
-            ⏱️ 本次閱讀：<span id="session-time-text" style="font-weight:bold; color:var(--accent-hover);">0 秒</span><br/>
-            📅 今日閱讀總計：<span id="today-time-text" style="font-weight:bold;">0 秒</span>
+
+          <!-- 本次閱讀時長與今日累計顯示區 -->
+          <div id="seat-session-time-info" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:12px; padding:10px; font-size:12px; margin-bottom:12px; color:var(--text-color); line-height:1.6;">
+            ⏱️ 本次閱讀：<span id="session-time-text" style="font-weight:bold; color:var(--accent-hover);">0秒</span><br/>
+            📅 今日閱讀總計：<span id="today-time-text" style="font-weight:bold;">0秒</span>
           </div>
 
           <div style="display:flex; gap:8px; margin-bottom:14px;">
@@ -134,7 +134,7 @@ import Layout from '../layouts/Layout.astro';
           <div style="margin-bottom:8px;"><strong>📚 正在閱讀：</strong><span id="pc-current-book">尚無記錄</span></div>
           <div style="margin-bottom:4px;"><strong>🤝 參與共讀：</strong><span id="pc-table-book">目前未參與共讀</span></div>
           <div style="margin-top:8px; border-top:1px dashed var(--border-color); padding-top:6px; font-size:11px; color:var(--text-muted);">
-            <strong>📅 今日閱讀總計：</strong><span id="pc-today-time" style="color:var(--accent-hover); font-weight:bold;">0 分鐘</span>
+            <strong>📅 今日閱讀總計：</strong><span id="pc-today-time" style="color:var(--accent-hover); font-weight:bold;">0秒</span>
           </div>
         </div>
 
@@ -424,8 +424,10 @@ import Layout from '../layouts/Layout.astro';
     let isDND = false;
     let currentTask = '';
 
-    // ⏱️ 計時器相關變數
+    // 閱讀計時開始時間戳記（毫秒）
     let sessionStartTime: number | null = null;
+    // 起立彈窗開啟時的即時刷新計時器
+    let leaveModalTimer: any = null;
 
     let moveQueue: { gx: number; gy: number }[] = [];
     let moveTimer = 0;
@@ -445,12 +447,13 @@ import Layout from '../layouts/Layout.astro';
     let hoveredItem: any = null;
     let glowCounter = 0;
 
-    // ⏱️ 格式化秒數為易讀字串
+    // 將秒數轉為「X小時Y分Z秒」
     function formatDuration(seconds: number): string {
-      if (!seconds || seconds <= 0) return '0秒';
-      const hrs = Math.floor(seconds / 3600);
-      const mins = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
+      const safeSec = Math.max(0, Math.floor(seconds || 0));
+      if (safeSec === 0) return '0秒';
+      const hrs = Math.floor(safeSec / 3600);
+      const mins = Math.floor((safeSec % 3600) / 60);
+      const secs = safeSec % 60;
 
       let str = '';
       if (hrs > 0) str += `${hrs}小時`;
@@ -459,9 +462,18 @@ import Layout from '../layouts/Layout.astro';
       return str;
     }
 
-    // ⏱️ 計算特定使用者今日閱讀總時長（從所有記錄的 reading_logs 累加）
+    // 取得本地今日日期字串（YYYY-MM-DD）
+    function getLocalTodayString(): string {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // 計算今日閱讀總秒數
     function calculateTodayTotalSeconds(records: any[]): number {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getLocalTodayString();
       let todayTotal = 0;
       records.forEach(rec => {
         let logs = rec.reading_logs || [];
@@ -492,9 +504,8 @@ import Layout from '../layouts/Layout.astro';
 
     const rpgContainer = document.getElementById('rpg-container');
 
-    // 💡 1. 雙重保險：同時監聽 Header 事件，並在頁面載入時主動初始化一次身分
     window.addEventListener('USER_AUTH_READY', async (e: any) => {
-      if (userId) return; // 避免重複初始化
+      if (userId) return;
       userId = e.detail.userId;
       playerName = e.detail.userName;
       isGuest = e.detail.isGuest;
@@ -503,23 +514,19 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    // 主動初始化入口（防止錯過 USER_AUTH_READY 事件）
     async function initMainSession() {
       if (userId) return;
 
-      // 優先檢查 localStorage 的訪客身分
       const guestId = localStorage.getItem('space_guest_id');
       const guestName = localStorage.getItem('space_guest_name');
       if (guestId) {
         userId = guestId;
         playerName = guestName || '訪客';
         isGuest = true;
-        console.log("🟢 [Main] 主動識別為本地訪客身分:", userId);
         await startAppSession();
         return;
       }
 
-      // 若無訪客身分，檢查 Supabase Session
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         userId = session.user.id;
@@ -530,10 +537,8 @@ import Layout from '../layouts/Layout.astro';
           if (member.avatar) playerAvatar = member.avatar;
         }
         isGuest = false;
-        console.log("🟢 [Main] 主動識別為 Supabase 會員身分:", userId);
         await checkAdminAndStartSession(userId);
       } else {
-        console.warn("⚠️ [Main] 尚未登入或無身分，以預設訪客/冒險者啟動畫面");
         await startAppSession();
       }
     }
@@ -555,7 +560,6 @@ import Layout from '../layouts/Layout.astro';
     async function startAppSession() {
       await fetchRooms();
       
-      // 🛡️ 防呆修復：如果重新整理時還佔著椅子，自動幫玩家起立釋放座位
       if (userId) {
         const { data: stuckSeat } = await supabase
           .from(ITEMS_TABLE)
@@ -565,7 +569,6 @@ import Layout from '../layouts/Layout.astro';
           .maybeSingle();
 
         if (stuckSeat) {
-          console.log("椅子還被卡住，執行自動起立釋放...");
           await supabase.from(ITEMS_TABLE).update({
             host_id: '',
             host_name: '',
@@ -929,9 +932,9 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
       }
 
-      // ⏱️ 專注閱讀時，氣泡會即時動態顯示坐下的已閱讀秒數
+      // 坐下專注閱讀時，氣泡即時顯示已閱讀秒數
       let myStatusText = isDND ? '📖 專注閱讀' : playerName;
-      if (isDND && sessionStartTime) {
+      if (isDND && sessionStartTime !== null) {
         const currentElapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
         myStatusText = `📖 閱讀中 (${formatDuration(currentElapsedSec)})`;
       }
@@ -1203,6 +1206,14 @@ import Layout from '../layouts/Layout.astro';
     const leaveConfirmBtn = document.getElementById('leave-confirm-btn');
     const seatDetails = document.getElementById('seat-details');
 
+    function closeSeatModal() {
+      if (leaveModalTimer) {
+        clearInterval(leaveModalTimer);
+        leaveModalTimer = null;
+      }
+      if (seatModal) seatModal.style.display = 'none';
+    }
+
     seatRecordSelect?.addEventListener('change', (e) => {
       const recId = (e.target as HTMLSelectElement).value;
       if (!recId) {
@@ -1386,7 +1397,6 @@ import Layout from '../layouts/Layout.astro';
     tableCancelBtn?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
     tableInfoClose?.addEventListener('click', () => { if (tableModal) tableModal.style.display = 'none'; });
 
-    // 發起共讀 (同步建立加密聊天室)
     tableCreateBtn?.addEventListener('click', async () => {
       if (isGuest) { alert('訪客無法發起共讀活動，請登入完整會員！'); return; }
       if (!activeTableData || !userId) return;
@@ -1460,7 +1470,6 @@ import Layout from '../layouts/Layout.astro';
       alert('成功加入共讀！');
     });
 
-    // 結束共讀 (同步刪除聊天室)
     async function endTableAction() {
       if (!activeTableData) return;
       if (confirm('確定要結束這場共讀活動嗎？相關的專屬聊天室也會一併關閉。')) {
@@ -1525,7 +1534,6 @@ import Layout from '../layouts/Layout.astro';
         if (pcCurrentBook) pcCurrentBook.textContent = currentReadingBookText;
         if (pcTableBook) pcTableBook.textContent = participatingTableText;
 
-        // 計算並呈現該玩家今日閱讀時長
         const { data: records } = await supabase
           .from(LOGS_TABLE)
           .select('*')
@@ -1761,7 +1769,7 @@ import Layout from '../layouts/Layout.astro';
       if (customModalFrame) customModalFrame.style.display = 'none';
     });
 
-    // ⏱️ 點擊「✨ 坐下閱讀」：記錄計時器開始時間
+    // 點擊「坐下閱讀」：啟動計時器與專注狀態
     seatSitBtn?.addEventListener('click', async () => {
       const bookTitle = seatBookInput?.value.trim();
       const author = seatAuthorInput?.value.trim() || '佚名';
@@ -1769,84 +1777,89 @@ import Layout from '../layouts/Layout.astro';
       const totPage = parseInt(seatTotalPage?.value) || 100;
 
       if (!bookTitle) { alert('請輸入或選擇你想閱讀的書名！'); return; }
+      if (!activeSeatData || !userId) {
+        alert('尚未取得座位或會員資訊，請重新點擊木椅。');
+        return;
+      }
 
-      if (activeSeatData && userId) {
-        isDND = true;
-        sessionStartTime = Date.now(); // ⏱️ 開始計時
-        if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
-        playerGx = activeSeatData.gx;
-        playerGy = activeSeatData.gy;
-        setLeaveSeatButtonVisible(true);
-        await syncMyStateToDB();
+      // 先啟動計時與氣泡顯示，確保畫面即時反應
+      isDND = true;
+      sessionStartTime = Date.now();
+      if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
+      playerGx = activeSeatData.gx;
+      playerGy = activeSeatData.gy;
+      setLeaveSeatButtonVisible(true);
+      await syncMyStateToDB();
 
-        const { error } = await supabase.from(ITEMS_TABLE).update({
-          host_id: userId,
-          host_name: playerName,
-          book_title: bookTitle
-        }).eq('id', activeSeatData.id);
+      const { error } = await supabase.from(ITEMS_TABLE).update({
+        host_id: userId,
+        host_name: playerName,
+        book_title: bookTitle
+      }).eq('id', activeSeatData.id);
 
-        if (error) {
-          console.error('坐下更新失敗:', error);
-          alert('坐下失敗，請稍後再試');
-          return;
-        }
+      if (error) {
+        console.error('坐下更新失敗:', error);
+      }
 
-        if (currentReadingRecordId) {
-          await supabase.from(LOGS_TABLE).update({
-            book_title: bookTitle,
-            author: author,
-            current_page: curPage,
-            total_pages: totPage
-          }).eq('id', currentReadingRecordId);
-        } else {
-          const { data: newRec } = await supabase.from(LOGS_TABLE).insert([{
-            user_id: userId,
-            book_title: bookTitle,
-            author: author,
-            current_page: curPage,
-            total_pages: totPage,
-            duration_seconds: 0,
-            reading_logs: []
-          }]).select().single();
-          if (newRec) {
-            currentReadingRecordId = newRec.id;
-          }
+      if (currentReadingRecordId) {
+        await supabase.from(LOGS_TABLE).update({
+          book_title: bookTitle,
+          author: author,
+          current_page: curPage,
+          total_pages: totPage
+        }).eq('id', currentReadingRecordId);
+      } else {
+        const { data: newRec } = await supabase.from(LOGS_TABLE).insert([{
+          user_id: userId,
+          book_title: bookTitle,
+          author: author,
+          current_page: curPage,
+          total_pages: totPage,
+          duration_seconds: 0,
+          reading_logs: []
+        }]).select().single();
+        if (newRec) {
+          currentReadingRecordId = newRec.id;
         }
       }
 
-      if (seatModal) seatModal.style.display = 'none';
+      closeSeatModal();
       await fetchRoomItems();
       await fetchUserReadingRecords();
     });
 
-    seatCancelBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
-    seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
+    seatCancelBtn?.addEventListener('click', closeSeatModal);
+    seatInfoClose?.addEventListener('click', closeSeatModal);
 
-    // ⏱️ 點擊底部「🚶 起立」按鈕：計算時間並顯示在 Modal 內
-    leaveSeatBtn?.addEventListener('click', () => {
-      const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
-      if (seatedSeat) {
-        if (currentReadingRecordId) {
-          const matchedRec = userReadingRecords.find(r => r.id === currentReadingRecordId);
-          if (matchedRec) {
-            if (leaveCurrentPage) leaveCurrentPage.value = matchedRec.current_page || 1;
-            if (leaveTotalPage) leaveTotalPage.value = matchedRec.total_pages || 100;
-          }
-        }
-      }
-
-      // ⏱️ 即時顯示本次閱讀時間與今日總計
+    // 刷新起立彈窗內的「本次閱讀」與「今日閱讀總計」
+    function refreshLeaveTimeDisplay() {
       let sessionSeconds = 0;
-      if (sessionStartTime) {
-        sessionSeconds = Math.max(1, Math.floor((Date.now() - sessionStartTime) / 1000));
+      if (sessionStartTime !== null) {
+        sessionSeconds = Math.max(0, Math.floor((Date.now() - sessionStartTime) / 1000));
       }
       const sessionTextEl = document.getElementById('session-time-text');
       const todayTextEl = document.getElementById('today-time-text');
-      
+
       if (sessionTextEl) sessionTextEl.textContent = formatDuration(sessionSeconds);
-      
+
       const prevTodaySec = calculateTodayTotalSeconds(userReadingRecords);
       if (todayTextEl) todayTextEl.textContent = formatDuration(prevTodaySec + sessionSeconds);
+    }
+
+    // 點擊底部「起立」按鈕：開啟起立彈窗並顯示本次與今日閱讀時間
+    leaveSeatBtn?.addEventListener('click', () => {
+      const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
+      if (seatedSeat && currentReadingRecordId) {
+        const matchedRec = userReadingRecords.find(r => r.id === currentReadingRecordId);
+        if (matchedRec) {
+          if (leaveCurrentPage) leaveCurrentPage.value = matchedRec.current_page || 1;
+          if (leaveTotalPage) leaveTotalPage.value = matchedRec.total_pages || 100;
+        }
+      }
+
+      refreshLeaveTimeDisplay();
+      if (leaveModalTimer) clearInterval(leaveModalTimer);
+      leaveModalTimer = setInterval(refreshLeaveTimeDisplay, 1000);
 
       if (seatModalTitle) seatModalTitle.textContent = '🚶 準備起立';
       if (seatFormView) seatFormView.style.display = 'none';
@@ -1855,28 +1868,26 @@ import Layout from '../layouts/Layout.astro';
       if (seatModal) seatModal.style.display = 'flex';
     });
 
-    // ⏱️ 點擊「✅ 確認並起立」：結算時間並寫入資料庫
+    // 點擊「確認並起立」：結算秒數並寫入單本書與今日閱讀紀錄
     leaveConfirmBtn?.addEventListener('click', async () => {
       const curPage = parseInt(leaveCurrentPage?.value) || 1;
       const totPage = parseInt(leaveTotalPage?.value) || 100;
 
-      // 計算本次閱讀總秒數
       let elapsedSeconds = 0;
-      if (sessionStartTime) {
+      if (sessionStartTime !== null) {
         elapsedSeconds = Math.max(1, Math.floor((Date.now() - sessionStartTime) / 1000));
       }
 
       isDND = false;
-      sessionStartTime = null; // 重置計時器
+      sessionStartTime = null;
 
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
       setLeaveSeatButtonVisible(false);
-      if (seatModal) seatModal.style.display = 'none';
-      
+      closeSeatModal();
+
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
         if (currentReadingRecordId) {
-          // 抓出原有的 duration_seconds 與 reading_logs
           const matchedRec = userReadingRecords.find(r => r.id === currentReadingRecordId);
           const oldDuration = Number(matchedRec?.duration_seconds) || 0;
           let oldLogs = matchedRec?.reading_logs || [];
@@ -1885,15 +1896,19 @@ import Layout from '../layouts/Layout.astro';
           }
           if (!Array.isArray(oldLogs)) oldLogs = [];
 
-          const todayStr = new Date().toISOString().split('T')[0];
+          const todayStr = getLocalTodayString();
           oldLogs.push({ date: todayStr, seconds: elapsedSeconds });
 
-          await supabase.from(LOGS_TABLE).update({
+          const { error: logErr } = await supabase.from(LOGS_TABLE).update({
             current_page: curPage,
             total_pages: totPage,
             duration_seconds: oldDuration + elapsedSeconds,
             reading_logs: oldLogs
           }).eq('id', currentReadingRecordId);
+
+          if (logErr) {
+            console.error('更新閱讀時間失敗:', logErr);
+          }
         }
 
         await supabase.from(ITEMS_TABLE).update({
@@ -1914,7 +1929,7 @@ import Layout from '../layouts/Layout.astro';
       await fetchUserReadingRecords();
     });
 
-    // 🚀 執行主動初始化
+    // 主動初始化會話
     initMainSession();
   </script>
 </Layout>
