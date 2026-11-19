@@ -90,10 +90,10 @@ import Layout from '../layouts/Layout.astro';
         <div id="seat-update-view" style="display:none;">
           <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
 
-          <!-- 本次閱讀時長與今日累計顯示區 -->
+          <!-- 本次閱讀時長與今日累計顯示區（以小時與分鐘計） -->
           <div id="seat-session-time-info" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:12px; padding:10px; font-size:12px; margin-bottom:12px; color:var(--text-color); line-height:1.6;">
-            ⏱️ 本次閱讀：<span id="session-time-text" style="font-weight:bold; color:var(--accent-hover);">0秒</span><br/>
-            📅 今日閱讀總計：<span id="today-time-text" style="font-weight:bold;">0秒</span>
+            ⏱️ 本次閱讀：<span id="session-time-text" style="font-weight:bold; color:var(--accent-hover);">0分</span><br/>
+            📅 今日閱讀總計：<span id="today-time-text" style="font-weight:bold;">0分</span>
           </div>
 
           <div style="display:flex; gap:8px; margin-bottom:14px;">
@@ -134,7 +134,7 @@ import Layout from '../layouts/Layout.astro';
           <div style="margin-bottom:8px;"><strong>📚 正在閱讀：</strong><span id="pc-current-book">尚無記錄</span></div>
           <div style="margin-bottom:4px;"><strong>🤝 參與共讀：</strong><span id="pc-table-book">目前未參與共讀</span></div>
           <div style="margin-top:8px; border-top:1px dashed var(--border-color); padding-top:6px; font-size:11px; color:var(--text-muted);">
-            <strong>📅 今日閱讀總計：</strong><span id="pc-today-time" style="color:var(--accent-hover); font-weight:bold;">0秒</span>
+            <strong>📅 今日閱讀總計：</strong><span id="pc-today-time" style="color:var(--accent-hover); font-weight:bold;">0分</span>
           </div>
         </div>
 
@@ -447,19 +447,18 @@ import Layout from '../layouts/Layout.astro';
     let hoveredItem: any = null;
     let glowCounter = 0;
 
-    // 將秒數轉為「X小時Y分Z秒」
+    // 將秒數換算並格式化為「小時和分鐘」（例如：1小時25分、45分、0分）
     function formatDuration(seconds: number): string {
       const safeSec = Math.max(0, Math.floor(seconds || 0));
-      if (safeSec === 0) return '0秒';
-      const hrs = Math.floor(safeSec / 3600);
-      const mins = Math.floor((safeSec % 3600) / 60);
-      const secs = safeSec % 60;
+      const totalMins = Math.floor(safeSec / 60);
+      if (totalMins === 0) return '0分';
+      const hrs = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
 
-      let str = '';
-      if (hrs > 0) str += `${hrs}小時`;
-      if (mins > 0 || hrs > 0) str += `${mins}分`;
-      if (hrs === 0) str += `${secs}秒`;
-      return str;
+      if (hrs > 0) {
+        return `${hrs}小時${mins}分`;
+      }
+      return `${mins}分`;
     }
 
     // 取得本地今日日期字串（YYYY-MM-DD）
@@ -932,7 +931,7 @@ import Layout from '../layouts/Layout.astro';
         ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
       }
 
-      // 坐下專注閱讀時，氣泡即時顯示已閱讀秒數
+      // 坐下專注閱讀時，氣泡顯示以小時和分鐘計算的已閱讀時間
       let myStatusText = isDND ? '📖 專注閱讀' : playerName;
       if (isDND && sessionStartTime !== null) {
         const currentElapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
@@ -1782,7 +1781,6 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
-      // 先啟動計時與氣泡顯示，確保畫面即時反應
       isDND = true;
       sessionStartTime = Date.now();
       if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
@@ -1831,7 +1829,7 @@ import Layout from '../layouts/Layout.astro';
     seatCancelBtn?.addEventListener('click', closeSeatModal);
     seatInfoClose?.addEventListener('click', closeSeatModal);
 
-    // 刷新起立彈窗內的「本次閱讀」與「今日閱讀總計」
+    // 刷新起立彈窗內的「本次閱讀」與「今日閱讀總計」（以小時和分鐘計）
     function refreshLeaveTimeDisplay() {
       let sessionSeconds = 0;
       if (sessionStartTime !== null) {
