@@ -1,0 +1,392 @@
+---
+import Layout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+const rawTitle = Astro.params.title;
+const decodedTitle = rawTitle ? decodeURIComponent(rawTitle) : '';
+
+const { data: product, error } = await supabase
+  .from('products')
+  .select('*')
+  .eq('title', decodedTitle)
+  .single();
+---
+
+<Layout title={product ? product.title : '商品不存在'}>
+  {product ? (
+    <div class="shop-container">
+      <nav class="breadcrumb-bar">
+        <div class="breadcrumb">
+          <a href="/products">全部商品</a> <span class="sep">/</span> <span>{product.title}</span>
+        </div>
+        <!-- 管理員模式專用編輯按鈕 -->
+        <div class="admin-detail-action">
+          <button id="btn-edit-current" 
+            data-id={product.id}
+            data-title={product.title}
+            data-author={product.author || ''}
+            data-publisher={product.publisher || ''}
+            data-price={product.price}
+            data-category={product.category || ''}
+            data-badge={product.badge || ''}
+            data-image={product.images?.[0] || ''}
+            data-description={product.description || ''}
+            data-shipping={product.shipping_info || ''}
+          >✏️ 編輯此商品</button>
+        </div>
+      </nav>
+
+      <div class="product-main">
+        <div class="gallery-section">
+          {product.images && product.images.length > 0 && (
+            <div class="thumbnail-list">
+              {product.images.map((img: string, index: number) => (
+                <button class={`thumb-btn ${index === 0 ? 'active' : ''}`} data-src={img}>
+                  <img src={img} alt={`${product.title} 縮圖 ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+          )}
+          <div class="main-image">
+            <img id="current-img" src={product.images?.[0] || 'https://via.placeholder.com/600x600'} alt={product.title} />
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h1 class="product-title">{product.title}</h1>
+          
+          <div class="meta-info">
+            {product.author && <p>作者：{product.author}</p>}
+            {product.publisher && <p>出版社：{product.publisher}</p>}
+            {product.publish_date && <p>出版日期：{product.publish_date}</p>}
+          </div>
+
+          <div class="price-tag">
+            {product.price_range ? product.price_range : `${product.currency || 'HK$'}${Number(product.price).toFixed(2)}`}
+          </div>
+
+          <div class="field-group">
+            <label>數量</label>
+            <div class="quantity-picker">
+              <button type="button" id="btn-minus">-</button>
+              <input type="number" id="qty-input" value="1" min="1" readonly />
+              <button type="button" id="btn-plus">+</button>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-add-cart">加入購物車</button>
+            <button class="btn btn-buy-now">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+              立即購買
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <div class="tab-header">
+          <button class="tab-btn active" data-tab="description">商品描述</button>
+          <button class="tab-btn" data-tab="shipping">送貨及付款方式</button>
+          <button class="tab-btn" data-tab="reviews">顧客評價</button>
+        </div>
+
+        <div class="tab-content">
+          <div id="tab-description" class="tab-pane active">
+            <h3 class="pane-title">商品描述</h3>
+            <div class="pane-body whitespace-pre">{product.description || '暫無描述'}</div>
+          </div>
+          <div id="tab-shipping" class="tab-pane">
+            <h3 class="pane-title">送貨及付款方式</h3>
+            <div class="pane-body whitespace-pre">{product.shipping_info || '順豐速運 / 郵政寄送'}</div>
+          </div>
+          <div id="tab-reviews" class="tab-pane">
+            <h3 class="pane-title">顧客評價</h3>
+            <div class="pane-body whitespace-pre">{product.reviews || '暫無顧客評價'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div class="not-found">
+      <h2>找不到此商品</h2>
+      <p>抱歉，您所尋找的商品可能已下架或不存在。</p>
+      <a href="/">返回首頁</a>
+    </div>
+  )}
+
+  <!-- 編輯商品 Modal -->
+  <div id="productModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <h3>編輯商品</h3>
+      <form id="product-form">
+        <input type="hidden" id="prod-id" />
+        <div class="form-group">
+          <label>商品名稱 (Title)*</label>
+          <input type="text" id="prod-title" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>作者</label>
+            <input type="text" id="prod-author" />
+          </div>
+          <div class="form-group">
+            <label>出版社</label>
+            <input type="text" id="prod-publisher" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>價格 (Price)*</label>
+            <input type="number" step="0.01" id="prod-price" required />
+          </div>
+          <div class="form-group">
+            <label>分類 Slug</label>
+            <input type="text" id="prod-category" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>右上角標籤 (Badge)</label>
+            <input type="text" id="prod-badge" />
+          </div>
+          <div class="form-group">
+            <label>圖片網址 (Image URL)</label>
+            <input type="text" id="prod-image" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>商品描述</label>
+          <textarea id="prod-description" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>送貨及付款方式</label>
+          <textarea id="prod-shipping" rows="2"></textarea>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" id="btn-close-modal" class="btn-cancel">取消</button>
+          <button type="submit" class="btn-submit">儲存變更</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const thumbBtns = document.querySelectorAll('.thumb-btn');
+  const mainImg = document.getElementById('current-img') as HTMLImageElement;
+
+  thumbBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      thumbBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const newSrc = btn.getAttribute('data-src');
+      if (newSrc && mainImg) mainImg.src = newSrc;
+    });
+  });
+
+  const btnMinus = document.getElementById('btn-minus');
+  const btnPlus = document.getElementById('btn-plus');
+  const qtyInput = document.getElementById('qty-input') as HTMLInputElement;
+
+  btnMinus?.addEventListener('click', () => {
+    let val = parseInt(qtyInput.value) || 1;
+    if (val > 1) qtyInput.value = (val - 1).toString();
+  });
+
+  btnPlus?.addEventListener('click', () => {
+    let val = parseInt(qtyInput.value) || 1;
+    qtyInput.value = (val + 1).toString();
+  });
+
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabPanes = document.querySelectorAll('.tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabPanes.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${targetTab}`)?.classList.add('active');
+    });
+  });
+
+  // 共用的加入購物車邏輯
+  function addToCart(redirect = false) {
+    const titleEl = document.querySelector('.product-title');
+    const priceTagEl = document.querySelector('.price-tag');
+    const mainImgEl = document.getElementById('current-img') as HTMLImageElement;
+
+    const title = titleEl ? titleEl.textContent?.trim() : '';
+    const priceText = priceTagEl ? priceTagEl.textContent?.trim() : '0';
+    
+    // 從價格字串中解析出數字 (例如 "HK$140.00" -> 140)
+    const priceMatch = priceText.replace(/[^0-9.]/g, '');
+    const price = priceMatch ? parseFloat(priceMatch) : 0;
+    const currency = priceText.includes('HK$') ? 'HK$' : '$';
+    const image = mainImgEl ? mainImgEl.src : '';
+    const quantity = parseInt(qtyInput?.value || '1');
+
+    if (!title) {
+      alert('無法取得商品資訊');
+      return;
+    }
+
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingIndex = cart.findIndex((item: any) => item.title === title);
+
+    if (existingIndex > -1) {
+      cart[existingIndex].quantity += quantity;
+    } else {
+      cart.push({ title, price, currency, image, quantity });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    if (redirect) {
+      window.location.href = '/checkout';
+    } else {
+      alert('🛒 已成功加入購物車！');
+    }
+  }
+
+  // 綁定加入購物車按鈕
+  const addCartBtn = document.querySelector('.btn-add-cart');
+  addCartBtn?.addEventListener('click', () => addToCart(false));
+
+  // 綁定立即購買按鈕 (加入購物車後跳轉到結帳頁)
+  const buyNowBtn = document.querySelector('.btn-buy-now');
+  buyNowBtn?.addEventListener('click', () => addToCart(true));
+
+  // 編輯 Modal 互動
+  const modal = document.getElementById('productModal');
+  const btnEditCurrent = document.getElementById('btn-edit-current');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const productForm = document.getElementById('product-form') as HTMLFormElement;
+
+  const prodIdInput = document.getElementById('prod-id') as HTMLInputElement;
+  const prodTitleInput = document.getElementById('prod-title') as HTMLInputElement;
+  const prodAuthorInput = document.getElementById('prod-author') as HTMLInputElement;
+  const prodPublisherInput = document.getElementById('prod-publisher') as HTMLInputElement;
+  const prodPriceInput = document.getElementById('prod-price') as HTMLInputElement;
+  const prodCategoryInput = document.getElementById('prod-category') as HTMLInputElement;
+  const prodBadgeInput = document.getElementById('prod-badge') as HTMLInputElement;
+  const prodImageInput = document.getElementById('prod-image') as HTMLInputElement;
+  const prodDescInput = document.getElementById('prod-description') as HTMLTextAreaElement;
+  const prodShippingInput = document.getElementById('prod-shipping') as HTMLTextAreaElement;
+
+  btnEditCurrent?.addEventListener('click', (e) => {
+    const dataset = (e.currentTarget as HTMLElement).dataset;
+    prodIdInput.value = dataset.id || '';
+    prodTitleInput.value = dataset.title || '';
+    prodAuthorInput.value = dataset.author || '';
+    prodPublisherInput.value = dataset.publisher || '';
+    prodPriceInput.value = dataset.price || '';
+    prodCategoryInput.value = dataset.category || '';
+    prodBadgeInput.value = dataset.badge || '';
+    prodImageInput.value = dataset.image || '';
+    prodDescInput.value = dataset.description || '';
+    prodShippingInput.value = dataset.shipping || '';
+
+    if (modal) modal.style.display = 'flex';
+  });
+
+  btnCloseModal?.addEventListener('click', () => {
+    if (modal) modal.style.display = 'none';
+  });
+
+  productForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = prodIdInput.value;
+    const payload = {
+      title: prodTitleInput.value,
+      author: prodAuthorInput.value,
+      publisher: prodPublisherInput.value,
+      price: parseFloat(prodPriceInput.value),
+      category: prodCategoryInput.value,
+      badge: prodBadgeInput.value,
+      images: prodImageInput.value ? [prodImageInput.value] : [],
+      description: prodDescInput.value,
+      shipping_info: prodShippingInput.value
+    };
+
+    const { error } = await supabase.from('products').update(payload).eq('id', id);
+    if (error) {
+      alert('更新失敗: ' + error.message);
+    } else {
+      alert('✅ 商品更新成功！');
+      window.location.reload();
+    }
+  });
+</script>
+
+<style>
+  .shop-container { max-width: 1080px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; }
+  .breadcrumb-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; margin-bottom: 30px; }
+  .breadcrumb { font-size: 14px; color: #666; }
+  .breadcrumb a { color: #666; text-decoration: none; }
+  .breadcrumb .sep { margin: 0 8px; color: #ccc; }
+
+  .admin-detail-action { display: none; }
+  :global(body.admin-mode-active) .admin-detail-action { display: block; }
+  #btn-edit-current { background-color: #333; color: #fff; border: none; padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 2px; }
+  #btn-edit-current:hover { background-color: #c99e58; }
+
+  .product-main { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 60px; }
+  @media (max-width: 768px) { .product-main { grid-template-columns: 1fr; } }
+  .gallery-section { display: flex; gap: 15px; }
+  .thumbnail-list { display: flex; flex-direction: column; gap: 10px; }
+  .thumb-btn { width: 60px; height: 60px; border: 1px solid #e5e5e5; padding: 2px; background: none; cursor: pointer; }
+  .thumb-btn.active { border-color: #cda861; }
+  .thumb-btn img { width: 100%; height: 100%; object-fit: cover; }
+  .main-image { flex: 1; background-color: #f7f7f7; display: flex; align-items: center; justify-content: center; min-height: 400px; }
+  .main-image img { max-width: 100%; height: auto; object-fit: contain; }
+  .info-section { display: flex; flex-direction: column; }
+  .product-title { font-size: 22px; font-weight: 400; margin: 0 0 20px 0; line-height: 1.4; color: #222; }
+  .meta-info { font-size: 14px; color: #666; line-height: 1.8; margin-bottom: 25px; }
+  .meta-info p { margin: 0; }
+  .price-tag { font-size: 20px; font-weight: 600; color: #111; margin-bottom: 25px; padding-top: 15px; border-top: 1px solid #eee; }
+  .field-group { margin-bottom: 20px; }
+  .field-group label { display: block; font-size: 13px; color: #666; margin-bottom: 8px; }
+  .quantity-picker { display: flex; width: 140px; border: 1px solid #ccc; }
+  .quantity-picker button { width: 40px; height: 38px; background: #fff; border: none; font-size: 16px; cursor: pointer; }
+  .quantity-picker input { width: 60px; border: none; text-align: center; font-size: 14px; border-left: 1px solid #eee; border-right: 1px solid #eee; outline: none; }
+  .action-buttons { display: flex; gap: 12px; margin-top: 10px; }
+  .btn { flex: 1; padding: 12px 20px; border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.9; }
+  .btn-add-cart { background-color: #c99e58; color: #fff; }
+  .btn-buy-now { background-color: #ff6600; color: #fff; }
+  .details-section { margin-top: 40px; }
+  .tab-header { display: flex; justify-content: center; gap: 40px; border-bottom: 1px solid #eee; }
+  .tab-btn { background: none; border: none; padding: 15px 0; font-size: 15px; color: #888; cursor: pointer; position: relative; }
+  .tab-btn.active { color: #333; }
+  .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: #c99e58; }
+  .tab-content { padding: 40px 0; text-align: center; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .pane-title { font-size: 18px; font-weight: 400; margin-bottom: 15px; position: relative; display: inline-block; }
+  .pane-title::after { content: ''; display: block; width: 30px; height: 2px; background-color: #c99e58; margin: 8px auto 0 auto; }
+  .pane-body { max-width: 600px; margin: 30px auto 0 auto; text-align: left; line-height: 1.8; color: #444; font-size: 14px; }
+  .whitespace-pre { white-space: pre-line; }
+  .not-found { text-align: center; padding: 80px 20px; }
+
+  /* Modal 樣式 */
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+  .modal-card { background: #fff; width: 500px; max-width: 90%; padding: 30px; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+  .modal-card h3 { margin-top: 0; font-size: 18px; margin-bottom: 20px; font-weight: 500; }
+  .form-group { margin-bottom: 15px; }
+  .form-row { display: flex; gap: 15px; }
+  .form-row .form-group { flex: 1; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+  .form-group input, .form-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; }
+  .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
+  .btn-cancel { background: #f0f0f0; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .btn-submit { background: #c99e58; color: #fff; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+</style>

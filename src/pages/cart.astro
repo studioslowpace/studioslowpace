@@ -1,0 +1,223 @@
+---
+import Layout from '../layouts/BaseLayout.astro';
+---
+
+<Layout title="購物車 - 商店主頁">
+  <div class="shop-container">
+    <nav class="breadcrumb">
+      <a href="/products">全部商品</a> <span class="sep">/</span> <span>購物車</span>
+    </nav>
+
+    <!-- 購物車卡片容器 -->
+    <div class="cart-card-box">
+      <div class="cart-card-header">
+        <span id="cart-header-title">購物車 (0 件)</span>
+        <div class="header-actions">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </div>
+      </div>
+
+      <!-- 商品表格 -->
+      <div class="cart-table-wrapper">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th class="th-product">商品資料</th>
+              <th class="th-price">商品單價</th>
+              <th class="th-qty">數量</th>
+              <th class="th-subtotal">商品小計</th>
+              <th class="th-action"></th>
+            </tr>
+          </thead>
+          <tbody id="cart-tbody">
+            <!-- JS 動態填入商品列 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 空購物車提示 -->
+      <div id="cart-empty" class="cart-empty" style="display: none;">
+        <p>目前購物車是空的</p>
+        <a href="/" class="btn btn-shop-now">去選購商品</a>
+      </div>
+
+      <!-- 結帳總結區塊 (靠右設計) -->
+      <div id="cart-summary" class="cart-summary-section" style="display: none;">
+        <div class="summary-content">
+          <div class="summary-row">
+            <span class="summary-label">總計金額</span>
+            <span id="cart-total-price" class="total-price">HK$0.00</span>
+          </div>
+          <div class="summary-actions">
+            <a href="/checkout" class="btn btn-checkout">前往結帳</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  interface CartItem {
+    id: string;
+    title: string;
+    price: number;
+    currency: string;
+    image: string;
+    quantity: number;
+  }
+
+  function renderCart() {
+    const tbody = document.getElementById('cart-tbody');
+    const summary = document.getElementById('cart-summary');
+    const emptyView = document.getElementById('cart-empty');
+    const totalPriceEl = document.getElementById('cart-total-price');
+    const headerTitleEl = document.getElementById('cart-header-title');
+
+    const cart: CartItem[] = JSON.parse(localStorage.getItem('cart') || '[]');
+
+    if (!tbody || !summary || !emptyView || !totalPriceEl || !headerTitleEl) return;
+
+    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    headerTitleEl.innerText = `購物車 (${totalItems} 件)`;
+
+    if (cart.length === 0) {
+      tbody.innerHTML = '';
+      summary.style.display = 'none';
+      emptyView.style.display = 'block';
+      return;
+    }
+
+    emptyView.style.display = 'none';
+    summary.style.display = 'block';
+
+    let html = '';
+    let total = 0;
+
+    cart.forEach((item, index) => {
+      const itemTotal = item.price * item.quantity;
+      total += itemTotal;
+      html += `
+        <tr>
+          <td class="td-product">
+            <div class="product-info-cell">
+              <div class="cart-item-img">
+                <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.title}" />
+              </div>
+              <span class="cart-item-title">${item.title}</span>
+            </div>
+          </td>
+          <td class="td-price">${item.currency || 'HK$'}${item.price.toFixed(2)}</td>
+          <td class="td-qty">
+            <div class="quantity-picker">
+              <button type="button" class="qty-btn minus-btn" data-index="${index}">-</button>
+              <input type="text" value="${item.quantity}" readonly />
+              <button type="button" class="qty-btn plus-btn" data-index="${index}">+</button>
+            </div>
+          </td>
+          <td class="td-subtotal">${item.currency || 'HK$'}${itemTotal.toFixed(2)}</td>
+          <td class="td-action">
+            <button class="remove-btn" data-index="${index}" title="刪除商品">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+    totalPriceEl.innerText = `HK$${total.toFixed(2)}`;
+
+    document.querySelectorAll('.minus-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+        if (cart[idx].quantity > 1) {
+          cart[idx].quantity -= 1;
+        } else {
+          cart.splice(idx, 1);
+        }
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+      });
+    });
+
+    document.querySelectorAll('.plus-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+        cart[idx].quantity += 1;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+      });
+    });
+
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+        cart.splice(idx, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+      });
+    });
+  }
+
+  renderCart();
+</script>
+
+<style is:global>
+  .shop-container { max-width: 1080px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; }
+  .breadcrumb { padding: 10px 0; font-size: 14px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 30px; }
+  .breadcrumb a { color: #666; text-decoration: none; }
+  .breadcrumb a:hover { color: #c99e58; }
+  .breadcrumb .sep { margin: 0 8px; color: #ccc; }
+
+  /* 購物車外框卡片 */
+  .cart-card-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden; margin-bottom: 40px; }
+  .cart-card-header { padding: 14px 20px; font-size: 14px; font-weight: 500; border-bottom: 1px solid #eaeaea; color: #333; background: #fff; display: flex; justify-content: space-between; align-items: center; }
+  .header-actions { display: flex; gap: 12px; color: #888; cursor: pointer; }
+
+  /* 表格樣式 */
+  .cart-table-wrapper { width: 100%; overflow-x: auto; }
+  .cart-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+  .cart-table th { background: #fff; color: #666; font-weight: 400; padding: 12px 20px; border-bottom: 1px solid #eaeaea; font-size: 13px; }
+  .cart-table td { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+
+  .th-product, .td-product { width: 45%; }
+  .th-price, .td-price { width: 18%; color: #333; }
+  .th-qty, .td-qty { width: 20%; }
+  .th-subtotal, .td-subtotal { width: 12%; font-weight: 500; color: #111; }
+  .th-action, .td-action { width: 5%; text-align: center; }
+
+  /* 圖片比例調整 (寬 45px, 高 60px 配合書本) */
+  .product-info-cell { display: flex; align-items: center; gap: 15px; }
+  .cart-item-img { width: 45px; height: 60px; background: #f9f9f9; border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
+  .cart-item-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .cart-item-title { font-size: 13px; color: #333; line-height: 1.4; font-weight: 400; }
+
+  /* 數量選擇器 (對齊截圖中的微框設計) */
+  .quantity-picker { display: flex; width: 100px; border: 1px solid #dcdcdc; border-radius: 2px; background: #fff; }
+  .qty-btn { width: 30px; height: 32px; background: #fff; border: none; font-size: 14px; cursor: pointer; color: #666; transition: background 0.1s; }
+  .qty-btn:hover { background: #f5f5f5; color: #111; }
+  .quantity-picker input { width: 40px; border: none; text-align: center; font-size: 13px; border-left: 1px solid #dcdcdc; border-right: 1px solid #dcdcdc; outline: none; background: #fff; color: #333; }
+
+  /* 垃圾桶刪除按鈕 */
+  .remove-btn { background: none; border: none; color: #bbb; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
+  .remove-btn:hover { color: #d9534f; }
+
+  /* 總結區塊靠右 */
+  .cart-summary-section { padding: 20px 30px; border-top: 1px solid #eaeaea; background: #fff; display: flex; justify-content: flex-end; }
+  .summary-content { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; min-width: 260px; }
+  .summary-row { display: flex; justify-content: space-between; width: 100%; font-size: 14px; align-items: center; }
+  .summary-label { color: #666; }
+  .total-price { font-size: 18px; font-weight: 600; color: #111; }
+  
+  .btn { padding: 12px 35px; border: none; font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; border-radius: 2px; transition: opacity 0.2s; display: inline-block; }
+  .btn-checkout { background-color: #ff6600; color: #fff; width: 100%; font-weight: 500; }
+  .btn-checkout:hover { opacity: 0.9; }
+
+  .cart-empty { text-align: center; padding: 60px 0; color: #666; font-size: 13px; }
+  .btn-shop-now { background-color: #c99e58; color: #fff; margin-top: 15px; border-radius: 2px; }
+</style>

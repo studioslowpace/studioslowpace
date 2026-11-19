@@ -1,0 +1,142 @@
+---
+import Layout from '../layouts/BaseLayout.astro';
+---
+
+<Layout title="填寫訂單 - 結帳頁面">
+  <div class="shop-container">
+    <nav class="breadcrumb">
+      <a href="/cart">購物車</a> <span class="sep">/</span> <span>填寫訂單</span>
+    </nav>
+
+    <h1 class="page-title">結帳</h1>
+
+    <div class="checkout-grid">
+      <!-- 左側：收件人與付款資訊表單 -->
+      <div class="checkout-form-section">
+        <form id="checkout-form">
+          <h3>收件人資訊</h3>
+          <div class="form-group">
+            <label>收件人姓名 *</label>
+            <input type="text" id="name" required placeholder="請輸入全名" />
+          </div>
+          <div class="form-group">
+            <label>電子郵件 *</label>
+            <input type="email" id="email" required placeholder="name@example.com" />
+          </div>
+          <div class="form-group">
+            <label>聯絡電話 *</label>
+            <input type="tel" id="phone" required placeholder="電話號碼" />
+          </div>
+          <div class="form-group">
+            <label>收件地址 / 順豐站代碼 *</label>
+            <textarea id="address" rows="3" required placeholder="請輸入詳細地址或順豐智能櫃/站代碼"></textarea>
+          </div>
+
+          <h3 class="mt-30">付款方式</h3>
+          <div class="payment-options">
+            <label class="radio-label">
+              <input type="radio" name="payment" value="fps" checked /> 轉數快 (FPS) / PayMe
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="payment" value="credit_card" /> 信用卡線上支付
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-submit-order">確認送出訂單</button>
+        </form>
+      </div>
+
+      <!-- 右側：訂單摘要 -->
+      <div class="checkout-summary-section">
+        <h3>訂單摘要</h3>
+        <div id="checkout-items-list" class="checkout-items-list">
+          <!-- JS 動態載入 -->
+        </div>
+        <div class="summary-total-row">
+          <span>應付總額</span>
+          <span id="checkout-total-price" class="total-price">HK$0.00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  interface CartItem {
+    id: string;
+    title: string;
+    price: number;
+    currency: string;
+    image: string;
+    quantity: number;
+  }
+
+  const cart: CartItem[] = JSON.parse(localStorage.getItem('cart') || '[]');
+  const listContainer = document.getElementById('checkout-items-list');
+  const totalPriceEl = document.getElementById('checkout-total-price');
+
+  if (cart.length === 0) {
+    alert('您的購物車是空的，將返回首頁');
+    window.location.href = '/';
+  }
+
+  if (listContainer && totalPriceEl) {
+    let html = '';
+    let total = 0;
+
+    cart.forEach(item => {
+      const itemTotal = item.price * item.quantity;
+      total += itemTotal;
+      html += `
+        <div class="summary-item">
+          <span class="summary-item-title">${item.title} × ${item.quantity}</span>
+          <span class="summary-item-price">${item.currency || 'HK$'}${itemTotal.toFixed(2)}</span>
+        </div>
+      `;
+    });
+
+    listContainer.innerHTML = html;
+    totalPriceEl.innerText = `HK$${total.toFixed(2)}`;
+  }
+
+  const form = document.getElementById('checkout-form');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    // 模擬訂單送出成功
+    alert('🎉 訂單已成功送出！感謝您的購買。');
+    localStorage.removeItem('cart'); // 清空購物車
+    window.location.href = '/';
+  });
+</script>
+
+<style is:global>
+  .shop-container { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; }
+  .breadcrumb { padding: 10px 0; font-size: 14px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 30px; }
+  .breadcrumb a { color: #666; text-decoration: none; }
+  .breadcrumb .sep { margin: 0 8px; color: #ccc; }
+  .page-title { font-size: 22px; font-weight: 400; margin-bottom: 30px; }
+
+  .checkout-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; }
+  @media (max-width: 768px) { .checkout-grid { grid-template-columns: 1fr; } }
+
+  .checkout-form-section h3, .checkout-summary-section h3 { font-size: 16px; font-weight: 500; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  .mt-30 { margin-top: 30px; }
+
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
+  .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; }
+
+  .payment-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+  .radio-label { font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+  .btn-submit-order { background-color: #ff6600; color: #fff; width: 100%; padding: 14px; border: none; font-size: 15px; cursor: pointer; border-radius: 2px; }
+  .btn-submit-order:hover { opacity: 0.9; }
+
+  .checkout-summary-section { background: #f9f9f9; padding: 25px; border-radius: 2px; height: fit-content; }
+  .checkout-items-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; max-height: 300px; overflow-y: auto; }
+  .summary-item { display: flex; justify-content: space-between; font-size: 13px; color: #444; gap: 15px; }
+  .summary-item-title { flex: 1; }
+  .summary-total-row { display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 15px; font-size: 15px; font-weight: 600; }
+  .total-price { color: #111; }
+</style>

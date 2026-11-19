@@ -1,0 +1,97 @@
+---
+const { title = "預設標題" } = Astro.props;
+import Footer from '../components/phonefooter.astro';
+import Header from '../components/phoneheader.astro';
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <slot name="head" />
+  </head>
+<body>
+    <div class="app-viewport">
+      <div class="rpg-container">
+        <Header />
+        <main class="app-main">
+          <slot />
+        </main>
+        <div class="app-footer-wrapper">
+          <Footer />
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg-main: #faf6ee;
+    --bg-card: rgba(255, 255, 255, 0.9);
+    --bg-input: #f4efe6;
+    --border-color: #e6dcc8;
+    --text-color: #2c241d;
+    --accent-hover: #52796f;
+    --text-muted: #8c7a6b;
+    --danger-color: #e07a5f;
+    --success-color: #81b29a;
+  }
+
+  /* 🟢 解除原本強制鎖死全頁的 overflow: hidden，改由容器自適應 */
+  html, body {
+    background-color: var(--bg-main);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    min-height: 100vh;
+  }
+
+  .app-viewport { 
+    width: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background: var(--bg-main); 
+  }
+  
+  /* 🟢 讓 rpg-container 在手機時維持最大 430px，但在電腦版時可以自動延展或置中 */
+  .rpg-container {
+    width: 100%;
+    max-width: 430px; 
+    min-height: 100vh;
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    background-color: var(--bg-main); 
+    border: 1px solid var(--border-color); 
+    box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); 
+  }
+
+  /* 🟢 當螢幕大於 768px（電腦版）時，自動解開寬度限制，讓它可以正常展開 */
+  @media (min-width: 768px) {
+    .rpg-container {
+      max-width: 1200px; /* 電腦版寬度 */
+      border-radius: 16px;
+      margin: 20px auto;
+      min-height: 90vh;
+    }
+  }
+
+  .app-main {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0px;
+  }
+
+  .app-footer-wrapper {
+    padding: 0px;
+    width: 100%;
+  }
+</style>

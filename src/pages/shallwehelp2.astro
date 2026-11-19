@@ -1,0 +1,52 @@
+---
+import MobileLayout from '../layouts/PhoneLayout.astro';       // 手機版 Layout
+import DesktopLayout from '../layouts/BaseLayout.astro';    // 電腦版 Layout
+import Shallwehelp from '../components/shallwehelp-code.astro';
+---
+
+<!-- 📱 手機版容器 -->
+<div class="mobile-view">
+    <MobileLayout title="客舍萬事屋 Shall We Help">
+        <!-- 所有的 head 標籤與頁面內容，都要乖乖包在 Layout 裡面 -->
+        <Fragment slot="head">
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="https://unpkg.com/lucide@latest"></script>
+        </Fragment>
+        
+        <Shallwehelp />
+    </MobileLayout>
+</div>
+
+<!-- 💻 電腦版容器 -->
+<div class="desktop-view">
+    <DesktopLayout title="客舍萬事屋 Shall We Help">
+        <Fragment slot="head">
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="https://unpkg.com/lucide@latest"></script>
+        </Fragment>
+        
+        <Shallwehelp />
+    </DesktopLayout>
+</div>
+
+<style>
+    /* 預設（手機）：顯示手機版，隱藏電腦版 */
+    .desktop-view {
+        display: none;
+    }
+    .mobile-view {
+        display: block;
+    }
+
+    /* 當螢幕寬度大於 768px（電腦）：顯示電腦版，隱藏手機版 */
+    @media (min-width: 768px) {
+        .mobile-view {
+            display: none;
+        }
+        .desktop-view {
+            display: block;
+        }
+    }
+</style>
