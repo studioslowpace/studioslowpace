@@ -1,793 +1,627 @@
 <!DOCTYPE html>
-<html lang="zh-TW" class="dark">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>SwipeClean - 相簿滑動整理 App</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              50: '#eef2ff',
-              500: '#6366f1',
-              600: '#4f46e5',
-              700: '#4338ca',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SwipeClean 相簿整理</title>
   <style>
-    /* Prevent dynamic dynamic scrolling and text selection during swipe */
-    body {
-      touch-action: pan-y;
+    :root {
+      --bg: #f6f4ef;
+      --card: #ffffff;
+      --text: #1f2421;
+      --muted: #68706a;
+      --accent: #2c6e49;
+      --danger: #c92a2a;
+      --border: #e2dfd7;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
-      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
       overflow: hidden;
-      background-color: #0f172a;
-    }
-    
-    .card-shadow {
-      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.5), 0 10px 15px -5px rgba(0, 0, 0, 0.3);
     }
 
-    .glass-panel {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .glass-btn {
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    
-    .glass-btn:active {
-      transform: scale(0.95);
+    header {
+      padding: 12px 16px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 10;
     }
 
-    /* Custom scrollbar for modals */
-    ::-webkit-scrollbar {
-      width: 6px;
+    .stats {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
+
+    .stats strong {
+      color: var(--text);
     }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 9999px;
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-danger-outline {
+      color: var(--danger);
+      border-color: #ffc9c9;
+      background: #fff5f5;
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 400px;
+      height: 100%;
+      max-height: 540px;
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      touch-action: none;
+      transition: transform 0.18s ease-out, opacity 0.18s ease-out;
+    }
+
+    .card.dragging {
+      transition: none;
+    }
+
+    .card img {
+      width: 100%;
+      flex: 1;
+      object-fit: cover;
+      background: #eae7e1;
+      pointer-events: none;
+    }
+
+    .card-meta {
+      padding: 12px 16px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .badge {
+      position: absolute;
+      top: 20px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 1px;
+      opacity: 0;
+      pointer-events: none;
+      border: 2px solid currentColor;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .badge-delete {
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--danger);
+    }
+
+    .badge-prev {
+      left: 18px;
+      color: var(--accent);
+    }
+
+    .badge-next {
+      right: 18px;
+      color: #1971c2;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 24px;
+    }
+
+    .albums-bar {
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      align-items: center;
+    }
+
+    .album-chip {
+      flex: 0 0 auto;
+      padding: 8px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #faf9f6;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .album-chip:active {
+      background: #e6fcf5;
+      border-color: var(--accent);
+    }
+
+    .bottom-actions {
+      background: var(--card);
+      padding: 8px 14px 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 30;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 420px;
+      max-height: 75vh;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pending-list {
+      overflow-y: auto;
+      flex: 1;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      font-size: 13px;
+    }
+
+    .pending-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px dashed #eee;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(25, 28, 26, 0.9);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 40;
+    }
+
+    #toast.show {
+      opacity: 1;
     }
   </style>
 </head>
-<body class="text-slate-100 font-sans h-screen flex flex-col justify-between select-none overflow-hidden">
-
-  <!-- Top App Navigation / Header Bar -->
-  <header class="w-full px-4 pt-4 pb-2 z-20 max-w-md mx-auto">
-    <div class="glass-panel rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
-      <div class="flex items-center space-x-2">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-rose-500 flex items-center justify-center shadow-md">
-          <i class="fa-solid font-bold fa-fire text-white text-lg"></i>
-        </div>
-        <span class="font-extrabold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">SwipeClean</span>
-      </div>
-      
-      <!-- Counters & Actions -->
-      <div class="flex items-center space-x-2">
-        <button id="btnOpenAlbums" class="glass-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 hover:bg-slate-700/50 transition">
-          <i class="fa-solid fa-folder-closed text-indigo-400"></i>
-          <span id="albumCountBadge" class="text-slate-200">0</span>
-        </button>
-
-        <button id="btnOpenTrash" class="glass-btn px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 hover:bg-slate-700/50 transition relative">
-          <i class="fa-solid fa-trash-can text-rose-400"></i>
-          <span id="trashCountBadge" class="text-slate-200">0</span>
-        </button>
-        
-        <label for="fileUploadInput" class="glass-btn cursor-pointer p-2 rounded-xl text-xs font-semibold flex items-center justify-center text-indigo-300 hover:bg-slate-700/50 transition" title="上傳照片">
-          <i class="fa-solid fa-cloud-arrow-up text-base"></i>
-        </label>
-        <input type="file" id="fileUploadInput" accept="image/*" multiple class="hidden">
-      </div>
+<body>
+  <header>
+    <div class="stats">
+      <span>待整理：<strong id="statRemain">0</strong></span>
+      <span>已存新檔：<strong id="statSaved">0</strong></span>
+      <span>待刪：<strong id="statDelete">0</strong></span>
     </div>
+    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">選取照片</button>
+    <input id="fileInput" type="file" accept="image/*" multiple hidden />
   </header>
 
-  <!-- Progress Bar & Status -->
-  <div class="w-full max-w-md mx-auto px-6 py-1 flex items-center justify-between text-xs text-slate-400 z-10">
-    <div class="flex items-center space-x-1">
-      <i class="fa-regular fa-images text-indigo-400"></i>
-      <span>剩餘待整理：<strong id="remainingCounter" class="text-white font-bold">0</strong></span>
-    </div>
-    <div class="text-xs text-slate-500">
-      ↑ 向上滑動標記刪除
-    </div>
-  </div>
-
-  <!-- Main Card Stack Container -->
-  <main class="relative flex-1 w-full max-w-md mx-auto px-4 py-2 flex items-center justify-center z-10 overflow-hidden">
-    
-    <!-- Gesture Overlay Labels -->
-    <div id="badgeDelete" class="absolute top-10 z-30 pointer-events-none opacity-0 transform -translate-y-4 transition-all duration-150 flex items-center space-x-2 bg-rose-500/90 text-white font-extrabold px-6 py-2 rounded-full shadow-2xl border border-rose-300/40 text-lg uppercase tracking-wider">
-      <i class="fa-solid fa-trash-can"></i>
-      <span>標記刪除</span>
-    </div>
-
-    <div id="badgeNext" class="absolute right-8 top-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-0 transform translate-x-4 transition-all duration-150 flex items-center space-x-2 bg-indigo-500/90 text-white font-extrabold px-5 py-3 rounded-2xl shadow-2xl border border-indigo-300/40 text-base">
-      <span>下一張</span>
-      <i class="fa-solid fa-chevron-right"></i>
-    </div>
-
-    <div id="badgePrev" class="absolute left-8 top-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-0 transform -translate-x-4 transition-all duration-150 flex items-center space-x-2 bg-slate-600/90 text-white font-extrabold px-5 py-3 rounded-2xl shadow-2xl border border-slate-300/40 text-base">
-      <i class="fa-solid fa-chevron-left"></i>
-      <span>上一張</span>
-    </div>
-
-    <!-- Empty State Screen -->
-    <div id="emptyState" class="hidden flex-col items-center justify-center text-center p-8 glass-panel rounded-3xl w-full h-[75vh] max-h-[560px] border border-slate-700/50 shadow-2xl">
-      <div class="w-20 h-20 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mb-4 text-indigo-400 text-3xl animate-bounce">
-        <i class="fa-solid fa-circle-check"></i>
-      </div>
-      <h3 class="text-xl font-extrabold text-white mb-2">相簿整理完成！</h3>
-      <p class="text-slate-400 text-sm mb-6 max-w-xs leading-relaxed">太棒了，所有圖片皆已處理完畢。你可以匯入新照片或檢查垃圾桶。</p>
-      
-      <div class="flex flex-col space-y-3 w-full max-w-xs">
-        <label for="fileUploadInput2" class="cursor-pointer bg-gradient-to-r from-indigo-500 to-rose-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition flex items-center justify-center space-x-2">
-          <i class="fa-solid fa-plus"></i>
-          <span>上傳手機本地照片</span>
-        </label>
-        <input type="file" id="fileUploadInput2" accept="image/*" multiple class="hidden">
-
-        <button id="btnResetDemo" class="glass-btn text-slate-300 font-semibold py-2.5 px-4 rounded-xl hover:bg-slate-700/60 transition text-sm flex items-center justify-center space-x-2">
-          <i class="fa-solid fa-rotate-left"></i>
-          <span>重新載入範例圖庫</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Dynamic Card Stack Container -->
-    <div id="cardContainer" class="relative w-full h-[72vh] max-h-[580px] flex items-center justify-center">
-      <!-- Cards rendered via JavaScript dynamically -->
+  <main id="stage">
+    <div class="empty-state" id="emptyState">
+      <p><strong>尚未載入照片</strong></p>
+      <p>點擊右上角「選取照片」匯入相片，即可開始滑動整理。</p>
+      <p style="font-size:12px;">向上滑動：放入待刪清單｜左右滑動：切換照片</p>
     </div>
   </main>
 
-  <!-- Quick Album Categorization Dock (Bottom Toolbar) -->
-  <footer class="w-full max-w-md mx-auto px-4 pb-6 pt-2 z-20">
-    <div class="glass-panel rounded-3xl p-3 shadow-2xl border border-slate-700/60 flex flex-col space-y-2">
-      <div class="flex items-center justify-between px-2 pt-1">
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">一鍵歸檔至相簿</span>
-        <button id="btnCreateAlbum" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
-          <i class="fa-solid fa-plus text-[10px]"></i>
-          <span>新增相簿</span>
-        </button>
-      </div>
-
-      <!-- Scrollable Album Quick Buttons -->
-      <div id="albumDock" class="flex items-center space-x-2 overflow-x-auto pb-1 pt-1 no-scrollbar px-1">
-        <!-- Rendered by JS -->
-      </div>
-    </div>
-  </footer>
-
-  <!-- Toast Floating Notification -->
-  <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 bg-slate-900/90 border border-slate-700 text-white px-5 py-2.5 rounded-full shadow-2xl flex items-center space-x-2 text-sm font-medium">
-    <i id="toastIcon" class="fa-solid fa-circle-info text-indigo-400"></i>
-    <span id="toastMsg">提示訊息</span>
+  <div class="albums-bar" id="albumsBar">
+    <!-- 動態產生相簿按鈕 -->
   </div>
 
-  <!-- MODAL 1: Trash Manager -->
-  <div id="modalTrash" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex-col justify-end sm:justify-center items-center p-0 sm:p-4 transition-opacity">
-    <div class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md h-[85vh] sm:h-[680px] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
-      <!-- Modal Header -->
-      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center">
-            <i class="fa-solid fa-trash-can text-sm"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-white leading-tight">回收桶</h3>
-            <p class="text-xs text-slate-400">已標記待刪除的照片</p>
-          </div>
-        </div>
-        <button class="btnCloseModal text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
+  <div class="bottom-actions">
+    <button class="btn" onclick="addAlbum()">＋ 新增相簿</button>
+    <button class="btn btn-danger-outline" onclick="openPendingModal()">待刪清單 (<span id="pendingCountBtn">0</span>)</button>
+  </div>
 
-      <!-- Trash Grid -->
-      <div id="trashGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-2 align-content-start">
-        <!-- Items added dynamically -->
+  <!-- 待刪清單視窗 -->
+  <div class="modal" id="pendingModal">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong>待刪照片清單（需自行於系統相簿刪除）</strong>
+        <button class="btn" onclick="closePendingModal()">關閉</button>
       </div>
-
-      <!-- Trash Footer Actions -->
-      <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between space-x-3">
-        <button id="btnRestoreAll" class="flex-1 glass-btn py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 transition">
-          全部還原
-        </button>
-        <button id="btnClearTrash" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-rose-950 transition">
-          永久刪除全部
-        </button>
+      <div class="pending-list" id="pendingList"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn" onclick="clearPending()">清空清單</button>
+        <button class="btn btn-primary" onclick="exportPendingList()">匯出待刪清單檔</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 2: Albums View -->
-  <div id="modalAlbums" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex-col justify-end sm:justify-center items-center p-0 sm:p-4 transition-opacity">
-    <div class="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md h-[85vh] sm:h-[680px] flex flex-col shadow-2xl overflow-hidden">
-      <!-- Modal Header -->
-      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-            <i class="fa-solid fa-folder-open text-sm"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-white leading-tight">分類相簿集</h3>
-            <p class="text-xs text-slate-400">已分類照片預覽</p>
-          </div>
-        </div>
-        <button class="btnCloseModal text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
+  <div id="toast"></div>
 
-      <!-- Album Selector Tabs -->
-      <div id="albumTabs" class="flex items-center space-x-2 px-4 py-3 border-b border-slate-800 overflow-x-auto no-scrollbar">
-        <!-- Rendered by JS -->
-      </div>
-
-      <!-- Album Photos Grid -->
-      <div id="albumGrid" class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-2 align-content-start">
-        <!-- Renders pictures inside active album -->
-      </div>
-    </div>
-  </div>
-
-  <!-- APPLICATION LOGIC -->
   <script>
-    // --- Sample Default Photos ---
-    const INITIAL_PHOTOS = [
-      { id: '1', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80', title: '陽光海灘景色', albumId: null, isDeleted: false },
-      { id: '2', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80', title: '壯麗星空雪山', albumId: null, isDeleted: false },
-      { id: '3', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80', title: '清晨晨霧森林', albumId: null, isDeleted: false },
-      { id: '4', url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80', title: '極光奇幻夜空', albumId: null, isDeleted: false },
-      { id: '5', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', title: '人像攝影特寫', albumId: null, isDeleted: false },
-      { id: '6', url: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80', title: '精緻美饌料理', albumId: null, isDeleted: false },
-      { id: '7', url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80', title: '質感科技手機', albumId: null, isDeleted: false }
-    ];
-
-    // --- Initial Albums ---
-    let albums = [
-      { id: 'favorites', name: '精選收藏', icon: 'fa-heart', color: 'bg-rose-500' },
-      { id: 'travel', name: '旅遊記憶', icon: 'fa-plane', color: 'bg-emerald-500' },
-      { id: 'work', name: '工作文件', icon: 'fa-briefcase', color: 'bg-blue-500' },
-      { id: 'family', name: '家庭生活', icon: 'fa-house-user', color: 'bg-amber-500' }
-    ];
-
-    // App State
-    let photos = [...INITIAL_PHOTOS];
+    const ALBUMS = ["精選收藏", "旅遊紀錄", "工作資料", "生活日常"];
+    let photos = [];        // { id, name, dataUrl, status: 'pending' | 'saved' | 'to_delete', album: string | null }
     let currentIndex = 0;
-    let selectedAlbumTab = 'favorites';
+    let savedCount = 0;
+    let pendingDelete = []; // { id, name, timestamp }
 
-    // DOM Elements
-    const cardContainer = document.getElementById('cardContainer');
-    const emptyState = document.getElementById('emptyState');
-    const albumDock = document.getElementById('albumDock');
-    const remainingCounter = document.getElementById('remainingCounter');
-    const trashCountBadge = document.getElementById('trashCountBadge');
-    const albumCountBadge = document.getElementById('albumCountBadge');
-    const badgeDelete = document.getElementById('badgeDelete');
-    const badgeNext = document.getElementById('badgeNext');
-    const badgePrev = document.getElementById('badgePrev');
+    const stage = document.getElementById("stage");
+    const emptyState = document.getElementById("emptyState");
+    const fileInput = document.getElementById("fileInput");
 
-    // Init App
-    window.onload = () => {
-      renderAlbumDock();
-      renderStack();
-      updateCounters();
-      setupFileUploadListeners();
-      setupModalListeners();
-    };
-
-    // --- Helper: Get active unsorted photos ---
-    function getPendingPhotos() {
-      return photos.filter(p => !p.isDeleted && p.albumId === null);
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => el.classList.remove("show"), 1800);
     }
 
-    // --- Update Counters & Badges ---
-    function updateCounters() {
-      const pending = getPendingPhotos();
-      const trash = photos.filter(p => p.isDeleted);
-      const categorized = photos.filter(p => p.albumId !== null && !p.isDeleted);
+    function hasNativeBridge() {
+      return typeof window.AndroidBridge !== "undefined";
+    }
 
-      remainingCounter.textContent = pending.length;
-      trashCountBadge.textContent = trash.length;
-      albumCountBadge.textContent = categorized.length;
+    function renderAlbumsBar() {
+      const bar = document.getElementById("albumsBar");
+      bar.innerHTML = "";
+      ALBUMS.forEach((album) => {
+        const chip = document.createElement("button");
+        chip.className = "album-chip";
+        chip.textContent = `存至「${album}」`;
+        chip.onclick = () => saveCurrentToAlbum(album);
+        bar.appendChild(chip);
+      });
+    }
 
-      if (pending.length === 0) {
-        cardContainer.classList.add('hidden');
-        emptyState.classList.remove('hidden');
-        emptyState.classList.add('flex');
-      } else {
-        cardContainer.classList.remove('hidden');
-        emptyState.classList.add('hidden');
-        emptyState.classList.remove('flex');
+    function addAlbum() {
+      const name = prompt("請輸入新相簿名稱：");
+      if (!name) return;
+      const trimmed = name.trim();
+      if (!trimmed) return;
+      if (!ALBUMS.includes(trimmed)) {
+        ALBUMS.push(trimmed);
+        renderAlbumsBar();
       }
+      showToast(`已新增相簿「${trimmed}」`);
     }
 
-    // --- Toast Notification System ---
-    let toastTimeout;
-    function showToast(message, iconClass = 'fa-circle-info', colorClass = 'text-indigo-400') {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toastMsg');
-      const toastIcon = document.getElementById('toastIcon');
+    fileInput.addEventListener("change", async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
 
-      toastMsg.textContent = message;
-      toastIcon.className = `fa-solid ${iconClass} ${colorClass}`;
+      for (const file of files) {
+        const dataUrl = await readFileAsDataUrl(file);
+        photos.push({
+          id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          name: file.name || `photo_${photos.length + 1}.jpg`,
+          dataUrl,
+          status: "pending",
+          album: null
+        });
+      }
+      fileInput.value = "";
+      if (currentIndex >= photos.length) currentIndex = 0;
+      renderCard();
+      updateStats();
+      showToast(`已載入 ${files.length} 張照片`);
+    });
 
-      toast.classList.remove('opacity-0', 'translate-y-4');
-      toast.classList.add('opacity-100', '-translate-y-2');
-
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('opacity-100', '-translate-y-2');
-        toast.classList.add('opacity-0', 'translate-y-4');
-      }, 2000);
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
-    // --- Render Card Stack ---
-    function renderStack() {
-      cardContainer.innerHTML = '';
-      const pending = getPendingPhotos();
+    function getActivePhotos() {
+      return photos.filter((p) => p.status === "pending");
+    }
 
-      if (pending.length === 0) {
-        updateCounters();
+    function updateStats() {
+      const remain = getActivePhotos().length;
+      document.getElementById("statRemain").textContent = remain;
+      document.getElementById("statSaved").textContent = savedCount;
+      document.getElementById("statDelete").textContent = pendingDelete.length;
+      document.getElementById("pendingCountBtn").textContent = pendingDelete.length;
+    }
+
+    function renderCard() {
+      // 移除舊卡片
+      const oldCard = stage.querySelector(".card");
+      if (oldCard) oldCard.remove();
+
+      const active = getActivePhotos();
+      if (!active.length) {
+        emptyState.style.display = "block";
         return;
       }
 
-      // Ensure index boundary safety
-      if (currentIndex >= pending.length) {
-        currentIndex = Math.max(0, pending.length - 1);
-      }
+      emptyState.style.display = "none";
+      if (currentIndex < 0) currentIndex = active.length - 1;
+      if (currentIndex >= active.length) currentIndex = 0;
 
-      // We render current photo and the next 2 stacked photos behind it
-      const visibleCount = Math.min(3, pending.length - currentIndex);
+      const item = active[currentIndex];
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="badge badge-delete" id="badgeDelete">加入待刪</div>
+        <div class="badge badge-prev" id="badgePrev">上一張</div>
+        <div class="badge badge-next" id="badgeNext">下一張</div>
+        <img src="${item.dataUrl}" alt="${item.name}" />
+        <div class="card-meta">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">${item.name}</span>
+          <span>${currentIndex + 1} / ${active.length}</span>
+        </div>
+      `;
 
-      for (let i = visibleCount - 1; i >= 0; i--) {
-        const photoIdx = currentIndex + i;
-        if (photoIdx >= pending.length) continue;
-
-        const photo = pending[photoIdx];
-        const card = document.createElement('div');
-        card.dataset.id = photo.id;
-        
-        // Base styling for cards
-        card.className = `absolute inset-0 w-full h-full rounded-3xl overflow-hidden glass-panel border border-slate-700/60 card-shadow transition-transform duration-200 select-none cursor-grab active:cursor-grabbing flex flex-col`;
-        
-        // Stack depth effect
-        const scale = 1 - i * 0.05;
-        const translateY = i * 14;
-        const opacity = 1 - i * 0.2;
-        card.style.transform = `translateY(${translateY}px) scale(${scale})`;
-        card.style.zIndex = 10 - i;
-        card.style.opacity = opacity;
-
-        card.innerHTML = `
-          <div class="relative flex-1 w-full bg-slate-950 overflow-hidden">
-            <img src="${photo.url}" alt="${photo.title}" class="w-full h-full object-cover pointer-events-none" onerror="this.src='https://placehold.co/600x800/1e293b/fff?text=圖片載入失敗'">
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-black/30"></div>
-            
-            <div class="absolute top-4 left-4 glass-btn px-3 py-1 rounded-full text-xs font-semibold text-slate-200 backdrop-blur-md">
-              # ${photoIdx + 1} / ${pending.length}
-            </div>
-          </div>
-          <div class="p-4 bg-slate-900/90 backdrop-blur-md flex items-center justify-between border-t border-slate-800">
-            <div>
-              <h4 class="font-bold text-white text-base leading-snug">${photo.title}</h4>
-              <p class="text-xs text-slate-400">滑動手勢：向上刪除 ‧ 左右切換</p>
-            </div>
-          </div>
-        `;
-
-        cardContainer.appendChild(card);
-
-        // Attach Swipe Events to top active card only
-        if (i === 0) {
-          attachSwipeGesture(card, photo);
-        }
-      }
-
-      updateCounters();
+      attachSwipeEvents(card, item);
+      stage.appendChild(card);
     }
 
-    // --- Gesture Handling Logic (Touch + Mouse Drag) ---
-    function attachSwipeGesture(card, photo) {
+    function attachSwipeEvents(card, item) {
       let startX = 0;
       let startY = 0;
-      let currentX = 0;
-      let currentY = 0;
+      let dx = 0;
+      let dy = 0;
       let isDragging = false;
 
-      const onStart = (x, y) => {
+      const badgeDelete = card.querySelector("#badgeDelete");
+      const badgePrev = card.querySelector("#badgePrev");
+      const badgeNext = card.querySelector("#badgeNext");
+
+      const onStart = (clientX, clientY) => {
         isDragging = true;
-        startX = x;
-        startY = y;
-        card.style.transition = 'none';
+        startX = clientX;
+        startY = clientY;
+        dx = 0;
+        dy = 0;
+        card.classList.add("dragging");
       };
 
-      const onMove = (x, y) => {
+      const onMove = (clientX, clientY) => {
         if (!isDragging) return;
-        currentX = x - startX;
-        currentY = y - startY;
+        dx = clientX - startX;
+        dy = clientY - startY;
+        const rot = dx * 0.04;
+        card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
 
-        // Apply translation & rotation
-        const rotate = currentX * 0.05;
-        card.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rotate}deg)`;
-
-        // Visual Feedback Indicators
-        if (currentY < -60 && Math.abs(currentY) > Math.abs(currentX)) {
-          // Swipe Up -> Delete
-          badgeDelete.style.opacity = Math.min(1, Math.abs(currentY) / 120);
-          badgeNext.style.opacity = 0;
-          badgePrev.style.opacity = 0;
-        } else if (currentX > 50) {
-          // Swipe Right -> Prev
-          badgePrev.style.opacity = Math.min(1, currentX / 120);
-          badgeNext.style.opacity = 0;
-          badgeDelete.style.opacity = 0;
-        } else if (currentX < -50) {
-          // Swipe Left -> Next
-          badgeNext.style.opacity = Math.min(1, Math.abs(currentX) / 120);
-          badgePrev.style.opacity = 0;
-          badgeDelete.style.opacity = 0;
-        } else {
-          badgeDelete.style.opacity = 0;
-          badgeNext.style.opacity = 0;
-          badgePrev.style.opacity = 0;
-        }
+        badgeDelete.style.opacity = dy < -40 ? Math.min(1, (-dy - 40) / 70) : 0;
+        badgeNext.style.opacity = dx < -40 ? Math.min(1, (-dx - 40) / 70) : 0;
+        badgePrev.style.opacity = dx > 40 ? Math.min(1, (dx - 40) / 70) : 0;
       };
 
       const onEnd = () => {
         if (!isDragging) return;
         isDragging = false;
-        
-        // Reset Overlays
+        card.classList.remove("dragging");
+
+        // 向上滑動超過 110px -> 加入待刪
+        if (dy < -110 && Math.abs(dy) > Math.abs(dx)) {
+          card.style.transform = `translate(${dx}px, -650px) rotate(${dx * 0.05}deg)`;
+          card.style.opacity = "0";
+          setTimeout(() => markPendingDelete(item), 160);
+          return;
+        }
+
+        // 向左滑動超過 90px -> 下一張
+        if (dx < -90) {
+          currentIndex += 1;
+          renderCard();
+          return;
+        }
+
+        // 向右滑動超過 90px -> 上一張
+        if (dx > 90) {
+          currentIndex -= 1;
+          renderCard();
+          return;
+        }
+
+        // 復位
+        card.style.transform = "";
         badgeDelete.style.opacity = 0;
-        badgeNext.style.opacity = 0;
         badgePrev.style.opacity = 0;
-
-        const thresholdX = 100;
-        const thresholdY = 120;
-
-        // Action Trigger Decisions
-        if (currentY < -thresholdY && Math.abs(currentY) > Math.abs(currentX)) {
-          // SWIPE UP: Mark Photo as Deleted
-          animateCardOut(card, 0, -600, () => {
-            photo.isDeleted = true;
-            showToast('已移至回收桶', 'fa-trash-can', 'text-rose-400');
-            renderStack();
-          });
-        } else if (currentX < -thresholdX) {
-          // SWIPE LEFT: Next Photo
-          const pending = getPendingPhotos();
-          if (currentIndex < pending.length - 1) {
-            animateCardOut(card, -500, 0, () => {
-              currentIndex++;
-              renderStack();
-            });
-          } else {
-            resetCardPosition(card);
-            showToast('已經是最後一張照片了', 'fa-circle-exclamation', 'text-amber-400');
-          }
-        } else if (currentX > thresholdX) {
-          // SWIPE RIGHT: Previous Photo
-          if (currentIndex > 0) {
-            animateCardOut(card, 500, 0, () => {
-              currentIndex--;
-              renderStack();
-            });
-          } else {
-            resetCardPosition(card);
-            showToast('已經是第一張照片了', 'fa-circle-exclamation', 'text-amber-400');
-          }
-        } else {
-          // Reset if threshold not reached
-          resetCardPosition(card);
-        }
+        badgeNext.style.opacity = 0;
       };
 
-      // Mouse Events
-      card.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
-      window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
-      window.addEventListener('mouseup', onEnd);
-
-      // Touch Events
-      card.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
-        onStart(touch.clientX, touch.clientY);
+      card.addEventListener("touchstart", (e) => {
+        const t = e.touches[0];
+        onStart(t.clientX, t.clientY);
       }, { passive: true });
 
-      card.addEventListener('touchmove', (e) => {
-        const touch = e.touches[0];
-        onMove(touch.clientX, touch.clientY);
+      card.addEventListener("touchmove", (e) => {
+        const t = e.touches[0];
+        onMove(t.clientX, t.clientY);
       }, { passive: true });
 
-      card.addEventListener('touchend', onEnd);
+      card.addEventListener("touchend", onEnd);
+
+      // 滑鼠支援（方便桌面測試）
+      card.addEventListener("mousedown", (e) => onStart(e.clientX, e.clientY));
+      window.addEventListener("mousemove", (e) => onMove(e.clientX, e.clientY));
+      window.addEventListener("mouseup", onEnd);
     }
 
-    function animateCardOut(card, targetX, targetY, callback) {
-      card.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out';
-      card.style.transform = `translate(${targetX}px, ${targetY}px) rotate(${targetX * 0.1}deg)`;
-      card.style.opacity = '0';
-      setTimeout(callback, 280);
-    }
+    function saveCurrentToAlbum(albumName) {
+      const active = getActivePhotos();
+      if (!active.length) return;
+      const item = active[currentIndex];
+      item.status = "saved";
+      item.album = albumName;
+      savedCount += 1;
 
-    function resetCardPosition(card) {
-      card.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-      card.style.transform = 'translate(0px, 0px) rotate(0deg)';
-    }
-
-    // --- Quick Album Dock Rendering & Interactions ---
-    function renderAlbumDock() {
-      albumDock.innerHTML = '';
-      albums.forEach(album => {
-        const btn = document.createElement('button');
-        btn.className = `glass-btn flex-shrink-0 px-3.5 py-2 rounded-2xl flex items-center space-x-2 text-xs font-bold text-slate-200 hover:text-white transition active:scale-95 border border-slate-700/80 hover:border-slate-500`;
-        btn.innerHTML = `
-          <div class="w-6 h-6 rounded-lg ${album.color} flex items-center justify-center text-white text-[10px] shadow">
-            <i class="fa-solid ${album.icon}"></i>
-          </div>
-          <span>${album.name}</span>
-        `;
-
-        btn.addEventListener('click', () => assignCurrentPhotoToAlbum(album));
-        albumDock.appendChild(btn);
-      });
-    }
-
-    // --- Categorize Current Photo to Album ---
-    function assignCurrentPhotoToAlbum(album) {
-      const pending = getPendingPhotos();
-      if (pending.length === 0) return;
-
-      const currentPhoto = pending[currentIndex];
-      currentPhoto.albumId = album.id;
-
-      // Animate card out with subtle effect
-      const topCard = cardContainer.firstElementChild;
-      if (topCard) {
-        animateCardOut(topCard, 0, 400, () => {
-          showToast(`已分類至「${album.name}」`, album.icon, 'text-emerald-400');
-          renderStack();
-        });
+      if (hasNativeBridge()) {
+        try {
+          const result = window.AndroidBridge.savePhotoToAlbum(albumName, item.name, item.dataUrl);
+          showToast(result || `已另存至「${albumName}」`);
+        } catch (err) {
+          showToast("另存時發生錯誤");
+        }
       } else {
-        renderStack();
+        showToast(`已分類至「${albumName}」（預覽模式）`);
       }
+
+      updateStats();
+      renderCard();
     }
 
-    // --- Add New Custom Album ---
-    document.getElementById('btnCreateAlbum').addEventListener('click', () => {
-      const albumName = prompt('請輸入新相簿名稱：');
-      if (albumName && albumName.trim() !== '') {
-        const colors = ['bg-purple-500', 'bg-pink-500', 'bg-cyan-500', 'bg-orange-500', 'bg-teal-500'];
-        const icons = ['fa-star', 'fa-bookmark', 'fa-camera', 'fa-image', 'fa-heart-circle-check'];
-        
-        const newAlbum = {
-          id: 'album_' + Date.now(),
-          name: albumName.trim(),
-          icon: icons[Math.floor(Math.random() * icons.length)],
-          color: colors[Math.floor(Math.random() * colors.length)]
-        };
-
-        albums.push(newAlbum);
-        renderAlbumDock();
-        showToast(`已建立「${newAlbum.name}」相簿`, newAlbum.icon, 'text-indigo-400');
-      }
-    });
-
-    // --- Support Local File Uploads ---
-    function setupFileUploadListeners() {
-      const handleFiles = (e) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        let addedCount = 0;
-        Array.from(files).forEach((file, index) => {
-          if (file.type.startsWith('image/')) {
-            const url = URL.createObjectURL(file);
-            photos.unshift({
-              id: 'user_' + Date.now() + '_' + index,
-              url: url,
-              title: file.name.replace(/\.[^/.]+$/, ""),
-              albumId: null,
-              isDeleted: false
-            });
-            addedCount++;
-          }
-        });
-
-        if (addedCount > 0) {
-          currentIndex = 0;
-          renderStack();
-          showToast(`成功匯入 ${addedCount} 張新照片！`, 'fa-cloud-arrow-up', 'text-emerald-400');
-        }
+    function markPendingDelete(item) {
+      item.status = "to_delete";
+      const record = {
+        id: item.id,
+        name: item.name,
+        time: new Date().toLocaleString()
       };
+      pendingDelete.push(record);
 
-      document.getElementById('fileUploadInput').addEventListener('change', handleFiles);
-      document.getElementById('fileUploadInput2').addEventListener('change', handleFiles);
-
-      document.getElementById('btnResetDemo').addEventListener('click', () => {
-        photos = INITIAL_PHOTOS.map(p => ({ ...p, albumId: null, isDeleted: false }));
-        currentIndex = 0;
-        renderStack();
-        showToast('已重新載入預設圖庫', 'fa-rotate-left', 'text-indigo-400');
-      });
-    }
-
-    // --- Modal Management & Views ---
-    function setupModalListeners() {
-      const modalTrash = document.getElementById('modalTrash');
-      const modalAlbums = document.getElementById('modalAlbums');
-
-      // Open Trash Modal
-      document.getElementById('btnOpenTrash').addEventListener('click', () => {
-        renderTrashGrid();
-        modalTrash.classList.remove('hidden');
-        modalTrash.classList.add('flex');
-      });
-
-      // Open Albums Modal
-      document.getElementById('btnOpenAlbums').addEventListener('click', () => {
-        renderAlbumTabs();
-        renderAlbumGrid();
-        modalAlbums.classList.remove('hidden');
-        modalAlbums.classList.add('flex');
-      });
-
-      // Close buttons
-      document.querySelectorAll('.btnCloseModal').forEach(btn => {
-        btn.addEventListener('click', () => {
-          modalTrash.classList.add('hidden');
-          modalAlbums.classList.add('hidden');
-        });
-      });
-
-      // Trash Actions
-      document.getElementById('btnRestoreAll').addEventListener('click', () => {
-        photos.forEach(p => { if (p.isDeleted) p.isDeleted = false; });
-        renderTrashGrid();
-        renderStack();
-        showToast('已還原所有刪除照片', 'fa-rotate-left', 'text-emerald-400');
-      });
-
-      document.getElementById('btnClearTrash').addEventListener('click', () => {
-        photos = photos.filter(p => !p.isDeleted);
-        renderTrashGrid();
-        renderStack();
-        showToast('已永久刪除回收桶照片', 'fa-trash-can', 'text-rose-400');
-      });
-    }
-
-    // --- Render Trash Grid Modal ---
-    function renderTrashGrid() {
-      const grid = document.getElementById('trashGrid');
-      grid.innerHTML = '';
-      const trashPhotos = photos.filter(p => p.isDeleted);
-
-      if (trashPhotos.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-3 py-16 text-center text-slate-500">
-            <i class="fa-solid fa-trash-can text-3xl mb-2 opacity-40"></i>
-            <p class="text-xs">回收桶為空</p>
-          </div>
-        `;
-        return;
+      if (hasNativeBridge()) {
+        try {
+          window.AndroidBridge.recordPendingDelete(item.name);
+        } catch (err) {}
       }
 
-      trashPhotos.forEach(photo => {
-        const item = document.createElement('div');
-        item.className = 'relative aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 group';
-        item.innerHTML = `
-          <img src="${photo.url}" class="w-full h-full object-cover">
-          <button title="還原" class="btnRestoreSingle absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white text-xs font-bold space-y-1">
-            <i class="fa-solid fa-rotate-left text-base text-emerald-400"></i>
-            <span>點擊還原</span>
-          </button>
-        `;
-
-        item.querySelector('.btnRestoreSingle').addEventListener('click', () => {
-          photo.isDeleted = false;
-          renderTrashGrid();
-          renderStack();
-          showToast('已還原 1 張照片', 'fa-rotate-left', 'text-emerald-400');
-        });
-
-        grid.appendChild(item);
-      });
+      showToast(`已加入待刪：${item.name}`);
+      updateStats();
+      renderCard();
     }
 
-    // --- Render Albums Tabs & Grid Modal ---
-    function renderAlbumTabs() {
-      const container = document.getElementById('albumTabs');
-      container.innerHTML = '';
-
-      albums.forEach(album => {
-        const count = photos.filter(p => p.albumId === album.id && !p.isDeleted).length;
-        const active = selectedAlbumTab === album.id;
-        
-        const tab = document.createElement('button');
-        tab.className = `px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 flex-shrink-0 ${
-          active 
-            ? 'bg-indigo-600 text-white shadow-md' 
-            : 'glass-btn text-slate-400 hover:text-white'
-        }`;
-        tab.innerHTML = `
-          <span>${album.name}</span>
-          <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-950/40">${count}</span>
-        `;
-
-        tab.addEventListener('click', () => {
-          selectedAlbumTab = album.id;
-          renderAlbumTabs();
-          renderAlbumGrid();
-        });
-
-        container.appendChild(tab);
-      });
+    function openPendingModal() {
+      const list = document.getElementById("pendingList");
+      if (!pendingDelete.length) {
+        list.innerHTML = `<p style="color:#888;text-align:center;">目前沒有待刪照片</p>`;
+      } else {
+        list.innerHTML = pendingDelete
+          .map((p, idx) => `
+            <div class="pending-item">
+              <span>${idx + 1}. <strong>${p.name}</strong><br><small style="color:#888;">${p.time}</small></span>
+              <button class="btn" onclick="restorePending(${idx})">取消待刪</button>
+            </div>
+          `)
+          .join("");
+      }
+      document.getElementById("pendingModal").classList.add("open");
     }
 
-    function renderAlbumGrid() {
-      const grid = document.getElementById('albumGrid');
-      grid.innerHTML = '';
+    function closePendingModal() {
+      document.getElementById("pendingModal").classList.remove("open");
+    }
 
-      const categoryPhotos = photos.filter(p => p.albumId === selectedAlbumTab && !p.isDeleted);
+    function restorePending(idx) {
+      const removed = pendingDelete.splice(idx, 1)[0];
+      const target = photos.find((p) => p.id === removed.id);
+      if (target) {
+        target.status = "pending";
+      }
+      updateStats();
+      renderCard();
+      openPendingModal();
+    }
 
-      if (categoryPhotos.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-3 py-16 text-center text-slate-500">
-            <i class="fa-regular fa-folder-open text-3xl mb-2 opacity-40"></i>
-            <p class="text-xs">此相簿尚未有照片</p>
-          </div>
-        `;
+    function clearPending() {
+      pendingDelete.forEach((p) => {
+        const target = photos.find((item) => item.id === p.id);
+        if (target && target.status === "to_delete") {
+          target.status = "pending";
+        }
+      });
+      pendingDelete = [];
+      updateStats();
+      renderCard();
+      openPendingModal();
+    }
+
+    function exportPendingList() {
+      if (!pendingDelete.length) {
+        showToast("待刪清單為空");
         return;
       }
-
-      categoryPhotos.forEach(photo => {
-        const item = document.createElement('div');
-        item.className = 'relative aspect-square rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 group';
-        item.innerHTML = `
-          <img src="${photo.url}" class="w-full h-full object-cover">
-          <button title="移出相簿" class="btnUnassign absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition flex flex-col items-center justify-center text-white text-xs font-bold space-y-1">
-            <i class="fa-solid fa-arrow-up-from-bracket text-base text-indigo-400"></i>
-            <span>移出相簿</span>
-          </button>
-        `;
-
-        item.querySelector('.btnUnassign').addEventListener('click', () => {
-          photo.albumId = null;
-          renderAlbumTabs();
-          renderAlbumGrid();
-          renderStack();
-          showToast('已將照片移回整理佇列', 'fa-arrow-up-from-bracket', 'text-indigo-400');
-        });
-
-        grid.appendChild(item);
-      });
+      const content = pendingDelete.map((p, i) => `${i + 1}. ${p.name} (${p.time})`).join("\n");
+      if (hasNativeBridge()) {
+        const msg = window.AndroidBridge.exportPendingListFile(content);
+        showToast(msg || "已匯出待刪清單");
+      } else {
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "pending_delete_list.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     }
+
+    renderAlbumsBar();
+    updateStats();
   </script>
 </body>
 </html>
