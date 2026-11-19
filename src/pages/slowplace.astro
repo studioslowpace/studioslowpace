@@ -89,6 +89,13 @@ import Layout from '../layouts/Layout.astro';
 
         <div id="seat-update-view" style="display:none;">
           <p class="rpg-text">準備起立！要順便更新目前的閱讀進度嗎？</p>
+          
+          <!-- 新增：呈現本次閱讀時長與今日累積 -->
+          <div id="seat-session-time-info" style="background:var(--bg-input); border:1px solid var(--border-color); border-radius:12px; padding:10px; font-size:12px; margin-bottom:12px; color:var(--text-color); line-height:1.5;">
+            ⏱️ 本次閱讀：<span id="session-time-text" style="font-weight:bold; color:var(--accent-hover);">0 秒</span><br/>
+            📅 今日閱讀總計：<span id="today-time-text" style="font-weight:bold;">0 秒</span>
+          </div>
+
           <div style="display:flex; gap:8px; margin-bottom:14px;">
             <div style="flex:1;">
               <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">目前頁數</div>
@@ -126,6 +133,9 @@ import Layout from '../layouts/Layout.astro';
         <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:12px; border-radius:12px; font-size:12px; margin-bottom:14px; line-height:1.6; color:var(--text-color);">
           <div style="margin-bottom:8px;"><strong>📚 正在閱讀：</strong><span id="pc-current-book">尚無記錄</span></div>
           <div style="margin-bottom:4px;"><strong>🤝 參與共讀：</strong><span id="pc-table-book">目前未參與共讀</span></div>
+          <div style="margin-top:8px; border-top:1px dashed var(--border-color); padding-top:6px; font-size:11px; color:var(--text-muted);">
+            <strong>📅 今日閱讀總計：</strong><span id="pc-today-time" style="color:var(--accent-hover); font-weight:bold;">0 分鐘</span>
+          </div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
@@ -394,7 +404,7 @@ import Layout from '../layouts/Layout.astro';
     }
   </style>
 
-<script>
+  <script>
     import { supabase } from '../lib/supabase';
 
     const TABLE_NAME = 'slowpace_members';
@@ -414,6 +424,9 @@ import Layout from '../layouts/Layout.astro';
     let isDND = false;
     let currentTask = '';
 
+    // ⏱️ 計時器相關變數
+    let sessionStartTime: number | null = null;
+
     let moveQueue: { gx: number; gy: number }[] = [];
     let moveTimer = 0;
     let onlinePlayers: Record<string, any> = {};
@@ -431,6 +444,40 @@ import Layout from '../layouts/Layout.astro';
 
     let hoveredItem: any = null;
     let glowCounter = 0;
+
+    // ⏱️ 格式化秒數為易讀字串
+    function formatDuration(seconds: number): string {
+      if (!seconds || seconds <= 0) return '0秒';
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+
+      let str = '';
+      if (hrs > 0) str += `${hrs}小時`;
+      if (mins > 0 || hrs > 0) str += `${mins}分`;
+      if (hrs === 0) str += `${secs}秒`;
+      return str;
+    }
+
+    // ⏱️ 計算特定使用者今日閱讀總時長（從所有記錄的 reading_logs 累加）
+    function calculateTodayTotalSeconds(records: any[]): number {
+      const todayStr = new Date().toISOString().split('T')[0];
+      let todayTotal = 0;
+      records.forEach(rec => {
+        let logs = rec.reading_logs || [];
+        if (typeof logs === 'string') {
+          try { logs = JSON.parse(logs); } catch (e) { logs = []; }
+        }
+        if (Array.isArray(logs)) {
+          logs.forEach((log: any) => {
+            if (log && log.date === todayStr) {
+              todayTotal += (Number(log.seconds) || 0);
+            }
+          });
+        }
+      });
+      return todayTotal;
+    }
 
     function updateCurrentRoomConfig() {
       const r = customRooms.find(rc => rc.room_key === currentRoom);
@@ -505,7 +552,7 @@ import Layout from '../layouts/Layout.astro';
       await startAppSession();
     }
 
-async function startAppSession() {
+    async function startAppSession() {
       await fetchRooms();
       
       // 🛡️ 防呆修復：如果重新整理時還佔著椅子，自動幫玩家起立釋放座位
@@ -557,7 +604,8 @@ async function startAppSession() {
         const cur = rec.current_page || 0;
         const tot = rec.total_pages || 100;
         const pct = tot > 0 ? Math.round((cur / tot) * 100) : 0;
-        html += `<option value="${rec.id}">${title} - ${author} (${cur}/${tot} 頁, ${pct}%)</option>`;
+        const durationText = formatDuration(rec.duration_seconds || 0);
+        html += `<option value="${rec.id}">${title} - ${author} (${cur}/${tot} 頁, ${pct}% | ⏱️ ${durationText})</option>`;
       });
       selectEl.innerHTML = html;
     }
@@ -881,7 +929,13 @@ async function startAppSession() {
         ctx.fillRect(pScreenX - 12, pScreenY - 12, 24, 24);
       }
 
-      const myStatusText = isDND ? '📖 專注閱讀' : playerName;
+      // ⏱️ 專注閱讀時，氣泡會即時動態顯示坐下的已閱讀秒數
+      let myStatusText = isDND ? '📖 專注閱讀' : playerName;
+      if (isDND && sessionStartTime) {
+        const currentElapsedSec = Math.floor((Date.now() - sessionStartTime) / 1000);
+        myStatusText = `📖 閱讀中 (${formatDuration(currentElapsedSec)})`;
+      }
+
       drawSpeechBubble(ctx, myStatusText, pScreenX, pScreenY - 18, isDND);
     }
 
@@ -952,6 +1006,7 @@ async function startAppSession() {
     const pcRole = document.getElementById('pc-role');
     const pcCurrentBook = document.getElementById('pc-current-book');
     const pcTableBook = document.getElementById('pc-table-book');
+    const pcTodayTime = document.getElementById('pc-today-time');
     const pcViewRecordsBtn = document.getElementById('pc-view-records-btn');
     const pcDmBtn = document.getElementById('pc-dm-btn');
 
@@ -996,10 +1051,14 @@ async function startAppSession() {
           const cur = rec.current_page || 0;
           const tot = rec.total_pages || 100;
           const pct = tot > 0 ? Math.round((cur / tot) * 100) : 0;
+          const durationText = formatDuration(rec.duration_seconds || 0);
           listHtml += `
             <div style="background:var(--bg-input); border:1px solid var(--border-color); padding:10px; border-radius:12px;">
               <div style="font-weight:700; color:var(--text-color);">《${rec.book_title || '無題'}》</div>
-              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">作者：${rec.author || '佚名'} ｜ 進度：第 ${cur}/${tot} 頁 (${pct}%)</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                作者：${rec.author || '佚名'} ｜ 進度：第 ${cur}/${tot} 頁 (${pct}%)<br/>
+                ⏱️ 累計閱讀時長：<span style="color:var(--accent-hover); font-weight:bold;">${durationText}</span>
+              </div>
             </div>
           `;
         });
@@ -1211,6 +1270,7 @@ async function startAppSession() {
       currentRoom = target.value;
       updateCurrentRoomConfig();
       isDND = false;
+      sessionStartTime = null;
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
       setLeaveSeatButtonVisible(false);
       playerGx = 1; playerGy = 1;
@@ -1465,6 +1525,14 @@ async function startAppSession() {
         if (pcCurrentBook) pcCurrentBook.textContent = currentReadingBookText;
         if (pcTableBook) pcTableBook.textContent = participatingTableText;
 
+        // 計算並呈現該玩家今日閱讀時長
+        const { data: records } = await supabase
+          .from(LOGS_TABLE)
+          .select('*')
+          .eq('user_id', hitPlayer.user_id);
+        const todaySec = calculateTodayTotalSeconds(records || []);
+        if (pcTodayTime) pcTodayTime.textContent = formatDuration(todaySec);
+
         if (playerCardModal) playerCardModal.style.display = 'flex';
         return;
       }
@@ -1693,6 +1761,7 @@ async function startAppSession() {
       if (customModalFrame) customModalFrame.style.display = 'none';
     });
 
+    // ⏱️ 點擊「✨ 坐下閱讀」：記錄計時器開始時間
     seatSitBtn?.addEventListener('click', async () => {
       const bookTitle = seatBookInput?.value.trim();
       const author = seatAuthorInput?.value.trim() || '佚名';
@@ -1703,6 +1772,7 @@ async function startAppSession() {
 
       if (activeSeatData && userId) {
         isDND = true;
+        sessionStartTime = Date.now(); // ⏱️ 開始計時
         if (rpgContainer) rpgContainer.classList.add('dnd-focus-mode');
         playerGx = activeSeatData.gx;
         playerGy = activeSeatData.gy;
@@ -1734,7 +1804,9 @@ async function startAppSession() {
             book_title: bookTitle,
             author: author,
             current_page: curPage,
-            total_pages: totPage
+            total_pages: totPage,
+            duration_seconds: 0,
+            reading_logs: []
           }]).select().single();
           if (newRec) {
             currentReadingRecordId = newRec.id;
@@ -1750,6 +1822,7 @@ async function startAppSession() {
     seatCancelBtn?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
     seatInfoClose?.addEventListener('click', () => { if (seatModal) seatModal.style.display = 'none'; });
 
+    // ⏱️ 點擊底部「🚶 起立」按鈕：計算時間並顯示在 Modal 內
     leaveSeatBtn?.addEventListener('click', () => {
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
@@ -1762,6 +1835,19 @@ async function startAppSession() {
         }
       }
 
+      // ⏱️ 即時顯示本次閱讀時間與今日總計
+      let sessionSeconds = 0;
+      if (sessionStartTime) {
+        sessionSeconds = Math.max(1, Math.floor((Date.now() - sessionStartTime) / 1000));
+      }
+      const sessionTextEl = document.getElementById('session-time-text');
+      const todayTextEl = document.getElementById('today-time-text');
+      
+      if (sessionTextEl) sessionTextEl.textContent = formatDuration(sessionSeconds);
+      
+      const prevTodaySec = calculateTodayTotalSeconds(userReadingRecords);
+      if (todayTextEl) todayTextEl.textContent = formatDuration(prevTodaySec + sessionSeconds);
+
       if (seatModalTitle) seatModalTitle.textContent = '🚶 準備起立';
       if (seatFormView) seatFormView.style.display = 'none';
       if (seatInfoView) seatInfoView.style.display = 'none';
@@ -1769,11 +1855,20 @@ async function startAppSession() {
       if (seatModal) seatModal.style.display = 'flex';
     });
 
+    // ⏱️ 點擊「✅ 確認並起立」：結算時間並寫入資料庫
     leaveConfirmBtn?.addEventListener('click', async () => {
       const curPage = parseInt(leaveCurrentPage?.value) || 1;
       const totPage = parseInt(leaveTotalPage?.value) || 100;
 
+      // 計算本次閱讀總秒數
+      let elapsedSeconds = 0;
+      if (sessionStartTime) {
+        elapsedSeconds = Math.max(1, Math.floor((Date.now() - sessionStartTime) / 1000));
+      }
+
       isDND = false;
+      sessionStartTime = null; // 重置計時器
+
       if (rpgContainer) rpgContainer.classList.remove('dnd-focus-mode');
       setLeaveSeatButtonVisible(false);
       if (seatModal) seatModal.style.display = 'none';
@@ -1781,9 +1876,23 @@ async function startAppSession() {
       const seatedSeat = roomItems.find(item => item.type === 'seat' && item.host_id === userId);
       if (seatedSeat) {
         if (currentReadingRecordId) {
+          // 抓出原有的 duration_seconds 與 reading_logs
+          const matchedRec = userReadingRecords.find(r => r.id === currentReadingRecordId);
+          const oldDuration = Number(matchedRec?.duration_seconds) || 0;
+          let oldLogs = matchedRec?.reading_logs || [];
+          if (typeof oldLogs === 'string') {
+            try { oldLogs = JSON.parse(oldLogs); } catch (e) { oldLogs = []; }
+          }
+          if (!Array.isArray(oldLogs)) oldLogs = [];
+
+          const todayStr = new Date().toISOString().split('T')[0];
+          oldLogs.push({ date: todayStr, seconds: elapsedSeconds });
+
           await supabase.from(LOGS_TABLE).update({
             current_page: curPage,
-            total_pages: totPage
+            total_pages: totPage,
+            duration_seconds: oldDuration + elapsedSeconds,
+            reading_logs: oldLogs
           }).eq('id', currentReadingRecordId);
         }
 
@@ -1808,3 +1917,4 @@ async function startAppSession() {
     // 🚀 執行主動初始化
     initMainSession();
   </script>
+</Layout>
