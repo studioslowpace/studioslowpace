@@ -1,6 +1,7 @@
 ---
 // 匯入 Layout
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
 ---
 <BaseLayout title="客舍時間表 Timetable of Slow Pace Studio">
 <Fragment slot="head">
@@ -57,10 +58,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             margin-bottom: 18px; 
         }
 
-        /* 標題與年月份並列區塊 - 垂直向下對齊 (置中) */
+        /* 標題與年月份並列區塊 - 嚴格向底部基準線靠齊 (baseline) */
         .title-area { 
             display: flex; 
-            align-items: center;
+            align-items: baseline;
             justify-content: flex-end;
             width: 100%;
             gap: 15px;
@@ -71,7 +72,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             color: var(--primary-blue); 
             letter-spacing: 2px; 
             font-weight: bold; 
-            line-height: 1.2;
+            line-height: 1;
         }
         
         #month-display { 
@@ -80,11 +81,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             color: var(--primary-blue); 
             display: inline-block; 
             cursor: pointer; 
-            padding: 6px 12px; 
+            padding: 4px 10px; 
             border-radius: 6px; 
             transition: all 0.2s ease; 
             user-select: none; 
-            line-height: 1.2;
+            line-height: 1;
         }
         #month-display:hover { 
             background-color: rgba(0, 0, 0, 0.05); 
@@ -92,7 +93,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         }
 
         .logo-img {
-            display: block;
+            display: inline-block;
+            vertical-align: baseline;
         }
 
         /* 類型圖例獨立新一列 */
@@ -168,44 +170,42 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         .modal-card p { font-size: 16px; margin-bottom: 12px; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-        /* 1. 下拉容器維持相對定位 */
+        /* 下拉容器維持相對定位 */
         .month-dropdown-container {
             position: relative;
             display: inline-block;
         }
 
-        /* 2. 月份網格選單：預設隱藏、單欄（一列一個）、固定最大高度並開啟捲軸 */
+        /* 月份網格選單：預設隱藏、單欄直向排列、安全高度與捲軸 */
         .month-select-grid {
-            display: none; /* 預設不顯示，必須點擊後才展開 */
+            display: none; 
             position: absolute;
-            top: calc(100% + 6px); /* 距離上方按鈕 6px */
+            top: calc(100% + 6px); 
             left: 0;
-            z-index: 1000;
+            z-index: 9999; 
             
-            /* 視覺外觀 */
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 12px;
             
-            /* 排版：單欄直向排列 */
             flex-direction: column;
             gap: 8px; 
             
-            /* 限制高度並強制出現捲軸 */
-            max-height: 220px; 
+            /* 設定最大高度並允許捲動 */
+            max-height: 300px; 
             overflow-y: auto; 
-            width: 180px; 
+            width: 200px; 
             box-sizing: border-box;
         }
 
-        /* 3. 透過 JS 切換顯示時的 class (強制覆蓋顯示) */
+        /* 透過 JS 切換顯示時的 class */
         .month-select-grid.show {
             display: flex !important;
         }
 
-        /* 4. 捲軸樣式美化 */
+        /* 捲軸樣式美化 */
         .month-select-grid::-webkit-scrollbar {
             width: 6px;
         }
@@ -214,7 +214,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             border-radius: 3px;
         }
 
-        /* 5. 按鈕樣式 */
+        /* 按鈕樣式 */
         .month-select-btn {
             background: #f7f5f2; 
             color: #333; 
@@ -226,6 +226,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             transition: all 0.2s; 
             cursor: pointer;
             width: 100%; 
+            flex-shrink: 0;
         }
         .month-select-btn:hover { 
             background: #eef5ee; 
@@ -262,10 +263,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 margin-bottom: 12px; 
             }
 
-            /* 標題與年月份維持左右並列並置中對齊 */
             .title-area { 
                 flex-direction: row !important;
-                align-items: center;
+                align-items: baseline;
                 width: 100%;
                 gap: 8px;
             }
@@ -282,7 +282,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 white-space: nowrap; 
             }
 
-            /* 圖例區塊獨立新一列並滿版換行 */
             .legend-box {
                 width: 100%; 
                 gap: 4px 6px; 
@@ -376,9 +375,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <div class="container">
     <div class="header-section">
-        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (垂直置中對齊) -->
+        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (靠齊底部基準線 baseline) -->
         <div class="title-area">
-            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 50px; height: 50px;" oncontextmenu="return false;" ondragstart="return false;">
+            <a href="/" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:baseline;">
+                <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 45px; height: 45px; margin-right: 6px;" oncontextmenu="return false;" ondragstart="return false;">
+            </a>
             <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
              <!-- 下拉選單容器 -->
             <div class="month-dropdown-container">
@@ -514,14 +515,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </div>
 </div>
 
-<script>
+<script define:vars={{ supabase }}>
 // --- 設定 ---
-const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-const TABLE_NAME = 'events'; 
-
-window.client = window.client || (window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null);
-const client = window.client;
+const TABLE_NAME = 'events';
+const client = supabase;
+window.client = client;
 
 const holidays = ["2026-01-01", "2026-02-17", "2026-02-18", "2026-02-19", "2026-04-03", "2026-04-04", "2026-04-06", "2026-04-07", "2026-05-01", "2026-05-25", "2026-06-19", "2026-07-01", "2026-09-26", "2026-10-01", "2026-10-19", "2026-12-25", "2026-12-26"];
 
@@ -557,6 +555,13 @@ async function fetchData() {
             months: data.calendar_months || [],
             types: data.calendar_types || []
         };
+        
+        // 確保當前月份如果不在資料庫的 months 清單內，自動補上並排序
+        if (!dbData.months.includes(currentMonth)) {
+            dbData.months.push(currentMonth);
+            dbData.months.sort();
+        }
+
         renderCalendar();
         renderLegend();
         renderMonthList();
@@ -570,7 +575,7 @@ function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     const [year, month] = currentMonth.split('-').map(Number);
-    document.getElementById('month-display').innerText = `${year}年 ${month}月`;
+    document.getElementById('month-display').innerText = `${year}年 ${month}月 ▼`;
 
     const firstDay = new Date(year, month - 1, 1).getDay();
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -660,7 +665,6 @@ window.exportEventImage = function() {
     const W = 1080;
     const H = 1350;
 
-    // 輔助函式：繪製圓角矩形
     function drawRoundRect(x, y, w, h, r, fillStyle, strokeStyle) {
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, r);
@@ -682,12 +686,11 @@ window.exportEventImage = function() {
     const padX = 42;
     const padTop = 48;
 
-    // 載入 Logo 圖片並與標題、月份垂直置中對齊繪製
     const logoImgObj = new Image();
     logoImgObj.src = '/images/logo-small2.png';
     logoImgObj.onload = function() {
-        const logoSize = 55;
-        const headerY = padTop + 10;
+        const logoSize = 48;
+        const headerY = padTop + 5;
         ctx.drawImage(logoImgObj, padX, headerY, logoSize, logoSize);
 
         // 2. 標題與月份
@@ -695,13 +698,13 @@ window.exportEventImage = function() {
         ctx.fillStyle = '#2b579a';
         ctx.font = 'bold 48px "Noto Sans TC", sans-serif';
         ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText('客舍時間表', padX + logoSize + 15, headerY + 4);
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText('客舍時間表', padX + logoSize + 15, headerY + 42);
 
         ctx.font = 'bold 36px "Noto Sans TC", sans-serif';
         ctx.textAlign = 'right';
-        ctx.textBaseline = 'top';
-        ctx.fillText(`${year}年 ${month}月`, W - padX, headerY + 8);
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(`${year}年 ${month}月`, W - padX, headerY + 42);
 
         // 3. 頁首第二列：類型圖示轉新一列（自動折行）
         let curX = padX;
@@ -769,7 +772,6 @@ window.exportEventImage = function() {
             const fullDateStr = `${currentMonth}-${dayStr}`;
             const isHoliday = holidays.includes(fullDateStr);
 
-            // 日期數字
             if (c === 0 || isHoliday) {
                 ctx.fillStyle = '#d9534f';
             } else if (c === 6) {
@@ -782,7 +784,6 @@ window.exportEventImage = function() {
             ctx.textBaseline = 'top';
             ctx.fillText(String(d), x + colW - 8, y + 7);
 
-            // 該日活動
             const events = (dbData.events[currentMonth] || []).filter(e => e.day === d);
             let evtY = y + 33;
             const evtPadX = 5;
@@ -852,7 +853,6 @@ window.exportEventImage = function() {
         document.body.removeChild(link);
     };
 
-    // 若圖片已快取載入，觸發 onload
     if (logoImgObj.complete) {
         logoImgObj.onload();
     }
@@ -880,7 +880,9 @@ window.renderMonthList = function() {
     const container = document.getElementById('popup-month-list');
     if (!container) return;
     
-    container.innerHTML = dbData.months.map(m => `
+    const sortedMonths = [...dbData.months].sort();
+
+    container.innerHTML = sortedMonths.map(m => `
         <button class="month-select-btn ${m === currentMonth ? 'active' : ''}" 
                 onclick="switchMonth('${m}')">
             ${m}
@@ -892,7 +894,6 @@ window.switchMonth = function(m) {
     currentMonth = m;
     fetchData(); 
     
-    // 選擇月份後自動收合下拉選單
     const list = document.getElementById('popup-month-list');
     if (list) {
         list.classList.remove('show');
@@ -901,8 +902,15 @@ window.switchMonth = function(m) {
 
 window.submitAddMonth = function() {
     const m = document.getElementById('new-month-input').value;
-    if (!dbData.months.includes(m)) dbData.months.push(m);
-    saveDB();
+    if (!m) return;
+
+    if (!dbData.months.includes(m)) {
+        dbData.months.push(m);
+        dbData.months.sort();
+    }
+
+    currentMonth = m;
+    saveDB(); // 關鍵：同步寫入 Supabase 資料庫
     window.closeModal('monthModal');
 };
 
