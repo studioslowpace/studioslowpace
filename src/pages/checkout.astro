@@ -34,22 +34,22 @@ import Layout from '../layouts/BaseLayout.astro';
               <input type="radio" name="delivery" value="pickup" checked />
               <div class="option-info">
                 <span class="option-title">店內自取</span>
-                <span class="option-desc">留貨兩星期，開店期間憑訂單姓名及電話自取</span>
+                <span class="option-desc">留貨兩星期，開店期間憑單自取</span>
               </div>
             </label>
             <label class="radio-label option-card">
               <input type="radio" name="delivery" value="shipping" />
               <div class="option-info">
                 <span class="option-title">郵寄</span>
-                <span class="option-desc">郵費及收件地址會在下單後由店主發信/聯絡確認</span>
+                <span class="option-desc">郵費及收件地址會在下單再雙方聯絡確認</span>
               </div>
             </label>
           </div>
 
           <!-- 選擇郵寄時動態顯示地址輸入欄位 -->
           <div class="form-group" id="address-group" style="display: none;">
-            <label>收件地址 / 順豐站或智能櫃代碼</label>
-            <textarea id="address" rows="3" placeholder="請輸入詳細郵寄地址或順豐站/智能櫃代碼"></textarea>
+            <label>收件地址 / 順豐站代碼</label>
+            <textarea id="address" rows="3" placeholder="請輸入詳細郵寄地址或順豐站/智能櫃代碼（下單後會再雙方聯絡確認）"></textarea>
           </div>
 
           <h3 class="mt-30">付款方式</h3>
@@ -58,7 +58,7 @@ import Layout from '../layouts/BaseLayout.astro';
               <input type="radio" name="payment" value="fps_payme" checked /> 轉數快 (FPS) / PayMe
             </label>
             <label class="radio-label">
-              <input type="radio" name="payment" value="cash" /> 現金 (Cash)
+              <input type="radio" name="payment" value="cash" /> 現金
             </label>
           </div>
 
@@ -142,20 +142,25 @@ import Layout from '../layouts/BaseLayout.astro';
       submitBtn.innerText = '處理訂單中...';
     }
 
-    const nameInput = (document.getElementById('name') as HTMLInputElement).value;
-    const emailInput = (document.getElementById('email') as HTMLInputElement).value;
-    const phoneInput = (document.getElementById('phone') as HTMLInputElement).value;
+    const nameInput = (document.getElementById('name') as HTMLInputElement).value.trim();
+    const emailInput = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const phoneInput = (document.getElementById('phone') as HTMLInputElement).value.trim();
     const deliveryMethod = (document.querySelector('input[name="delivery"]:checked') as HTMLInputElement).value;
-    const addressInput = (document.getElementById('address') as HTMLTextAreaElement).value;
+    const addressInput = (document.getElementById('address') as HTMLTextAreaElement).value.trim();
     const paymentMethod = (document.querySelector('input[name="payment"]:checked') as HTMLInputElement).value;
 
-    const deliveryText = deliveryMethod === 'pickup' 
-      ? '店內自取 (留貨兩星期)' 
-      : '郵寄 (郵費及收件地址下單後聯絡確認)';
-      
-    const paymentText = paymentMethod === 'fps_payme' 
-      ? '轉數快 (FPS) / PayMe' 
-      : '現金 (Cash)';
+    const deliveryText =
+      deliveryMethod === 'pickup'
+        ? '店內自取 (留貨兩星期，開店期間憑單自取)'
+        : '郵寄 (郵費及收件地址會在下單再雙方聯絡確認)';
+
+    const paymentText =
+      paymentMethod === 'fps_payme' ? '轉數快 (FPS) / PayMe' : '現金';
+
+    const finalAddress =
+      deliveryMethod === 'shipping'
+        ? addressInput || '下單後再雙方聯絡確認'
+        : '店內自取 (留貨兩星期，開店期間憑單自取)';
 
     // 1. 寫入 Supabase orders 表格
     const { data: orderData, error: dbError } = await supabase
@@ -166,12 +171,12 @@ import Layout from '../layouts/BaseLayout.astro';
           customer_email: emailInput,
           customer_phone: phoneInput,
           delivery_method: deliveryText,
-          address: deliveryMethod === 'shipping' ? addressInput : '店內自取',
+          address: finalAddress,
           payment_method: paymentText,
           items: cart,
           total_price: calculatedTotal,
-          status: 'pending'
-        }
+          status: 'pending',
+        },
       ])
       .select()
       .single();
@@ -185,11 +190,37 @@ import Layout from '../layouts/BaseLayout.astro';
       return;
     }
 
-    // 2. 清空 LocalStorage 購物車
+    // 2. 呼叫 Resend API 寄出帳單給買家與店主
+    let emailSent = false;
+    try {
+      const mailRes = await fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: orderData.id,
+          customerName: nameInput,
+          customerEmail: emailInput,
+          customerPhone: phoneInput,
+          deliveryMethod: deliveryText,
+          address: finalAddress,
+          paymentMethod: paymentText,
+          items: cart,
+          totalPrice: calculatedTotal,
+        }),
+      });
+      emailSent = mailRes.ok;
+    } catch (mailErr) {
+      console.error('寄送帳單 Email 失敗:', mailErr);
+    }
+
+    // 3. 清空購物車並提示
     localStorage.removeItem('cart');
 
-    // 3. 提示並導回首頁
-    alert(`🎉 訂單已成功送出！\n訂單編號：${orderData.id.slice(0, 8)}\n確認信將發送至您的 Email。`);
+    alert(
+      emailSent
+        ? `🎉 訂單已成功送出！\n訂單編號：#${orderData.id.slice(0, 8)}\n帳單確認信已寄出。`
+        : `🎉 訂單已成功送出！\n訂單編號：#${orderData.id.slice(0, 8)}\n（註：訂單已記錄，但帳單信件未能即時寄出，請留意後台訂單）`
+    );
     window.location.href = '/';
   });
 </script>
