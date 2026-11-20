@@ -14,9 +14,9 @@ import Layout from '../layouts/BaseLayout.astro';
       <!-- 左側：收件人與付款資訊表單 -->
       <div class="checkout-form-section">
         <form id="checkout-form">
-          <h3>收件人資訊</h3>
+          <h3>顧客資訊</h3>
           <div class="form-group">
-            <label>收件人姓名 *</label>
+            <label>姓名 *</label>
             <input type="text" id="name" required placeholder="請輸入全名" />
           </div>
           <div class="form-group">
@@ -25,24 +25,44 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
           <div class="form-group">
             <label>聯絡電話 *</label>
-            <input type="tel" id="phone" required placeholder="電話號碼" />
+            <input type="tel" id="phone" required placeholder="請輸入電話號碼" />
           </div>
-          <div class="form-group">
-            <label>收件地址 / 順豐站代碼 *</label>
-            <textarea id="address" rows="3" required placeholder="請輸入詳細地址或順豐智能櫃/站代碼"></textarea>
+
+          <h3 class="mt-30">取貨 / 送貨方式</h3>
+          <div class="delivery-options">
+            <label class="radio-label option-card">
+              <input type="radio" name="delivery" value="pickup" checked />
+              <div class="option-info">
+                <span class="option-title">店內自取</span>
+                <span class="option-desc">留貨兩星期，開店期間憑訂單姓名及電話自取</span>
+              </div>
+            </label>
+            <label class="radio-label option-card">
+              <input type="radio" name="delivery" value="shipping" />
+              <div class="option-info">
+                <span class="option-title">郵寄</span>
+                <span class="option-desc">郵費及收件地址會在下單後由店主發信/聯絡確認</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- 選擇郵寄時動態顯示地址輸入欄位 -->
+          <div class="form-group" id="address-group" style="display: none;">
+            <label>收件地址 / 順豐站或智能櫃代碼</label>
+            <textarea id="address" rows="3" placeholder="請輸入詳細郵寄地址或順豐站/智能櫃代碼"></textarea>
           </div>
 
           <h3 class="mt-30">付款方式</h3>
           <div class="payment-options">
             <label class="radio-label">
-              <input type="radio" name="payment" value="fps" checked /> 轉數快 (FPS) / PayMe
+              <input type="radio" name="payment" value="fps_payme" checked /> 轉數快 (FPS) / PayMe
             </label>
             <label class="radio-label">
-              <input type="radio" name="payment" value="credit_card" /> 信用卡線上支付
+              <input type="radio" name="payment" value="cash" /> 現金 (Cash)
             </label>
           </div>
 
-          <button type="submit" class="btn btn-submit-order">確認送出訂單</button>
+          <button type="submit" id="btn-submit" class="btn btn-submit-order">確認送出訂單</button>
         </form>
       </div>
 
@@ -62,8 +82,10 @@ import Layout from '../layouts/BaseLayout.astro';
 </Layout>
 
 <script>
+  import { supabase } from '../lib/supabase';
+
   interface CartItem {
-    id: string;
+    id?: string;
     title: string;
     price: number;
     currency: string;
@@ -74,19 +96,23 @@ import Layout from '../layouts/BaseLayout.astro';
   const cart: CartItem[] = JSON.parse(localStorage.getItem('cart') || '[]');
   const listContainer = document.getElementById('checkout-items-list');
   const totalPriceEl = document.getElementById('checkout-total-price');
+  const addressGroup = document.getElementById('address-group');
+  const deliveryRadios = document.querySelectorAll('input[name="delivery"]');
+  const form = document.getElementById('checkout-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement;
 
   if (cart.length === 0) {
     alert('您的購物車是空的，將返回首頁');
     window.location.href = '/';
   }
 
+  // 渲染購物車清單
+  let calculatedTotal = 0;
   if (listContainer && totalPriceEl) {
     let html = '';
-    let total = 0;
-
     cart.forEach(item => {
       const itemTotal = item.price * item.quantity;
-      total += itemTotal;
+      calculatedTotal += itemTotal;
       html += `
         <div class="summary-item">
           <span class="summary-item-title">${item.title} × ${item.quantity}</span>
@@ -94,18 +120,76 @@ import Layout from '../layouts/BaseLayout.astro';
         </div>
       `;
     });
-
     listContainer.innerHTML = html;
-    totalPriceEl.innerText = `HK$${total.toFixed(2)}`;
+    totalPriceEl.innerText = `HK$${calculatedTotal.toFixed(2)}`;
   }
 
-  const form = document.getElementById('checkout-form');
-  form?.addEventListener('submit', (e) => {
+  // 切換店內自取 / 郵寄時顯示或隱藏地址輸入框
+  deliveryRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const val = (e.target as HTMLInputElement).value;
+      if (addressGroup) {
+        addressGroup.style.display = val === 'shipping' ? 'block' : 'none';
+      }
+    });
+  });
+
+  // 提交表單處理
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // 模擬訂單送出成功
-    alert('🎉 訂單已成功送出！感謝您的購買。');
-    localStorage.removeItem('cart'); // 清空購物車
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = '處理訂單中...';
+    }
+
+    const nameInput = (document.getElementById('name') as HTMLInputElement).value;
+    const emailInput = (document.getElementById('email') as HTMLInputElement).value;
+    const phoneInput = (document.getElementById('phone') as HTMLInputElement).value;
+    const deliveryMethod = (document.querySelector('input[name="delivery"]:checked') as HTMLInputElement).value;
+    const addressInput = (document.getElementById('address') as HTMLTextAreaElement).value;
+    const paymentMethod = (document.querySelector('input[name="payment"]:checked') as HTMLInputElement).value;
+
+    const deliveryText = deliveryMethod === 'pickup' 
+      ? '店內自取 (留貨兩星期)' 
+      : '郵寄 (郵費及收件地址下單後聯絡確認)';
+      
+    const paymentText = paymentMethod === 'fps_payme' 
+      ? '轉數快 (FPS) / PayMe' 
+      : '現金 (Cash)';
+
+    // 1. 寫入 Supabase orders 表格
+    const { data: orderData, error: dbError } = await supabase
+      .from('orders')
+      .insert([
+        {
+          customer_name: nameInput,
+          customer_email: emailInput,
+          customer_phone: phoneInput,
+          delivery_method: deliveryText,
+          address: deliveryMethod === 'shipping' ? addressInput : '店內自取',
+          payment_method: paymentText,
+          items: cart,
+          total_price: calculatedTotal,
+          status: 'pending'
+        }
+      ])
+      .select()
+      .single();
+
+    if (dbError) {
+      alert('訂單建立失敗：' + dbError.message);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerText = '確認送出訂單';
+      }
+      return;
+    }
+
+    // 2. 清空 LocalStorage 購物車
+    localStorage.removeItem('cart');
+
+    // 3. 提示並導回首頁
+    alert(`🎉 訂單已成功送出！\n訂單編號：${orderData.id.slice(0, 8)}\n確認信將發送至您的 Email。`);
     window.location.href = '/';
   });
 </script>
@@ -120,23 +204,32 @@ import Layout from '../layouts/BaseLayout.astro';
   .checkout-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; }
   @media (max-width: 768px) { .checkout-grid { grid-template-columns: 1fr; } }
 
-  .checkout-form-section h3, .checkout-summary-section h3 { font-size: 16px; font-weight: 500; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  .checkout-form-section h3, .checkout-summary-section h3 { font-size: 15px; font-weight: 500; margin-bottom: 18px; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #333; }
   .mt-30 { margin-top: 30px; }
 
   .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
-  .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; }
+  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 6px; }
+  .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 4px; box-sizing: border-box; }
+  .form-group input:focus, .form-group textarea:focus { border-color: #c99e58; }
 
-  .payment-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
-  .radio-label { font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .delivery-options, .payment-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .option-card { border: 1px solid #eee; padding: 12px 15px; border-radius: 4px; background: #fafafa; transition: border-color 0.2s; }
+  .option-card:has(input:checked) { border-color: #c99e58; background: #fff; }
 
-  .btn-submit-order { background-color: #ff6600; color: #fff; width: 100%; padding: 14px; border: none; font-size: 15px; cursor: pointer; border-radius: 2px; }
+  .radio-label { font-size: 13px; color: #333; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+  .radio-label input[type="radio"] { margin-top: 3px; accent-color: #c99e58; }
+  .option-info { display: flex; flex-direction: column; gap: 3px; }
+  .option-title { font-weight: 500; color: #222; }
+  .option-desc { font-size: 12px; color: #888; line-height: 1.4; }
+
+  .btn-submit-order { background-color: #c99e58; color: #fff; width: 100%; padding: 14px; border: none; font-size: 14px; cursor: pointer; border-radius: 4px; letter-spacing: 0.5px; transition: opacity 0.2s; margin-top: 10px; }
   .btn-submit-order:hover { opacity: 0.9; }
+  .btn-submit-order:disabled { background-color: #ccc; cursor: not-allowed; }
 
-  .checkout-summary-section { background: #f9f9f9; padding: 25px; border-radius: 2px; height: fit-content; }
+  .checkout-summary-section { background: #fafafa; border: 1px solid #eee; padding: 25px; border-radius: 4px; height: fit-content; }
   .checkout-items-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; max-height: 300px; overflow-y: auto; }
   .summary-item { display: flex; justify-content: space-between; font-size: 13px; color: #444; gap: 15px; }
-  .summary-item-title { flex: 1; }
-  .summary-total-row { display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 15px; font-size: 15px; font-weight: 600; }
-  .total-price { color: #111; }
+  .summary-item-title { flex: 1; line-height: 1.4; }
+  .summary-total-row { display: flex; justify-content: space-between; border-top: 1px solid #e5e5e5; padding-top: 15px; font-size: 15px; font-weight: 600; }
+  .total-price { color: #111; font-size: 18px; }
 </style>
