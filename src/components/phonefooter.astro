@@ -34,7 +34,7 @@ const navItems = [
   </div>
 </footer>
 
-<style is:global>
+<style>
   .slowpace-footer {
     display: flex;
     justify-content: center;
@@ -93,10 +93,17 @@ const navItems = [
     font-size: 16px;
   }
 
-  /* 電腦視窗：背景維持全闊，功能按鈕置中 */
+  /* 電腦視窗：外層白底全闊延伸，內層按鈕置中 */
   @media (min-width: 768px) {
+    .slowpace-footer-bar {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+    }
+
     .slowpace-footer-inner {
       flex: none;
+      width: 100%;
       max-width: 1120px; /* 可依需求調整中間按鈕區塊寬度 */
       margin: 0 auto;
       justify-content: space-around;
