@@ -56,10 +56,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             margin-bottom: 18px; 
         }
 
-        /* 標題與年月份並列區塊 - 嚴格向底部基準線靠齊 (baseline) */
+        /* 標題與年月份並列區塊 - 垂直向下對齊 (置中) */
         .title-area { 
             display: flex; 
-            align-items: baseline;
+            align-items: center;
             justify-content: flex-end;
             width: 100%;
             gap: 15px;
@@ -70,7 +70,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             color: var(--primary-blue); 
             letter-spacing: 2px; 
             font-weight: bold; 
-            line-height: 1;
+            line-height: 1.2;
         }
         
         #month-display { 
@@ -79,11 +79,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             color: var(--primary-blue); 
             display: inline-block; 
             cursor: pointer; 
-            padding: 4px 10px; 
+            padding: 6px 12px; 
             border-radius: 6px; 
             transition: all 0.2s ease; 
             user-select: none; 
-            line-height: 1;
+            line-height: 1.2;
         }
         #month-display:hover { 
             background-color: rgba(0, 0, 0, 0.05); 
@@ -91,8 +91,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         }
 
         .logo-img {
-            display: inline-block;
-            vertical-align: baseline;
+            display: block;
         }
 
         /* 類型圖例獨立新一列 */
@@ -168,42 +167,44 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         .modal-card p { font-size: 16px; margin-bottom: 12px; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
-        /* 下拉容器維持相對定位 */
+        /* 1. 下拉容器維持相對定位 */
         .month-dropdown-container {
             position: relative;
             display: inline-block;
         }
 
-        /* 月份網格選單：預設隱藏、單欄直向排列、安全高度與滾動條 */
+        /* 2. 月份網格選單：預設隱藏、單欄（一列一個）、固定最大高度並開啟捲軸 */
         .month-select-grid {
-            display: none; 
+            display: none; /* 預設不顯示，必須點擊後才展開 */
             position: absolute;
-            top: calc(100% + 6px); 
+            top: calc(100% + 6px); /* 距離上方按鈕 6px */
             left: 0;
-            z-index: 9999; /* 確保浮在最上層，不被其他區塊遮擋 */
+            z-index: 1000;
             
+            /* 視覺外觀 */
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
             padding: 12px;
             
+            /* 排版：單欄直向排列 */
             flex-direction: column;
             gap: 8px; 
             
-            /* 調整最大高度，確保所有月份都能夠完整顯示並透過捲軸上下移動 */
-            max-height: 280px; 
+            /* 限制高度並強制出現捲軸 */
+            max-height: 220px; 
             overflow-y: auto; 
             width: 180px; 
             box-sizing: border-box;
         }
 
-        /* 透過 JS 切換顯示時的 class */
+        /* 3. 透過 JS 切換顯示時的 class (強制覆蓋顯示) */
         .month-select-grid.show {
             display: flex !important;
         }
 
-        /* 捲軸樣式美化 */
+        /* 4. 捲軸樣式美化 */
         .month-select-grid::-webkit-scrollbar {
             width: 6px;
         }
@@ -212,7 +213,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             border-radius: 3px;
         }
 
-        /* 按鈕樣式 */
+        /* 5. 按鈕樣式 */
         .month-select-btn {
             background: #f7f5f2; 
             color: #333; 
@@ -224,7 +225,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             transition: all 0.2s; 
             cursor: pointer;
             width: 100%; 
-            flex-shrink: 0;
         }
         .month-select-btn:hover { 
             background: #eef5ee; 
@@ -261,9 +261,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 margin-bottom: 12px; 
             }
 
+            /* 標題與年月份維持左右並列並置中對齊 */
             .title-area { 
                 flex-direction: row !important;
-                align-items: baseline;
+                align-items: center;
                 width: 100%;
                 gap: 8px;
             }
@@ -280,6 +281,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
                 white-space: nowrap; 
             }
 
+            /* 圖例區塊獨立新一列並滿版換行 */
             .legend-box {
                 width: 100%; 
                 gap: 4px 6px; 
@@ -373,9 +375,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <div class="container">
     <div class="header-section">
-        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (精準靠齊底部基準線 baseline) -->
+        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (垂直置中對齊) -->
         <div class="title-area">
-            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 45px; height: 45px;" oncontextmenu="return false;" ondragstart="return false;">
+            <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 50px; height: 50px;" oncontextmenu="return false;" ondragstart="return false;">
             <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
              <!-- 下拉選單容器 -->
             <div class="month-dropdown-container">
@@ -657,6 +659,7 @@ window.exportEventImage = function() {
     const W = 1080;
     const H = 1350;
 
+    // 輔助函式：繪製圓角矩形
     function drawRoundRect(x, y, w, h, r, fillStyle, strokeStyle) {
         ctx.beginPath();
         ctx.roundRect(x, y, w, h, r);
@@ -678,25 +681,26 @@ window.exportEventImage = function() {
     const padX = 42;
     const padTop = 48;
 
+    // 載入 Logo 圖片並與標題、月份垂直置中對齊繪製
     const logoImgObj = new Image();
     logoImgObj.src = '/images/logo-small2.png';
     logoImgObj.onload = function() {
-        const logoSize = 48;
-        const headerY = padTop + 5;
+        const logoSize = 55;
+        const headerY = padTop + 10;
         ctx.drawImage(logoImgObj, padX, headerY, logoSize, logoSize);
 
-        // 2. 標題與月份 (Canvas 繪製與網頁 baseline 一致)
+        // 2. 標題與月份
         const [year, month] = currentMonth.split('-').map(Number);
         ctx.fillStyle = '#2b579a';
         ctx.font = 'bold 48px "Noto Sans TC", sans-serif';
         ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText('客舍時間表', padX + logoSize + 15, headerY + 42);
+        ctx.textBaseline = 'top';
+        ctx.fillText('客舍時間表', padX + logoSize + 15, headerY + 4);
 
         ctx.font = 'bold 36px "Noto Sans TC", sans-serif';
         ctx.textAlign = 'right';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(`${year}年 ${month}月`, W - padX, headerY + 42);
+        ctx.textBaseline = 'top';
+        ctx.fillText(`${year}年 ${month}月`, W - padX, headerY + 8);
 
         // 3. 頁首第二列：類型圖示轉新一列（自動折行）
         let curX = padX;
@@ -764,6 +768,7 @@ window.exportEventImage = function() {
             const fullDateStr = `${currentMonth}-${dayStr}`;
             const isHoliday = holidays.includes(fullDateStr);
 
+            // 日期數字
             if (c === 0 || isHoliday) {
                 ctx.fillStyle = '#d9534f';
             } else if (c === 6) {
@@ -776,6 +781,7 @@ window.exportEventImage = function() {
             ctx.textBaseline = 'top';
             ctx.fillText(String(d), x + colW - 8, y + 7);
 
+            // 該日活動
             const events = (dbData.events[currentMonth] || []).filter(e => e.day === d);
             let evtY = y + 33;
             const evtPadX = 5;
@@ -845,6 +851,7 @@ window.exportEventImage = function() {
         document.body.removeChild(link);
     };
 
+    // 若圖片已快取載入，觸發 onload
     if (logoImgObj.complete) {
         logoImgObj.onload();
     }
@@ -884,6 +891,7 @@ window.switchMonth = function(m) {
     currentMonth = m;
     fetchData(); 
     
+    // 選擇月份後自動收合下拉選單
     const list = document.getElementById('popup-month-list');
     if (list) {
         list.classList.remove('show');

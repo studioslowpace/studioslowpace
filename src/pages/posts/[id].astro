@@ -255,8 +255,6 @@ import BaseLayout from '../../layouts/Layout.astro';
 
     </style>
 
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -310,31 +308,32 @@ import BaseLayout from '../../layouts/Layout.astro';
          ⚡ JavaScript 邏輯控制
          ========================================== -->
     <script>
-        const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-        const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-        const POSTS_TABLE = 'posts';
+        import { supabase } from '../../lib/supabase';
 
-        window.client = window.client || (window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null);
-        const client = window.client;
+        const POSTS_TABLE = 'posts';
 
         let posts = [];
         let isAdmin = false;
         let unlockedPosts = {};
 
-        const pathSegments = window.location.pathname.split('/');
-        const currentPostId = pathSegments[pathSegments.length - 1] || pathSegments[pathSegments.length - 2];
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const currentPostId = pathSegments[pathSegments.length - 1] || '';
 
+        // 初始化頁面狀態與委託資料
         async function initPage() {
-            if (client) {
-                const { data: { session } } = await client.auth.getSession();
-                isAdmin = !!session;
-            }
+            if (!supabase) return;
+
+            const { data: { session } } = await supabase.auth.getSession();
+            isAdmin = !!session;
+
             await fetchPostsFromSupabase();
         }
 
+        // 從 Supabase 讀取所有委託資料並渲染目前頁面
         async function fetchPostsFromSupabase() {
-            if (!client) return;
-            const { data, error } = await client.from(POSTS_TABLE).select('*');
+            if (!supabase) return;
+
+            const { data, error } = await supabase.from(POSTS_TABLE).select('*');
             if (!error && data) {
                 posts = data;
                 renderSinglePostView(currentPostId);
@@ -349,7 +348,7 @@ import BaseLayout from '../../layouts/Layout.astro';
             const cleanEmail = email ? email.trim() : null;
 
             try {
-                const { data: existing, error: fetchError } = await client
+                const { data: existing, error: fetchError } = await supabase
                     .from('alluser_record')
                     .select('*')
                     .eq('contact', cleanContact)
@@ -363,7 +362,7 @@ import BaseLayout from '../../layouts/Layout.astro';
                     if (cleanName) updateData.name = cleanName;
                     if (cleanEmail) updateData.email = cleanEmail;
 
-                    const { error: updateError } = await client
+                    const { error: updateError } = await supabase
                         .from('alluser_record')
                         .update(updateData)
                         .eq('id', existing.id);
@@ -377,7 +376,7 @@ import BaseLayout from '../../layouts/Layout.astro';
                         email: cleanEmail || ''
                     };
 
-                    const { error: insertError } = await client
+                    const { error: insertError } = await supabase
                         .from('alluser_record')
                         .insert([newRecord]);
 
@@ -389,11 +388,14 @@ import BaseLayout from '../../layouts/Layout.astro';
             }
         }
 
+        // 渲染單一委託詳細內容
         function renderSinglePostView(postId) {
             const post = posts.find(p => String(p.id) === String(postId));
             const targetDiv = document.getElementById('single-post-render-target');
             if (!post || !targetDiv) {
-                targetDiv.innerHTML = `<div class="error-box">找不到此筆委託或已被刪除。</div>`;
+                if (targetDiv) {
+                    targetDiv.innerHTML = `<div class="error-box">找不到此筆委託或已被刪除。</div>`;
+                }
                 return;
             }
 
@@ -485,9 +487,9 @@ import BaseLayout from '../../layouts/Layout.astro';
                 </div>
             `;
 
-            document.getElementById('btn-verify-inline-pwd')?.addEventListener('click', (e) => {
+            document.getElementById('btn-verify-inline-pwd')?.addEventListener('click', () => {
                 const pwd = document.getElementById('inline-pwd-input').value;
-                if(pwd === post.password) {
+                if (pwd === post.password) {
                     unlockedPosts[postId] = true;
                     renderSinglePostView(postId);
                 } else {
@@ -505,7 +507,7 @@ import BaseLayout from '../../layouts/Layout.astro';
             setTimeout(() => { lucide.createIcons(); }, 100);
         }
 
-        // 💡 使用全域事件委派點擊監聽，完美觸發動態產生的接單與結案按鈕
+        // 使用全域事件委派點擊監聽，觸發動態產生的接單與結案按鈕
         document.addEventListener('click', (e) => {
             const completeBtn = e.target.closest('#btn-open-complete-modal');
             if (completeBtn) {
@@ -533,7 +535,7 @@ import BaseLayout from '../../layouts/Layout.astro';
 
         function openCompleteModal(postId) {
             const post = posts.find(p => String(p.id) === String(postId));
-            if(!post) return;
+            if (!post) return;
 
             document.getElementById('complete-post-id').value = postId;
             const container = document.getElementById('heroes-select-container');
@@ -587,7 +589,7 @@ import BaseLayout from '../../layouts/Layout.astro';
             const updatedHeroes = [...(post.heroeslist || []), newHero];
 
             try {
-                const { error } = await client.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
+                const { error } = await supabase.from(POSTS_TABLE).update({ heroeslist: updatedHeroes }).eq('id', postId);
                 if (error) throw error;
 
                 // 同步更新 alluser_record
@@ -626,16 +628,16 @@ import BaseLayout from '../../layouts/Layout.astro';
         async function submitCompleteTask() {
             const postId = document.getElementById('complete-post-id').value;
             const post = posts.find(p => String(p.id) === String(postId));
-            if(!post) return;
+            if (!post) return;
 
             const selectedRadio = document.querySelector('input[name="selected-complete-hero"]:checked');
-            if(!selectedRadio) { alert("請選擇一項結案條件。"); return; }
+            if (!selectedRadio) { alert("請選擇一項結案條件。"); return; }
 
             let cName = null;
             let cContact = null;
             let cEmail = null;
 
-            if(selectedRadio.value !== 'none') {
+            if (selectedRadio.value !== 'none') {
                 const heroIndex = parseInt(selectedRadio.value);
                 const chosenHero = post.heroeslist[heroIndex];
                 cName = chosenHero.name;
@@ -644,7 +646,7 @@ import BaseLayout from '../../layouts/Layout.astro';
             }
 
             try {
-                const { error } = await client
+                const { error } = await supabase
                     .from(POSTS_TABLE)
                     .update({ 
                         iscompleted: true,
@@ -662,7 +664,7 @@ import BaseLayout from '../../layouts/Layout.astro';
                     await updateUserPointsInSupabase(cContact, cName, 1, cEmail);
                 }
 
-                if(cName) {
+                if (cName) {
                     alert(`🏮 結案成功！恭喜【${cName}】獲得了 1 點萬事分！`);
                 } else {
                     alert("🏮 委託已關閉結案。");
