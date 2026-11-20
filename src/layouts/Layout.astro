@@ -15,18 +15,18 @@ const TABLE_NAME = 'slowpace_members';
     <title>{title}</title>
   </head>
 <body>
-    <!-- 外層 viewport：支援響應式置中，並讓內部維持固定視窗高度以鎖定 header/footer -->
+    <!-- 外層 viewport：支援響應式置中，無上下邊界空隙 -->
     <div class="app-viewport">
       <div class="rpg-container">
-        <!-- 固定在頂部 -->
+        <!-- 頂部 Header：無空隙緊貼頂部 -->
         <Header />
 
-        <!-- 中間內容區：只有這塊會滾動 -->
+        <!-- 中間內容區：只有這塊會滾動；手機隱藏捲軸，電腦顯示捲軸 -->
         <main class="app-main">
           <slot />
         </main>
 
-        <!-- 固定在底部 -->
+        <!-- 底部 Footer：無空隙緊貼底部 -->
         <div class="app-footer-wrapper">
           <Footer />
         </div>
@@ -54,7 +54,7 @@ const TABLE_NAME = 'slowpace_members';
     box-sizing: border-box; 
   }
 
-  /* 鎖死外層視窗高度，讓滾動集中在中間 .app-main */
+  /* 鎖死外層視窗高度，確保上下無滾動空隙 */
   html, body {
     background-color: var(--bg-main);
     color: var(--text-color);
@@ -67,19 +67,20 @@ const TABLE_NAME = 'slowpace_members';
     overflow: hidden;
   }
 
-  /* 外層視窗：置中容器並自適應視窗 */
+  /* 外層視窗：滿版高度，上下無空隙 */
   .app-viewport { 
     width: 100%; 
     height: 100vh; 
     height: 100dvh; 
     display: flex; 
     justify-content: center; 
-    align-items: center; 
+    align-items: stretch; 
     background: var(--bg-main); 
     overflow: hidden;
+    padding: 0; /* 清除內距，讓 Header/Footer 緊貼上下邊界 */
   }
   
-  /* 核心容器：手機自適應寬度與高度，不鎖死 430px / 880px */
+  /* 核心容器：無外框線、無陰影、無圓角 */
   .rpg-container {
     width: 100%;
     height: 100vh;
@@ -88,48 +89,73 @@ const TABLE_NAME = 'slowpace_members';
     flex-direction: column; 
     justify-content: space-between; 
     background-color: var(--bg-main); 
-    border: 1px solid var(--border-color); 
-    border-radius: 0;
-    box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); 
+    border: none; /* 取消包著 Header 和 Footer 的框線 */
+    border-radius: 0; /* 取消圓角 */
+    box-shadow: none; /* 取消陰影 */
     overflow: hidden;
   }
 
-  /* 電腦與平板視窗：自動展開寬度，並固定高度讓 header 與 footer 保持不動 */
-  @media (min-width: 768px) {
-    .app-viewport {
-      padding: 20px;
-    }
-
-    .rpg-container {
-      width: 100%;
-      max-width: 1120px; /* 可依需求調整寬度上限 */
-      height: calc(100dvh - 40px);
-      border-radius: 24px;
-    }
-  }
-
-  /* 中間內容區：佔滿剩餘空間，內容超出時僅在此區滾動 */
+  /* 中間內容區：內部滾動，手機版預設隱藏捲軸 */
   .app-main {
     flex: 1; 
     display: flex;
     flex-direction: column;
     overflow-y: auto; 
-    overflow-x: auto;
+    overflow-x: hidden;
     padding: 0px;
-    min-height: 0; /* 關鍵：允許 flex 子元素縮放並觸發內部捲軸 */
+    min-height: 0;
     width: 100%;
+
+    /* 手機版隱藏捲軸 */
+    scrollbar-width: none;
   }
 
-  /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
   .app-main::-webkit-scrollbar {
     display: none;
   }
-  /* 隱藏 Firefox 捲軸 */
-  .app-main {
-    scrollbar-width: none; 
+
+  /* 電腦與平板視窗：自適應寬度、無上下空隙與框線，並顯示可見捲軸 */
+  @media (min-width: 768px) {
+    .app-viewport {
+      padding: 0; /* 確保上下完全無空隙 */
+    }
+
+    .rpg-container {
+      width: 100%;
+      max-width: 1120px; /* 電腦版寬度上限，可依需求調整 */
+      height: 100vh;
+      height: 100dvh;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* 電腦視窗恢復並美化捲軸 (移動 Bar) */
+    .app-main {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    .app-main::-webkit-scrollbar {
+      width: 8px;
+      display: block;
+    }
+
+    .app-main::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .app-main::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 4px;
+    }
+
+    .app-main::-webkit-scrollbar-thumb:hover {
+      background-color: var(--text-muted);
+    }
   }
 
-  /* 底部導覽列包裝：固定在 .rpg-container 底部不被壓縮 */
+  /* 底部導覽列：緊貼底部 */
   .app-footer-wrapper {
     flex-shrink: 0;
     padding: 0px;
