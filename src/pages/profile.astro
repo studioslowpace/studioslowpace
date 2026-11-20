@@ -22,6 +22,36 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
+        <!-- 文青圖示式閱讀時數卡片 -->
+        <div class="reading-stats-panel" aria-label="閱讀時數統計">
+          <div class="reading-stat-item">
+            <div class="reading-icon-badge" aria-hidden="true">🕯️</div>
+            <div class="reading-stat-meta">
+              <span class="reading-stat-label">今日閱讀</span>
+              <strong id="display-daily-reading" class="reading-stat-value">0分</strong>
+            </div>
+          </div>
+
+          <div class="reading-stat-divider" aria-hidden="true"></div>
+
+          <div class="reading-stat-item">
+            <div class="reading-icon-badge reading-icon-badge--alt" aria-hidden="true">📚</div>
+            <div class="reading-stat-meta">
+              <span class="reading-stat-label">累積總閱讀</span>
+              <strong id="display-total-reading" class="reading-stat-value">0分</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 近 10 日閱讀足跡（由 reading_logs 整理） -->
+        <div class="history-10d-card" aria-label="近 10 日閱讀紀錄">
+          <div class="history-10d-header">
+            <span class="history-10d-title">🗓️ 近 10 日閱讀足跡</span>
+            <span id="display-10d-total" class="history-10d-summary">共 0分</span>
+          </div>
+          <div id="reading-10d-list" class="history-10d-grid"></div>
+        </div>
+
         <!-- 帳號與聯絡資訊檢視卡片 -->
         <div class="info-display-card">
           <div class="info-row">
@@ -204,6 +234,122 @@ import Layout from '../layouts/BaseLayout.astro';
       border-radius: 12px;
       color: #6e655b;
     }
+
+    /* 文青圖示式閱讀時數樣式 */
+    .reading-stats-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #faf7f0 0%, #f3ede1 100%);
+      border: 1px solid #e3dacb;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    .reading-stat-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .reading-icon-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: #fdfbf7;
+      border: 1px solid #e5dfd5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(60, 56, 53, 0.05);
+    }
+    .reading-icon-badge--alt {
+      background: #f4f1ea;
+    }
+    .reading-stat-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .reading-stat-label {
+      font-size: 0.72rem;
+      color: #8c8275;
+      letter-spacing: 0.04em;
+    }
+    .reading-stat-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #3c3835;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .reading-stat-divider {
+      width: 1px;
+      height: 30px;
+      background: #e3dacb;
+      flex-shrink: 0;
+    }
+
+    /* 近 10 日閱讀足跡區塊 */
+    .history-10d-card {
+      background: #faf7f2;
+      border: 1px solid #e5dfd5;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .history-10d-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 0.78rem;
+    }
+    .history-10d-title {
+      font-weight: 600;
+      color: #5c5349;
+    }
+    .history-10d-summary {
+      color: #8c8275;
+      font-size: 0.74rem;
+    }
+    .history-10d-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .day-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fdfbf7;
+      border: 1px solid #ebe4d8;
+      border-radius: 9px;
+      padding: 6px 9px;
+      font-size: 0.74rem;
+      color: #6e655b;
+    }
+    .day-pill--active {
+      border-color: #c8beae;
+      background: #f6f1e7;
+      color: #3c3835;
+      font-weight: 500;
+    }
+    .day-pill-date {
+      color: #8c8275;
+      font-variant-numeric: tabular-nums;
+    }
+    .day-pill-time {
+      color: #3c3835;
+      font-weight: 600;
+    }
+
     .info-display-card {
       background: #f7f4ee;
       border: 1px solid #e5dfd5;
@@ -374,6 +520,94 @@ import Layout from '../layouts/BaseLayout.astro';
     const toggleEditPasswordBtn = document.getElementById('toggle-edit-password-btn');
     const passwordFormContainer = document.getElementById('password-form-container');
 
+    // 秒數格式化為「X小時Y分」或「Y分」
+    function formatReadingDuration(seconds = 0): string {
+      const safeSec = Math.max(0, Math.floor(Number(seconds) || 0));
+      const totalMinutes = Math.floor(safeSec / 60);
+      if (totalMinutes < 1) return '0分';
+
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+
+      if (hours > 0) {
+        return minutes > 0 ? `${hours}小時${minutes}分` : `${hours}小時`;
+      }
+      return `${minutes}分`;
+    }
+
+    // 格式化 Date 物件為 YYYY-MM-DD
+    function formatDateKey(d: Date): string {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // 取得今日日期字串（YYYY-MM-DD）
+    function getTodayDateString(): string {
+      return formatDateKey(new Date());
+    }
+
+    // 正規化 reading_logs 陣列
+    function normalizeReadingLogs(rawLogs: any): { date: string; seconds: number }[] {
+      let parsed = rawLogs;
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch { parsed = []; }
+      }
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((item: any) => item && typeof item.date === 'string')
+        .map((item: any) => ({
+          date: item.date,
+          seconds: Math.max(0, Number(item.seconds) || 0)
+        }));
+    }
+
+    // 取得最近 N 天日期清單（由近到遠或由遠到近）
+    function getLastNDays(days = 10): string[] {
+      const result: string[] = [];
+      const base = new Date();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(base);
+        d.setDate(base.getDate() - i);
+        result.push(formatDateKey(d));
+      }
+      return result;
+    }
+
+    // 渲染近 10 日閱讀足跡
+    function renderLast10Days(logs: { date: string; seconds: number }[]) {
+      const listEl = document.getElementById('reading-10d-list');
+      const total10dEl = document.getElementById('display-10d-total');
+      if (!listEl) return;
+
+      const dateMap = new Map<string, number>();
+      logs.forEach(entry => {
+        dateMap.set(entry.date, (dateMap.get(entry.date) || 0) + entry.seconds);
+      });
+
+      const last10Dates = getLastNDays(10).reverse();
+      let sum10dSec = 0;
+
+      const html = last10Dates.map(dateStr => {
+        const sec = dateMap.get(dateStr) || 0;
+        sum10dSec += sec;
+        const shortDate = dateStr.slice(5); // MM-DD
+        const activeClass = sec > 0 ? 'day-pill day-pill--active' : 'day-pill';
+        return `
+          <div class="${activeClass}">
+            <span class="day-pill-date">${shortDate}</span>
+            <span class="day-pill-time">${formatReadingDuration(sec)}</span>
+          </div>
+        `;
+      }).join('');
+
+      listEl.innerHTML = html;
+      if (total10dEl) {
+        total10dEl.textContent = `共 ${formatReadingDuration(sum10dSec)}`;
+      }
+    }
+
     // 切換修改個人資料表單顯示/隱藏
     toggleEditProfileBtn?.addEventListener('click', () => {
       if (form) {
@@ -460,6 +694,9 @@ import Layout from '../layouts/BaseLayout.astro';
       const avatarImg = document.getElementById('profile-avatar-img') as HTMLImageElement;
       const nameDisplay = document.getElementById('profile-name-display');
       const tierBadge = document.getElementById('profile-tier-badge');
+
+      const dailyReadingEl = document.getElementById('display-daily-reading');
+      const totalReadingEl = document.getElementById('display-total-reading');
       
       const displayEmail = document.getElementById('display-email');
       const displayPhone = document.getElementById('display-phone');
@@ -473,6 +710,28 @@ import Layout from '../layouts/BaseLayout.astro';
       if (avatarImg) avatarImg.src = currentProfile.avatar || '/assets/player1.png';
       if (nameDisplay) nameDisplay.textContent = currentProfile.name;
       if (tierBadge) tierBadge.textContent = currentProfile.tier === '店主' ? '👑 店主' : '🌱 鄰里人';
+
+      const todayStr = getTodayDateString();
+      const logs = normalizeReadingLogs(currentProfile.reading_logs);
+
+      const logsTodaySec = logs
+        .filter(item => item.date === todayStr)
+        .reduce((sum, item) => sum + item.seconds, 0);
+      const logsTotalSec = logs.reduce((sum, item) => sum + item.seconds, 0);
+
+      const fallbackDailySec =
+        currentProfile.daily_reading_date === todayStr
+          ? Number(currentProfile.daily_reading_seconds || 0)
+          : 0;
+      const fallbackTotalSec = Number(currentProfile.total_reading_seconds || 0);
+
+      const rawDailySec = logs.length > 0 ? logsTodaySec : fallbackDailySec;
+      const rawTotalSec = logs.length > 0 ? logsTotalSec : fallbackTotalSec;
+
+      if (dailyReadingEl) dailyReadingEl.textContent = formatReadingDuration(rawDailySec);
+      if (totalReadingEl) totalReadingEl.textContent = formatReadingDuration(rawTotalSec);
+
+      renderLast10Days(logs);
 
       if (displayEmail) displayEmail.textContent = currentProfile.email;
       if (displayPhone) displayPhone.textContent = currentProfile.phone || '未填寫';
