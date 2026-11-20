@@ -135,7 +135,7 @@ const TABLE_NAME = 'slowpace_members';
     flex-direction: column;
   }
 
-  /* 電腦與平板視窗：Header / Footer 全闊，按鈕置中，滾動 Bar 貼在全闊最右邊 */
+  /* 電腦與平板視窗：Header / Footer 背景全闊，內部功能按鈕置中，滾動 Bar 貼在全闊最右邊 */
   @media (min-width: 768px) {
     .app-viewport {
       padding: 0;
@@ -151,9 +151,16 @@ const TABLE_NAME = 'slowpace_members';
       box-shadow: none;
     }
 
-    /* 將 Header 與 Footer 內部第一層容器/功能列置中，背景仍維持全闊 */
+    /* 讓 Header 與 Footer 元件本身保持 100% 全闊，左右背景色完整延伸 */
     .app-header-wrapper > *,
     .app-footer-wrapper > * {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* 只將元件內部的第一層內容/按鈕列置中，避免裁切兩側背景色 */
+    .app-header-wrapper > * > *,
+    .app-footer-wrapper > * > * {
       width: 100%;
       max-width: 1120px; /* 可依需求調整中間功能按鈕區塊寬度 */
       margin-left: auto;
