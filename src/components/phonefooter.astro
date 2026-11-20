@@ -10,33 +10,21 @@ const navItems = [
 ];
 ---
 
-<footer style="display: flex; justify-content: center; width: 100%; ">
-  <!-- 導覽列本體：使用 100% 寬度，透過父層容器來限制最大寬度 -->
-  <div style="display: flex; align-items: center; background: #ffffff; border: 1px solid #f0ebe1; border-radius: 0px; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-    <div style="flex: 1; display: flex; justify-content: space-around; padding: 8px 12px; box-sizing: border-box;">
+<footer class="slowpace-footer">
+  <!-- 白色背景全闊延伸層 -->
+  <div class="slowpace-footer-bar">
+    <!-- 按鈕容器：手機全寬，桌機置中對齊 -->
+    <div class="slowpace-footer-inner">
       {
         navItems.map((item) => {
           const isActive = currentPath === item.href;
 
           return (
-            <a 
-              href={item.href} 
-              style={`
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                text-decoration: none; 
-                font-size: 11px; 
-                gap: 2px; 
-                padding: 6px 12px; 
-                border-radius: 12px;
-                color: ${isActive ? '#6b8e23' : '#8c8275'};
-                font-weight: ${isActive ? '600' : 'normal'};
-                background: ${isActive ? '#f4efe6' : 'transparent'};
-                transition: background 0.2s, color 0.2s;
-              `}
+            <a
+              href={item.href}
+              class:list={['slowpace-footer-link', { 'is-active': isActive }]}
             >
-              <span style="font-size: 16px;">{item.icon}</span>
+              <span class="slowpace-footer-icon">{item.icon}</span>
               <span>{item.label}</span>
             </a>
           );
@@ -45,3 +33,73 @@ const navItems = [
     </div>
   </div>
 </footer>
+
+<style>
+  .slowpace-footer {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 導覽列背景全闊，確保左右兩側也是白色底色 */
+  .slowpace-footer-bar {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-top: 1px solid #f0ebe1;
+    border-bottom: 1px solid #f0ebe1;
+    border-left: none;
+    border-right: none;
+    border-radius: 0px;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  }
+
+  /* 按鈕列：預設手機版滿寬平均分佈 */
+  .slowpace-footer-inner {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 12px;
+    box-sizing: border-box;
+  }
+
+  .slowpace-footer-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    font-size: 11px;
+    gap: 2px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    color: #8c8275;
+    font-weight: normal;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .slowpace-footer-link.is-active {
+    color: #6b8e23;
+    font-weight: 600;
+    background: #f4efe6;
+  }
+
+  .slowpace-footer-icon {
+    font-size: 16px;
+  }
+
+  /* 電腦視窗：背景維持全闊，功能按鈕置中 */
+  @media (min-width: 768px) {
+    .slowpace-footer-inner {
+      flex: none;
+      max-width: 1120px; /* 可依需求調整中間按鈕區塊寬度 */
+      margin: 0 auto;
+      justify-content: space-around;
+    }
+  }
+</style>
