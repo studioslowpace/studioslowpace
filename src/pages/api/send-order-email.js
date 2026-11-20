@@ -1,13 +1,4 @@
-import type { APIRoute } from "astro";
-
-interface OrderItem {
-  title: string;
-  quantity: number;
-  price: number;
-  currency?: string;
-}
-
-export const POST: APIRoute = async ({ request }) => {
+export async function POST({ request }) {
   try {
     const {
       orderId,
@@ -55,7 +46,7 @@ export const POST: APIRoute = async ({ request }) => {
     const formattedTotal = Number(totalPrice || 0).toFixed(2);
 
     const itemsText = items
-      .map((item: OrderItem) => {
+      .map((item) => {
         const curr = item.currency || "HK$";
         const qty = Number(item.quantity || 1);
         const unitPrice = Number(item.price || 0);
@@ -121,7 +112,7 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("訂單寄信 API 發生例外錯誤:", err?.message || err);
     return new Response(
       JSON.stringify({
@@ -134,4 +125,4 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
   }
-};
+}
