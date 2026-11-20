@@ -4,7 +4,7 @@ import Layout from '../layouts/BaseLayout.astro';
 
 <Layout title="個人會員專區 · 空間客舍">
   <div class="profile-viewport">
-    
+
     <!-- 頂端導航列 -->
     <header class="profile-navbar">
       <a href="/slowplace" class="back-btn">
@@ -23,17 +23,63 @@ import Layout from '../layouts/BaseLayout.astro';
 
     <!-- 主內容區塊 (預設隱藏) -->
     <main id="profile-content" class="profile-main-grid" style="display: none;">
-      
-      <!-- ================= 左側欄：個人名片與重點數據 ================= -->
+
+      <!-- ================= 左側欄：客舍空間捷徑與操作面板 ================= -->
       <aside class="profile-left-col">
-        <!-- 讀者名片卡片 -->
-        <div class="card profile-card">
-          <div class="avatar-wrapper">
-            <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" class="profile-avatar" />
-            <div id="profile-tier-badge" class="tier-badge">🌱 鄰里人</div>
+        <div class="card nav-hub-card">
+          <h2 class="card-title">🏮 客舍空間捷徑</h2>
+          <p class="card-desc">從個人專區快速前往客舍各處。</p>
+          <div class="hub-links">
+            <a href="/slowplace" class="hub-link-item">
+              <span class="hub-icon">🪑</span>
+              <span class="hub-text">
+                <strong>自由空間</strong>
+                <small>入座木椅計時、共讀桌與館藏書架</small>
+              </span>
+              <span class="hub-arrow">→</span>
+            </a>
+            <a href="/chatroom" class="hub-link-item">
+              <span class="hub-icon">💬</span>
+              <span class="hub-text">
+                <strong>客舍聊天室</strong>
+                <small>與旅人交流與查看私訊</small>
+              </span>
+              <span class="hub-arrow">→</span>
+            </a>
+            <a href="/record" class="hub-link-item">
+              <span class="hub-icon">📜</span>
+              <span class="hub-text">
+                <strong>我的閱讀記錄</strong>
+                <small>管理書單、頁數進度與累積時數</small>
+              </span>
+              <span class="hub-arrow">→</span>
+            </a>
           </div>
-          <h1 id="profile-name-display" class="profile-name">旅人</h1>
-          <p id="profile-role-display" class="profile-role">☁️ 晴空選書</p>
+        </div>
+
+        <!-- 空間精神小語卡片 -->
+        <div class="card quote-card">
+          <div class="quote-symbol">“</div>
+          <p class="quote-text">閱讀不是為了抵達終點，而是為自己在吵雜的世界裡，闢出一塊安靜的角落。</p>
+          <div class="quote-author">—— 空間客舍 Slow Pace Studio</div>
+        </div>
+      </aside>
+
+      <!-- ================= 右側欄：讀者名片、閱讀時間概覽、走勢圖與資料 ================= -->
+      <section class="profile-right-col">
+
+        <!-- 讀者名片卡片（放右側） -->
+        <div class="card profile-card">
+          <div class="profile-card-top">
+            <div class="avatar-wrapper">
+              <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" class="profile-avatar" />
+              <div id="profile-tier-badge" class="tier-badge">🌱 鄰里人</div>
+            </div>
+            <div class="profile-identity">
+              <h1 id="profile-name-display" class="profile-name">旅人</h1>
+              <p id="profile-role-display" class="profile-role">☁️ 晴空選書</p>
+            </div>
+          </div>
 
           <div class="quick-actions">
             <button type="button" id="toggle-edit-profile-btn" class="action-btn">✏️ 編輯資料</button>
@@ -41,7 +87,7 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <!-- 閱讀統計看板 -->
+        <!-- 閱讀統計看板 + 走勢圖按鈕（放右側） -->
         <div class="card stats-card">
           <h2 class="card-title">📖 閱讀時間概覽</h2>
           <div class="stats-grid">
@@ -62,19 +108,57 @@ import Layout from '../layouts/BaseLayout.astro';
             </div>
           </div>
 
-          <!-- 關鍵功能：閱讀足跡圖示按鈕 -->
+          <!-- 閱讀足跡圖示按鈕 -->
           <button type="button" id="btn-toggle-chart" class="chart-toggle-btn">
             <span class="btn-left">
               <span class="icon">📊</span>
-              <span>查看本月閱讀走勢圖</span>
+              <span>本月閱讀走勢圖</span>
             </span>
             <span id="chart-arrow" class="arrow">▼</span>
           </button>
         </div>
 
-        <!-- 個人隱私資料檢視 -->
+        <!-- 折疊展開區塊：當月閱讀走勢二維平面直條圖 -->
+        <div id="chart-section" class="card chart-card" style="display: none;">
+          <div class="chart-header">
+            <div>
+              <h2 class="card-title" id="chart-month-title">📅 本月閱讀每日走勢</h2>
+              <p class="card-desc">X 軸為日期、Y 軸為閱讀時長；懸浮或點擊長條可查看當日紀錄。</p>
+            </div>
+            <div class="chart-meta-badges">
+              <span id="selected-day-readout" class="selected-day-tag">點選長條查看日期</span>
+              <span id="display-month-total" class="month-total-tag">本月總計：0分</span>
+            </div>
+          </div>
+
+          <!-- 二維平面直條圖容器 (Y軸刻度 + 格線 + 垂直長條 + X軸日期) -->
+          <div class="chart-scroll-area">
+            <div class="cartesian-chart">
+              <div class="y-axis-column" aria-hidden="true">
+                <span id="y-axis-max">60分</span>
+                <span id="y-axis-mid">30分</span>
+                <span>0分</span>
+              </div>
+
+              <div class="plot-and-x-axis">
+                <div class="plot-grid-lines" aria-hidden="true">
+                  <div class="grid-line"></div>
+                  <div class="grid-line"></div>
+                  <div class="grid-line grid-line--base"></div>
+                </div>
+                <div id="monthly-bar-chart" class="bar-chart-wrapper" role="img" aria-label="當月每日閱讀時間平面直條圖"></div>
+                <div class="axis-caption-row">
+                  <span class="axis-caption">← X 軸：日期（日）→</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 聯絡資訊卡片 -->
         <div class="card info-card">
-          <h3 class="card-subtitle">聯絡資訊</h3>
+          <h2 class="card-title">✉️ 聯絡資訊</h2>
+          <p class="card-desc">你的會員聯絡資料與帳號資訊。</p>
           <ul class="info-list">
             <li>
               <span class="info-label">電子信箱</span>
@@ -90,33 +174,11 @@ import Layout from '../layouts/BaseLayout.astro';
             </li>
           </ul>
         </div>
-      </aside>
-
-      <!-- ================= 右側欄：月走勢圖表與表單編輯 ================= -->
-      <section class="profile-right-col">
-
-        <!-- 折疊展開區塊：當月閱讀走勢直條圖 -->
-        <div id="chart-section" class="card chart-card" style="display: none;">
-          <div class="chart-header">
-            <div>
-              <h2 class="card-title" id="chart-month-title">📅 本月閱讀每日走勢</h2>
-              <p class="card-desc">直條高度代表當天累積的閱讀時間，懸浮或點擊可查看具體時數。</p>
-            </div>
-            <div class="chart-month-selector">
-              <span id="display-month-total" class="month-total-tag">本月總計：0分</span>
-            </div>
-          </div>
-
-          <!-- 直條圖容器 -->
-          <div class="chart-container">
-            <div id="monthly-bar-chart" class="bar-chart-wrapper"></div>
-          </div>
-        </div>
 
         <!-- 修改個人資料表單 (預設隱藏) -->
         <form id="profile-form" class="card form-card" style="display: none;">
           <h2 class="card-title">✏️ 編輯個人資料</h2>
-          
+
           <div class="form-group">
             <label class="form-label" for="edit-name">客舍稱號</label>
             <input type="text" id="edit-name" maxlength="12" required placeholder="請輸入您的稱號" />
@@ -168,7 +230,7 @@ import Layout from '../layouts/BaseLayout.astro';
         <!-- 修改密碼表單 (預設隱藏) -->
         <div id="password-form-container" class="card form-card" style="display: none;">
           <h2 class="card-title">🔒 變更會員密碼</h2>
-          
+
           <div class="form-group">
             <label class="form-label" for="new-password">新密碼 (至少 6 位數)</label>
             <div class="pwd-input-wrapper">
@@ -190,30 +252,22 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <!-- 空間精神小語卡片 -->
-        <div class="card quote-card">
-          <div class="quote-symbol">“</div>
-          <p class="quote-text">閱讀不是為了抵達終點，而是為自己在吵雜的世界裡，闢出一塊安靜的角落。</p>
-          <div class="quote-author">—— 空間客舍 Slow Pace Studio</div>
-        </div>
-
       </section>
     </main>
   </div>
 
   <style>
-    /* CSS Variables Design Tokens */
     :root {
       --bg-base: #FAF7F2;
       --bg-card: #FFFFFF;
       --bg-subtle: #F4EFE6;
       --border-color: #E8E2D5;
       --border-active: #C5BBAA;
-      
+
       --text-main: #2C241D;
       --text-muted: #8C8275;
       --text-light: #A3998E;
-      
+
       --accent-brand: #52796F;
       --accent-hover: #354F52;
       --accent-warm: #DDA15E;
@@ -226,20 +280,18 @@ import Layout from '../layouts/BaseLayout.astro';
       --radius-sm: 10px;
     }
 
-    /* 滿版 Viewport 基礎設定 */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       background-color: var(--bg-base);
       color: var(--text-main);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      box-sizing: border-box;
     }
 
-    *, *:before, *:after {
-      box-sizing: inherit;
+    *, *::before, *::after {
+      box-sizing: border-box;
     }
 
     .profile-viewport {
@@ -250,29 +302,31 @@ import Layout from '../layouts/BaseLayout.astro';
       background-color: var(--bg-base);
     }
 
-    /* 頂端 Full-width Navbar */
+    /* 頂端導航列 */
     .profile-navbar {
       width: 100%;
-      height: 64px;
-      padding: 0 24px;
-      background: rgba(255, 255, 255, 0.85);
+      min-height: 64px;
+      padding: 10px 24px;
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
       position: sticky;
       top: 0;
       z-index: 40;
     }
 
     .back-btn {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 500;
       padding: 6px 14px;
       border-radius: var(--radius-sm);
@@ -310,7 +364,7 @@ import Layout from '../layouts/BaseLayout.astro';
       border-color: #F8D7DA;
     }
 
-    /* Loading 載入動畫狀態 */
+    /* 載入狀態 */
     .state-container {
       flex: 1;
       display: flex;
@@ -320,6 +374,7 @@ import Layout from '../layouts/BaseLayout.astro';
       gap: 16px;
       color: var(--text-muted);
       font-size: 0.95rem;
+      padding: 40px 16px;
     }
 
     .spinner {
@@ -335,16 +390,23 @@ import Layout from '../layouts/BaseLayout.astro';
       to { transform: rotate(360deg); }
     }
 
-    /* 主內容自適應 Layout RWD Grid */
+    /* 全闊自適應雙欄佈局 */
     .profile-main-grid {
       width: 100%;
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 24px;
       flex: 1;
+      padding: 24px;
       display: grid;
-      grid-template-columns: 340px 1fr;
+      grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
       gap: 24px;
+      align-items: start;
+    }
+
+    .profile-left-col,
+    .profile-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
     }
 
     @media (max-width: 900px) {
@@ -353,16 +415,21 @@ import Layout from '../layouts/BaseLayout.astro';
         padding: 16px;
         gap: 16px;
       }
+
+      .brand-title {
+        order: -1;
+        width: 100%;
+        text-align: center;
+      }
     }
 
-    /* 通用卡片容器 Base Card Style */
+    /* 通用卡片 */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: 22px;
       box-shadow: var(--shadow-sm);
-      margin-bottom: 20px;
       transition: box-shadow 0.2s ease;
     }
 
@@ -371,16 +438,9 @@ import Layout from '../layouts/BaseLayout.astro';
     }
 
     .card-title {
-      font-size: 1.1rem;
+      font-size: 1.08rem;
       font-weight: 700;
       margin: 0 0 6px 0;
-      color: var(--text-main);
-    }
-
-    .card-subtitle {
-      font-size: 0.95rem;
-      font-weight: 600;
-      margin: 0 0 12px 0;
       color: var(--text-main);
     }
 
@@ -390,22 +450,90 @@ import Layout from '../layouts/BaseLayout.astro';
       margin: 0 0 16px 0;
     }
 
-    /* 1. 左側欄：個人名片 */
-    .profile-card {
-      text-align: center;
+    /* 左側空間捷徑 */
+    .hub-links {
       display: flex;
       flex-direction: column;
+      gap: 10px;
+    }
+
+    .hub-link-item {
+      display: flex;
       align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .hub-link-item:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-active);
+      transform: translateX(2px);
+    }
+
+    .hub-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+    }
+
+    .hub-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .hub-text strong {
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .hub-text small {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .hub-arrow {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* 右側讀者名片 */
+    .profile-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .profile-card-top {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
     }
 
     .avatar-wrapper {
       position: relative;
-      margin-bottom: 12px;
+      flex-shrink: 0;
     }
 
     .profile-avatar {
-      width: 84px;
-      height: 84px;
+      width: 78px;
+      height: 78px;
       border-radius: 50%;
       object-fit: cover;
       background: var(--bg-subtle);
@@ -428,28 +556,33 @@ import Layout from '../layouts/BaseLayout.astro';
       color: var(--text-main);
     }
 
+    .profile-identity {
+      flex: 1;
+      min-width: 160px;
+    }
+
     .profile-name {
       font-size: 1.35rem;
       font-weight: 700;
-      margin: 8px 0 2px 0;
+      margin: 0 0 4px 0;
     }
 
     .profile-role {
-      font-size: 0.85rem;
+      font-size: 0.86rem;
       color: var(--text-muted);
-      margin: 0 0 16px 0;
+      margin: 0;
     }
 
     .quick-actions {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
     }
 
     .action-btn {
       flex: 1;
-      padding: 9px 0;
-      font-size: 0.82rem;
+      padding: 10px 12px;
+      font-size: 0.84rem;
       font-weight: 600;
       border-radius: var(--radius-sm);
       border: 1px solid var(--accent-brand);
@@ -474,12 +607,18 @@ import Layout from '../layouts/BaseLayout.astro';
       background: var(--bg-subtle);
     }
 
-    /* 2. 閱讀時間概覽 */
+    /* 右側閱讀時間概覽 */
     .stats-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
       margin-bottom: 16px;
+    }
+
+    @media (max-width: 540px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .stat-box {
@@ -489,7 +628,7 @@ import Layout from '../layouts/BaseLayout.astro';
       background: var(--bg-base);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 12px 16px;
+      padding: 14px 16px;
     }
 
     .stat-icon {
@@ -520,12 +659,12 @@ import Layout from '../layouts/BaseLayout.astro';
     }
 
     .stat-value {
-      font-size: 1.1rem;
+      font-size: 1.12rem;
       font-weight: 700;
       color: var(--text-main);
     }
 
-    /* 關鍵按鈕：閱讀走勢圖圖示按鈕 */
+    /* 閱讀走勢圖按鈕 */
     .chart-toggle-btn {
       width: 100%;
       padding: 12px 16px;
@@ -563,21 +702,23 @@ import Layout from '../layouts/BaseLayout.astro';
       transform: rotate(180deg);
     }
 
-    /* 3. 個人隱私資訊清單 */
+    /* 右側聯絡資訊卡片 */
     .info-list {
       list-style: none;
       padding: 0;
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     .info-list li {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
-      padding-bottom: 8px;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.88rem;
+      padding-bottom: 10px;
       border-bottom: 1px dashed var(--border-color);
     }
 
@@ -588,23 +729,46 @@ import Layout from '../layouts/BaseLayout.astro';
 
     .info-label {
       color: var(--text-muted);
+      flex-shrink: 0;
     }
 
     .info-val {
-      font-weight: 500;
+      font-weight: 600;
       color: var(--text-main);
+      word-break: break-word;
+      text-align: right;
     }
 
-    /* 4. 右側欄：月走勢圖表與 Bar Chart */
+    /* 二維平面直條圖樣式 */
     .chart-card {
       background: #FFFFFF;
+      animation: fadeIn 0.25s ease;
     }
 
     .chart-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .chart-meta-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .selected-day-tag {
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-main);
     }
 
     .month-total-tag {
@@ -612,27 +776,76 @@ import Layout from '../layouts/BaseLayout.astro';
       border: 1px solid var(--border-color);
       padding: 4px 12px;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--accent-brand);
     }
 
-    .chart-container {
+    .chart-scroll-area {
       width: 100%;
       overflow-x: auto;
-      padding: 10px 0;
+      padding-bottom: 6px;
     }
 
-    /* 自製輕量柱狀圖 CSS Bar Chart */
+    .cartesian-chart {
+      display: flex;
+      align-items: stretch;
+      min-width: 680px;
+      padding-top: 28px;
+    }
+
+    .y-axis-column {
+      width: 54px;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-right: 10px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .plot-and-x-axis {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .plot-grid-lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .grid-line {
+      width: 100%;
+      border-top: 1px dashed rgba(140, 130, 117, 0.25);
+    }
+
+    .grid-line--base {
+      border-top: 1.5px solid var(--border-active);
+    }
+
     .bar-chart-wrapper {
       display: flex;
       align-items: flex-end;
-      gap: 6px;
+      gap: 4px;
       height: 180px;
-      min-width: 600px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--border-color);
+      padding: 0 4px;
       position: relative;
+      z-index: 1;
     }
 
     .bar-col {
@@ -648,32 +861,57 @@ import Layout from '../layouts/BaseLayout.astro';
 
     .bar-item {
       width: 100%;
-      max-width: 18px;
+      max-width: 16px;
       background: var(--accent-brand);
       border-radius: 4px 4px 0 0;
-      transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
+      transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
       min-height: 2px;
     }
 
-    .bar-col:hover .bar-item {
+    .bar-col:hover .bar-item,
+    .bar-col.active-bar .bar-item {
       background: var(--accent-warm);
     }
 
     .bar-col.today .bar-item {
-      background: var(--accent-warm);
+      outline: 2px solid rgba(221, 161, 94, 0.45);
+      outline-offset: 1px;
     }
 
-    .bar-label {
-      position: absolute;
-      bottom: -22px;
+    .x-axis-row {
+      display: flex;
+      gap: 4px;
+      padding: 6px 4px 0 4px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .x-tick-label {
+      flex: 1;
+      text-align: center;
       font-size: 0.68rem;
       color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
     }
 
-    /* Tooltip 懸浮顯示具體時間 */
+    .x-tick-label.today {
+      color: var(--accent-warm);
+      font-weight: 700;
+    }
+
+    .axis-caption-row {
+      margin-top: 6px;
+      text-align: right;
+    }
+
+    .axis-caption {
+      font-size: 0.7rem;
+      color: var(--text-light);
+    }
+
     .bar-tooltip {
       position: absolute;
-      top: -32px;
+      top: -30px;
       background: var(--text-main);
       color: #FFFFFF;
       padding: 3px 8px;
@@ -682,15 +920,16 @@ import Layout from '../layouts/BaseLayout.astro';
       white-space: nowrap;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s ease;
-      z-index: 10;
+      transition: opacity 0.18s ease;
+      z-index: 20;
     }
 
-    .bar-col:hover .bar-tooltip {
+    .bar-col:hover .bar-tooltip,
+    .bar-col.active-bar .bar-tooltip {
       opacity: 1;
     }
 
-    /* 5. 表單 Form Cards */
+    /* 表單卡片 */
     .form-card {
       animation: fadeIn 0.3s ease;
     }
@@ -707,6 +946,13 @@ import Layout from '../layouts/BaseLayout.astro';
     .form-row {
       display: flex;
       gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
     }
 
     .form-row .form-group {
@@ -754,7 +1000,7 @@ import Layout from '../layouts/BaseLayout.astro';
       border: none;
       cursor: pointer;
       font-size: 0.9rem;
-      opacity: 0.6;
+      opacity: 0.65;
     }
 
     .eye-btn:hover {
@@ -825,7 +1071,7 @@ import Layout from '../layouts/BaseLayout.astro';
       cursor: pointer;
     }
 
-    /* Quote Card 精神小語 */
+    /* 精神小語 */
     .quote-card {
       background: linear-gradient(135deg, #F4EFE6 0%, #E8E2D5 100%);
       border: none;
@@ -844,7 +1090,7 @@ import Layout from '../layouts/BaseLayout.astro';
 
     .quote-text {
       font-size: 0.95rem;
-      line-height: 1.6;
+      line-height: 1.65;
       font-style: italic;
       color: var(--text-main);
       margin: 0 0 10px 0;
@@ -871,7 +1117,6 @@ import Layout from '../layouts/BaseLayout.astro';
     let currentUserId: string | null = null;
     let currentProfile: any = null;
 
-    // 格式化秒數為時分
     function formatReadingDuration(seconds = 0): string {
       const safeSec = Math.max(0, Math.floor(Number(seconds) || 0));
       const totalMinutes = Math.floor(safeSec / 60);
@@ -911,26 +1156,27 @@ import Layout from '../layouts/BaseLayout.astro';
         }));
     }
 
-    // 關鍵功能：渲染「當月每日閱讀時間直條圖 (Monthly Bar Chart)」
     function renderMonthlyBarChart(logs: { date: string; seconds: number }[]) {
       const chartWrapper = document.getElementById('monthly-bar-chart');
+      const plotContainer = chartWrapper?.parentElement;
       const monthTitle = document.getElementById('chart-month-title');
       const monthTotalEl = document.getElementById('display-month-total');
-      if (!chartWrapper) return;
+      const selectedReadoutEl = document.getElementById('selected-day-readout');
+      const yMaxEl = document.getElementById('y-axis-max');
+      const yMidEl = document.getElementById('y-axis-mid');
+
+      if (!chartWrapper || !plotContainer) return;
 
       const now = new Date();
       const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth(); // 0-11
+      const currentMonth = now.getMonth();
       const todayStr = getTodayDateString();
 
       if (monthTitle) {
         monthTitle.textContent = `📅 ${currentYear}年 ${currentMonth + 1}月 每日閱讀走勢圖`;
       }
 
-      // 算當月天數
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      
-      // 整理當月每日秒數 Map
       const daySecondsMap = new Map<number, number>();
       let monthTotalSec = 0;
 
@@ -946,29 +1192,58 @@ import Layout from '../layouts/BaseLayout.astro';
         monthTotalEl.textContent = `本月總計：${formatReadingDuration(monthTotalSec)}`;
       }
 
-      // 找出當月最大值來做比例縮放 (最高 bar 佔 100%)
-      let maxSec = Math.max(...Array.from(daySecondsMap.values()), 1800); // 至少 30 分鐘作為預設對比基準
+      const maxRecordedSec = Math.max(...Array.from(daySecondsMap.values()), 0);
+      const yAxisMaxSec = Math.max(maxRecordedSec, 1800);
 
-      let chartHtml = '';
+      if (yMaxEl) yMaxEl.textContent = formatReadingDuration(yAxisMaxSec);
+      if (yMidEl) yMidEl.textContent = formatReadingDuration(Math.floor(yAxisMaxSec / 2));
+
+      let barsHtml = '';
+      let xTicksHtml = '';
+
       for (let day = 1; day <= daysInMonth; day++) {
         const sec = daySecondsMap.get(day) || 0;
-        const heightPercent = Math.min(100, Math.max(2, Math.round((sec / maxSec) * 100)));
+        const heightPercent = sec > 0 ? Math.min(100, Math.max(4, Math.round((sec / yAxisMaxSec) * 100))) : 0;
         const dayFormatted = String(day).padStart(2, '0');
-        const isToday = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${dayFormatted}` === todayStr;
+        const fullDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${dayFormatted}`;
+        const isToday = fullDateStr === todayStr;
+        const formattedSec = formatReadingDuration(sec);
 
-        chartHtml += `
-          <div class="bar-col ${isToday ? 'today' : ''}" title="${day}日: ${formatReadingDuration(sec)}">
-            <div class="bar-tooltip">${day}日 · ${formatReadingDuration(sec)}</div>
+        barsHtml += `
+          <div class="bar-col ${isToday ? 'today' : ''}" data-label="${currentMonth + 1}/${day} · ${formattedSec}">
+            <div class="bar-tooltip">${currentMonth + 1}/${day} · ${formattedSec}</div>
             <div class="bar-item" style="height: ${heightPercent}%;"></div>
-            <span class="bar-label">${day}</span>
           </div>
+        `;
+
+        xTicksHtml += `
+          <div class="x-tick-label ${isToday ? 'today' : ''}">${day}</div>
         `;
       }
 
-      chartWrapper.innerHTML = chartHtml;
+      chartWrapper.innerHTML = barsHtml;
+
+      let existingXRow = plotContainer.querySelector('.x-axis-row');
+      if (!existingXRow) {
+        existingXRow = document.createElement('div');
+        existingXRow.className = 'x-axis-row';
+        const captionRow = plotContainer.querySelector('.axis-caption-row');
+        plotContainer.insertBefore(existingXRow, captionRow || null);
+      }
+      existingXRow.innerHTML = xTicksHtml;
+
+      chartWrapper.querySelectorAll('.bar-col').forEach(col => {
+        col.addEventListener('click', () => {
+          chartWrapper.querySelectorAll('.bar-col').forEach(c => c.classList.remove('active-bar'));
+          col.classList.add('active-bar');
+          const labelText = col.getAttribute('data-label') || '';
+          if (selectedReadoutEl && labelText) {
+            selectedReadoutEl.textContent = `已選：${labelText}`;
+          }
+        });
+      });
     }
 
-    // 初始化與控制按鈕事件 Bindings
     function setupUIEvents() {
       const btnToggleChart = document.getElementById('btn-toggle-chart');
       const chartSection = document.getElementById('chart-section');
@@ -978,19 +1253,17 @@ import Layout from '../layouts/BaseLayout.astro';
       const passwordFormContainer = document.getElementById('password-form-container');
       const logoutBtn = document.getElementById('profile-logout-btn');
 
-      // 點擊圖示按鈕展開／收起走勢圖
       btnToggleChart?.addEventListener('click', () => {
         if (!chartSection) return;
         const isHidden = chartSection.style.display === 'none';
         chartSection.style.display = isHidden ? 'block' : 'none';
         btnToggleChart.classList.toggle('active', isHidden);
-        
+
         if (isHidden) {
           chartSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       });
 
-      // 編輯個人資料按鈕
       toggleEditProfileBtn?.addEventListener('click', () => {
         if (!profileForm) return;
         const isHidden = profileForm.style.display === 'none';
@@ -998,7 +1271,6 @@ import Layout from '../layouts/BaseLayout.astro';
         if (isHidden) profileForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
 
-      // 修改密碼按鈕
       toggleEditPasswordBtn?.addEventListener('click', () => {
         if (!passwordFormContainer) return;
         const isHidden = passwordFormContainer.style.display === 'none';
@@ -1006,14 +1278,12 @@ import Layout from '../layouts/BaseLayout.astro';
         if (isHidden) passwordFormContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       });
 
-      // 登出
       logoutBtn?.addEventListener('click', async () => {
         await supabase.auth.signOut();
         localStorage.clear();
         window.location.href = '/slowplace';
       });
 
-      // 密碼切換按鈕
       setupPasswordToggle('new-password', 'toggle-pwd-1');
       setupPasswordToggle('new-password-confirm', 'toggle-pwd-2');
     }
@@ -1032,13 +1302,12 @@ import Layout from '../layouts/BaseLayout.astro';
       });
     }
 
-    // 載入 Auth 與 Profile 資料
     async function initProfile() {
       const loadingState = document.getElementById('loading-state');
       const profileContent = document.getElementById('profile-content');
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session || !session.user) {
         alert('您尚未登入，請先前往客舍空間進行登入。');
         window.location.href = '/slowplace';
@@ -1082,7 +1351,7 @@ import Layout from '../layouts/BaseLayout.astro';
 
       const dailyReadingEl = document.getElementById('display-daily-reading');
       const totalReadingEl = document.getElementById('display-total-reading');
-      
+
       const displayEmail = document.getElementById('display-email');
       const displayPhone = document.getElementById('display-phone');
       const displayIg = document.getElementById('display-ig');
@@ -1114,13 +1383,12 @@ import Layout from '../layouts/BaseLayout.astro';
       if (dailyReadingEl) dailyReadingEl.textContent = formatReadingDuration(rawDailySec);
       if (totalReadingEl) totalReadingEl.textContent = formatReadingDuration(rawTotalSec);
 
-      // 渲染月閱讀走勢柱狀圖
       renderMonthlyBarChart(logs);
 
       if (displayEmail) displayEmail.textContent = currentProfile.email;
       if (displayPhone) displayPhone.textContent = currentProfile.phone || '未填寫';
       if (displayIg) displayIg.textContent = currentProfile.ig || '未填寫';
-      
+
       if (editName) editName.value = currentProfile.name || '';
       if (editRole) editRole.value = currentProfile.role || '☁️ 晴空選書';
       if (editPhone) editPhone.value = currentProfile.phone || '';
@@ -1141,7 +1409,6 @@ import Layout from '../layouts/BaseLayout.astro';
       });
     }
 
-    // 提交編輯個人資料
     document.getElementById('profile-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentUserId) return;
@@ -1193,7 +1460,6 @@ import Layout from '../layouts/BaseLayout.astro';
       }
     });
 
-    // 變更密碼
     document.getElementById('update-password-btn')?.addEventListener('click', async () => {
       const newPassword = (document.getElementById('new-password') as HTMLInputElement).value.trim();
       const newPasswordConfirm = (document.getElementById('new-password-confirm') as HTMLInputElement).value.trim();
