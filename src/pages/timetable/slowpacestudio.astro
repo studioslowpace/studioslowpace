@@ -1,4 +1,3 @@
----
 // 匯入 Layout
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
@@ -175,13 +174,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             display: inline-block;
         }
 
-        /* 月份網格選單：預設隱藏、單欄直向排列、安全高度與捲軸 */
+        /* 月份網格選單：預設隱藏、單欄直向排列、安全高度與滾動條 */
         .month-select-grid {
             display: none; 
             position: absolute;
             top: calc(100% + 6px); 
             left: 0;
-            z-index: 9999; 
+            z-index: 9999; /* 確保浮在最上層，不被其他區塊遮擋 */
             
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -192,10 +191,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             flex-direction: column;
             gap: 8px; 
             
-            /* 設定最大高度並允許捲動 */
-            max-height: 300px; 
+            /* 調整最大高度，確保所有月份都能夠完整顯示並透過捲軸上下移動 */
+            max-height: 280px; 
             overflow-y: auto; 
-            width: 200px; 
+            width: 180px; 
             box-sizing: border-box;
         }
 
@@ -374,7 +373,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <div class="container">
     <div class="header-section">
-        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (靠齊底部基準線 baseline) -->
+        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (精準靠齊底部基準線 baseline) -->
         <div class="title-area">
             <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 45px; height: 45px;" oncontextmenu="return false;" ondragstart="return false;">
             <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
@@ -555,13 +554,6 @@ async function fetchData() {
             months: data.calendar_months || [],
             types: data.calendar_types || []
         };
-        
-        // 確保當前月份如果不在資料庫的 months 清單內，自動補上並排序，避免本月無法選取
-        if (!dbData.months.includes(currentMonth)) {
-            dbData.months.push(currentMonth);
-            dbData.months.sort();
-        }
-
         renderCalendar();
         renderLegend();
         renderMonthList();
@@ -575,7 +567,7 @@ function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     const [year, month] = currentMonth.split('-').map(Number);
-    document.getElementById('month-display').innerText = `${year}年 ${month}月 ▼`;
+    document.getElementById('month-display').innerText = `${year}年 ${month}月`;
 
     const firstDay = new Date(year, month - 1, 1).getDay();
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -693,7 +685,7 @@ window.exportEventImage = function() {
         const headerY = padTop + 5;
         ctx.drawImage(logoImgObj, padX, headerY, logoSize, logoSize);
 
-        // 2. 標題與月份
+        // 2. 標題與月份 (Canvas 繪製與網頁 baseline 一致)
         const [year, month] = currentMonth.split('-').map(Number);
         ctx.fillStyle = '#2b579a';
         ctx.font = 'bold 48px "Noto Sans TC", sans-serif';
@@ -875,15 +867,12 @@ window.addEventListener('click', function(e) {
     }
 });
 
-// 渲染月份清單的函式 (倒序或正序排列所有月份，並確保本月包含在內)
+// 渲染月份清單的函式
 window.renderMonthList = function() {
     const container = document.getElementById('popup-month-list');
     if (!container) return;
     
-    // 確保排序由舊到新或由新到舊
-    const sortedMonths = [...dbData.months].sort();
-
-    container.innerHTML = sortedMonths.map(m => `
+    container.innerHTML = dbData.months.map(m => `
         <button class="month-select-btn ${m === currentMonth ? 'active' : ''}" 
                 onclick="switchMonth('${m}')">
             ${m}
