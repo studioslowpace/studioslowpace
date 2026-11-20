@@ -15,16 +15,18 @@ const TABLE_NAME = 'slowpace_members';
     <title>{title}</title>
   </head>
 <body>
-    <!-- 外層 viewport：支援響應式置中與自動調適 -->
+    <!-- 外層 viewport：支援響應式置中，並讓內部維持固定視窗高度以鎖定 header/footer -->
     <div class="app-viewport">
       <div class="rpg-container">
+        <!-- 固定在頂部 -->
         <Header />
-        <!-- 內容區：內容超出時在內部安全滾動 -->
+
+        <!-- 中間內容區：只有這塊會滾動 -->
         <main class="app-main">
           <slot />
         </main>
 
-        <!-- 底部共用導覽列 -->
+        <!-- 固定在底部 -->
         <div class="app-footer-wrapper">
           <Footer />
         </div>
@@ -52,7 +54,7 @@ const TABLE_NAME = 'slowpace_members';
     box-sizing: border-box; 
   }
 
-  /* 改為自適應視窗高度，不再強制鎖死 100vh 溢位裁切 */
+  /* 鎖死外層視窗高度，讓滾動集中在中間 .app-main */
   html, body {
     background-color: var(--bg-main);
     color: var(--text-color);
@@ -60,27 +62,28 @@ const TABLE_NAME = 'slowpace_members';
     margin: 0; 
     padding: 0; 
     width: 100%;
-    min-height: 100vh; 
-    min-height: 100dvh; 
-    overflow-x: hidden;
+    height: 100vh; 
+    height: 100dvh; 
+    overflow: hidden;
   }
 
-  /* 外層視窗：手機與桌機皆可置中並自適應空間 */
+  /* 外層視窗：置中容器並自適應視窗 */
   .app-viewport { 
     width: 100%; 
-    min-height: 100vh; 
-    min-height: 100dvh; 
+    height: 100vh; 
+    height: 100dvh; 
     display: flex; 
     justify-content: center; 
-    align-items: stretch; 
+    align-items: center; 
     background: var(--bg-main); 
+    overflow: hidden;
   }
   
-  /* 核心容器：手機維持緊湊版面，不強制鎖死上限 */
+  /* 核心容器：手機自適應寬度與高度，不鎖死 430px / 880px */
   .rpg-container {
     width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     display: flex; 
     flex-direction: column; 
     justify-content: space-between; 
@@ -91,23 +94,21 @@ const TABLE_NAME = 'slowpace_members';
     overflow: hidden;
   }
 
-  /* 平板與電腦視窗：自動展開寬度與高度，並留出舒適邊距 */
+  /* 電腦與平板視窗：自動展開寬度，並固定高度讓 header 與 footer 保持不動 */
   @media (min-width: 768px) {
     .app-viewport {
-      align-items: center;
       padding: 20px;
     }
 
     .rpg-container {
       width: 100%;
-      max-width: 1120px; /* 可依需求調整為 960px / 1200px / 100% */
-      min-height: calc(100dvh - 40px);
-      height: auto;
+      max-width: 1120px; /* 可依需求調整寬度上限 */
+      height: calc(100dvh - 40px);
       border-radius: 24px;
     }
   }
 
-  /* 主內容區：保留 flex 排版與內部滾動能力 */
+  /* 中間內容區：佔滿剩餘空間，內容超出時僅在此區滾動 */
   .app-main {
     flex: 1; 
     display: flex;
@@ -115,7 +116,7 @@ const TABLE_NAME = 'slowpace_members';
     overflow-y: auto; 
     overflow-x: auto;
     padding: 0px;
-    min-height: 0;
+    min-height: 0; /* 關鍵：允許 flex 子元素縮放並觸發內部捲軸 */
     width: 100%;
   }
 
@@ -128,7 +129,9 @@ const TABLE_NAME = 'slowpace_members';
     scrollbar-width: none; 
   }
 
+  /* 底部導覽列包裝：固定在 .rpg-container 底部不被壓縮 */
   .app-footer-wrapper {
+    flex-shrink: 0;
     padding: 0px;
     width: 100%;
   }
