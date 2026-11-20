@@ -102,13 +102,13 @@ const sidebarCategories = [
               <div class="category-section">
                 <div class="category-header">
                   <span class="icon">■</span>
-                  <a href={`/?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
+                  <a href={`/products?main_category=${cat.mainSlug}`} class={`cat-name-link ${mainCategory === cat.mainSlug && !subCategory ? 'active' : ''}`}>{cat.title}</a>
                 </div>
                 {cat.items.length > 0 && (
                   <ul class="sub-category-list">
                     {cat.items.map(item => (
                       <li>
-                        <a href={`/?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
+                        <a href={`/products?main_category=${cat.mainSlug}&sub_category=${item.slug}`} class={mainCategory === cat.mainSlug && subCategory === item.slug ? 'active' : ''}>
                           {item.name}
                         </a>
                       </li>
@@ -232,7 +232,7 @@ const sidebarCategories = [
         <div class="form-row">
           <div class="form-group">
             <label>右上角標籤 (Badge)</label>
-            <input type="text" id="prod-badge" placeholder="例如: 界限" />
+            <input type="text" id="prod-badge" placeholder="例如: 空間客舍" />
           </div>
           <div class="form-group">
             <label>圖片網址 (Image URL)</label>
