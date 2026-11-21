@@ -15,6 +15,32 @@ import Layout from '../layouts/Layout.astro';
         
         .hidden { display: none !important; }
 
+/* 覆蓋 Layout 的滾動設定：禁止 Layout 的主區域滾動，改由對話框獨立滾動 */
+.app-main {
+  overflow: hidden !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.app-main-inner {
+  height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* 確保聊天面板外層滿高且不被截斷 */
+main {
+  height: 100% !important;
+  max-height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
         .btn-blue { 
             background-color: #2563eb; 
             color: #ffffff; 
