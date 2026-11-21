@@ -11,44 +11,12 @@ import Layout from '../layouts/BaseLayout.astro';
     <h1 class="page-title">結帳</h1>
 
     <div class="checkout-grid">
-      <!-- 左側：收件人與付款資訊表單 -->
-      <div class="checkout-form-section">
-        <form id="checkout-form">
-          <h3>收件人資訊</h3>
-          <div class="form-group">
-            <label>收件人姓名 *</label>
-            <input type="text" id="name" required placeholder="請輸入全名" />
-          </div>
-          <div class="form-group">
-            <label>電子郵件 *</label>
-            <input type="email" id="email" required placeholder="name@example.com" />
-          </div>
-          <div class="form-group">
-            <label>聯絡電話 *</label>
-            <input type="tel" id="phone" required placeholder="電話號碼" />
-          </div>
-          <div class="form-group">
-            <label>收件地址 / 順豐站代碼 *</label>
-            <textarea id="address" rows="3" required placeholder="請輸入詳細地址或順豐智能櫃/站代碼"></textarea>
-          </div>
-
-          <h3 class="mt-30">付款方式</h3>
-          <div class="payment-options">
-            <label class="radio-label">
-              <input type="radio" name="payment" value="fps" checked /> 轉數快 (FPS) / PayMe
-            </label>
-            <label class="radio-label">
-              <input type="radio" name="payment" value="credit_card" /> 信用卡線上支付
-            </label>
-          </div>
-
-          <button type="submit" class="btn btn-submit-order">確認送出訂單</button>
-        </form>
-      </div>
-
-      <!-- 右側：訂單摘要 -->
-      <div class="checkout-summary-section">
-        <h3>訂單摘要</h3>
+      <!-- 左側：訂單摘要（含縮圖與加減數量） -->
+      <aside class="checkout-summary-section">
+        <div class="summary-header">
+          <h3>訂單摘要</h3>
+          <span id="summary-item-count" class="item-count">0 件</span>
+        </div>
         <div id="checkout-items-list" class="checkout-items-list">
           <!-- JS 動態載入 -->
         </div>
@@ -56,14 +24,73 @@ import Layout from '../layouts/BaseLayout.astro';
           <span>應付總額</span>
           <span id="checkout-total-price" class="total-price">HK$0.00</span>
         </div>
+      </aside>
+
+      <!-- 右側：收件人與付款資訊表單 -->
+      <div class="checkout-form-section">
+        <form id="checkout-form">
+          <h3>顧客資訊</h3>
+          <div class="form-group">
+            <label for="name">姓名 *</label>
+            <input type="text" id="name" required placeholder="請輸入全名" />
+          </div>
+          <div class="form-group">
+            <label for="email">電子郵件 *</label>
+            <input type="email" id="email" required placeholder="name@example.com" />
+          </div>
+          <div class="form-group">
+            <label for="phone">聯絡電話 *</label>
+            <input type="tel" id="phone" required placeholder="請輸入電話號碼" />
+          </div>
+
+          <h3 class="mt-30">取貨 / 送貨方式</h3>
+          <div class="delivery-options">
+            <label class="radio-label option-card">
+              <input type="radio" name="delivery" value="pickup" checked />
+              <div class="option-info">
+                <span class="option-title">店內自取</span>
+                <span class="option-desc">留貨兩星期，開店期間憑單自取</span>
+              </div>
+            </label>
+            <label class="radio-label option-card">
+              <input type="radio" name="delivery" value="shipping" />
+              <div class="option-info">
+                <span class="option-title">郵寄</span>
+                <span class="option-desc">郵費及收件地址會在下單再雙方聯絡確認</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- 選擇郵寄時動態顯示地址輸入欄位 -->
+          <div class="form-group" id="address-group" style="display: none;">
+            <label for="address">收件地址 / 順豐站代碼</label>
+            <textarea id="address" rows="3" placeholder="請輸入詳細郵寄地址或順豐站/智能櫃代碼（下單後會再雙方聯絡確認）"></textarea>
+          </div>
+
+          <h3 class="mt-30">付款方式</h3>
+          <div class="payment-options">
+            <label class="radio-label payment-card">
+              <input type="radio" name="payment" value="fps_payme" checked />
+              <span>轉數快 (FPS) / PayMe</span>
+            </label>
+            <label class="radio-label payment-card">
+              <input type="radio" name="payment" value="cash" />
+              <span>現金</span>
+            </label>
+          </div>
+
+          <button type="submit" id="btn-submit" class="btn btn-submit-order">確認送出訂單</button>
+        </form>
       </div>
     </div>
   </div>
 </Layout>
 
 <script>
+  import { supabase } from '../lib/supabase';
+
   interface CartItem {
-    id: string;
+    id?: string;
     title: string;
     price: number;
     currency: string;
@@ -71,72 +98,538 @@ import Layout from '../layouts/BaseLayout.astro';
     quantity: number;
   }
 
-  const cart: CartItem[] = JSON.parse(localStorage.getItem('cart') || '[]');
+  let cart: CartItem[] = JSON.parse(localStorage.getItem('cart') || '[]');
   const listContainer = document.getElementById('checkout-items-list');
   const totalPriceEl = document.getElementById('checkout-total-price');
+  const itemCountEl = document.getElementById('summary-item-count');
+  const addressGroup = document.getElementById('address-group');
+  const deliveryRadios = document.querySelectorAll('input[name="delivery"]');
+  const form = document.getElementById('checkout-form') as HTMLFormElement;
+  const submitBtn = document.getElementById('btn-submit') as HTMLButtonElement;
 
-  if (cart.length === 0) {
-    alert('您的購物車是空的，將返回首頁');
-    window.location.href = '/';
-  }
+  let calculatedTotal = 0;
 
-  if (listContainer && totalPriceEl) {
+  function saveAndRenderSummary() {
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    if (cart.length === 0) {
+      alert('您的購物車是空的，將返回首頁');
+      window.location.href = '/';
+      return;
+    }
+
+    const totalCount = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    if (itemCountEl) {
+      itemCountEl.innerText = `${totalCount} 件`;
+    }
+
     let html = '';
     let total = 0;
 
-    cart.forEach(item => {
-      const itemTotal = item.price * item.quantity;
+    cart.forEach((item, index) => {
+      const qty = Number(item.quantity || 1);
+      const unitPrice = Number(item.price || 0);
+      const itemTotal = unitPrice * qty;
+      const currency = item.currency || 'HK$';
       total += itemTotal;
+
       html += `
         <div class="summary-item">
-          <span class="summary-item-title">${item.title} × ${item.quantity}</span>
-          <span class="summary-item-price">${item.currency || 'HK$'}${itemTotal.toFixed(2)}</span>
+          <div class="summary-thumb">
+            <img src="${item.image || 'https://via.placeholder.com/90x120'}" alt="${item.title}" />
+          </div>
+          <div class="summary-item-body">
+            <div class="summary-item-title">${item.title}</div>
+            <div class="summary-item-meta">
+              <div class="mini-qty-picker">
+                <button type="button" class="mini-qty-btn dec-btn" data-index="${index}" aria-label="減少數量">-</button>
+                <span class="mini-qty-val">${qty}</span>
+                <button type="button" class="mini-qty-btn inc-btn" data-index="${index}" aria-label="增加數量">+</button>
+              </div>
+              <span class="summary-item-price">${currency}${itemTotal.toFixed(2)}</span>
+            </div>
+          </div>
         </div>
       `;
     });
 
-    listContainer.innerHTML = html;
-    totalPriceEl.innerText = `HK$${total.toFixed(2)}`;
+    calculatedTotal = total;
+
+    if (listContainer) {
+      listContainer.innerHTML = html;
+    }
+    if (totalPriceEl) {
+      totalPriceEl.innerText = `HK$${calculatedTotal.toFixed(2)}`;
+    }
+
+    document.querySelectorAll('.dec-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+        if (!cart[idx]) return;
+        if (cart[idx].quantity > 1) {
+          cart[idx].quantity -= 1;
+        } else {
+          cart.splice(idx, 1);
+        }
+        saveAndRenderSummary();
+      });
+    });
+
+    document.querySelectorAll('.inc-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const idx = Number((e.currentTarget as HTMLElement).dataset.index);
+        if (!cart[idx]) return;
+        cart[idx].quantity += 1;
+        saveAndRenderSummary();
+      });
+    });
   }
 
-  const form = document.getElementById('checkout-form');
-  form?.addEventListener('submit', (e) => {
+  saveAndRenderSummary();
+
+  // 切換店內自取 / 郵寄時顯示或隱藏地址輸入框
+  deliveryRadios.forEach((radio) => {
+    radio.addEventListener('change', (e) => {
+      const val = (e.target as HTMLInputElement).value;
+      if (addressGroup) {
+        addressGroup.style.display = val === 'shipping' ? 'block' : 'none';
+      }
+    });
+  });
+
+  // 提交表單處理
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    // 模擬訂單送出成功
-    alert('🎉 訂單已成功送出！感謝您的購買。');
-    localStorage.removeItem('cart'); // 清空購物車
+
+    if (cart.length === 0) {
+      alert('您的購物車是空的');
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = '處理訂單中...';
+    }
+
+    const nameInput = (document.getElementById('name') as HTMLInputElement).value.trim();
+    const emailInput = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const phoneInput = (document.getElementById('phone') as HTMLInputElement).value.trim();
+    const deliveryMethod = (document.querySelector('input[name="delivery"]:checked') as HTMLInputElement).value;
+    const addressInput = (document.getElementById('address') as HTMLTextAreaElement).value.trim();
+    const paymentMethod = (document.querySelector('input[name="payment"]:checked') as HTMLInputElement).value;
+
+    const deliveryText =
+      deliveryMethod === 'pickup'
+        ? '店內自取 (留貨兩星期，開店期間憑單自取)'
+        : '郵寄 (郵費及收件地址會在下單再雙方聯絡確認)';
+
+    const paymentText =
+      paymentMethod === 'fps_payme' ? '轉數快 (FPS) / PayMe' : '現金';
+
+    const finalAddress =
+      deliveryMethod === 'shipping'
+        ? addressInput || '下單後再雙方聯絡確認'
+        : '店內自取 (留貨兩星期，開店期間憑單自取)';
+
+    // 1. 寫入 Supabase orders 表格
+    const { data: orderData, error: dbError } = await supabase
+      .from('orders')
+      .insert([
+        {
+          customer_name: nameInput,
+          customer_email: emailInput,
+          customer_phone: phoneInput,
+          delivery_method: deliveryText,
+          address: finalAddress,
+          payment_method: paymentText,
+          items: cart,
+          total_price: calculatedTotal,
+          status: 'pending',
+        },
+      ])
+      .select()
+      .single();
+
+    if (dbError) {
+      alert('訂單建立失敗：' + dbError.message);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerText = '確認送出訂單';
+      }
+      return;
+    }
+
+    // 2. 呼叫 Resend API 寄出帳單給買家與店主
+    let emailSent = false;
+    try {
+      const mailRes = await fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: orderData.id,
+          customerName: nameInput,
+          customerEmail: emailInput,
+          customerPhone: phoneInput,
+          deliveryMethod: deliveryText,
+          address: finalAddress,
+          paymentMethod: paymentText,
+          items: cart,
+          totalPrice: calculatedTotal,
+        }),
+      });
+      emailSent = mailRes.ok;
+    } catch (mailErr) {
+      console.error('寄送帳單 Email 失敗:', mailErr);
+    }
+
+    // 3. 清空購物車並提示
+    localStorage.removeItem('cart');
+
+    alert(
+      emailSent
+        ? `🎉 訂單已成功送出！\n訂單編號：#${orderData.id.slice(0, 8)}\n帳單確認信已寄出。`
+        : `🎉 訂單已成功送出！\n訂單編號：#${orderData.id.slice(0, 8)}\n（註：訂單已記錄，但帳單信件未能即時寄出，請留意後台訂單）`
+    );
     window.location.href = '/';
   });
 </script>
 
 <style is:global>
-  .shop-container { max-width: 1000px; margin: 0 auto; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #333; }
-  .breadcrumb { padding: 10px 0; font-size: 14px; color: #666; border-bottom: 1px solid #eee; margin-bottom: 30px; }
+  .shop-container {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    color: #333;
+    box-sizing: border-box;
+  }
+
+  .breadcrumb {
+    padding: 10px 0;
+    font-size: 13px;
+    color: #666;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 24px;
+  }
   .breadcrumb a { color: #666; text-decoration: none; }
+  .breadcrumb a:hover { color: #c99e58; }
   .breadcrumb .sep { margin: 0 8px; color: #ccc; }
-  .page-title { font-size: 22px; font-weight: 400; margin-bottom: 30px; }
 
-  .checkout-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; }
-  @media (max-width: 768px) { .checkout-grid { grid-template-columns: 1fr; } }
+  .page-title {
+    font-size: 22px;
+    font-weight: 400;
+    margin: 0 0 24px;
+    color: #222;
+  }
 
-  .checkout-form-section h3, .checkout-summary-section h3 { font-size: 16px; font-weight: 500; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-  .mt-30 { margin-top: 30px; }
+  /* 桌面版：左邊訂單摘要 (0.95fr)、右邊填寫表單 (1.25fr) */
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr);
+    gap: 36px;
+    align-items: start;
+  }
 
-  .form-group { margin-bottom: 15px; }
-  .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; }
-  .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; font-size: 13px; outline: none; border-radius: 2px; }
+  .checkout-summary-section {
+    background: #faf9f6;
+    border: 1px solid #eae6de;
+    padding: 22px;
+    border-radius: 6px;
+    position: sticky;
+    top: 20px;
+  }
 
-  .payment-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
-  .radio-label { font-size: 13px; color: #333; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #e8e3d9;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
 
-  .btn-submit-order { background-color: #ff6600; color: #fff; width: 100%; padding: 14px; border: none; font-size: 15px; cursor: pointer; border-radius: 2px; }
-  .btn-submit-order:hover { opacity: 0.9; }
+  .summary-header h3,
+  .checkout-form-section h3 {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0;
+    color: #2c2a27;
+  }
 
-  .checkout-summary-section { background: #f9f9f9; padding: 25px; border-radius: 2px; height: fit-content; }
-  .checkout-items-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; max-height: 300px; overflow-y: auto; }
-  .summary-item { display: flex; justify-content: space-between; font-size: 13px; color: #444; gap: 15px; }
-  .summary-item-title { flex: 1; }
-  .summary-total-row { display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 15px; font-size: 15px; font-weight: 600; }
-  .total-price { color: #111; }
+  .checkout-form-section h3 {
+    margin-bottom: 16px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+
+  .item-count {
+    font-size: 12px;
+    color: #888;
+  }
+
+  .mt-30 { margin-top: 28px; }
+
+  /* 訂單摘要商品列（含縮圖與加減數量） */
+  .checkout-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #efece6;
+  }
+  .summary-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .summary-thumb {
+    width: 36px;
+    height: 48px;
+    background: #fff;
+    border: 1px solid #e5e1d8;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .summary-thumb img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .summary-item-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .summary-item-title {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .summary-item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mini-qty-picker {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #dcd7ce;
+    border-radius: 4px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .mini-qty-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: #faf9f6;
+    color: #555;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .mini-qty-btn:hover {
+    background: #efeae0;
+    color: #111;
+  }
+
+  .mini-qty-val {
+    min-width: 26px;
+    text-align: center;
+    font-size: 12px;
+    color: #333;
+    border-left: 1px solid #ece8e0;
+    border-right: 1px solid #ece8e0;
+    line-height: 26px;
+  }
+
+  .summary-item-price {
+    font-size: 13px;
+    color: #333;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .summary-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2ddd3;
+    padding-top: 14px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .total-price {
+    color: #9c7a44;
+    font-size: 18px;
+  }
+
+  /* 表單樣式 */
+  .form-group {
+    margin-bottom: 14px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    outline: none;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background: #fff;
+  }
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #c99e58;
+  }
+
+  .delivery-options,
+  .payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .option-card,
+  .payment-card {
+    border: 1px solid #e6e6e6;
+    padding: 12px 14px;
+    border-radius: 4px;
+    background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .option-card:has(input:checked),
+  .payment-card:has(input:checked) {
+    border-color: #c99e58;
+    background: #fff;
+  }
+
+  .radio-label {
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .payment-card {
+    align-items: center;
+  }
+  .radio-label input[type="radio"] {
+    margin-top: 2px;
+    accent-color: #c99e58;
+    flex-shrink: 0;
+  }
+  .payment-card input[type="radio"] {
+    margin-top: 0;
+  }
+
+  .option-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .option-title {
+    font-weight: 500;
+    color: #222;
+  }
+  .option-desc {
+    font-size: 12px;
+    color: #777;
+    line-height: 1.45;
+  }
+
+  .btn-submit-order {
+    background-color: #c99e58;
+    color: #fff;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+    letter-spacing: 0.8px;
+    transition: opacity 0.2s, transform 0.15s;
+    margin-top: 8px;
+  }
+  .btn-submit-order:hover {
+    opacity: 0.92;
+  }
+  .btn-submit-order:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  /* 手機版自適屏優化 */
+  @media (max-width: 768px) {
+    .shop-container {
+      padding: 14px 12px 40px;
+    }
+    .breadcrumb {
+      margin-bottom: 18px;
+      font-size: 12px;
+    }
+    .page-title {
+      font-size: 20px;
+      margin-bottom: 18px;
+    }
+    .checkout-grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .checkout-summary-section {
+      position: static;
+      padding: 16px;
+    }
+    .checkout-items-list {
+      max-height: none;
+    }
+    .mini-qty-btn {
+      width: 30px;
+      height: 30px;
+      font-size: 14px;
+    }
+    .mini-qty-val {
+      min-width: 28px;
+      line-height: 30px;
+    }
+    .btn-submit-order {
+      padding: 14px;
+      font-size: 15px;
+    }
+  }
 </style>

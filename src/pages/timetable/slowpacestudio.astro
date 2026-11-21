@@ -1,6 +1,7 @@
 ---
 // 匯入 Layout
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
 ---
 <BaseLayout title="客舍時間表 Timetable of Slow Pace Studio">
 <Fragment slot="head">
@@ -514,14 +515,11 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </div>
 </div>
 
-<script>
+<script define:vars={{ supabase }}>
 // --- 設定 ---
-const supabaseUrl = 'https://blqlrxqckiuvgevmakbu.supabase.co';
-const supabaseKey = 'sb_publishable_qFXwpuGChVdRwjc9K7prVQ_PgYmlnpG';
-const TABLE_NAME = 'events'; 
-
-window.client = window.client || (window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null);
-const client = window.client;
+const TABLE_NAME = 'events';
+const client = supabase;
+window.client = client;
 
 const holidays = ["2026-01-01", "2026-02-17", "2026-02-18", "2026-02-19", "2026-04-03", "2026-04-04", "2026-04-06", "2026-04-07", "2026-05-01", "2026-05-25", "2026-06-19", "2026-07-01", "2026-09-26", "2026-10-01", "2026-10-19", "2026-12-25", "2026-12-26"];
 

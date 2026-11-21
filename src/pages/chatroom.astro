@@ -5,8 +5,41 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="客舍萬事屋 | 鄰里人交流區">
     <style is:global>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+        /* 鎖定整頁視窗高度，避免外層捲動導致主題列與輸入框跟著滑動 */
+        html, body {
+            height: 100dvh;
+            max-height: 100dvh;
+            overflow: hidden;
+        }
         
         .hidden { display: none !important; }
+
+/* 覆蓋 Layout 的滾動設定：禁止 Layout 的主區域滾動，改由對話框獨立滾動 */
+.app-main {
+  overflow: hidden !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.app-main-inner {
+  height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* 確保聊天面板外層滿高且不被截斷 */
+main {
+  height: 100% !important;
+  max-height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
 
         .btn-blue { 
             background-color: #2563eb; 
@@ -22,14 +55,16 @@ import Layout from '../layouts/Layout.astro';
         /* 主理人控制面板 */
         .admin-nav { background-color: #0f172a; color: #ffffff; padding: 0.5rem 1rem; border-bottom: 2px solid #2563eb; flex-shrink: 0; z-index: 25; width: 100%; }
         
+        /* 固定頂部主題列並水平置中 */
         .phone-header {
             flex-shrink: 0 !important;
+            position: relative;
             background: #f1f5f9;
             border-bottom: 1px solid #e2e8f0;
-            padding: 0.55rem 0.85rem;
+            padding: 0.55rem 2.5rem;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             user-select: none;
             z-index: 10;
             width: 100%;
@@ -45,7 +80,10 @@ import Layout from '../layouts/Layout.astro';
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            text-align: center;
             gap: 1px;
+            max-width: 100%;
         }
         .phone-header-title:hover { background: #e2e8f0; }
 
@@ -85,6 +123,7 @@ import Layout from '../layouts/Layout.astro';
             min-height: 0 !important;
             overflow-y: auto !important;
             overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
             padding: 1rem;
             display: flex;
             flex-direction: column;
@@ -95,10 +134,10 @@ import Layout from '../layouts/Layout.astro';
             width: 100%;
         }
 
-          /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
-  .phone-chat-messages::-webkit-scrollbar {
-    display: none;
-  }
+        /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
+        .phone-chat-messages::-webkit-scrollbar {
+            display: none;
+        }
 
         .msg-bubble {
             max-width: 78%;
@@ -141,6 +180,7 @@ import Layout from '../layouts/Layout.astro';
             gap: 0.5rem;
             align-items: center;
             width: 100%;
+            z-index: 10;
         }
         .phone-input-field {
             flex: 1;
@@ -219,8 +259,8 @@ import Layout from '../layouts/Layout.astro';
         </div>
     </div>
 
-    <!-- 📱 主頁容器：繼承 100% 高度 -->
-    <main style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
+    <!-- 📱 主頁容器：繼承視窗高度並鎖定外層捲動 -->
+    <main style="height: 100%; max-height: 100dvh; flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
 
         <div id="chat-unlocked-box" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
 
@@ -259,20 +299,18 @@ import Layout from '../layouts/Layout.astro';
 
             </div>
 
-            <!-- 💬 PAGE 2: 群組對話模式 (固定上下，中間滾動) -->
+            <!-- 💬 PAGE 2: 群組對話模式 (固定上下，中間滾動，主題置中) -->
             <div id="page-chat" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
-                <!-- 固定標題 -->
+                <!-- 固定置中標題 -->
                 <div class="phone-header">                   
                     <div class="phone-header-title" id="topic-switcher-trigger">
-                        <div style="display: flex; align-items: center; gap: 3px;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
                             <span id="current-topic-title">選擇主題</span>
                             <span style="font-size: 0.6rem; color: #94a3b8;">▼</span>
                         </div>
                         <span id="current-topic-status-badge" style="font-size: 0.6rem; padding: 0px 5px; border-radius: 3px; display: none; font-weight: normal;"></span>
                     </div>
-
-                    <div style="width: 40px;"></div>
                 </div>
 
                 <!-- 內部滾動訊息區 -->
@@ -287,15 +325,14 @@ import Layout from '../layouts/Layout.astro';
                 </form>
             </div>
 
-            <!-- 💬 PAGE 3: 單對單私訊模式 (固定上下，中間滾動) -->
+            <!-- 💬 PAGE 3: 單對單私訊模式 (固定上下，中間滾動，主題置中) -->
             <div id="page-dm" class="hidden" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; width: 100%;">
                 
-                <!-- 固定標題 -->
+                <!-- 固定置中標題 -->
                 <div class="phone-header" style="background: #eff6ff;">
                     <div class="phone-header-title">
                         <span id="current-dm-title" style="color: #1e40af;">💬 私訊對話</span>
                     </div>
-                    <div style="width: 40px;"></div>
                 </div>
 
                 <!-- 內部滾動私訊區 -->
@@ -418,16 +455,16 @@ import Layout from '../layouts/Layout.astro';
             console.log("🟢 [ChatPage] 身分初始化成功，使用者:", currentUserId, currentUserName, "是否為訪客:", isGuest);
             
             // ==========================================
-    // 💡 貼上這段程式碼：初始化時檢查已授權的解鎖主題
-    // ==========================================
-    const savedUnlocked = localStorage.getItem('unlocked_topics');
-    if (savedUnlocked) {
-      try {
-        const parsed = JSON.parse(savedUnlocked);
-        Object.assign(unlockedTopics, parsed);
-      } catch (e) {}
-    }
-    // ==========================================
+            // 💡 初始化時檢查已授權的解鎖主題
+            // ==========================================
+            const savedUnlocked = localStorage.getItem('unlocked_topics');
+            if (savedUnlocked) {
+                try {
+                    const parsed = JSON.parse(savedUnlocked);
+                    Object.assign(unlockedTopics, parsed);
+                } catch (e) {}
+            }
+            // ==========================================
 
             await checkAdminPermission(currentUserId);
             fetchAllUserRecordsFromSupabase();
@@ -698,19 +735,19 @@ import Layout from '../layouts/Layout.astro';
             const { data } = await supabase.from('chat_topics').select('*').order('sort_order', { ascending: true });
             topics = data || [];
             renderTopicsList();
-            // ==========================================
-    // 💡 貼上這段程式碼：當主題載入完成後，檢查網址是否有 ?topic=xxx
-    // ==========================================
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetTopicId = urlParams.get('topic');
 
-    if (targetTopicId && topics.length > 0) {
-      // 稍微延遲確保 DOM 與狀態完全就緒後自動嘗試進入
-      setTimeout(() => {
-        trySelectTopic(targetTopicId);
-      }, 200);
-    }
-    // ==========================================
+            // ==========================================
+            // 💡 當主題載入完成後，檢查網址是否有 ?topic=xxx
+            // ==========================================
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetTopicId = urlParams.get('topic');
+
+            if (targetTopicId && topics.length > 0) {
+                setTimeout(() => {
+                    trySelectTopic(targetTopicId);
+                }, 200);
+            }
+            // ==========================================
         }
 
         async function moveTopicOrder(topicId, direction) {
@@ -778,6 +815,7 @@ import Layout from '../layouts/Layout.astro';
                 if (inputPwd === null) return;
                 if (inputPwd.trim() === topic.password.trim()) {
                     unlockedTopics[topicId] = true;
+                    localStorage.setItem('unlocked_topics', JSON.stringify(unlockedTopics));
                     enterTopicChat(topic);
                 } else {
                     alert("❌ 密碼錯誤！");

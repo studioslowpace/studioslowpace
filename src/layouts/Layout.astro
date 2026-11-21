@@ -15,21 +15,26 @@ const TABLE_NAME = 'slowpace_members';
     <title>{title}</title>
   </head>
 <body>
-    <!-- 確保外層 viewport 絕對置中，且禁止全頁滾動 -->
+    <!-- 外層 viewport：支援響應式置中，無上下邊界空隙 -->
     <div class="app-viewport">
       <div class="rpg-container">
-        <Header />
-        <!-- 內容區：如果內部有超出的內容，讓它在內部滾動而不撐開外框 -->
+        <!-- 頂部 Header：背景全闊，內部功能按鈕在桌機置中 -->
+        <div class="app-header-wrapper">
+          <Header />
+        </div>
+
+        <!-- 中間內容區：桌機時全闊延伸至最右邊顯示滾動 Bar，內容區本身置中 -->
         <main class="app-main">
-          <slot />
+          <div class="app-main-inner">
+            <slot />
+          </div>
         </main>
 
-        <!-- 底部共用導覽列 -->
+        <!-- 底部 Footer：背景全闊，內部功能按鈕在桌機置中 -->
         <div class="app-footer-wrapper">
           <Footer />
         </div>
       </div>
-
     </div>
   </body>
 </html>
@@ -53,80 +58,147 @@ const TABLE_NAME = 'slowpace_members';
     box-sizing: border-box; 
   }
 
-  /* 鎖死全頁，絕對不允許出現視窗捲軸 */
+  /* 鎖死外層視窗高度，確保上下無滾動空隙 */
   html, body {
     background-color: var(--bg-main);
     color: var(--text-color);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
     margin: 0; 
     padding: 0; 
-    width: 100vw; 
+    width: 100%;
     height: 100vh; 
     height: 100dvh; 
-    overflow: hidden; 
+    overflow: hidden;
   }
 
-  /* 外層視窗：強迫置中所有內容 */
+  /* 外層視窗：滿版高度，上下無空隙 */
   .app-viewport { 
-    width: 100vw; 
+    width: 100%; 
     height: 100vh; 
     height: 100dvh; 
     display: flex; 
     justify-content: center; 
-    align-items: center; 
+    align-items: stretch; 
     background: var(--bg-main); 
     overflow: hidden;
+    padding: 0;
   }
   
-  /* 核心容器：限制最大寬度為 430px，並強制隱藏所有超出範圍的捲軸 */
+  /* 核心容器：全闊、無外框線、無陰影、無圓角 */
   .rpg-container {
     width: 100%;
-    max-width: 430px; 
+    max-width: 100%;
     height: 100vh;
     height: 100dvh;
-    max-height: 880px;
     display: flex; 
     flex-direction: column; 
     justify-content: space-between; 
     background-color: var(--bg-main); 
-    border: 1px solid var(--border-color); 
+    border: none;
     border-radius: 0;
-    box-shadow: 0 16px 48px rgba(44, 36, 29, 0.08); 
-    overflow: hidden; /* 關鍵：切掉任何跑出卡片外面的東西，防止出現捲軸 */
+    box-shadow: none; 
+    overflow: hidden;
   }
 
-  /* 在桌機版時顯示漂亮的圓角卡片外框 */
-  @media (min-width: 480px) {
-    .rpg-container {
-      border-radius: 28px;
-      height: 96vh;
-      height: 96dvh;
-    }
+  /* Header 與 Footer 外層：全闊，緊貼上下邊緣 */
+  .app-header-wrapper,
+  .app-footer-wrapper {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 0px;
   }
 
-  /* 主內容區：允許內部滾動，但隱藏醜陋的捲軸 */
+  /* 中間內容區：預設佔滿剩餘高度，手機版隱藏捲軸 */
   .app-main {
     flex: 1; 
     display: flex;
+    flex-direction: column;
     overflow-y: auto; 
-    overflow-x: auto;
+    overflow-x: hidden;
     padding: 0px;
     min-height: 0;
     width: 100%;
+
+    /* 手機版隱藏捲軸 */
+    scrollbar-width: none;
   }
 
-  /* 隱藏主流瀏覽器的捲軸 (Chrome, Safari, Edge) */
   .app-main::-webkit-scrollbar {
     display: none;
   }
-  /* 隱藏 Firefox 捲軸 */
-  .app-main {
-    scrollbar-width: none; 
+
+  /* 內容內層：手機版滿寬，桌機版置中對齊 Header / Footer 功能按鈕 */
+  .app-main-inner {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
-  .app-footer-wrapper {
-    padding: 0px;
-    width: 100%;
+  /* 電腦與平板視窗：Header / Footer 背景全闊，內部功能按鈕置中，滾動 Bar 貼在全闊最右邊 */
+  @media (min-width: 768px) {
+    .app-viewport {
+      padding: 0;
+    }
+
+    .rpg-container {
+      width: 100%;
+      max-width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    /* 讓 Header 與 Footer 元件本身保持 100% 全闊，左右背景色完整延伸 */
+    .app-header-wrapper > *,
+    .app-footer-wrapper > * {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* 只將元件內部的第一層內容/按鈕列置中，避免裁切兩側背景色 */
+    .app-header-wrapper > * > *,
+    .app-footer-wrapper > * > * {
+      width: 100%;
+      max-width: 1120px; /* 可依需求調整中間功能按鈕區塊寬度 */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* 內容區維持全闊以便捲軸出現在視窗最右邊，內部內容置中 */
+    .app-main {
+      width: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+
+    .app-main-inner {
+      width: 100%;
+      max-width: 1120px; /* 與上方 Header / Footer 按鈕區塊對齊 */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .app-main::-webkit-scrollbar {
+      width: 8px;
+      display: block;
+    }
+
+    .app-main::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .app-main::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 4px;
+    }
+
+    .app-main::-webkit-scrollbar-thumb:hover {
+      background-color: var(--text-muted);
+    }
+    
   }
 </style>
 

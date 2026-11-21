@@ -1,491 +1,934 @@
 ---
-import Layout from '../layouts/BaseLayout.astro';
+import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="個人會員專區 · 空間客舍">
   <div class="profile-viewport">
-    <div class="profile-card">
-      <div class="profile-header">
-        <a href="/" class="back-link">← 返回客舍空間</a>
-        <div class="brand-title">會員個人專區</div>
-      </div>
 
-      <div id="loading-state" class="state-msg">正在載入會員資料...</div>
+    <!-- 載入中狀態 -->
+    <div id="loading-state" class="state-container">
+      <div class="spinner"></div>
+      <p>正在翻開您的閱讀手帳...</p>
+    </div>
 
-      <div id="profile-content" style="display: none;">
-        <!-- 基本身分預覽與檢視區塊 -->
-        <div class="avatar-preview-box">
-          <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" />
-          <div>
-            <div id="profile-name-display" class="profile-name">旅人</div>
-            <div id="profile-tier-badge" class="profile-badge">🌱 鄰里人</div>
-          </div>
-        </div>
+    <!-- 主內容區塊 (預設隱藏；桌面左右雙欄，手機單欄上下排列) -->
+    <main id="profile-content" class="profile-main-grid" style="display: none;">
 
-        <!-- 文青圖示式閱讀時數卡片 -->
-        <div class="reading-stats-panel" aria-label="閱讀時數統計">
-          <div class="reading-stat-item">
-            <div class="reading-icon-badge" aria-hidden="true">🕯️</div>
-            <div class="reading-stat-meta">
-              <span class="reading-stat-label">今日閱讀</span>
-              <strong id="display-daily-reading" class="reading-stat-value">0分</strong>
+      <!-- ================= 左側欄（手機上方）：個人資料、三個功能按鈕與登出 ================= -->
+      <aside class="profile-left-col">
+        <div class="card personal-hub-card">
+
+          <!-- 讀者名片 -->
+          <div class="profile-card-top">
+            <div class="avatar-wrapper">
+              <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" class="profile-avatar" oncontextmenu="return false;" ondragstart="return false;" />
+              <div id="profile-tier-badge" class="tier-badge">🌱 鄰里人</div>
+            </div>
+            <div class="profile-identity">
+              <h1 id="profile-name-display" class="profile-name">旅人</h1>
+              <p id="profile-role-display" class="profile-role">漫步者</p>
             </div>
           </div>
 
-          <div class="reading-stat-divider" aria-hidden="true"></div>
+          <!-- 閱讀時間概覽 -->
+          <div class="stats-section">
+            <h2 class="section-mini-title">📖 閱讀時間概覽</h2>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-icon">🕯️</div>
+                <div class="stat-info">
+                  <span class="stat-label">今日閱讀</span>
+                  <strong id="display-daily-reading" class="stat-value">0分</strong>
+                </div>
+              </div>
 
-          <div class="reading-stat-item">
-            <div class="reading-icon-badge reading-icon-badge--alt" aria-hidden="true">📚</div>
-            <div class="reading-stat-meta">
-              <span class="reading-stat-label">累積總閱讀</span>
-              <strong id="display-total-reading" class="reading-stat-value">0分</strong>
+              <div class="stat-box">
+                <div class="stat-icon alt">📚</div>
+                <div class="stat-info">
+                  <span class="stat-label">累積總閱讀</span>
+                  <strong id="display-total-reading" class="stat-value">0分</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 聯絡資訊 -->
+          <div class="contact-section">
+            <h2 class="section-mini-title">✉️ 聯絡資訊</h2>
+            <ul class="info-list">
+              <li>
+                <span class="info-label">電子信箱</span>
+                <span id="display-email" class="info-val">-</span>
+              </li>
+              <li>
+                <span class="info-label">聯絡電話</span>
+                <span id="display-phone" class="info-val">-</span>
+              </li>
+              <li>
+                <span class="info-label">IG 帳號</span>
+                <span id="display-ig" class="info-val">-</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 個人資料下方的三個面板功能按鈕（手機與電腦皆顯示） -->
+          <div class="three-panel-btns" role="group" aria-label="面板功能切換">
+            <button type="button" id="btn-panel-chart" class="panel-switch-btn active">
+              <span>📊</span>
+              <span>走勢圖</span>
+            </button>
+            <button type="button" id="btn-panel-edit" class="panel-switch-btn">
+              <span>✏️</span>
+              <span>編輯資料</span>
+            </button>
+            <button type="button" id="btn-panel-password" class="panel-switch-btn">
+              <span>🔒</span>
+              <span>修改密碼</span>
+            </button>
+          </div>
+
+          <!-- 登出按鈕（放在個人資料內） -->
+          <button type="button" id="profile-logout-btn" class="card-logout-btn">🚪 登出帳號</button>
+        </div>
+      </aside>
+
+      <!-- ================= 右側欄（手機下方）：走勢圖表、編輯資料與修改密碼視窗 ================= -->
+      <section id="right-panels-anchor" class="profile-right-col">
+
+        <!-- 閱讀走勢圖視窗（支援月份切換與按年顯示，Y軸每格30分鐘上限12小時，X軸底部左右滑動） -->
+        <div id="chart-section" class="card chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="card-title" id="chart-period-title">2026年 11月 閱讀走勢</h2>
+              <p class="card-desc">Y 軸每格 30 分鐘（上限 12 小時），水平與垂直虛線輔助對照。</p>
+            </div>
+
+            <div class="chart-controls-bar">
+              <!-- 檢視維度切換：月 / 年 -->
+              <div class="granularity-switch">
+                <button type="button" id="btn-view-month" class="gran-btn active">按月</button>
+                <button type="button" id="btn-view-year" class="gran-btn">按年</button>
+              </div>
+
+              <!-- 切換不同月份或年份 -->
+              <div class="period-nav">
+                <button type="button" id="btn-prev-period" class="period-step-btn" title="上一期">‹</button>
+                <span id="period-label" class="period-label">2026-11</span>
+                <button type="button" id="btn-next-period" class="period-step-btn" title="下一期">›</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-summary-strip">
+            <span id="selected-bar-readout" class="selected-bar-tag">懸浮或點選直條查看時數</span>
+            <span id="display-period-total" class="period-total-tag">期間總計：0分</span>
+          </div>
+
+          <!-- 帶淺色外框線的平面直條圖容器 -->
+          <div class="chart-frame-wrapper">
+            <div class="cartesian-row">
+              <div id="y-axis-container" class="y-axis-column" aria-hidden="true"></div>
+
+              <div id="chart-scroll-viewport" class="chart-scroll-viewport">
+                <div id="chart-plot-inner" class="chart-plot-inner">
+                  <div id="h-grid-container" class="h-grid-layer" aria-hidden="true"></div>
+                  <div id="v-grid-container" class="v-grid-layer" aria-hidden="true"></div>
+                  <div id="bar-chart-columns" class="bar-columns-row" role="img" aria-label="閱讀時間直條圖"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- X 軸放在底部，附左右按鍵可捲動查看不夠位顯示的日子 -->
+            <div class="x-axis-bottom-bar">
+              <button type="button" id="btn-x-scroll-left" class="x-scroll-btn" title="向左查看更早日子" aria-label="向左捲動">◀</button>
+              <div id="x-axis-scroll-track" class="x-axis-scroll-track">
+                <div id="x-axis-ticks-row" class="x-axis-ticks-row"></div>
+              </div>
+              <button type="button" id="btn-x-scroll-right" class="x-scroll-btn" title="向右查看較晚日子" aria-label="向右捲動">▶</button>
             </div>
           </div>
         </div>
 
-        <!-- 近 10 日閱讀足跡（由 reading_logs 整理） -->
-        <div class="history-10d-card" aria-label="近 10 日閱讀紀錄">
-          <div class="history-10d-header">
-            <span class="history-10d-title">🗓️ 近 10 日閱讀足跡</span>
-            <span id="display-10d-total" class="history-10d-summary">共 0分</span>
-          </div>
-          <div id="reading-10d-list" class="history-10d-grid"></div>
-        </div>
+        <!-- 編輯個人資料視窗 -->
+        <form id="profile-form" class="card form-card" style="display: none;">
+          <h2 class="card-title">✏️ 編輯個人資料</h2>
 
-        <!-- 帳號與聯絡資訊檢視卡片 -->
-        <div class="info-display-card">
-          <div class="info-row">
-            <span class="info-label">電子信箱</span>
-            <span id="display-email" class="info-value">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">聯絡電話</span>
-            <span id="display-phone" class="info-value">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">IG 帳號</span>
-            <span id="display-ig" class="info-value">-</span>
-          </div>
-        </div>
-
-        <!-- 切換修改個人資料按鈕 -->
-        <button type="button" id="toggle-edit-profile-btn" class="secondary-toggle-btn">✏️ 修改個人資料</button>
-
-        <!-- 修改個人資料表單（預設隱藏，按鈕展開） -->
-        <form id="profile-form" class="profile-form" style="display: none;">
-          <h3 class="section-title">編輯個人資料</h3>
-          <div>
-            <label class="form-label">客舍稱號</label>
+          <div class="form-group">
+            <label class="form-label" for="edit-name">客舍稱號</label>
             <input type="text" id="edit-name" maxlength="12" required placeholder="請輸入您的稱號" />
           </div>
 
-          <div>
-            <label class="form-label">身份標籤</label>
+          <div class="form-group">
+            <label class="form-label" for="edit-role">身份標籤</label>
             <select id="edit-role">
-              <option value="☁️ 晴空選書">☁️ 晴空選書</option>
-              <option value="🍃 散文漫遊">🍃 散文漫遊</option>
-              <option value="✍️ 靜心寫作">✍️ 靜心寫作</option>
+              <option value="漫步者" selected>漫步者</option>
+              <option value="探索者">探索者</option>
+              <option value="實踐者">實踐者</option>
+              <option value="觀察者">觀察者</option>
             </select>
           </div>
 
-          <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-              <label class="form-label">聯絡電話</label>
-              <input type="text" id="edit-phone" placeholder="0912-345-678" />
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="edit-phone">聯絡電話</label>
+              <input type="text" id="edit-phone" placeholder="例：0912-345-678" />
             </div>
-            <div style="flex: 1;">
-              <label class="form-label">IG 帳號</label>
-              <input type="text" id="edit-ig" placeholder="@instagram_id" />
+            <div class="form-group">
+              <label class="form-label" for="edit-ig">IG 帳號</label>
+              <input type="text" id="edit-ig" placeholder="例：@slowpace_studio" />
             </div>
           </div>
 
-          <div>
-            <label class="form-label">分身造型</label>
-            <div class="avatar-options" id="edit-avatar-group">
-              <label class="avatar-option edit-avatar-label">
+          <div class="form-group">
+            <label class="form-label">選擇分身造型</label>
+            <div class="avatar-select-grid" id="edit-avatar-group">
+              <label class="avatar-option-item">
                 <input type="radio" name="edit-avatar" value="/assets/player1.png" style="display:none;" />
-                <img src="/assets/player1.png" alt="P1" style="width:24px; height:24px; vertical-align:middle; margin-right:4px;" />
+                <img src="/assets/player1.png" alt="P1" oncontextmenu="return false;" ondragstart="return false;" />
                 <span>分身一號</span>
               </label>
-              <label class="avatar-option edit-avatar-label">
+              <label class="avatar-option-item">
                 <input type="radio" name="edit-avatar" value="/assets/player2.png" style="display:none;" />
-                <img src="/assets/player2.png" alt="P2" style="width:24px; height:24px; vertical-align:middle; margin-right:4px;" />
+                <img src="/assets/player2.png" alt="P2" oncontextmenu="return false;" ondragstart="return false;" />
                 <span>分身二號</span>
               </label>
             </div>
           </div>
 
-          <button type="submit" class="submit-btn">💾 儲存修改</button>
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">💾 儲存修改內容</button>
+          </div>
         </form>
 
-        <hr class="divider" />
+        <!-- 修改密碼視窗 -->
+        <div id="password-form-container" class="card form-card" style="display: none;">
+          <h2 class="card-title">🔒 變更會員密碼</h2>
 
-        <!-- 切換修改密碼按鈕 -->
-        <button type="button" id="toggle-edit-password-btn" class="secondary-toggle-btn">🔒 修改密碼</button>
-
-        <!-- 修改密碼區塊（預設隱藏，按鈕展開） -->
-        <div id="password-form-container" class="profile-form" style="display: none;">
-          <h3 class="section-title">變更您的密碼</h3>
-          
-          <div>
-            <label class="form-label">新密碼 (至少 6 位數)</label>
-            <div style="position: relative;">
-              <input type="password" id="new-password" placeholder="••••••••" style="padding-right: 40px;" />
-              <button type="button" id="toggle-pwd-1" class="eye-btn">👁️</button>
+          <div class="form-group">
+            <label class="form-label" for="new-password">新密碼 (至少 6 位數)</label>
+            <div class="pwd-input-wrapper">
+              <input type="password" id="new-password" placeholder="••••••••" />
+              <button type="button" id="toggle-pwd-1" class="eye-btn" title="切換顯示密碼">👁️</button>
             </div>
           </div>
 
-          <div>
-            <label class="form-label">確認新密碼</label>
-            <div style="position: relative;">
-              <input type="password" id="new-password-confirm" placeholder="••••••••" style="padding-right: 40px;" />
-              <button type="button" id="toggle-pwd-2" class="eye-btn">👁️</button>
+          <div class="form-group">
+            <label class="form-label" for="new-password-confirm">再次確認新密碼</label>
+            <div class="pwd-input-wrapper">
+              <input type="password" id="new-password-confirm" placeholder="••••••••" />
+              <button type="button" id="toggle-pwd-2" class="eye-btn" title="切換顯示密碼">👁️</button>
             </div>
           </div>
 
-          <button type="button" id="update-password-btn" class="secondary-btn">確認更新密碼</button>
+          <div class="form-actions">
+            <button type="button" id="update-password-btn" class="accent-btn">確認變更密碼</button>
+          </div>
         </div>
 
-        <button id="profile-logout-btn" class="danger-btn">🚪 登出帳號</button>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
 
-  <style>
-    .profile-viewport {
-      min-height: 100vh;
-      background: #78716c;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  <style is:global>
+    :root {
+      --bg-base: #FAF7F2;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F4EFE6;
+      --border-color: #E8E2D5;
+      --border-active: #C5BBAA;
+
+      --text-main: #2C241D;
+      --text-muted: #8C8275;
+      --text-light: #A3998E;
+
+      --accent-brand: #52796F;
+      --accent-hover: #354F52;
+      --accent-warm: #DDA15E;
+      --accent-danger: #BC4749;
+
+      --shadow-sm: 0 4px 12px rgba(44, 36, 29, 0.03);
+      --shadow-md: 0 8px 24px rgba(44, 36, 29, 0.06);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
     }
-    .profile-card {
-      background: #fdfbf7;
-      color: #3c3835;
-      border: 1px solid #efece6;
-      border-radius: 20px;
+
+    html, body {
+      margin: 0;
+      padding: 0;
       width: 100%;
-      max-width: 440px;
-      padding: 32px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      min-height: 100%;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    *, *::before, *::after {
       box-sizing: border-box;
     }
-    .profile-header {
+
+    .profile-viewport {
+      width: 100%;
+      min-height: 100vh;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
+      background-color: var(--bg-base);
+    }
+
+    .state-container {
+      flex: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #efece6;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      padding: 40px 16px;
     }
-    .brand-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: #3c3835;
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--accent-brand);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
-    .back-link {
-      font-size: 0.75rem;
-      color: #8c8275;
-      text-decoration: none;
-      padding: 4px 10px;
-      border: 1px solid #e5dfd5;
-      border-radius: 6px;
-      transition: all 0.2s;
-      background: #f7f4ee;
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
-    .back-link:hover {
-      background: #efece6;
+
+    /* 全闊自適應雙欄佈局：桌面左右雙欄，手機單欄上下排列 */
+    .profile-main-grid {
+      width: 100%;
+      min-height: 100vh;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: minmax(310px, 380px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
     }
-    .state-msg {
-      text-align: center;
-      color: #8c8275;
-      padding: 40px 0;
-      font-size: 0.9rem;
+
+    .profile-left-col,
+    .profile-right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-width: 0;
     }
-    .avatar-preview-box {
+
+    @media (max-width: 820px) {
+      .profile-main-grid {
+        grid-template-columns: 1fr;
+        padding: 14px;
+        gap: 16px;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 1.06rem;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      color: var(--text-main);
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .section-mini-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin: 0 0 10px 0;
+      letter-spacing: 0.02em;
+    }
+
+    /* 個人資料卡片 */
+    .personal-hub-card {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .profile-card-top {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 16px;
-    }
-    .avatar-preview-box img {
-      width: 56px;
-      height: 56px;
-      background: #f4efe6;
-      border: 2px solid #3c3835;
-      border-radius: 12px;
-      padding: 4px;
-      object-fit: contain;
-    }
-    .profile-name {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: #3c3835;
-    }
-    .profile-badge {
-      display: inline-block;
-      margin-top: 4px;
-      font-size: 0.75rem;
-      background: #f4efe6;
-      border: 1px solid #e5dfd5;
-      padding: 2px 10px;
-      border-radius: 12px;
-      color: #6e655b;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
     }
 
-    /* 文青圖示式閱讀時數樣式 */
-    .reading-stats-panel {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(135deg, #faf7f0 0%, #f3ede1 100%);
-      border: 1px solid #e3dacb;
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 12px;
+    .avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--bg-subtle);
+      border: 2px solid var(--border-color);
+    }
+
+    .tier-badge {
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      padding: 1px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .profile-identity {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .profile-name {
+      font-size: 1.28rem;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      word-break: break-word;
+    }
+
+    .profile-role {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
-    .reading-stat-item {
-      flex: 1;
+
+    .stat-box {
       display: flex;
       align-items: center;
       gap: 10px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
       min-width: 0;
     }
-    .reading-icon-badge {
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
-      background: #fdfbf7;
-      border: 1px solid #e5dfd5;
+
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.05rem;
       flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(60, 56, 53, 0.05);
     }
-    .reading-icon-badge--alt {
-      background: #f4f1ea;
+
+    .stat-icon.alt {
+      background: #FAF3E0;
     }
-    .reading-stat-meta {
+
+    .stat-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
       min-width: 0;
     }
-    .reading-stat-label {
+
+    .stat-label {
       font-size: 0.72rem;
-      color: #8c8275;
-      letter-spacing: 0.04em;
+      color: var(--text-muted);
     }
-    .reading-stat-value {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #3c3835;
+
+    .stat-value {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-main);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .reading-stat-divider {
-      width: 1px;
-      height: 30px;
-      background: #e3dacb;
-      flex-shrink: 0;
-    }
 
-    /* 近 10 日閱讀足跡區塊 */
-    .history-10d-card {
-      background: #faf7f2;
-      border: 1px solid #e5dfd5;
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-    }
-    .history-10d-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      font-size: 0.78rem;
-    }
-    .history-10d-title {
-      font-weight: 600;
-      color: #5c5349;
-    }
-    .history-10d-summary {
-      color: #8c8275;
-      font-size: 0.74rem;
-    }
-    .history-10d-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-    }
-    .day-pill {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fdfbf7;
-      border: 1px solid #ebe4d8;
-      border-radius: 9px;
-      padding: 6px 9px;
-      font-size: 0.74rem;
-      color: #6e655b;
-    }
-    .day-pill--active {
-      border-color: #c8beae;
-      background: #f6f1e7;
-      color: #3c3835;
-      font-weight: 500;
-    }
-    .day-pill-date {
-      color: #8c8275;
-      font-variant-numeric: tabular-nums;
-    }
-    .day-pill-time {
-      color: #3c3835;
-      font-weight: 600;
-    }
-
-    .info-display-card {
-      background: #f7f4ee;
-      border: 1px solid #e5dfd5;
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
+    .info-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
     }
-    .info-row {
+
+    .info-list li {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.84rem;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed var(--border-color);
     }
+
+    .info-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
     .info-label {
-      color: #8c8275;
+      color: var(--text-muted);
+      flex-shrink: 0;
     }
-    .info-value {
-      color: #3c3835;
-      font-weight: 500;
-    }
-    .divider {
-      border: 0;
-      border-top: 1px solid #efece6;
-      margin: 18px 0;
-    }
-    .section-title {
-      font-size: 0.9rem;
+
+    .info-val {
       font-weight: 600;
-      color: #3c3835;
-      margin: 0 0 4px 0;
+      color: var(--text-main);
+      text-align: right;
+      word-break: break-word;
     }
-    .profile-form {
+
+    /* 個人資料下方三個面板功能按鈕 */
+    .three-panel-btns {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .panel-switch-btn {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      background: #f7f4ee;
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid #e5dfd5;
-      margin-top: 10px;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
+
+    .panel-switch-btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-active);
+    }
+
+    .panel-switch-btn.active {
+      background: var(--accent-brand);
+      border-color: var(--accent-brand);
+      color: #FFFFFF;
+    }
+
+    /* 登出按鈕（個人資料內） */
+    .card-logout-btn {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #F1C4C4;
+      background: #FDF4F4;
+      color: var(--accent-danger);
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .card-logout-btn:hover {
+      background: var(--accent-danger);
+      border-color: var(--accent-danger);
+      color: #FFFFFF;
+    }
+
+    /* 走勢圖區 */
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .chart-controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .granularity-switch {
+      display: inline-flex;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+    }
+
+    .gran-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .gran-btn.active {
+      background: var(--accent-brand);
+      color: #FFFFFF;
+    }
+
+    .period-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+    }
+
+    .period-step-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .period-step-btn:hover {
+      background: var(--bg-subtle);
+    }
+
+    .period-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      min-width: 66px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chart-summary-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .selected-bar-tag {
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .period-total-tag {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent-brand);
+    }
+
+    /* 淺色外框線圖表框 */
+    .chart-frame-wrapper {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: #FCFBF8;
+      padding: 16px 12px 12px 12px;
+    }
+
+    .cartesian-row {
+      display: flex;
+      align-items: stretch;
+      height: 220px;
+    }
+
+    .y-axis-column {
+      width: 58px;
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-right: 8px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .chart-scroll-viewport {
+      flex: 1;
+      height: 220px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      border-left: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-active);
+      position: relative;
+    }
+
+    .chart-scroll-viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chart-plot-inner {
+      position: relative;
+      height: 100%;
+      min-width: 100%;
+    }
+
+    .h-grid-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .h-grid-line {
+      width: 100%;
+      border-top: 1px dashed rgba(140, 130, 117, 0.22);
+    }
+
+    .h-grid-line--zero {
+      border-top: none;
+    }
+
+    .v-grid-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .v-grid-cell {
+      flex: 1;
+      border-right: 1px dashed rgba(140, 130, 117, 0.22);
+    }
+
+    .v-grid-cell:last-child {
+      border-right: none;
+    }
+
+    /* 直條緊貼排列 */
+    .bar-columns-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      height: 100%;
+    }
+
+    .bar-slot {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .bar-rect {
+      width: 100%;
+      background: var(--accent-brand);
+      border-radius: 3px 3px 0 0;
+      transition: height 0.25s ease, background-color 0.18s ease;
+      min-height: 0;
+    }
+
+    .bar-slot:hover .bar-rect,
+    .bar-slot.active-bar .bar-rect {
+      background: var(--accent-warm);
+    }
+
+    .bar-slot.today-slot .bar-rect {
+      background: #6B9080;
+    }
+
+    .bar-slot.today-slot:hover .bar-rect,
+    .bar-slot.today-slot.active-bar .bar-rect {
+      background: var(--accent-warm);
+    }
+
+    /* X 軸放在底部，附左右按鍵滑動不夠位顯示的日子 */
+    .x-axis-bottom-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding-left: 58px;
+    }
+
+    @media (max-width: 600px) {
+      .y-axis-column {
+        width: 48px;
+      }
+
+      .x-axis-bottom-bar {
+        padding-left: 48px;
+      }
+    }
+
+    .x-scroll-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.72rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s ease;
+    }
+
+    .x-scroll-btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-active);
+    }
+
+    .x-axis-scroll-track {
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-active) transparent;
+    }
+
+    .x-axis-ticks-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .x-day-cell {
+      flex: 1;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      padding: 3px 0;
+      user-select: none;
+    }
+
+    .x-day-cell.today-tick {
+      color: var(--accent-warm);
+      font-weight: 700;
+    }
+
+    /* 表單區 */
+    .form-card {
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
     .form-label {
       display: block;
-      font-size: 0.8rem;
-      color: #6e655b;
-      margin-bottom: 4px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-main);
     }
-    .profile-form input[type="text"], 
-    .profile-form input[type="password"], 
-    .profile-form select {
-      background: #ffffff;
-      border: 1px solid #e5dfd5;
-      color: #3c3835;
+
+    .form-card input[type="text"],
+    .form-card input[type="password"],
+    .form-card select {
+      width: 100%;
       padding: 10px 12px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-base);
+      color: var(--text-main);
       font-size: 0.9rem;
       outline: none;
-      box-sizing: border-box;
-      width: 100%;
     }
-    .avatar-options {
-      display: flex;
-      gap: 12px;
-    }
-    .avatar-option {
-      flex: 1;
-      background: #ffffff;
-      border: 1px solid #e5dfd5;
-      padding: 8px;
-      border-radius: 8px;
-      text-align: center;
-      cursor: pointer;
-      font-size: 0.85rem;
-      color: #8c8275;
-      transition: all 0.2s;
-    }
-    .secondary-toggle-btn {
-      background: #f7f4ee;
-      color: #3c3835;
-      border: 1px solid #e5dfd5;
-      padding: 11px;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      width: 100%;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-      margin-top: 6px;
-    }
-    .secondary-toggle-btn:hover {
-      background: #efece6;
-    }
-    .submit-btn {
-      background: #3c3835;
-      color: #fdfbf7;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      width: 100%;
-      font-size: 0.9rem;
-      box-shadow: 0 4px 12px rgba(60,56,53,0.15);
-      margin-top: 4px;
-    }
-    .submit-btn:hover { opacity: 0.9; }
-    
-    .secondary-btn {
-      background: #557263;
-      color: #fdfbf7;
-      border: none;
-      padding: 11px;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      width: 100%;
-      font-size: 0.9rem;
-      margin-top: 4px;
-    }
-    .secondary-btn:hover { opacity: 0.9; }
 
-    .danger-btn {
-      background: #b94a48;
-      color: #fdfbf7;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 500;
-      cursor: pointer;
-      width: 100%;
-      font-size: 0.9rem;
-      margin-top: 24px;
+    .form-card input:focus,
+    .form-card select:focus {
+      border-color: var(--accent-brand);
+      background: #FFFFFF;
     }
-    .danger-btn:hover { opacity: 0.9; }
+
+    .pwd-input-wrapper {
+      position: relative;
+    }
 
     .eye-btn {
       position: absolute;
@@ -495,8 +938,69 @@ import Layout from '../layouts/BaseLayout.astro';
       background: none;
       border: none;
       cursor: pointer;
-      color: #8c8275;
       font-size: 0.9rem;
+    }
+
+    .avatar-select-grid {
+      display: flex;
+      gap: 10px;
+    }
+
+    .avatar-option-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-base);
+      cursor: pointer;
+      font-size: 0.84rem;
+    }
+
+    .avatar-option-item img {
+      width: 26px;
+      height: 26px;
+    }
+
+    .avatar-option-item.selected {
+      border-color: var(--accent-brand);
+      background: #FFFFFF;
+      font-weight: 600;
+    }
+
+    .form-actions {
+      margin-top: 16px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-brand);
+      color: #FFFFFF;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .primary-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .accent-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-warm);
+      color: #FFFFFF;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
     }
   </style>
 
@@ -511,16 +1015,13 @@ import Layout from '../layouts/BaseLayout.astro';
     let currentUserId: string | null = null;
     let currentProfile: any = null;
 
-    const loadingState = document.getElementById('loading-state');
-    const profileContent = document.getElementById('profile-content');
-    const logoutBtn = document.getElementById('profile-logout-btn');
-    const form = document.getElementById('profile-form') as HTMLFormElement;
+    // 走勢圖狀態：'month'（按月）或 'year'（按年）
+    let chartGranularity: 'month' | 'year' = 'month';
+    const initialNow = new Date();
+    let activeYear = initialNow.getFullYear();
+    let activeMonth = initialNow.getMonth(); // 0-11
 
-    const toggleEditProfileBtn = document.getElementById('toggle-edit-profile-btn');
-    const toggleEditPasswordBtn = document.getElementById('toggle-edit-password-btn');
-    const passwordFormContainer = document.getElementById('password-form-container');
-
-    // 秒數格式化為「X小時Y分」或「Y分」
+    // 將秒數轉為「X小時Y分」或「Y分」
     function formatReadingDuration(seconds = 0): string {
       const safeSec = Math.max(0, Math.floor(Number(seconds) || 0));
       const totalMinutes = Math.floor(safeSec / 60);
@@ -535,7 +1036,6 @@ import Layout from '../layouts/BaseLayout.astro';
       return `${minutes}分`;
     }
 
-    // 格式化 Date 物件為 YYYY-MM-DD
     function formatDateKey(d: Date): string {
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -543,12 +1043,10 @@ import Layout from '../layouts/BaseLayout.astro';
       return `${year}-${month}-${day}`;
     }
 
-    // 取得今日日期字串（YYYY-MM-DD）
     function getTodayDateString(): string {
       return formatDateKey(new Date());
     }
 
-    // 正規化 reading_logs 陣列
     function normalizeReadingLogs(rawLogs: any): { date: string; seconds: number }[] {
       let parsed = rawLogs;
       if (typeof parsed === 'string') {
@@ -563,70 +1061,270 @@ import Layout from '../layouts/BaseLayout.astro';
         }));
     }
 
-    // 取得最近 N 天日期清單（由近到遠或由遠到近）
-    function getLastNDays(days = 10): string[] {
-      const result: string[] = [];
-      const base = new Date();
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(base);
-        d.setDate(base.getDate() - i);
-        result.push(formatDateKey(d));
+    // 渲染直條圖（支援按月切換月份、按年顯示 12 個月；Y 軸每格 30 分鐘，最高 12 小時）
+    function renderTrendChart(logs: { date: string; seconds: number }[]) {
+      const titleEl = document.getElementById('chart-period-title');
+      const periodLabelEl = document.getElementById('period-label');
+      const periodTotalEl = document.getElementById('display-period-total');
+      const readoutEl = document.getElementById('selected-bar-readout');
+      const yAxisEl = document.getElementById('y-axis-container');
+      const hGridEl = document.getElementById('h-grid-container');
+      const vGridEl = document.getElementById('v-grid-container');
+      const plotInnerEl = document.getElementById('chart-plot-inner');
+      const barsRowEl = document.getElementById('bar-chart-columns');
+      const xTicksRowEl = document.getElementById('x-axis-ticks-row');
+      const xTrackEl = document.getElementById('x-axis-scroll-track');
+
+      if (
+        !titleEl || !periodLabelEl || !periodTotalEl || !yAxisEl ||
+        !hGridEl || !vGridEl || !plotInnerEl || !barsRowEl || !xTicksRowEl
+      ) return;
+
+      const todayStr = getTodayDateString();
+      const [todayY, todayM, todayD] = todayStr.split('-').map(Number);
+
+      let buckets: { key: string; axisText: string; detailText: string; seconds: number; isHighlight: boolean }[] = [];
+
+      if (chartGranularity === 'month') {
+        const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
+        const daySecMap = new Map<number, number>();
+
+        logs.forEach(log => {
+          const [y, m, d] = log.date.split('-').map(Number);
+          if (y === activeYear && m === (activeMonth + 1)) {
+            daySecMap.set(d, (daySecMap.get(d) || 0) + log.seconds);
+          }
+        });
+
+        titleEl.textContent = `${activeYear}年 ${activeMonth + 1}月 閱讀走勢`;
+        periodLabelEl.textContent = `${activeYear}-${String(activeMonth + 1).padStart(2, '0')}`;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const sec = daySecMap.get(day) || 0;
+          const isToday = (activeYear === todayY && (activeMonth + 1) === todayM && day === todayD);
+          buckets.push({
+            key: `${activeYear}-${String(activeMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+            axisText: `${day}`,
+            detailText: `${activeMonth + 1}/${day}日 · ${formatReadingDuration(sec)}`,
+            seconds: sec,
+            isHighlight: isToday
+          });
+        }
+      } else {
+        const monthSecMap = new Map<number, number>();
+
+        logs.forEach(log => {
+          const [y, m] = log.date.split('-').map(Number);
+          if (y === activeYear && m >= 1 && m <= 12) {
+            monthSecMap.set(m, (monthSecMap.get(m) || 0) + log.seconds);
+          }
+        });
+
+        titleEl.textContent = `${activeYear}年 全年閱讀走勢`;
+        periodLabelEl.textContent = `${activeYear}年`;
+
+        for (let m = 1; m <= 12; m++) {
+          const sec = monthSecMap.get(m) || 0;
+          const isCurrentMonth = (activeYear === todayY && m === todayM);
+          buckets.push({
+            key: `${activeYear}-${String(m).padStart(2, '0')}`,
+            axisText: `${m}月`,
+            detailText: `${activeYear}年${m}月 · ${formatReadingDuration(sec)}`,
+            seconds: sec,
+            isHighlight: isCurrentMonth
+          });
+        }
       }
-      return result;
-    }
 
-    // 渲染近 10 日閱讀足跡
-    function renderLast10Days(logs: { date: string; seconds: number }[]) {
-      const listEl = document.getElementById('reading-10d-list');
-      const total10dEl = document.getElementById('display-10d-total');
-      if (!listEl) return;
+      const totalSec = buckets.reduce((acc, b) => acc + b.seconds, 0);
+      periodTotalEl.textContent = `期間總計：${formatReadingDuration(totalSec)}`;
 
-      const dateMap = new Map<string, number>();
-      logs.forEach(entry => {
-        dateMap.set(entry.date, (dateMap.get(entry.date) || 0) + entry.seconds);
-      });
+      // Y 軸每格 30 分鐘（1800 秒），最多顯示 12 小時（43200 秒 = 24 格）
+      const maxValSec = Math.max(...buckets.map(b => b.seconds), 0);
+      let stepsCount = Math.max(2, Math.ceil(maxValSec / 1800));
+      if (stepsCount > 24) stepsCount = 24;
+      const yMaxSec = stepsCount * 1800;
 
-      const last10Dates = getLastNDays(10).reverse();
-      let sum10dSec = 0;
+      let yHtml = '';
+      let hGridHtml = '';
+      for (let i = stepsCount; i >= 0; i--) {
+        const stepSec = i * 1800;
+        yHtml += `<span>${stepSec === 0 ? '0分' : formatReadingDuration(stepSec)}</span>`;
+        hGridHtml += `<div class="h-grid-line ${i === 0 ? 'h-grid-line--zero' : ''}"></div>`;
+      }
+      yAxisEl.innerHTML = yHtml;
+      hGridEl.innerHTML = hGridHtml;
 
-      const html = last10Dates.map(dateStr => {
-        const sec = dateMap.get(dateStr) || 0;
-        sum10dSec += sec;
-        const shortDate = dateStr.slice(5); // MM-DD
-        const activeClass = sec > 0 ? 'day-pill day-pill--active' : 'day-pill';
-        return `
-          <div class="${activeClass}">
-            <span class="day-pill-date">${shortDate}</span>
-            <span class="day-pill-time">${formatReadingDuration(sec)}</span>
+      // 當月天數多時設定最小寬度，方便 X 軸左右滑動查看
+      const minPlotWidth = chartGranularity === 'month' ? buckets.length * 26 : 520;
+      plotInnerEl.style.minWidth = `${minPlotWidth}px`;
+      xTicksRowEl.style.minWidth = `${minPlotWidth}px`;
+
+      let vGridHtml = '';
+      let barsHtml = '';
+      let xHtml = '';
+
+      buckets.forEach((b, idx) => {
+        const pct = b.seconds > 0 ? Math.min(100, Math.max(3, Math.round((b.seconds / yMaxSec) * 100))) : 0;
+        vGridHtml += `<div class="v-grid-cell"></div>`;
+        barsHtml += `
+          <div class="bar-slot ${b.isHighlight ? 'today-slot' : ''}" data-index="${idx}" data-detail="${b.detailText}">
+            <div class="bar-rect" style="height: ${pct}%;"></div>
           </div>
         `;
-      }).join('');
+        xHtml += `
+          <div class="x-day-cell ${b.isHighlight ? 'today-tick' : ''}" data-index="${idx}">${b.axisText}</div>
+        `;
+      });
 
-      listEl.innerHTML = html;
-      if (total10dEl) {
-        total10dEl.textContent = `共 ${formatReadingDuration(sum10dSec)}`;
+      vGridEl.innerHTML = vGridHtml;
+      barsRowEl.innerHTML = barsHtml;
+      xTicksRowEl.innerHTML = xHtml;
+
+      if (readoutEl) {
+        readoutEl.textContent = '懸浮或點選直條查看時數';
       }
+
+      // 綁定直條懸浮與點擊事件
+      barsRowEl.querySelectorAll('.bar-slot').forEach(slot => {
+        const detail = slot.getAttribute('data-detail') || '';
+        slot.addEventListener('mouseenter', () => {
+          if (readoutEl && detail) readoutEl.textContent = detail;
+        });
+        slot.addEventListener('click', () => {
+          barsRowEl.querySelectorAll('.bar-slot').forEach(s => s.classList.remove('active-bar'));
+          slot.classList.add('active-bar');
+          if (readoutEl && detail) readoutEl.textContent = `已選：${detail}`;
+        });
+      });
+
+      if (xTrackEl) xTrackEl.scrollLeft = 0;
+      const chartViewport = document.getElementById('chart-scroll-viewport');
+      if (chartViewport) chartViewport.scrollLeft = 0;
     }
 
-    // 切換修改個人資料表單顯示/隱藏
-    toggleEditProfileBtn?.addEventListener('click', () => {
-      if (form) {
-        const isHidden = form.style.display === 'none';
-        form.style.display = isHidden ? 'flex' : 'none';
-        toggleEditProfileBtn.textContent = isHidden ? '✕ 收起個人資料修改' : '✏️ 修改個人資料';
-      }
-    });
+    // 同步 X 軸滑動列與直條圖捲動位置
+    function syncHorizontalScroll() {
+      const chartViewport = document.getElementById('chart-scroll-viewport');
+      const xTrack = document.getElementById('x-axis-scroll-track');
+      const btnLeft = document.getElementById('btn-x-scroll-left');
+      const btnRight = document.getElementById('btn-x-scroll-right');
 
-    // 切換修改密碼表單顯示/隱藏
-    toggleEditPasswordBtn?.addEventListener('click', () => {
-      if (passwordFormContainer) {
-        const isHidden = passwordFormContainer.style.display === 'none';
-        passwordFormContainer.style.display = isHidden ? 'flex' : 'none';
-        toggleEditPasswordBtn.textContent = isHidden ? '✕ 收起修改密碼' : '🔒 修改密碼';
-      }
-    });
+      if (!chartViewport || !xTrack) return;
 
-    // 密碼顯示/隱藏切換功能
+      let locking = false;
+      chartViewport.addEventListener('scroll', () => {
+        if (locking) return;
+        locking = true;
+        xTrack.scrollLeft = chartViewport.scrollLeft;
+        locking = false;
+      });
+
+      xTrack.addEventListener('scroll', () => {
+        if (locking) return;
+        locking = true;
+        chartViewport.scrollLeft = xTrack.scrollLeft;
+        locking = false;
+      });
+
+      btnLeft?.addEventListener('click', () => {
+        chartViewport.scrollBy({ left: -140, behavior: 'smooth' });
+      });
+
+      btnRight?.addEventListener('click', () => {
+        chartViewport.scrollBy({ left: 140, behavior: 'smooth' });
+      });
+    }
+
+    function setupUIEvents() {
+      const btnPanelChart = document.getElementById('btn-panel-chart');
+      const btnPanelEdit = document.getElementById('btn-panel-edit');
+      const btnPanelPassword = document.getElementById('btn-panel-password');
+
+      const chartSection = document.getElementById('chart-section');
+      const profileForm = document.getElementById('profile-form');
+      const passwordFormContainer = document.getElementById('password-form-container');
+      const rightPanelsAnchor = document.getElementById('right-panels-anchor');
+
+      const btnViewMonth = document.getElementById('btn-view-month');
+      const btnViewYear = document.getElementById('btn-view-year');
+      const btnPrevPeriod = document.getElementById('btn-prev-period');
+      const btnNextPeriod = document.getElementById('btn-next-period');
+      const logoutBtn = document.getElementById('profile-logout-btn');
+
+      // 切換面板（走勢圖 / 編輯資料 / 修改密碼），手機版自動捲動到面板位置
+      function switchRightPanel(target: 'chart' | 'edit' | 'password') {
+        if (chartSection) chartSection.style.display = target === 'chart' ? 'block' : 'none';
+        if (profileForm) profileForm.style.display = target === 'edit' ? 'block' : 'none';
+        if (passwordFormContainer) passwordFormContainer.style.display = target === 'password' ? 'block' : 'none';
+
+        btnPanelChart?.classList.toggle('active', target === 'chart');
+        btnPanelEdit?.classList.toggle('active', target === 'edit');
+        btnPanelPassword?.classList.toggle('active', target === 'password');
+
+        if (window.innerWidth <= 820 && rightPanelsAnchor) {
+          rightPanelsAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      btnPanelChart?.addEventListener('click', () => switchRightPanel('chart'));
+      btnPanelEdit?.addEventListener('click', () => switchRightPanel('edit'));
+      btnPanelPassword?.addEventListener('click', () => switchRightPanel('password'));
+
+      // 切換按月 / 按年顯示
+      btnViewMonth?.addEventListener('click', () => {
+        chartGranularity = 'month';
+        btnViewMonth.classList.add('active');
+        btnViewYear?.classList.remove('active');
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      btnViewYear?.addEventListener('click', () => {
+        chartGranularity = 'year';
+        btnViewYear.classList.add('active');
+        btnViewMonth?.classList.remove('active');
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      // 上一期 / 下一期（月份或年份）
+      btnPrevPeriod?.addEventListener('click', () => {
+        if (chartGranularity === 'month') {
+          activeMonth -= 1;
+          if (activeMonth < 0) {
+            activeMonth = 11;
+            activeYear -= 1;
+          }
+        } else {
+          activeYear -= 1;
+        }
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      btnNextPeriod?.addEventListener('click', () => {
+        if (chartGranularity === 'month') {
+          activeMonth += 1;
+          if (activeMonth > 11) {
+            activeMonth = 0;
+            activeYear += 1;
+          }
+        } else {
+          activeYear += 1;
+        }
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      // 登出
+      logoutBtn?.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        window.location.href = '/slowplace';
+      });
+
+      setupPasswordToggle('new-password', 'toggle-pwd-1');
+      setupPasswordToggle('new-password-confirm', 'toggle-pwd-2');
+      syncHorizontalScroll();
+    }
+
     function setupPasswordToggle(inputId: string, btnId: string) {
       const input = document.getElementById(inputId) as HTMLInputElement;
       const btn = document.getElementById(btnId);
@@ -640,42 +1338,33 @@ import Layout from '../layouts/BaseLayout.astro';
         }
       });
     }
-    setupPasswordToggle('new-password', 'toggle-pwd-1');
-    setupPasswordToggle('new-password-confirm', 'toggle-pwd-2');
 
-    // 登出
-    logoutBtn?.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      localStorage.clear();
-      window.location.href = '/';
-    });
-
-    // 初始化：載入 Auth 與雙表資料
     async function initProfile() {
+      const loadingState = document.getElementById('loading-state');
+      const profileContent = document.getElementById('profile-content');
+
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session || !session.user) {
         alert('您尚未登入，請先前往客舍空間進行登入。');
-        window.location.href = '/';
+        window.location.href = '/slowplace';
         return;
       }
 
       currentUserId = session.user.id;
       const userEmail = session.user.email || '';
 
-      // 1. 取得 slowpace_members 資料
       const { data: profile } = await supabase
         .from(TABLE_NAME)
         .select('*')
         .eq('user_id', currentUserId)
         .single();
 
-      // 2. 取得 member_contacts 私密資料（電話、IG）
       const { data: contact } = await supabase
         .from('member_contacts')
         .select('phone, ig')
         .eq('user_id', currentUserId)
-        .single();
+        .maybeSingle();
 
       currentProfile = {
         ...(profile || {}),
@@ -685,19 +1374,21 @@ import Layout from '../layouts/BaseLayout.astro';
       };
 
       renderProfileData();
+      setupUIEvents();
+
       if (loadingState) loadingState.style.display = 'none';
-      if (profileContent) profileContent.style.display = 'block';
+      if (profileContent) profileContent.style.display = 'grid';
     }
 
-    // 渲染資料至 UI 與表單
     function renderProfileData() {
       const avatarImg = document.getElementById('profile-avatar-img') as HTMLImageElement;
       const nameDisplay = document.getElementById('profile-name-display');
+      const roleDisplay = document.getElementById('profile-role-display');
       const tierBadge = document.getElementById('profile-tier-badge');
 
       const dailyReadingEl = document.getElementById('display-daily-reading');
       const totalReadingEl = document.getElementById('display-total-reading');
-      
+
       const displayEmail = document.getElementById('display-email');
       const displayPhone = document.getElementById('display-phone');
       const displayIg = document.getElementById('display-ig');
@@ -708,8 +1399,9 @@ import Layout from '../layouts/BaseLayout.astro';
       const editIg = document.getElementById('edit-ig') as HTMLInputElement;
 
       if (avatarImg) avatarImg.src = currentProfile.avatar || '/assets/player1.png';
-      if (nameDisplay) nameDisplay.textContent = currentProfile.name;
-      if (tierBadge) tierBadge.textContent = currentProfile.tier === '店主' ? '👑 店主' : '🌱 鄰里人';
+      if (nameDisplay) nameDisplay.textContent = currentProfile.name || '旅人';
+      if (roleDisplay) roleDisplay.textContent = currentProfile.role || '漫步者';
+      if (tierBadge) tierBadge.textContent = currentProfile.is_admin ? '👑 店主' : '🌱 鄰里人';
 
       const todayStr = getTodayDateString();
       const logs = normalizeReadingLogs(currentProfile.reading_logs);
@@ -719,10 +1411,7 @@ import Layout from '../layouts/BaseLayout.astro';
         .reduce((sum, item) => sum + item.seconds, 0);
       const logsTotalSec = logs.reduce((sum, item) => sum + item.seconds, 0);
 
-      const fallbackDailySec =
-        currentProfile.daily_reading_date === todayStr
-          ? Number(currentProfile.daily_reading_seconds || 0)
-          : 0;
+      const fallbackDailySec = currentProfile.daily_reading_date === todayStr ? Number(currentProfile.daily_reading_seconds || 0) : 0;
       const fallbackTotalSec = Number(currentProfile.total_reading_seconds || 0);
 
       const rawDailySec = logs.length > 0 ? logsTodaySec : fallbackDailySec;
@@ -731,55 +1420,33 @@ import Layout from '../layouts/BaseLayout.astro';
       if (dailyReadingEl) dailyReadingEl.textContent = formatReadingDuration(rawDailySec);
       if (totalReadingEl) totalReadingEl.textContent = formatReadingDuration(rawTotalSec);
 
-      renderLast10Days(logs);
+      renderTrendChart(logs);
 
       if (displayEmail) displayEmail.textContent = currentProfile.email;
       if (displayPhone) displayPhone.textContent = currentProfile.phone || '未填寫';
       if (displayIg) displayIg.textContent = currentProfile.ig || '未填寫';
-      
-      if (editName) editName.value = currentProfile.name;
-      if (editRole) editRole.value = currentProfile.role || '☁️ 晴空選書';
-      if (editPhone) editPhone.value = currentProfile.phone;
-      if (editIg) editIg.value = currentProfile.ig;
 
-      // 分身造型選取高亮
-      const radios = document.querySelectorAll('input[name="edit-avatar"]') as NodeListOf<HTMLInputElement>;
-      radios.forEach(radio => {
-        if (radio.value === currentProfile.avatar) {
+      if (editName) editName.value = currentProfile.name || '';
+      if (editRole) editRole.value = currentProfile.role || '漫步者';
+      if (editPhone) editPhone.value = currentProfile.phone || '';
+      if (editIg) editIg.value = currentProfile.ig || '';
+
+      const avatarOptions = document.querySelectorAll('.avatar-option-item');
+      avatarOptions.forEach(item => {
+        const radio = item.querySelector('input[type="radio"]') as HTMLInputElement;
+        if (radio && radio.value === (currentProfile.avatar || '/assets/player1.png')) {
           radio.checked = true;
-          updateAvatarLabelStyle(radio.closest('.avatar-option'), true);
-        } else {
-          radio.checked = false;
-          updateAvatarLabelStyle(radio.closest('.avatar-option'), false);
+          item.classList.add('selected');
         }
+        item.addEventListener('click', () => {
+          avatarOptions.forEach(o => o.classList.remove('selected'));
+          item.classList.add('selected');
+          if (radio) radio.checked = true;
+        });
       });
     }
 
-    function updateAvatarLabelStyle(label: HTMLElement | null, isSelected: boolean) {
-      if (!label) return;
-      const span = label.querySelector('span');
-      if (isSelected) {
-        label.style.background = '#f4efe6';
-        label.style.border = '2px solid #3c3835';
-        if (span) { span.style.color = '#3c3835'; span.style.fontWeight = '500'; }
-      } else {
-        label.style.background = '#ffffff';
-        label.style.border = '1px solid #e5dfd5';
-        if (span) { span.style.color = '#8c8275'; span.style.fontWeight = '400'; }
-      }
-    }
-
-    document.querySelectorAll('.edit-avatar-label').forEach(label => {
-      label.addEventListener('click', () => {
-        document.querySelectorAll('.edit-avatar-label').forEach(l => updateAvatarLabelStyle(l as HTMLElement, false));
-        updateAvatarLabelStyle(label as HTMLElement, true);
-        const radio = label.querySelector('input[type="radio"]') as HTMLInputElement;
-        if (radio) radio.checked = true;
-      });
-    });
-
-    // 儲存個人資料修改（同時更新 slowpace_members 與 member_contacts）
-    form?.addEventListener('submit', async (e) => {
+    document.getElementById('profile-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentUserId) return;
 
@@ -789,76 +1456,66 @@ import Layout from '../layouts/BaseLayout.astro';
       const newIg = (document.getElementById('edit-ig') as HTMLInputElement).value.trim();
       const selectedAvatar = (document.querySelector('input[name="edit-avatar"]:checked') as HTMLInputElement)?.value || '/assets/player1.png';
 
-      if (!newName || (!newPhone && !newIg)) {
-        alert('請填寫稱號，且聯絡電話與 IG 帳號至少需填寫其中一項');
+      if (!newName) {
+        alert('請輸入您的客舍稱號！');
         return;
       }
 
-      // 同步 Auth metadata
       await supabase.auth.updateUser({ data: { name: newName, avatar: selectedAvatar } });
 
-      // 更新 slowpace_members
       const { error: dbError } = await supabase
         .from(TABLE_NAME)
         .update({
           name: newName,
           role: newRole,
           avatar: selectedAvatar,
-          updated_at: new Date()
+          updated_at: new Date().toISOString()
         })
         .eq('user_id', currentUserId);
 
-      // 更新 member_contacts
       const { error: contactError } = await supabase
         .from('member_contacts')
-        .update({
+        .upsert({
+          user_id: currentUserId,
           name: newName,
           phone: newPhone,
           ig: newIg
-        })
-        .eq('user_id', currentUserId);
+        }, { onConflict: 'user_id' });
 
       if (dbError || contactError) {
         alert('儲存失敗：' + (dbError?.message || contactError?.message));
       } else {
-        alert('個人資料已成功更新！');
+        alert('個人資料已更新！');
         currentProfile.name = newName;
         currentProfile.role = newRole;
         currentProfile.phone = newPhone;
         currentProfile.ig = newIg;
         currentProfile.avatar = selectedAvatar;
         renderProfileData();
-        form.style.display = 'none';
-        if (toggleEditProfileBtn) toggleEditProfileBtn.textContent = '✏️ 修改個人資料';
       }
     });
 
-    // 更新密碼（含重複輸入驗證）
     document.getElementById('update-password-btn')?.addEventListener('click', async () => {
       const newPassword = (document.getElementById('new-password') as HTMLInputElement).value.trim();
       const newPasswordConfirm = (document.getElementById('new-password-confirm') as HTMLInputElement).value.trim();
 
       if (!newPassword || newPassword.length < 6) {
-        alert('新密碼長度至少需要 6 個字元');
+        alert('新密碼長度至少需要 6 位數');
         return;
       }
       if (newPassword !== newPasswordConfirm) {
-        alert('兩次輸入的新密碼不相符，請重新確認');
+        alert('兩次輸入的新密碼不符');
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
 
       if (error) {
         alert('修改密碼失敗：' + error.message);
       } else {
-        alert('密碼已成功更新！');
+        alert('密碼已更新！');
         (document.getElementById('new-password') as HTMLInputElement).value = '';
         (document.getElementById('new-password-confirm') as HTMLInputElement).value = '';
-        if (passwordFormContainer) passwordFormContainer.style.display = 'none';
-        if (toggleEditPasswordBtn) toggleEditPasswordBtn.textContent = '🔒 修改密碼';
       }
     });
 
