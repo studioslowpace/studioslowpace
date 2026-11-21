@@ -1,19 +1,9 @@
 ---
-import Layout from '../layouts/BaseLayout.astro';
+import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="個人會員專區 · 空間客舍">
   <div class="profile-viewport">
-
-    <!-- 頂端導航列 -->
-    <header class="profile-navbar">
-      <a href="/slowplace" class="back-btn">
-        <span class="btn-icon">←</span>
-        <span>返回客舍自由空間</span>
-      </a>
-      <div class="brand-title">空間客舍 · 讀者手帳專區</div>
-      <button id="profile-logout-btn" class="nav-logout-btn">🚪 登出</button>
-    </header>
 
     <!-- 載入中狀態 -->
     <div id="loading-state" class="state-container">
@@ -21,75 +11,146 @@ import Layout from '../layouts/BaseLayout.astro';
       <p>正在翻開您的閱讀手帳...</p>
     </div>
 
-    <!-- 主內容區塊 (預設隱藏) -->
+    <!-- 主內容區塊 (預設隱藏；桌面左右對調，手機優先顯示左側個人資料) -->
     <main id="profile-content" class="profile-main-grid" style="display: none;">
 
-      <!-- ================= 左側欄：控制按鈕與展開式視窗 ================= -->
+      <!-- ================= 左側欄：個人資料、三個功能按鈕與登出 ================= -->
       <aside class="profile-left-col">
+        <div class="card personal-hub-card">
 
-        <!-- 左側切換按鈕群 (左展開控制器) -->
-        <div class="card left-controls-card">
-          <h2 class="card-title">🎛️ 面板功能與圖表</h2>
-          <p class="card-desc">點擊下方按鈕可於左側視窗展開對應內容：</p>
-
-          <div class="left-btn-group">
-            <button type="button" id="btn-toggle-chart" class="drawer-trigger-btn active">
-              <span class="btn-left">
-                <span class="icon">📊</span>
-                <span>本月閱讀走勢圖</span>
-              </span>
-              <span id="chart-arrow" class="arrow">◀</span>
-            </button>
-
-            <button type="button" id="btn-toggle-edit" class="drawer-trigger-btn">
-              <span class="btn-left">
-                <span class="icon">✏️</span>
-                <span>編輯個人資料</span>
-              </span>
-              <span id="edit-arrow" class="arrow">◀</span>
-            </button>
-
-            <button type="button" id="btn-toggle-password" class="drawer-trigger-btn outline">
-              <span class="btn-left">
-                <span class="icon">🔒</span>
-                <span>修改會員密碼</span>
-              </span>
-              <span id="password-arrow" class="arrow">◀</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 左側展開區域：當月閱讀走勢二維平面直條圖 -->
-        <div id="chart-section" class="card chart-card drawer-panel">
-          <div class="chart-header">
-            <div>
-              <h2 class="card-title" id="chart-month-title">2026年 11月 每日閱讀走勢</h2>
-              <p class="card-desc">Y 軸每格 30 分鐘（上限 12 小時），X 軸底部僅標示日期。</p>
+          <!-- 讀者名片 -->
+          <div class="profile-card-top">
+            <div class="avatar-wrapper">
+              <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" class="profile-avatar" oncontextmenu="return false;" ondragstart="return false;" />
+              <div id="profile-tier-badge" class="tier-badge">🌱 鄰里人</div>
             </div>
-            <div class="chart-meta-badges">
-              <span id="selected-day-readout" class="selected-day-tag">點選長條查看日期</span>
-              <span id="display-month-total" class="month-total-tag">本月總計：0分</span>
+            <div class="profile-identity">
+              <h1 id="profile-name-display" class="profile-name">旅人</h1>
+              <p id="profile-role-display" class="profile-role">漫步者</p>
             </div>
           </div>
 
-          <!-- 二維平面直條圖容器 (帶淺色框線) -->
-          <div class="chart-frame-wrapper">
-            <div class="chart-scroll-area">
-              <div class="cartesian-chart">
-                <div id="y-axis-container" class="y-axis-column" aria-hidden="true"></div>
+          <!-- 閱讀時間概覽 -->
+          <div class="stats-section">
+            <h2 class="section-mini-title">📖 閱讀時間概覽</h2>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-icon">🕯️</div>
+                <div class="stat-info">
+                  <span class="stat-label">今日閱讀</span>
+                  <strong id="display-daily-reading" class="stat-value">0分</strong>
+                </div>
+              </div>
 
-                <div class="plot-and-x-axis">
-                  <div id="plot-grid-container" class="plot-grid-lines" aria-hidden="true"></div>
-                  <div id="monthly-bar-chart" class="bar-chart-wrapper" role="img" aria-label="當月每日閱讀時間平面直條圖"></div>
+              <div class="stat-box">
+                <div class="stat-icon alt">📚</div>
+                <div class="stat-info">
+                  <span class="stat-label">累積總閱讀</span>
+                  <strong id="display-total-reading" class="stat-value">0分</strong>
                 </div>
               </div>
             </div>
-            <div id="x-axis-date-row" class="x-axis-date-strip"></div>
+          </div>
+
+          <!-- 聯絡資訊 -->
+          <div class="contact-section">
+            <h2 class="section-mini-title">✉️ 聯絡資訊</h2>
+            <ul class="info-list">
+              <li>
+                <span class="info-label">電子信箱</span>
+                <span id="display-email" class="info-val">-</span>
+              </li>
+              <li>
+                <span class="info-label">聯絡電話</span>
+                <span id="display-phone" class="info-val">-</span>
+              </li>
+              <li>
+                <span class="info-label">IG 帳號</span>
+                <span id="display-ig" class="info-val">-</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 個人資料下方的三個面板功能按鈕 -->
+          <div class="three-panel-btns" role="group" aria-label="面板功能切換">
+            <button type="button" id="btn-panel-chart" class="panel-switch-btn active">
+              <span>📊</span>
+              <span>走勢圖</span>
+            </button>
+            <button type="button" id="btn-panel-edit" class="panel-switch-btn">
+              <span>✏️</span>
+              <span>編輯資料</span>
+            </button>
+            <button type="button" id="btn-panel-password" class="panel-switch-btn">
+              <span>🔒</span>
+              <span>修改密碼</span>
+            </button>
+          </div>
+
+          <!-- 登出按鈕（放在個人資料內） -->
+          <button type="button" id="profile-logout-btn" class="card-logout-btn">🚪 登出帳號</button>
+        </div>
+      </aside>
+
+      <!-- ================= 右側欄：走勢圖表、編輯資料與修改密碼視窗 ================= -->
+      <section class="profile-right-col">
+
+        <!-- 閱讀走勢圖視窗（支援月份切換與按年顯示，Y軸每格30分鐘上限12小時，X軸底部左右滑動） -->
+        <div id="chart-section" class="card chart-card">
+          <div class="chart-header">
+            <div>
+              <h2 class="card-title" id="chart-period-title">2026年 11月 閱讀走勢</h2>
+              <p class="card-desc">Y 軸每格 30 分鐘（上限 12 小時），水平與垂直虛線輔助對照。</p>
+            </div>
+
+            <div class="chart-controls-bar">
+              <!-- 檢視維度切換：月 / 年 -->
+              <div class="granularity-switch">
+                <button type="button" id="btn-view-month" class="gran-btn active">按月</button>
+                <button type="button" id="btn-view-year" class="gran-btn">按年</button>
+              </div>
+
+              <!-- 切換不同月份或年份 -->
+              <div class="period-nav">
+                <button type="button" id="btn-prev-period" class="period-step-btn" title="上一期">‹</button>
+                <span id="period-label" class="period-label">2026-11</span>
+                <button type="button" id="btn-next-period" class="period-step-btn" title="下一期">›</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-summary-strip">
+            <span id="selected-bar-readout" class="selected-bar-tag">懸浮或點選直條查看時數</span>
+            <span id="display-period-total" class="period-total-tag">期間總計：0分</span>
+          </div>
+
+          <!-- 帶淺色外框線的平面直條圖容器 -->
+          <div class="chart-frame-wrapper">
+            <div class="cartesian-row">
+              <div id="y-axis-container" class="y-axis-column" aria-hidden="true"></div>
+
+              <div id="chart-scroll-viewport" class="chart-scroll-viewport">
+                <div id="chart-plot-inner" class="chart-plot-inner">
+                  <div id="h-grid-container" class="h-grid-layer" aria-hidden="true"></div>
+                  <div id="v-grid-container" class="v-grid-layer" aria-hidden="true"></div>
+                  <div id="bar-chart-columns" class="bar-columns-row" role="img" aria-label="閱讀時間直條圖"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- X 軸放在底部，附左右按鍵可捲動查看不夠位顯示的日子 -->
+            <div class="x-axis-bottom-bar">
+              <button type="button" id="btn-x-scroll-left" class="x-scroll-btn" title="向左查看更早日子" aria-label="向左捲動">◀</button>
+              <div id="x-axis-scroll-track" class="x-axis-scroll-track">
+                <div id="x-axis-ticks-row" class="x-axis-ticks-row"></div>
+              </div>
+              <button type="button" id="btn-x-scroll-right" class="x-scroll-btn" title="向右查看較晚日子" aria-label="向右捲動">▶</button>
+            </div>
           </div>
         </div>
 
-        <!-- 左側展開區域：修改個人資料表單 (預設隱藏) -->
-        <form id="profile-form" class="card form-card drawer-panel" style="display: none;">
+        <!-- 編輯個人資料視窗 -->
+        <form id="profile-form" class="card form-card" style="display: none;">
           <h2 class="card-title">✏️ 編輯個人資料</h2>
 
           <div class="form-group">
@@ -123,12 +184,12 @@ import Layout from '../layouts/BaseLayout.astro';
             <div class="avatar-select-grid" id="edit-avatar-group">
               <label class="avatar-option-item">
                 <input type="radio" name="edit-avatar" value="/assets/player1.png" style="display:none;" />
-                <img src="/assets/player1.png" alt="P1" />
+                <img src="/assets/player1.png" alt="P1" oncontextmenu="return false;" ondragstart="return false;" />
                 <span>分身一號</span>
               </label>
               <label class="avatar-option-item">
                 <input type="radio" name="edit-avatar" value="/assets/player2.png" style="display:none;" />
-                <img src="/assets/player2.png" alt="P2" />
+                <img src="/assets/player2.png" alt="P2" oncontextmenu="return false;" ondragstart="return false;" />
                 <span>分身二號</span>
               </label>
             </div>
@@ -139,8 +200,8 @@ import Layout from '../layouts/BaseLayout.astro';
           </div>
         </form>
 
-        <!-- 左側展開區域：修改密碼表單 (預設隱藏) -->
-        <div id="password-form-container" class="card form-card drawer-panel" style="display: none;">
+        <!-- 修改密碼視窗 -->
+        <div id="password-form-container" class="card form-card" style="display: none;">
           <h2 class="card-title">🔒 變更會員密碼</h2>
 
           <div class="form-group">
@@ -162,73 +223,6 @@ import Layout from '../layouts/BaseLayout.astro';
           <div class="form-actions">
             <button type="button" id="update-password-btn" class="accent-btn">確認變更密碼</button>
           </div>
-        </div>
-
-        <!-- 空間精神小語卡片 -->
-        <div class="card quote-card">
-          <div class="quote-symbol">“</div>
-          <p class="quote-text">閱讀不是為了抵達終點，而是為自己在吵雜的世界裡，闢出一塊安靜的角落。</p>
-          <div class="quote-author">—— 空間客舍 Slow Pace Studio</div>
-        </div>
-      </aside>
-
-      <!-- ================= 右側欄：讀者名片、閱讀時間概覽與聯絡資訊 ================= -->
-      <section class="profile-right-col">
-
-        <!-- 讀者名片卡片（右側） -->
-        <div class="card profile-card">
-          <div class="profile-card-top">
-            <div class="avatar-wrapper">
-              <img id="profile-avatar-img" src="/assets/player1.png" alt="Avatar" class="profile-avatar" />
-              <div id="profile-tier-badge" class="tier-badge">🌱 鄰里人</div>
-            </div>
-            <div class="profile-identity">
-              <h1 id="profile-name-display" class="profile-name">旅人</h1>
-              <p id="profile-role-display" class="profile-role">漫步者</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 閱讀統計看板（右側） -->
-        <div class="card stats-card">
-          <h2 class="card-title">📖 閱讀時間概覽</h2>
-          <div class="stats-grid">
-            <div class="stat-box">
-              <div class="stat-icon">🕯️</div>
-              <div class="stat-info">
-                <span class="stat-label">今日閱讀</span>
-                <strong id="display-daily-reading" class="stat-value">0分</strong>
-              </div>
-            </div>
-
-            <div class="stat-box">
-              <div class="stat-icon alt">📚</div>
-              <div class="stat-info">
-                <span class="stat-label">累積總閱讀</span>
-                <strong id="display-total-reading" class="stat-value">0分</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 聯絡資訊卡片（右側） -->
-        <div class="card info-card">
-          <h2 class="card-title">✉️ 聯絡資訊</h2>
-          <p class="card-desc">您的會員聯絡資料與帳號資訊。</p>
-          <ul class="info-list">
-            <li>
-              <span class="info-label">電子信箱</span>
-              <span id="display-email" class="info-val">-</span>
-            </li>
-            <li>
-              <span class="info-label">聯絡電話</span>
-              <span id="display-phone" class="info-val">-</span>
-            </li>
-            <li>
-              <span class="info-label">IG 帳號</span>
-              <span id="display-ig" class="info-val">-</span>
-            </li>
-          </ul>
         </div>
 
       </section>
@@ -281,71 +275,9 @@ import Layout from '../layouts/BaseLayout.astro';
       background-color: var(--bg-base);
     }
 
-    /* 頂端導航列 */
-    .profile-navbar {
-      width: 100%;
-      min-height: 64px;
-      padding: 10px 24px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      position: sticky;
-      top: 0;
-      z-index: 40;
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 500;
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border-color);
-      background: var(--bg-card);
-      transition: all 0.2s ease;
-    }
-
-    .back-btn:hover {
-      background: var(--bg-subtle);
-      color: var(--text-main);
-    }
-
-    .brand-title {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      color: var(--text-main);
-    }
-
-    .nav-logout-btn {
-      background: transparent;
-      border: 1px solid var(--border-color);
-      color: var(--accent-danger);
-      padding: 6px 14px;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .nav-logout-btn:hover {
-      background: #FDF2F2;
-      border-color: #F8D7DA;
-    }
-
-    /* 載入狀態 */
     .state-container {
       flex: 1;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -369,14 +301,14 @@ import Layout from '../layouts/BaseLayout.astro';
       to { transform: rotate(360deg); }
     }
 
-    /* 全闊自適應雙欄佈局 */
+    /* 全闊自適應雙欄佈局：左邊放個人資料，右邊放展開視窗 */
     .profile-main-grid {
       width: 100%;
-      flex: 1;
-      padding: 24px;
+      min-height: 100vh;
+      padding: 20px;
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 380px);
-      gap: 24px;
+      grid-template-columns: minmax(310px, 380px) minmax(0, 1fr);
+      gap: 20px;
       align-items: start;
     }
 
@@ -388,310 +320,65 @@ import Layout from '../layouts/BaseLayout.astro';
       min-width: 0;
     }
 
-    @media (max-width: 960px) {
+    /* 手機版：只顯示個人資料，隱藏右側展開視窗 */
+    @media (max-width: 820px) {
       .profile-main-grid {
         grid-template-columns: 1fr;
-        padding: 16px;
-        gap: 16px;
+        padding: 14px;
+        gap: 0;
       }
 
-      .brand-title {
-        order: -1;
-        width: 100%;
-        text-align: center;
+      .profile-right-col {
+        display: none !important;
+      }
+
+      .three-panel-btns {
+        display: none !important;
       }
     }
 
-    /* 通用卡片 */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 22px;
+      padding: 20px;
       box-shadow: var(--shadow-sm);
-      transition: box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      box-shadow: var(--shadow-md);
     }
 
     .card-title {
-      font-size: 1.08rem;
+      font-size: 1.06rem;
       font-weight: 700;
-      margin: 0 0 6px 0;
+      margin: 0 0 4px 0;
       color: var(--text-main);
     }
 
     .card-desc {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
-      margin: 0 0 16px 0;
+      margin: 0;
     }
 
-    /* 左側面板切換控制按鈕 */
-    .left-btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .drawer-trigger-btn {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg-base);
-      color: var(--text-main);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.2s ease;
-    }
-
-    .drawer-trigger-btn:hover {
-      background: var(--bg-subtle);
-      border-color: var(--border-active);
-    }
-
-    .drawer-trigger-btn.active {
-      background: linear-gradient(135deg, #52796F 0%, #354F52 100%);
-      color: #FFFFFF;
-      border-color: var(--accent-hover);
-      box-shadow: 0 4px 12px rgba(82, 121, 111, 0.2);
-    }
-
-    .drawer-trigger-btn .btn-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .drawer-trigger-btn .arrow {
-      font-size: 0.75rem;
-      transition: transform 0.3s ease;
-    }
-
-    .drawer-trigger-btn.active .arrow {
-      transform: rotate(-90deg);
-    }
-
-    .drawer-panel {
-      animation: slideInLeft 0.28s ease;
-    }
-
-    @keyframes slideInLeft {
-      from { opacity: 0; transform: translateX(-10px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-
-    /* 左側二維平面直條圖 (帶淺色框線) */
-    .chart-card {
-      background: #FFFFFF;
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .chart-meta-badges {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .selected-day-tag {
-      background: var(--bg-base);
-      border: 1px solid var(--border-color);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .month-total-tag {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-color);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--accent-brand);
-    }
-
-    /* 帶淺色外框線的圖表容器 */
-    .chart-frame-wrapper {
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      background: var(--bg-base);
-      padding: 16px 12px 10px 12px;
-      box-shadow: inset 0 0 8px rgba(44, 36, 29, 0.02);
-    }
-
-    .chart-scroll-area {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .cartesian-chart {
-      display: flex;
-      align-items: stretch;
-      min-width: 680px;
-      height: 220px;
-    }
-
-    .y-axis-column {
-      width: 58px;
-      height: 220px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding-right: 10px;
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-      flex-shrink: 0;
-    }
-
-    .plot-and-x-axis {
-      flex: 1;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      height: 220px;
-      min-width: 0;
-    }
-
-    .plot-grid-lines {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .grid-line {
-      width: 100%;
-      border-top: 1px dashed rgba(140, 130, 117, 0.2);
-    }
-
-    .grid-line--base {
-      border-top: 1.5px solid var(--border-active);
-    }
-
-    .bar-chart-wrapper {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-      height: 100%;
-      padding: 0 4px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .bar-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      justify-content: flex-end;
-      position: relative;
-      cursor: pointer;
-    }
-
-    .bar-item {
-      width: 100%;
-      max-width: 16px;
-      background: var(--accent-brand);
-      border-radius: 4px 4px 0 0;
-      transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
-      min-height: 2px;
-    }
-
-    .bar-col:hover .bar-item,
-    .bar-col.active-bar .bar-item {
-      background: var(--accent-warm);
-    }
-
-    .bar-col.today .bar-item {
-      outline: 2px solid rgba(221, 161, 94, 0.45);
-      outline-offset: 1px;
-    }
-
-    /* X 軸日期獨立顯示於最底部 (只顯示日子) */
-    .x-axis-date-strip {
-      display: flex;
-      gap: 4px;
-      padding: 8px 4px 2px 70px;
-      border-top: 1px solid var(--border-color);
-      margin-top: 8px;
-      overflow-x: auto;
-      min-width: 680px;
-    }
-
-    .x-tick-label {
-      flex: 1;
-      text-align: center;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-variant-numeric: tabular-nums;
-      font-weight: 500;
-    }
-
-    .x-tick-label.today {
-      color: var(--accent-warm);
+    .section-mini-title {
+      font-size: 0.86rem;
       font-weight: 700;
+      color: var(--text-muted);
+      margin: 0 0 10px 0;
+      letter-spacing: 0.02em;
     }
 
-    .bar-tooltip {
-      position: absolute;
-      top: -30px;
-      background: var(--text-main);
-      color: #FFFFFF;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.7rem;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.18s ease;
-      z-index: 20;
-    }
-
-    .bar-col:hover .bar-tooltip,
-    .bar-col.active-bar .bar-tooltip {
-      opacity: 1;
-    }
-
-    /* 右側讀者名片 */
-    .profile-card {
+    /* 左側個人資料卡片 */
+    .personal-hub-card {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
     }
 
     .profile-card-top {
       display: flex;
       align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .avatar-wrapper {
@@ -700,13 +387,12 @@ import Layout from '../layouts/BaseLayout.astro';
     }
 
     .profile-avatar {
-      width: 78px;
-      height: 78px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       object-fit: cover;
       background: var(--bg-subtle);
-      border: 3px solid var(--bg-card);
-      box-shadow: 0 0 0 2px var(--border-color);
+      border: 2px solid var(--border-color);
     }
 
     .tier-badge {
@@ -717,63 +403,58 @@ import Layout from '../layouts/BaseLayout.astro';
       white-space: nowrap;
       background: var(--bg-subtle);
       border: 1px solid var(--border-color);
-      padding: 2px 10px;
+      padding: 1px 8px;
       border-radius: 20px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 600;
       color: var(--text-main);
     }
 
     .profile-identity {
+      min-width: 0;
       flex: 1;
-      min-width: 160px;
     }
 
     .profile-name {
-      font-size: 1.35rem;
+      font-size: 1.28rem;
       font-weight: 700;
       margin: 0 0 4px 0;
+      word-break: break-word;
     }
 
     .profile-role {
-      font-size: 0.86rem;
+      font-size: 0.84rem;
       color: var(--text-muted);
       margin: 0;
     }
 
-    /* 右側閱讀時間概覽 */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    @media (max-width: 540px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
+      gap: 10px;
     }
 
     .stat-box {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
       background: var(--bg-base);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 14px 16px;
+      padding: 10px 12px;
+      min-width: 0;
     }
 
     .stat-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
       background: #FFFFFF;
       border: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.05rem;
       flex-shrink: 0;
     }
 
@@ -784,36 +465,43 @@ import Layout from '../layouts/BaseLayout.astro';
     .stat-info {
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
 
     .stat-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
     }
 
     .stat-value {
-      font-size: 1.12rem;
+      font-size: 0.98rem;
       font-weight: 700;
       color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* 右側聯絡資訊卡片 */
     .info-list {
       list-style: none;
       padding: 0;
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
     }
 
     .info-list li {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      font-size: 0.88rem;
-      padding-bottom: 10px;
+      gap: 10px;
+      font-size: 0.84rem;
+      padding-bottom: 6px;
       border-bottom: 1px dashed var(--border-color);
     }
 
@@ -830,18 +518,373 @@ import Layout from '../layouts/BaseLayout.astro';
     .info-val {
       font-weight: 600;
       color: var(--text-main);
-      word-break: break-word;
       text-align: right;
+      word-break: break-word;
     }
 
-    /* 表單卡片 */
+    /* 個人資料下方三個面板功能按鈕 */
+    .three-panel-btns {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    .panel-switch-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .panel-switch-btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-active);
+    }
+
+    .panel-switch-btn.active {
+      background: var(--accent-brand);
+      border-color: var(--accent-brand);
+      color: #FFFFFF;
+    }
+
+    /* 登出按鈕（個人資料內） */
+    .card-logout-btn {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #F1C4C4;
+      background: #FDF4F4;
+      color: var(--accent-danger);
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .card-logout-btn:hover {
+      background: var(--accent-danger);
+      border-color: var(--accent-danger);
+      color: #FFFFFF;
+    }
+
+    /* 右側走勢圖區 */
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .chart-controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .granularity-switch {
+      display: inline-flex;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+    }
+
+    .gran-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .gran-btn.active {
+      background: var(--accent-brand);
+      color: #FFFFFF;
+    }
+
+    .period-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+    }
+
+    .period-step-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-main);
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .period-step-btn:hover {
+      background: var(--bg-subtle);
+    }
+
+    .period-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-main);
+      min-width: 66px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chart-summary-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .selected-bar-tag {
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .period-total-tag {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent-brand);
+    }
+
+    /* 淺色外框線圖表框 */
+    .chart-frame-wrapper {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: #FCFBF8;
+      padding: 16px 12px 12px 12px;
+    }
+
+    .cartesian-row {
+      display: flex;
+      align-items: stretch;
+      height: 220px;
+    }
+
+    .y-axis-column {
+      width: 58px;
+      height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding-right: 8px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .chart-scroll-viewport {
+      flex: 1;
+      height: 220px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;
+      border-left: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-active);
+      position: relative;
+    }
+
+    .chart-scroll-viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chart-plot-inner {
+      position: relative;
+      height: 100%;
+      min-width: 100%;
+    }
+
+    .h-grid-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .h-grid-line {
+      width: 100%;
+      border-top: 1px dashed rgba(140, 130, 117, 0.22);
+    }
+
+    .h-grid-line--zero {
+      border-top: none;
+    }
+
+    .v-grid-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .v-grid-cell {
+      flex: 1;
+      border-right: 1px dashed rgba(140, 130, 117, 0.22);
+    }
+
+    .v-grid-cell:last-child {
+      border-right: none;
+    }
+
+    /* 直條緊貼排列 */
+    .bar-columns-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 0;
+      height: 100%;
+    }
+
+    .bar-slot {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .bar-rect {
+      width: 100%;
+      background: var(--accent-brand);
+      border-radius: 3px 3px 0 0;
+      transition: height 0.25s ease, background-color 0.18s ease;
+      min-height: 0;
+    }
+
+    .bar-slot:hover .bar-rect,
+    .bar-slot.active-bar .bar-rect {
+      background: var(--accent-warm);
+    }
+
+    .bar-slot.today-slot .bar-rect {
+      background: #6B9080;
+    }
+
+    .bar-slot.today-slot:hover .bar-rect,
+    .bar-slot.today-slot.active-bar .bar-rect {
+      background: var(--accent-warm);
+    }
+
+    /* X 軸放在底部，附左右按鍵滑動不夠位顯示的日子 */
+    .x-axis-bottom-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding-left: 58px;
+    }
+
+    .x-scroll-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+      font-size: 0.72rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s ease;
+    }
+
+    .x-scroll-btn:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-active);
+    }
+
+    .x-axis-scroll-track {
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-active) transparent;
+    }
+
+    .x-axis-ticks-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .x-day-cell {
+      flex: 1;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      padding: 3px 0;
+      user-select: none;
+    }
+
+    .x-day-cell.today-tick {
+      color: var(--accent-warm);
+      font-weight: 700;
+    }
+
+    /* 表單區 */
+    .form-card {
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .form-row {
       display: flex;
-      gap: 16px;
+      gap: 14px;
     }
 
     @media (max-width: 600px) {
@@ -867,14 +910,13 @@ import Layout from '../layouts/BaseLayout.astro';
     .form-card input[type="password"],
     .form-card select {
       width: 100%;
-      padding: 10px 14px;
+      padding: 10px 12px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-color);
       background: var(--bg-base);
       color: var(--text-main);
       font-size: 0.9rem;
       outline: none;
-      transition: border-color 0.2s ease;
     }
 
     .form-card input:focus,
@@ -896,16 +938,11 @@ import Layout from '../layouts/BaseLayout.astro';
       border: none;
       cursor: pointer;
       font-size: 0.9rem;
-      opacity: 0.65;
-    }
-
-    .eye-btn:hover {
-      opacity: 1;
     }
 
     .avatar-select-grid {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
 
     .avatar-option-item {
@@ -919,13 +956,12 @@ import Layout from '../layouts/BaseLayout.astro';
       border-radius: var(--radius-sm);
       background: var(--bg-base);
       cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
+      font-size: 0.84rem;
     }
 
     .avatar-option-item img {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
     }
 
     .avatar-option-item.selected {
@@ -935,12 +971,12 @@ import Layout from '../layouts/BaseLayout.astro';
     }
 
     .form-actions {
-      margin-top: 20px;
+      margin-top: 16px;
     }
 
     .primary-btn {
       width: 100%;
-      padding: 12px;
+      padding: 11px;
       border-radius: var(--radius-sm);
       background: var(--accent-brand);
       color: #FFFFFF;
@@ -948,7 +984,6 @@ import Layout from '../layouts/BaseLayout.astro';
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s ease;
     }
 
     .primary-btn:hover {
@@ -957,7 +992,7 @@ import Layout from '../layouts/BaseLayout.astro';
 
     .accent-btn {
       width: 100%;
-      padding: 12px;
+      padding: 11px;
       border-radius: var(--radius-sm);
       background: var(--accent-warm);
       color: #FFFFFF;
@@ -965,40 +1000,6 @@ import Layout from '../layouts/BaseLayout.astro';
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-    }
-
-    /* 精神小語 */
-    .quote-card {
-      background: linear-gradient(135deg, #F4EFE6 0%, #E8E2D5 100%);
-      border: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .quote-symbol {
-      font-size: 4rem;
-      position: absolute;
-      top: -10px;
-      left: 14px;
-      opacity: 0.15;
-      font-family: Georgia, serif;
-    }
-
-    .quote-text {
-      font-size: 0.95rem;
-      line-height: 1.65;
-      font-style: italic;
-      color: var(--text-main);
-      margin: 0 0 10px 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    .quote-author {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-align: right;
-      font-weight: 500;
     }
   </style>
 
@@ -1013,6 +1014,13 @@ import Layout from '../layouts/BaseLayout.astro';
     let currentUserId: string | null = null;
     let currentProfile: any = null;
 
+    // 走勢圖狀態：'month'（按月）或 'year'（按年）
+    let chartGranularity: 'month' | 'year' = 'month';
+    const initialNow = new Date();
+    let activeYear = initialNow.getFullYear();
+    let activeMonth = initialNow.getMonth(); // 0-11
+
+    // 將秒數轉為「X小時Y分」或「Y分」
     function formatReadingDuration(seconds = 0): string {
       const safeSec = Math.max(0, Math.floor(Number(seconds) || 0));
       const totalMinutes = Math.floor(safeSec / 60);
@@ -1052,126 +1060,254 @@ import Layout from '../layouts/BaseLayout.astro';
         }));
     }
 
-    // 渲染「當月每日閱讀時間二維平面直條圖 (30分鐘一格，最多12小時；X軸放底部僅顯示日子)」
-    function renderMonthlyBarChart(logs: { date: string; seconds: number }[]) {
-      const chartWrapper = document.getElementById('monthly-bar-chart');
-      const yAxisContainer = document.getElementById('y-axis-container');
-      const gridContainer = document.getElementById('plot-grid-container');
-      const xAxisDateRow = document.getElementById('x-axis-date-row');
-      const monthTitle = document.getElementById('chart-month-title');
-      const monthTotalEl = document.getElementById('display-month-total');
-      const selectedReadoutEl = document.getElementById('selected-day-readout');
+    // 渲染直條圖（支援按月切換月份、按年顯示 12 個月；Y 軸每格 30 分鐘，最高 12 小時）
+    function renderTrendChart(logs: { date: string; seconds: number }[]) {
+      const titleEl = document.getElementById('chart-period-title');
+      const periodLabelEl = document.getElementById('period-label');
+      const periodTotalEl = document.getElementById('display-period-total');
+      const readoutEl = document.getElementById('selected-bar-readout');
+      const yAxisEl = document.getElementById('y-axis-container');
+      const hGridEl = document.getElementById('h-grid-container');
+      const vGridEl = document.getElementById('v-grid-container');
+      const plotInnerEl = document.getElementById('chart-plot-inner');
+      const barsRowEl = document.getElementById('bar-chart-columns');
+      const xTicksRowEl = document.getElementById('x-axis-ticks-row');
+      const xTrackEl = document.getElementById('x-axis-scroll-track');
 
-      if (!chartWrapper || !yAxisContainer || !gridContainer || !xAxisDateRow) return;
+      if (
+        !titleEl || !periodLabelEl || !periodTotalEl || !yAxisEl ||
+        !hGridEl || !vGridEl || !plotInnerEl || !barsRowEl || !xTicksRowEl
+      ) return;
 
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth();
       const todayStr = getTodayDateString();
+      const [todayY, todayM, todayD] = todayStr.split('-').map(Number);
 
-      if (monthTitle) {
-        monthTitle.textContent = `${currentYear}年 ${currentMonth + 1}月 每日閱讀走勢`;
-      }
+      let buckets: { key: string; axisText: string; detailText: string; seconds: number; isHighlight: boolean }[] = [];
 
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const daySecondsMap = new Map<number, number>();
-      let monthTotalSec = 0;
+      if (chartGranularity === 'month') {
+        const daysInMonth = new Date(activeYear, activeMonth + 1, 0).getDate();
+        const daySecMap = new Map<number, number>();
 
-      logs.forEach(log => {
-        const [y, m, d] = log.date.split('-').map(Number);
-        if (y === currentYear && m === (currentMonth + 1)) {
-          daySecondsMap.set(d, (daySecondsMap.get(d) || 0) + log.seconds);
-          monthTotalSec += log.seconds;
-        }
-      });
-
-      if (monthTotalEl) {
-        monthTotalEl.textContent = `本月總計：${formatReadingDuration(monthTotalSec)}`;
-      }
-
-      // 計算 Y 軸上限：以 30 分鐘（1800秒）為一格，最高可達 12 小時（43200秒）
-      const maxRecordedSec = Math.max(...Array.from(daySecondsMap.values()), 0);
-      let stepsCount = Math.max(2, Math.ceil(maxRecordedSec / 1800)); // 至少 2 格（1小時）
-      if (stepsCount > 24) stepsCount = 24; // 上限 12 小時 (24 * 30分鐘)
-
-      const yAxisMaxSec = stepsCount * 1800;
-
-      // 生成 Y 軸刻度標籤與橫線
-      let yAxisHtml = '';
-      let gridLinesHtml = '';
-      for (let i = stepsCount; i >= 0; i--) {
-        const stepSec = i * 1800;
-        const labelText = stepSec === 0 ? '0分' : formatReadingDuration(stepSec);
-        yAxisHtml += `<span>${labelText}</span>`;
-        gridLinesHtml += `<div class="grid-line ${i === 0 ? 'grid-line--base' : ''}"></div>`;
-      }
-      yAxisContainer.innerHTML = yAxisHtml;
-      gridContainer.innerHTML = gridLinesHtml;
-
-      // 生成直條柱與 X 軸日期數字
-      let barsHtml = '';
-      let xTicksHtml = '';
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const sec = daySecondsMap.get(day) || 0;
-        const heightPercent = sec > 0 ? Math.min(100, Math.max(3, Math.round((sec / yAxisMaxSec) * 100))) : 0;
-        const dayFormatted = String(day).padStart(2, '0');
-        const fullDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${dayFormatted}`;
-        const isToday = fullDateStr === todayStr;
-        const formattedSec = formatReadingDuration(sec);
-
-        barsHtml += `
-          <div class="bar-col ${isToday ? 'today' : ''}" data-label="${currentMonth + 1}/${day}日 · ${formattedSec}">
-            <div class="bar-tooltip">${day}日 · ${formattedSec}</div>
-            <div class="bar-item" style="height: ${heightPercent}%;"></div>
-          </div>
-        `;
-
-        xTicksHtml += `
-          <div class="x-tick-label ${isToday ? 'today' : ''}">${day}</div>
-        `;
-      }
-
-      chartWrapper.innerHTML = barsHtml;
-      xAxisDateRow.innerHTML = xTicksHtml;
-
-      chartWrapper.querySelectorAll('.bar-col').forEach(col => {
-        col.addEventListener('click', () => {
-          chartWrapper.querySelectorAll('.bar-col').forEach(c => c.classList.remove('active-bar'));
-          col.classList.add('active-bar');
-          const labelText = col.getAttribute('data-label') || '';
-          if (selectedReadoutEl && labelText) {
-            selectedReadoutEl.textContent = `已選：${labelText}`;
+        logs.forEach(log => {
+          const [y, m, d] = log.date.split('-').map(Number);
+          if (y === activeYear && m === (activeMonth + 1)) {
+            daySecMap.set(d, (daySecMap.get(d) || 0) + log.seconds);
           }
         });
+
+        titleEl.textContent = `${activeYear}年 ${activeMonth + 1}月 閱讀走勢`;
+        periodLabelEl.textContent = `${activeYear}-${String(activeMonth + 1).padStart(2, '0')}`;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const sec = daySecMap.get(day) || 0;
+          const isToday = (activeYear === todayY && (activeMonth + 1) === todayM && day === todayD);
+          buckets.push({
+            key: `${activeYear}-${String(activeMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+            axisText: `${day}`,
+            detailText: `${activeMonth + 1}/${day}日 · ${formatReadingDuration(sec)}`,
+            seconds: sec,
+            isHighlight: isToday
+          });
+        }
+      } else {
+        const monthSecMap = new Map<number, number>();
+
+        logs.forEach(log => {
+          const [y, m] = log.date.split('-').map(Number);
+          if (y === activeYear && m >= 1 && m <= 12) {
+            monthSecMap.set(m, (monthSecMap.get(m) || 0) + log.seconds);
+          }
+        });
+
+        titleEl.textContent = `${activeYear}年 全年閱讀走勢`;
+        periodLabelEl.textContent = `${activeYear}年`;
+
+        for (let m = 1; m <= 12; m++) {
+          const sec = monthSecMap.get(m) || 0;
+          const isCurrentMonth = (activeYear === todayY && m === todayM);
+          buckets.push({
+            key: `${activeYear}-${String(m).padStart(2, '0')}`,
+            axisText: `${m}月`,
+            detailText: `${activeYear}年${m}月 · ${formatReadingDuration(sec)}`,
+            seconds: sec,
+            isHighlight: isCurrentMonth
+          });
+        }
+      }
+
+      const totalSec = buckets.reduce((acc, b) => acc + b.seconds, 0);
+      periodTotalEl.textContent = `期間總計：${formatReadingDuration(totalSec)}`;
+
+      // Y 軸每格 30 分鐘（1800 秒），最多顯示 12 小時（43200 秒 = 24 格）
+      const maxValSec = Math.max(...buckets.map(b => b.seconds), 0);
+      let stepsCount = Math.max(2, Math.ceil(maxValSec / 1800));
+      if (stepsCount > 24) stepsCount = 24;
+      const yMaxSec = stepsCount * 1800;
+
+      let yHtml = '';
+      let hGridHtml = '';
+      for (let i = stepsCount; i >= 0; i--) {
+        const stepSec = i * 1800;
+        yHtml += `<span>${stepSec === 0 ? '0分' : formatReadingDuration(stepSec)}</span>`;
+        hGridHtml += `<div class="h-grid-line ${i === 0 ? 'h-grid-line--zero' : ''}"></div>`;
+      }
+      yAxisEl.innerHTML = yHtml;
+      hGridEl.innerHTML = hGridHtml;
+
+      // 當月天數多時設定最小寬度，方便 X 軸左右滑動查看
+      const minPlotWidth = chartGranularity === 'month' ? buckets.length * 26 : 520;
+      plotInnerEl.style.minWidth = `${minPlotWidth}px`;
+      xTicksRowEl.style.minWidth = `${minPlotWidth}px`;
+
+      let vGridHtml = '';
+      let barsHtml = '';
+      let xHtml = '';
+
+      buckets.forEach((b, idx) => {
+        const pct = b.seconds > 0 ? Math.min(100, Math.max(3, Math.round((b.seconds / yMaxSec) * 100))) : 0;
+        vGridHtml += `<div class="v-grid-cell"></div>`;
+        barsHtml += `
+          <div class="bar-slot ${b.isHighlight ? 'today-slot' : ''}" data-index="${idx}" data-detail="${b.detailText}">
+            <div class="bar-rect" style="height: ${pct}%;"></div>
+          </div>
+        `;
+        xHtml += `
+          <div class="x-day-cell ${b.isHighlight ? 'today-tick' : ''}" data-index="${idx}">${b.axisText}</div>
+        `;
+      });
+
+      vGridEl.innerHTML = vGridHtml;
+      barsRowEl.innerHTML = barsHtml;
+      xTicksRowEl.innerHTML = xHtml;
+
+      if (readoutEl) {
+        readoutEl.textContent = '懸浮或點選直條查看時數';
+      }
+
+      // 綁定直條懸浮與點擊事件
+      barsRowEl.querySelectorAll('.bar-slot').forEach(slot => {
+        const detail = slot.getAttribute('data-detail') || '';
+        slot.addEventListener('mouseenter', () => {
+          if (readoutEl && detail) readoutEl.textContent = detail;
+        });
+        slot.addEventListener('click', () => {
+          barsRowEl.querySelectorAll('.bar-slot').forEach(s => s.classList.remove('active-bar'));
+          slot.classList.add('active-bar');
+          if (readoutEl && detail) readoutEl.textContent = `已選：${detail}`;
+        });
+      });
+
+      if (xTrackEl) xTrackEl.scrollLeft = 0;
+      const chartViewport = document.getElementById('chart-scroll-viewport');
+      if (chartViewport) chartViewport.scrollLeft = 0;
+    }
+
+    // 同步 X 軸滑動列與直條圖捲動位置
+    function syncHorizontalScroll() {
+      const chartViewport = document.getElementById('chart-scroll-viewport');
+      const xTrack = document.getElementById('x-axis-scroll-track');
+      const btnLeft = document.getElementById('btn-x-scroll-left');
+      const btnRight = document.getElementById('btn-x-scroll-right');
+
+      if (!chartViewport || !xTrack) return;
+
+      let locking = false;
+      chartViewport.addEventListener('scroll', () => {
+        if (locking) return;
+        locking = true;
+        xTrack.scrollLeft = chartViewport.scrollLeft;
+        locking = false;
+      });
+
+      xTrack.addEventListener('scroll', () => {
+        if (locking) return;
+        locking = true;
+        chartViewport.scrollLeft = xTrack.scrollLeft;
+        locking = false;
+      });
+
+      btnLeft?.addEventListener('click', () => {
+        chartViewport.scrollBy({ left: -140, behavior: 'smooth' });
+      });
+
+      btnRight?.addEventListener('click', () => {
+        chartViewport.scrollBy({ left: 140, behavior: 'smooth' });
       });
     }
 
-    // 左側面板展開與切換控制
     function setupUIEvents() {
-      const btnToggleChart = document.getElementById('btn-toggle-chart');
-      const btnToggleEdit = document.getElementById('btn-toggle-edit');
-      const btnTogglePassword = document.getElementById('btn-toggle-password');
+      const btnPanelChart = document.getElementById('btn-panel-chart');
+      const btnPanelEdit = document.getElementById('btn-panel-edit');
+      const btnPanelPassword = document.getElementById('btn-panel-password');
 
       const chartSection = document.getElementById('chart-section');
       const profileForm = document.getElementById('profile-form');
       const passwordFormContainer = document.getElementById('password-form-container');
+
+      const btnViewMonth = document.getElementById('btn-view-month');
+      const btnViewYear = document.getElementById('btn-view-year');
+      const btnPrevPeriod = document.getElementById('btn-prev-period');
+      const btnNextPeriod = document.getElementById('btn-next-period');
       const logoutBtn = document.getElementById('profile-logout-btn');
 
-      function switchLeftPanel(target: 'chart' | 'edit' | 'password') {
+      // 切換右側展開面板（走勢圖 / 編輯資料 / 修改密碼）
+      function switchRightPanel(target: 'chart' | 'edit' | 'password') {
         if (chartSection) chartSection.style.display = target === 'chart' ? 'block' : 'none';
         if (profileForm) profileForm.style.display = target === 'edit' ? 'block' : 'none';
         if (passwordFormContainer) passwordFormContainer.style.display = target === 'password' ? 'block' : 'none';
 
-        btnToggleChart?.classList.toggle('active', target === 'chart');
-        btnToggleEdit?.classList.toggle('active', target === 'edit');
-        btnTogglePassword?.classList.toggle('active', target === 'password');
+        btnPanelChart?.classList.toggle('active', target === 'chart');
+        btnPanelEdit?.classList.toggle('active', target === 'edit');
+        btnPanelPassword?.classList.toggle('active', target === 'password');
       }
 
-      btnToggleChart?.addEventListener('click', () => switchLeftPanel('chart'));
-      btnToggleEdit?.addEventListener('click', () => switchLeftPanel('edit'));
-      btnTogglePassword?.addEventListener('click', () => switchLeftPanel('password'));
+      btnPanelChart?.addEventListener('click', () => switchRightPanel('chart'));
+      btnPanelEdit?.addEventListener('click', () => switchRightPanel('edit'));
+      btnPanelPassword?.addEventListener('click', () => switchRightPanel('password'));
 
+      // 切換按月 / 按年顯示
+      btnViewMonth?.addEventListener('click', () => {
+        chartGranularity = 'month';
+        btnViewMonth.classList.add('active');
+        btnViewYear?.classList.remove('active');
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      btnViewYear?.addEventListener('click', () => {
+        chartGranularity = 'year';
+        btnViewYear.classList.add('active');
+        btnViewMonth?.classList.remove('active');
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      // 上一期 / 下一期（月份或年份）
+      btnPrevPeriod?.addEventListener('click', () => {
+        if (chartGranularity === 'month') {
+          activeMonth -= 1;
+          if (activeMonth < 0) {
+            activeMonth = 11;
+            activeYear -= 1;
+          }
+        } else {
+          activeYear -= 1;
+        }
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      btnNextPeriod?.addEventListener('click', () => {
+        if (chartGranularity === 'month') {
+          activeMonth += 1;
+          if (activeMonth > 11) {
+            activeMonth = 0;
+            activeYear += 1;
+          }
+        } else {
+          activeYear += 1;
+        }
+        renderTrendChart(normalizeReadingLogs(currentProfile?.reading_logs));
+      });
+
+      // 登出
       logoutBtn?.addEventListener('click', async () => {
         await supabase.auth.signOut();
         localStorage.clear();
@@ -1180,6 +1316,7 @@ import Layout from '../layouts/BaseLayout.astro';
 
       setupPasswordToggle('new-password', 'toggle-pwd-1');
       setupPasswordToggle('new-password-confirm', 'toggle-pwd-2');
+      syncHorizontalScroll();
     }
 
     function setupPasswordToggle(inputId: string, btnId: string) {
@@ -1277,7 +1414,7 @@ import Layout from '../layouts/BaseLayout.astro';
       if (dailyReadingEl) dailyReadingEl.textContent = formatReadingDuration(rawDailySec);
       if (totalReadingEl) totalReadingEl.textContent = formatReadingDuration(rawTotalSec);
 
-      renderMonthlyBarChart(logs);
+      renderTrendChart(logs);
 
       if (displayEmail) displayEmail.textContent = currentProfile.email;
       if (displayPhone) displayPhone.textContent = currentProfile.phone || '未填寫';
