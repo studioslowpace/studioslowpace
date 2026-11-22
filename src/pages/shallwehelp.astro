@@ -56,154 +56,6 @@ import { supabase } from '../lib/supabase';
         }
 
         /* ==========================================
-           3. 最高權限管理端樣式 (Admin Navbar)
-           ========================================== */
-        .admin-nav {
-            background-color: #ffffff;
-            border-bottom: 1px solid #fef3c7;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            z-index: 50;
-        }
-        .admin-nav-container {
-            max-width: 56rem;
-            margin: 0 auto;
-            padding: 1rem;
-        }
-        @media (min-width: 768px) {
-            .admin-nav-container { padding: 1.5rem; }
-        }
-        .admin-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #f3f4f6;
-            margin-bottom: 1rem;
-        }
-        .admin-title-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .admin-title-icon {
-            color: #d97706;
-            width: 1.25rem;
-            height: 1.25rem;
-        }
-        .admin-main-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-        .btn-admin-close-nav {
-            color: #9ca3af;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-admin-close-nav:hover { color: #4b5563; }
-        .admin-close-icon { width: 1.25rem; height: 1.25rem; }
-        
-        .admin-logout-row {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        @media (min-width: 768px) {
-            .admin-logout-row { flex-direction: row; align-items: center; }
-        }
-        .admin-hint-text {
-            font-size: 0.75rem;
-            color: #9ca3af;
-        }
-        @media (min-width: 768px) {
-            .admin-hint-text { max-width: 28rem; }
-        }
-        .admin-password-code {
-            background-color: #f3f4f6;
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.25rem;
-            color: #b45309;
-        }
-        .admin-input-group-wrapper {
-            display: flex;
-            gap: 0.5rem;
-            flex: 1 1 0%;
-            width: 100%;
-            max-width: 24rem;
-        }
-        .admin-password-input {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
-        }
-        .admin-password-input:focus { outline: none; border-color: #f59e0b; }
-        
-        .btn-admin-login {
-            padding: 0.5rem 1rem;
-            background-color: #d97706;
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 0.75rem;
-            border-radius: 0.75rem;
-            white-space: nowrap;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-admin-login:hover { background-color: #b45309; }
-        
-        .admin-login-row {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        @media (min-width: 768px) {
-            .admin-login-row { flex-direction: row; align-items: flex-start; justify-content: space-between; }
-        }
-        .admin-success-badge {
-            background-color: #ecfdf5;
-            color: #065f46;
-            font-size: 0.75rem;
-            padding: 0.75rem;
-            border-radius: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .admin-success-text { font-weight: 700; }
-        .admin-success-icon { width: 1rem; height: 1rem; flex-shrink: 0; }
-        
-        .admin-logout-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.5rem;
-            background-color: #f9fafb;
-            padding: 0.75rem;
-            border-radius: 1rem;
-            border: 1px solid #f3f4f6;
-            width: 100%;
-        }
-        @media (min-width: 768px) { .admin-logout-wrapper { width: auto; } }
-        
-        .btn-admin-logout {
-            padding: 0.5rem 0.75rem;
-            background-color: #fef2f2;
-            color: #dc2626;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border-radius: 0.75rem;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-admin-logout:hover { background-color: #dc2626; color: #ffffff; }
-
-        /* ==========================================
            4. 頁首與導覽區塊 (Header - Logo 縮小、整體並列置中)
            ========================================== */
         .hero-banner {
@@ -352,17 +204,6 @@ import { supabase } from '../lib/supabase';
             flex-direction: column;
             gap: 1.5rem;
         }
-        .admin-status-badge {
-            text-align: center;
-            background-color: #fef3c7;
-            border: 1px solid #fde68a;
-            color: #92400e;
-            font-size: 0.75rem;
-            padding: 0.5rem;
-            border-radius: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-        }
 
         /* ==========================================
            7. 標籤分頁與資訊看板 (Tabs & Leaderboard)
@@ -480,13 +321,18 @@ import { supabase } from '../lib/supabase';
         }
 
         /* ==========================================
-           8. 卡片網格與元件 (Cards Grid)
+           8. 卡片網格與元件 (Cards Grid) - 電腦版改為一列 3 個
            ========================================== */
         .card-grid {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
             gap: 1rem;
             width: 100%;
+        }
+        @media (min-width: 768px) {
+            .card-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
 
         /* ==========================================
@@ -850,69 +696,26 @@ import { supabase } from '../lib/supabase';
         📋 聯絡資訊已複製到您的剪貼簿！
     </div>
 
-
-
     <main id="main-content-layout" class="main-layout">
 
-            <!-- 管理端導覽列 -->
-    <div id="admin-navbar" class="hidden admin-nav">
-        <div class="admin-nav-container">
-            <div class="admin-title-row">
-                <div class="admin-title-group">
-                    <i data-lucide="shield" class="admin-title-icon"></i>
-                    <h2 class="admin-main-title">萬事屋全域管理端 (最高權限)</h2>
+        <div class="hero-banner">
+            <!-- 上方區塊：Logo 與主副標題並排 -->
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div id="banner-logo-trigger" class="banner-logo-group">
+                    <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;">
                 </div>
-                <button id="btn-admin-close-nav" class="btn-admin-close-nav">
-                    <i data-lucide="x" class="admin-close-icon"></i>
-                </button>
-            </div>
-            
-            <div id="admin-logged-out" class="admin-logout-row">
-                <p class="admin-hint-text">
-                    萬事屋主理人專用登入密碼：<code class="admin-password-code"></code>
-                </p>
-                <div class="admin-input-group-wrapper">
-                    <input type="password" id="admin-password-input" placeholder="輸入管理密碼" class="admin-password-input">
-                    <button id="btn-admin-login" class="btn-admin-login">認證登入</button>
+                <div class="hero-title-group" >
+                    <h1 class="hero-title">客舍萬事屋</h1>
+                    <span class="hero-title-sub">Shall We Help</span> 
                 </div>
             </div>
-            
-            <div id="admin-logged-in" class="hidden admin-login-row">
-                <div id="admin-points-control" style="margin-top: 15px; padding: 12px; background: #fff3ed; border-radius: 12px; border: 1px solid #ffd8c2;">
-                    <h4 style="font-size: 0.9rem; font-weight: bold; color: #c2410c; margin-bottom: 8px;">⚙️ 管理員手動調整萬事分</h4>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <input type="text" id="admin-target-contact" placeholder="目標聯絡方式 (IG/電話)" class="input-field" style="flex: 1; min-width: 150px; font-size: 0.85rem;">
-                        <input type="text" id="admin-target-name" placeholder="稱呼 (加分用)" class="input-field" style="width: 100px; font-size: 0.85rem;">
-                        <button id="btn-admin-point-plus" class="btn-base btn-orange" style="padding: 4px 12px; font-size: 0.85rem;">+1 分</button>
-                        <button id="btn-admin-point-minus" style="padding: 4px 12px; font-size: 0.85rem; background: #ef4444; color: white; border-radius: 8px; border: none; cursor: pointer;">-1 分</button>
-                    </div>
-                </div>
 
-                <div class="admin-logout-wrapper">
-                    <button id="btn-admin-logout" class="btn-admin-logout">登出主理人</button>
-                </div>
-            </div>
+            <!-- 下方區塊：強制換行到新的一列 -->
+            <h2 class="hero-title-sub2">I help you, you help me — 讓互相成為日常</h2>
         </div>
-    </div>
 
- <div class="hero-banner">
-    <!-- 上方區塊：Logo 與主副標題並排 -->
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <div id="banner-logo-trigger" class="banner-logo-group">
-            <img src="/images/logo-small2.png" alt="Logo" class="banner-logo-img" oncontextmenu="return false;" ondragstart="return false;">
-        </div>
-        <div class="hero-title-group" >
-            <h1 class="hero-title">客舍萬事屋</h1>
-            <span class="hero-title-sub">Shall We Help</span> 
-        </div>
-    </div>
-
-    <!-- 下方區塊：強制換行到新的一列 -->
-    <h2 class="hero-title-sub2">I help you, you help me — 讓互相成為日常</h2>
-</div>
-
-            <div class="layout-action-row">
-                <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem; margin-top: 1rem;">
+        <div class="layout-action-row">
+            <div class="layout-action-row" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: flex-end; width: 100%; margin-bottom: 1rem; margin-top: 1rem;">
                 <!-- 💡 「因由」按鈕 -->
                 <button id="btn-open-reason" class="btn-base" style="background: #ffffff; color: #78350f; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 700;">
                     💡 因由
@@ -931,6 +734,27 @@ import { supabase } from '../lib/supabase';
                 <!-- 原有的互動按鈕 -->
                 <button id="header-chatroom-btn" class="btn-base btn-blue" style="background-color: #55a9d3; color: #ffffff; border: none;">鄰里人交流區 💬</button>
                 <button id="header-skill-btn" class="hidden btn-base btn-stone">+ 登記鄰里人技能</button>
+
+                <!-- 管理員手動調整萬事分（位於 +登記鄰里人技能 旁邊） -->
+                <div id="admin-points-control-wrapper" class="hidden" style="position: relative; display: inline-block;">
+                    <button id="btn-toggle-admin-points" class="btn-base" style="background: #fff3ed; color: #c2410c; border: 1px solid #ffd8c2; font-weight: 700;">
+                        ⚙️ 手動調整萬事分 ▾
+                    </button>
+
+                    <!-- 下拉面板 -->
+                    <div id="admin-points-dropdown" class="hidden" style="position: absolute; right: 0; top: 110%; z-index: 60; background: #fff3ed; padding: 12px; border-radius: 12px; border: 1px solid #ffd8c2; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 280px;">
+                        <h4 style="font-size: 0.85rem; font-weight: bold; color: #c2410c; margin-bottom: 8px;">⚙️ 手動調整萬事分</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="text" id="admin-target-contact" placeholder="目標聯絡方式 (IG/電話)" class="input-field" style="font-size: 0.85rem;">
+                            <input type="text" id="admin-target-name" placeholder="稱呼 (加分用)" class="input-field" style="font-size: 0.85rem;">
+                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                                <button id="btn-admin-point-plus" class="btn-base btn-orange" style="padding: 4px 12px; font-size: 0.85rem;">+1 分</button>
+                                <button id="btn-admin-point-minus" style="padding: 4px 12px; font-size: 0.85rem; background: #ef4444; color: white; border-radius: 8px; border: none; cursor: pointer;">-1 分</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button id="header-upload-btn" class="btn-base btn-orange">+ 發布新委託</button>
             </div>
 
@@ -1096,7 +920,7 @@ import { supabase } from '../lib/supabase';
         </div>
     </div>
 
-    <!-- 技能彈窗 -->
+    <!-- 技能彈窗 (含 X 關閉按鈕) -->
     <div id="skill-modal" class="hidden modal-overlay">
         <div class="modal-content max-w-md">
             <div class="modal-header">
@@ -1292,12 +1116,22 @@ window.onload = async function() {
     }
 
     function initEventListeners() {
-        document.getElementById('banner-logo-trigger')?.addEventListener('click', toggleAdminNavbar);
-        document.getElementById('btn-admin-close-nav')?.addEventListener('click', toggleAdminNavbar);
-        document.getElementById('btn-admin-login')?.addEventListener('click', handleAdminLogin);
-        document.getElementById('btn-admin-logout')?.addEventListener('click', handleAdminLogout);
         document.getElementById('btn-admin-point-plus')?.addEventListener('click', () => adminAdjustPoints(1));
         document.getElementById('btn-admin-point-minus')?.addEventListener('click', () => adminAdjustPoints(-1));
+        
+        // 手動調整萬事分選單收合切換
+        document.getElementById('btn-toggle-admin-points')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('admin-points-dropdown')?.classList.toggle('hidden');
+        });
+
+        // 點擊外部區域時自動關閉下拉面板
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('admin-points-control-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('admin-points-dropdown')?.classList.add('hidden');
+            }
+        });
 
         document.getElementById('header-chatroom-btn')?.addEventListener('click', () => {
             window.open('https://studioslowpace.com/chat', '_blank');
@@ -2122,60 +1956,14 @@ window.onload = async function() {
         if(document.getElementById('selected-emoji')) document.getElementById('selected-emoji').value = randomEmoji;
         if(document.getElementById('current-avatar-preview')) document.getElementById('current-avatar-preview').innerText = randomEmoji;
     }
-    
-    function toggleAdminNavbar() { 
-        document.getElementById('admin-navbar')?.classList.toggle('hidden'); 
-    }
-
-    async function handleAdminLogin() { 
-        const inputPwd = document.getElementById('admin-password-input').value.trim(); 
-        if (!inputPwd) {
-            alert("請輸入管理密碼！");
-            return;
-        }
-
-        const { error } = await client.auth.signInWithPassword({ 
-            email: 'admin@studio.local', 
-            password: inputPwd 
-        });
-
-        if (error) {
-            alert("❌ 認證登入失敗：" + error.message);
-        } else {
-            alert("🟢 主理人認證成功！");
-            document.getElementById('admin-password-input').value = '';
-            document.getElementById('admin-navbar')?.classList.remove('hidden');
-        }
-    }
-
-    async function handleAdminLogout() { 
-        try {
-            await client.auth.signOut();
-            isAdmin = false;
-            updateAdminUI();
-            switchTab(currentTab);
-            alert("已成功登出主理人模式。");
-        } catch (err) {
-            console.error("登出失敗:", err.message);
-        }
-    }
 
     function updateAdminUI() {
-        const loggedOut = document.getElementById('admin-logged-out');
-        const loggedIn = document.getElementById('admin-logged-in');
-        const globalBadge = document.getElementById('global-admin-badge');
-        const adminNavbar = document.getElementById('admin-navbar');
+        const pointsCtrlWrapper = document.getElementById('admin-points-control-wrapper');
 
         if (isAdmin) { 
-            loggedOut?.classList.add('hidden'); 
-            loggedIn?.classList.remove('hidden'); 
-            globalBadge?.classList.remove('hidden'); 
-            adminNavbar?.classList.remove('hidden'); 
+            pointsCtrlWrapper?.classList.remove('hidden'); 
         } else { 
-            loggedOut?.classList.remove('hidden'); 
-            loggedIn?.classList.add('hidden'); 
-            globalBadge?.classList.add('hidden'); 
-            adminNavbar?.classList.add('hidden');
+            pointsCtrlWrapper?.classList.add('hidden'); 
         }
     }
     
@@ -2217,6 +2005,7 @@ window.onload = async function() {
             alert(`✅ 成功為【${contact}】${change > 0 ? '增加' : '扣除'} 1 點萬事分！`);
             document.getElementById('admin-target-contact').value = '';
             document.getElementById('admin-target-name').value = '';
+            document.getElementById('admin-points-dropdown')?.classList.add('hidden');
         } catch (err) {
             alert("調整萬事分失敗: " + err.message);
         }
