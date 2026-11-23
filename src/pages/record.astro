@@ -1,1130 +1,983 @@
 ---
-// 匯入 Layout
-import BaseLayout from '../../layouts/BaseLayout.astro';
+// src/pages/record.astro
+import Layout from '../layouts/Layout.astro';
 ---
-<BaseLayout title="客舍時間表 Timetable of Slow Pace Studio">
-<Fragment slot="head">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</Fragment>
+<Layout title="個人書櫃與閱讀記錄 · 空間客舍">
+  <div class="reading-page-container">
+    <header class="reading-top-bar">
+      <h2 id="page-title">📖 個人閱讀清單與心得</h2>
+      <button id="open-add-modal-btn" class="action-btn primary" style="display: none;">➕ 新增記錄</button>
+    </header>
 
-    <style is:global>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            height: 100%;
-        }
-        body {
-            background-color: #ebf3dd; 
-            font-family: "Noto Sans TC", sans-serif;
-            color: #4A4A4A;
-            -webkit-font-smoothing: antialiased;
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-        body.admin-mode { background: #f0f4f8; }
-
-        :root {
-            --bg-color: #f7f5f2;
-            --card-bg: #ebf3dd;
-            --text-main: #333333;
-            --text-muted: #999999;
-            --primary-green: #4CAF50;
-            --danger-red: #d9534f;
-            --primary-blue: #2b579a;
-            --border-color: #efefef;
-        }
-
-        .container { 
-            max-width: 1100px; 
-            background: var(--card-bg); 
-            padding: 25px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
-            margin: 20px auto;
-        }
-
-        /* 頁首排版：標題列與圖例列上下分行 */
-        .header-section { 
-            display: flex; 
-            flex-direction: column;
-            gap: 14px; 
-            margin-bottom: 18px; 
-        }
-
-        /* 標題與年月份並列區塊 - 嚴格向底部基準線靠齊 (baseline) */
-        .title-area { 
-            display: flex; 
-            align-items: baseline;
-            justify-content: flex-end;
-            width: 100%;
-            gap: 15px;
-        }
-        .title-area h1 { 
-            margin: 0; 
-            font-size: 42px; 
-            color: var(--primary-blue); 
-            letter-spacing: 2px; 
-            font-weight: bold; 
-            line-height: 1;
-        }
-        
-        #month-display { 
-            font-size: 28px; 
-            font-weight: bold; 
-            color: var(--primary-blue); 
-            display: inline-block; 
-            cursor: pointer; 
-            padding: 4px 10px; 
-            border-radius: 6px; 
-            transition: all 0.2s ease; 
-            user-select: none; 
-            line-height: 1;
-        }
-        #month-display:hover { 
-            background-color: rgba(0, 0, 0, 0.05); 
-            color: #333; 
-        }
-
-        .logo-img {
-            display: inline-block;
-            vertical-align: baseline;
-        }
-
-        /* 類型圖例獨立新一列 */
-        .legend-box { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 10px 14px; 
-            width: 100%;
-        }
-        
-        .legend-item { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            font-size: 16px; 
-            color: var(--text-main); 
-            padding: 4px 8px; 
-            border-radius: 4px; 
-            transition: all 0.2s; 
-        }
-        body.admin-mode .legend-item:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .box { 
-            width: 20px; 
-            height: 20px; 
-            border-radius: 4px; 
-            border: 1px solid rgba(0,0,0,0.1); 
-            flex-shrink: 0; 
-        }
-
-        /* 日曆網格 */
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); margin-bottom: 10px;}
-        .cell { min-height: 160px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 8px; box-sizing: border-box; background: #f6f7e9; cursor: pointer; transition: background 0.2s; border-radius: 10px;}
-        .cell:not(.empty-cell):hover { background: #fafafa; }
-        body.admin-mode .cell:not(.empty-cell):hover { background: #fffdf0; box-shadow: inset 0 0 0 1px #ffa000; }
-        
-        .weekday { text-align: center; font-size: 18px; font-weight: bold; padding: 12px 0; background: #f0d0d0; color: #333; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-radius: 8px;}
-        .day-num { text-align: right; font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #333; }
-        .grid .cell:nth-child(7n+1) .day-num, .cell.holiday .day-num { color: var(--danger-red); }
-        .grid .cell:nth-child(7n) .day-num { color: var(--primary-blue); }
-        
-        /* 電腦版正常活動樣式 */
-        .event { font-size: 13px; padding: 5px 8px; margin: 5px 0; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); color: #333; line-break: anywhere; }
-        .evt-time { text-align: right; font-weight: bold; display: block; margin-bottom: 2px; }
-        .evt-text {
-            white-space: normal; 
-            word-break: break-all; 
-            word-wrap: break-word; 
-            text-align: right;
-            display: block;
-        }
-        
-        /* 管理中控台 */
-        #admin-panel { max-height: 0; overflow: hidden; background: #fffdf0; border-radius: 12px; padding: 0 20px; transition: all 0.4s ease; margin-top: 0; }
-        body.admin-mode #admin-panel { max-height: 1000px; margin-top: 25px; padding: 20px; border: 2px dashed #ffa000; }
-        #admin-panel h3 { margin-top: 0; color: #ffa000; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 18px; margin-bottom: 15px; }
-
-        .row { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        input, select, button { padding: 10px 14px; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
-        button { cursor: pointer; background: var(--primary-blue); color: white; border: none; }
-        button:hover { background: #1e3f70; }
-
-        /* 彈窗樣式 */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; z-index: 900;
-        }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .modal-card { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box; }
-        .modal-card h3 { margin-top: 0; color: #333; font-size: 20px; margin-bottom: 10px; }
-        .modal-card p { font-size: 16px; margin-bottom: 12px; }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-
-        /* 下拉容器維持相對定位 */
-        .month-dropdown-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        /* 月份網格選單：預設隱藏、單欄直向排列、安全高度與捲軸 */
-        .month-select-grid {
-            display: none; 
-            position: absolute;
-            top: calc(100% + 6px); 
-            left: 0;
-            z-index: 9999; 
-            
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 12px;
-            
-            flex-direction: column;
-            gap: 8px; 
-            
-            /* 設定最大高度並允許捲動 */
-            max-height: 300px; 
-            overflow-y: auto; 
-            width: 200px; 
-            box-sizing: border-box;
-        }
-
-        /* 透過 JS 切換顯示時的 class */
-        .month-select-grid.show {
-            display: flex !important;
-        }
-
-        /* 捲軸樣式美化 */
-        .month-select-grid::-webkit-scrollbar {
-            width: 6px;
-        }
-        .month-select-grid::-webkit-scrollbar-thumb {
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 3px;
-        }
-
-        /* 按鈕樣式 */
-        .month-select-btn {
-            background: #f7f5f2; 
-            color: #333; 
-            border: 1px solid #eee; 
-            padding: 10px 12px; 
-            text-align: center; 
-            border-radius: 6px; 
-            font-size: 14px; 
-            transition: all 0.2s; 
-            cursor: pointer;
-            width: 100%; 
-            flex-shrink: 0;
-        }
-        .month-select-btn:hover { 
-            background: #eef5ee; 
-            border-color: var(--primary-green); 
-        }
-        .month-select-btn.active { 
-            background: var(--primary-green); 
-            color: white; 
-            border-color: var(--primary-green); 
-            font-weight: bold; 
-        }
-
-        /* 📱 手機版專屬 RWD 覆蓋樣式 */
-        @media (max-width: 768px) {
-            .navbar {
-                position: relative !important;
-                z-index: 99999 !important;
-            }
-            .nav-links {
-                z-index: 99999 !important;
-            }
-
-            .container {
-                max-width: 100% !important;
-                padding: 12px !important;
-                border-radius: 12px !important;
-                box-shadow: none !important;
-                margin: 50px auto 20px auto;
-                z-index: 1 !important;
-            }
-
-            .header-section { 
-                gap: 8px; 
-                margin-bottom: 12px; 
-            }
-
-            .title-area { 
-                flex-direction: row !important;
-                align-items: baseline;
-                width: 100%;
-                gap: 8px;
-            }
-
-            .title-area h1 { 
-                font-size: 22px !important;
-                letter-spacing: 1px;
-                text-align: left; 
-            }
-
-            #month-display { 
-                font-size: 16px; 
-                padding: 4px 8px;
-                white-space: nowrap; 
-            }
-
-            .legend-box {
-                width: 100%; 
-                gap: 4px 6px; 
-            }
-            
-            .legend-item { font-size: 11px; padding: 3px 5px; }
-            .box { width: 11px; height: 11px; }
-
-            .cell { 
-                min-height: 55px;
-                height: 55px !important;
-                padding: 2px;
-                position: relative;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                align-items: center;
-                overflow: hidden;
-            }
-
-            .day-num { 
-                font-size: 11px; 
-                margin-bottom: 0; 
-                text-align: right;
-                width: 100%; 
-                padding-right: 2px; 
-                position: relative; 
-                z-index: 2;
-            }
-            
-            .weekday { font-size: 13px; padding: 6px 0; }
-
-            .event { 
-                position: relative;
-                top: 0; left: 0; width: 100%; height: 100%;
-                margin: 0 0 2px 0; 
-                padding: 2px;             
-                z-index: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
-            }
-
-            .evt-time { 
-                display: block !important;
-                font-size: 7.5px;
-                font-weight: normal;
-                color: #222;
-                width: 100%; 
-                text-align: right;
-                white-space: normal;
-                word-break: break-all;
-                line-height: 1.1;
-                letter-spacing: -0.5px;
-                margin-bottom: 1px;
-                margin-top: 2px;  
-            }
-            .evt-text { 
-                display: block !important;
-                font-size: 6px !important;
-                width: 100%;
-                text-align: right;
-                word-break: break-all;
-            }
-
-            .row { 
-                flex-direction: column;
-                align-items: stretch;
-                gap: 8px;
-            }
-
-            .row input,
-            .row select,
-            .row button {
-                width: 100% !important;
-            }
-
-            #admin-panel h3 { 
-                flex-direction: column;
-                align-items: center;
-                gap: 8px;
-            }
-            .logo-img {
-                width: 30px;
-                height: 30px;
-            }
-        }
-    </style>
-
-<div id="header-container" class="navbar-wrapper"></div>
-
-<div class="container">
-    <div class="header-section">
-        <!-- 第一列：Logo、客舍時間表 與 年月份並列 (靠齊底部基準線 baseline) -->
-        <div class="title-area">
-            <a href="/" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:baseline;">
-                <img src="/images/logo-small2.png" alt="Logo" class="logo-img" style="width: 45px; height: 45px; margin-right: 6px;" oncontextmenu="return false;" ondragstart="return false;">
-            </a>
-            <h1 onclick="exportEventImage()" style="cursor: pointer;" title="點擊匯出宣傳圖片">客舍時間表</h1>
-             <!-- 下拉選單容器 -->
-            <div class="month-dropdown-container">
-                <span id="month-display" class="rpg-btn" onclick="toggleMonthDropdown()" style="cursor: pointer;">
-                    連線中... ▼
-                </span>
-                
-                <!-- 下降展開的月份網格面板 -->
-                <div id="popup-month-list" class="month-select-grid"></div>
-            </div>
-        </div>
-
-        <!-- 第二列：類型圖示轉新一列 -->
-        <div id="legend-list" class="legend-box"></div>
+    <!-- 搜尋與篩選標籤 -->
+    <div class="explore-filter-section">
+      <div class="filter-tags">
+        <button class="filter-tag active" data-filter="all">全部</button>
+        <button class="filter-tag" data-filter="reading">閱讀中</button>
+        <button class="filter-tag" data-filter="finished">已讀完</button>
+        <button class="filter-tag" data-filter="rating">高評價 (8★up)</button>
+      </div>
+      <div class="search-bar-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="搜尋書名或作者..." />
+      </div>
     </div>
 
-    <div id="calendar" class="grid"></div>
-
-    <div id="admin-panel">
-        <h3>
-            <span>🛠 管理員智慧中控台</span>
-            <span id="edit-mode-badge" style="display:none; background:#f0a818; color:white; font-size:12px; padding:2px 8px; border-radius:4px; margin-left:10px; vertical-align:middle;">✏️ 編輯模式</span>
-            <div style="margin-left: auto; display: flex; gap: 8px;">
-                <button onclick="exportEventImage()" style="background:#2196F3; font-size:13px; padding:4px 8px;">🖼️ 導出本月圖檔 (1080x1350)</button>
-                <button onclick="openModal('passwordModal')" style="background:#673ab7; font-size:13px; padding:4px 8px;">🔑 修改管理員密碼</button>
-            </div>
-        </h3>
-        <canvas id="exportCanvas" width="1080" height="1350" style="display: none;"></canvas>
-
-        <input type="hidden" id="edit-idx-target" value="-1">
-        <input type="hidden" id="edit-day-target" value="-1">
-
-        <div class="row">
-            <input type="number" id="e-day" placeholder="日">
-            <input type="text" id="e-time" placeholder="時間 (如 19:30)">
-            <input type="text" id="e-text" placeholder="活動內容">
-            <select id="e-type"></select>
-            
-            <button onclick="handleEventSubmit()" id="btn-save-event" style="background:var(--primary-blue)">新增活動</button>
-            <button onclick="clearEventForm()" style="background:#888">清空 / 取消</button>
-        </div>
-        
-        <div class="row" style="border-top: 1px dashed #ddd; padding-top: 15px; margin-bottom: 0;">
-            <input type="text" id="new-type" placeholder="新類型名稱">
-            <input type="color" id="new-color" value="#dcecfc" style="padding:0; height:38px; width:50px; cursor:pointer;">
-            <button onclick="addType()" style="background:var(--primary-green)">➕ 快速新增類型</button>
-            <div style="margin-left: auto; display: flex; gap: 10px; flex: 1; min-width: 200px;">
-                <button onclick="openModal('monthModal')" style="flex:1;">新增月份</button>
-                <button style="background:var(--danger-red); flex:1;" onclick="openDelModal()">刪除本月</button>
-            </div>
-        </div>
+    <!-- 閱讀清單列表 -->
+    <div class="logs-container" id="my-logs-list">
+      <div style="text-align:center; color:#8c8275; padding:30px;">載入記錄中...</div>
     </div>
-</div>
 
-<div class="modal-overlay" id="typeManageModal">
-    <div class="modal-card">
-        <h3>修改 / 刪除 活動類型</h3>
-        <p style="font-size: 14px; color: #666;">您正在管理類型：<b id="manage-type-target"></b></p>
-        <div style="margin-bottom: 12px;">
-            <label style="font-size:14px; display:block; margin-bottom:4px;">類型名稱：</label>
-            <input type="text" id="manage-type-name" style="width: 100%;">
-        </div>
-        <div style="margin-bottom: 20px;">
-            <label style="font-size:14px; display:block; margin-bottom:4px;">代表顏色：</label>
-            <input type="color" id="manage-type-color" style="padding:0; width:100%; height:40px; cursor:pointer;">
-        </div>
-        <div class="modal-buttons" style="justify-content: space-between;">
-            <button onclick="submitDeleteType()" style="background:var(--danger-red)">🗑 刪除此類型</button>
+  </div>
+
+  <!-- 新增記錄彈窗 (Modal) -->
+  <div id="add-record-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+      <div class="modal-title-bar">
+        <span>✍️ 新增閱讀記錄</span>
+        <button id="close-add-modal-btn" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-content">
+        <div class="form-grid">
+          <div class="form-row"><label>書名</label><input type="text" id="book-title-input" placeholder="例：《白》" /></div>
+          <div class="form-row-2">
+            <div><label>作者</label><input type="text" id="book-author-input" placeholder="韓江" /></div>
+            <div><label>譯者</label><input type="text" id="book-translator-input" placeholder="張雅眉" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>目前頁數</label><input type="number" id="current-page-input" placeholder="0" min="0" /></div>
+            <div><label>總頁數</label><input type="number" id="total-pages-input" placeholder="300" min="1" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>閱讀日期</label><input type="date" id="start-date-input" /></div>
+            <div><label>完成日期</label><input type="date" id="finish-date-input" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>出版社</label><input type="text" id="publisher-input" placeholder="漫遊者文化" /></div>
             <div>
-                <button onclick="closeModal('typeManageModal')" style="background:#888">取消</button>
-                <button onclick="submitUpdateType()" style="background:var(--primary-green)">💾 儲存修改</button>
+              <label>喜愛程度 (1-10星)</label>
+              <select id="rating-input">
+                <option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (10星)</option>
+                <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ (9星)</option>
+                <option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ (8星)</option>
+                <option value="7">⭐⭐⭐⭐⭐⭐⭐ (7星)</option>
+                <option value="6">⭐⭐⭐⭐⭐⭐ (6星)</option>
+                <option value="5" selected>⭐⭐⭐⭐⭐ (5星)</option>
+                <option value="4">⭐⭐⭐⭐ (4星)</option>
+                <option value="3">⭐⭐⭐ (3星)</option>
+                <option value="2">⭐⭐ (2星)</option>
+                <option value="1">⭐★☆☆☆ (1星)</option>
+              </select>
             </div>
+          </div>
+          <div class="form-row"><label>記一些字句：</label><textarea id="quote-input" placeholder="摘錄喜歡的句子..."></textarea></div>
+          <div class="form-row"><label>記一些疑問：</label><textarea id="questions-input" placeholder="閱讀時產生的疑問..."></textarea></div>
+          <div class="form-row"><label>記一些感受：</label><textarea id="review-input" placeholder="讀後心得與感受..."></textarea></div>
+          <div class="form-row" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 4px;">
+            <input type="checkbox" id="add-is-public-input" style="width: auto;" />
+            <label for="add-is-public-input" style="cursor: pointer;">公開這本書的閱讀記錄至大廳書牆</label>
+          </div>
         </div>
-        <div class="modal-buttons" style="margin-bottom: 10px; justify-content: center; gap: 10px;">
-            <button onclick="moveType(-1)" style="background:#555">⬆️ 上移</button>
-            <button onclick="moveType(1)" style="background:#555">⬇️ 下移</button>
+        <button id="submit-log-btn" class="action-btn primary" style="margin-top: 16px; width: 100%;">儲存記錄</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 記錄詳細檢視與編輯彈窗 (Modal) -->
+  <div id="log-detail-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+      <div class="modal-title-bar">
+        <span id="modal-window-title">📖 閱讀筆記詳情</span>
+        <button id="detail-close-btn" class="modal-close-btn">✕</button>
+      </div>
+      
+      <!-- 1. 預設檢視模式 (Read-only view) -->
+      <div id="view-mode-container" class="modal-content paper-sheet">
+        <div class="detail-grid">
+          <div class="detail-line"><strong>書名</strong> <span id="modal-book" class="line-content"></span></div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>作者</strong> <span id="modal-author" class="line-content"></span></div>
+            <div class="detail-line"><strong>譯者</strong> <span id="modal-translator" class="line-content"></span></div>
+          </div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>閱讀進度</strong> <span id="modal-progress" class="line-content"></span></div>
+            <div class="detail-line"><strong>出版社</strong> <span id="modal-publisher" class="line-content"></span></div>
+          </div>
+          <div class="detail-row-2">
+            <div class="detail-line"><strong>閱讀日期</strong> <span id="modal-start-date" class="line-content"></span></div>
+            <div class="detail-line"><strong>完成日期</strong> <span id="modal-finish-date" class="line-content"></span></div>
+          </div>
+          <div class="detail-line"><strong>喜愛程度</strong> <span id="modal-rating" class="line-content" style="color: #d97706;"></span></div>
         </div>
-    </div>
-</div>
 
-<div class="modal-overlay" id="authModal">
-    <div class="modal-card">
-        <h3>安全驗證</h3>
-        <p>請輸入管理員密碼：</p>
-        <input type="password" id="admin-pwd" style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 10px;">
-        <div class="modal-buttons">
-            <button onclick="closeModal('authModal')" style="background:#888">取消</button>
-            <button onclick="verifyAdmin()">確認登入</button>
+        <div class="detail-section">
+          <div class="section-title">記一些字句：</div>
+          <div id="modal-quote" class="section-content-box"></div>
         </div>
-    </div>
-</div>
 
-<div class="modal-overlay" id="passwordModal">
-    <div class="modal-card">
-        <h3>修改管理員密碼</h3>
-        <p>請輸入全新密碼：</p>
-        <input type="text" id="new-pwd-input" style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 10px;" placeholder="請輸入新密碼">
-        <div class="modal-buttons">
-            <button onclick="closeModal('passwordModal')" style="background:#888">取消</button>
-            <button onclick="submitChangePassword()" style="background:#673ab7;">確認修改</button>
+        <div class="detail-section">
+          <div class="section-title">記一些疑問：</div>
+          <div id="modal-questions" class="section-content-box"></div>
         </div>
-    </div>
-</div>
 
-<div class="modal-overlay" id="monthModal">
-    <div class="modal-card">
-        <h3>新增月份</h3>
-        <p>請選擇欲建立的月份：</p>
-        <input type="month" id="new-month-input" value="2026-02" style="width: 100%; box-sizing: border-box; padding: 10px;">
-        <div class="modal-buttons">
-            <button onclick="closeModal('monthModal')" style="background:#888">取消</button>
-            <button onclick="submitAddMonth()">建立</button>
+        <div class="detail-section">
+          <div class="section-title">記一些感受：</div>
+          <div id="modal-review" class="section-content-box"></div>
         </div>
-    </div>
-</div>
 
-<div class="modal-overlay" id="delMonthModal">
-    <div class="modal-card">
-        <h3 style="color:var(--danger-red)">警告</h3>
-        <p>確定要刪除整個 <b><span class="text-current-month"></span></b> 月份的所有活動嗎？</p>
-        <div class="modal-buttons">
-            <button onclick="closeModal('delMonthModal')" style="background:#888">取消</button>
-            <button onclick="submitDelMonth()" style="background:var(--danger-red)">確定刪除</button>
+        <div style="margin-top: 16px; display: flex; gap: 8px;">
+          <button id="download-card-btn" class="action-btn success" style="flex: 1;">📥 下載記錄卡片</button>
         </div>
+
+        <div id="owner-action-bar" style="margin-top: 12px; display: none;">
+          <button id="switch-to-edit-btn" class="action-btn primary" style="width: 100%;">✏️ 編輯內容</button>
+        </div>
+      </div>
+
+      <!-- 2. 編輯模式 (Edit form view，預設隱藏) -->
+      <div id="edit-mode-container" class="modal-content paper-sheet" style="display: none;">
+        <input type="hidden" id="edit-log-id" />
+        <div class="form-grid">
+          <div class="form-row"><label>書名</label><input type="text" id="edit-book" /></div>
+          <div class="form-row-2">
+            <div><label>作者</label><input type="text" id="edit-author" /></div>
+            <div><label>譯者</label><input type="text" id="edit-translator" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>目前頁數</label><input type="number" id="edit-current-page" /></div>
+            <div><label>總頁數</label><input type="number" id="edit-total-pages" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>閱讀日期</label><input type="date" id="edit-start-date" /></div>
+            <div><label>完成日期</label><input type="date" id="edit-finish-date" /></div>
+          </div>
+          <div class="form-row-2">
+            <div><label>出版社</label><input type="text" id="edit-publisher" /></div>
+            <div>
+              <label>喜愛程度 (1-10星)</label>
+              <select id="edit-rating">
+                <option value="10">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐ (10星)</option>
+                <option value="9">⭐⭐⭐⭐⭐⭐⭐⭐⭐ (9星)</option>
+                <option value="8">⭐⭐⭐⭐⭐⭐⭐⭐ (8星)</option>
+                <option value="7">⭐⭐⭐⭐⭐⭐⭐ (7星)</option>
+                <option value="6">⭐⭐⭐⭐⭐⭐ (6星)</option>
+                <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+                <option value="4">⭐⭐⭐⭐ (4星)</option>
+                <option value="3">⭐⭐⭐ (3星)</option>
+                <option value="2">⭐⭐ (2星)</option>
+                <option value="1">⭐ (1星)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row"><label>記一些字句：</label><textarea id="edit-quote"></textarea></div>
+          <div class="form-row"><label>記一些疑問：</label><textarea id="edit-questions"></textarea></div>
+          <div class="form-row"><label>記一些感受：</label><textarea id="edit-review"></textarea></div>
+          <div class="form-row" style="flex-direction: row; align-items: center; gap: 8px; margin-top: 4px;">
+            <input type="checkbox" id="edit-is-public-input" style="width: auto;" />
+            <label for="edit-is-public-input" style="cursor: pointer;">公開這本書的閱讀記錄至大廳書牆</label>
+          </div>
+        </div>
+
+        <div class="detail-action-buttons" style="margin-top: 16px;">
+          <button id="finish-book-btn" class="action-btn success">✨ 一鍵讀完</button>
+          <button id="update-log-btn" class="action-btn primary">儲存修改</button>
+          <button id="cancel-edit-btn" class="action-btn secondary">取消</button>
+        </div>
+      </div>
+
     </div>
-</div>
+  </div>
 
-<div class="modal-overlay" id="eventActionModal">
-    <div class="modal-card">
-        <h3 id="modal-action-title">活動詳細資訊</h3>
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; font-size: 16px; margin-bottom: 15px; border-left: 4px solid var(--primary-blue);" id="info-event-preview"></div>
-        <div class="modal-buttons" id="modal-action-buttons"></div>
-    </div>
-</div>
+  <style is:global>
+    :root {
+      --bg-main: #fcfaf7;
+      --bg-card: #ffffff;
+      --border-color: #f0ebe1;
+      --text-main: #2c2420;
+      --text-sub: #8c8275;
+      --accent-color: #6b8e23;
+      --accent-hover: #556b2f;
+      --tag-bg: #f4efe6;
+    }
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .reading-page-container {
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 16px;
+      padding-bottom: 40px;
+      box-sizing: border-box;
+    }
+    .reading-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    #page-title {
+      font-size: 16px;
+      margin: 0;
+    }
 
-<script>
-import { supabase } from '../lib/supabase';
+    .explore-filter-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 14px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .filter-tags {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .filter-tag {
+      background: var(--tag-bg);
+      border: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-sub);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .filter-tag.active {
+      background: var(--accent-color);
+      color: #fff;
+      font-weight: 500;
+    }
+    .search-bar-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 14px;
+    }
+    #search-input {
+      width: 100%;
+      background: var(--tag-bg);
+      border: 1px solid transparent;
+      padding: 10px 12px 10px 36px;
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    #search-input:focus {
+      border-color: var(--accent-color);
+      background: #fff;
+    }
 
-// --- 設定 ---
-const TABLE_NAME = 'events';
-const client = supabase;
-window.client = client;
+    .logs-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .log-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .log-item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .book-title {
+      font-weight: bold;
+      color: var(--text-main);
+      font-size: 15px;
+    }
+    .book-meta {
+      font-size: 12px;
+      color: var(--text-sub);
+      display: flex;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: var(--tag-bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-color);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
 
-const holidays = ["2026-01-01", "2026-02-17", "2026-02-18", "2026-02-19", "2026-04-03", "2026-04-04", "2026-04-06", "2026-04-07", "2026-05-01", "2026-05-25", "2026-06-19", "2026-07-01", "2026-09-26", "2026-10-01", "2026-10-19", "2026-12-25", "2026-12-26"];
+    .form-grid { display: flex; flex-direction: column; gap: 12px; }
+    .form-row { display: flex; flex-direction: column; gap: 4px; }
+    .form-row-2 { display: flex; gap: 10px; }
+    .form-row-2 > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 11px; color: var(--text-sub); font-weight: 500; }
+    input, textarea, select {
+      background: #fff;
+      border: 1px solid #dcd6cd;
+      color: var(--text-main);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    textarea { height: 60px; resize: none; }
 
-// --- 全域變數 ---
-const today = new Date();
-const currentYearStr = today.getFullYear();
-const currentMonthStr = (today.getMonth() + 1).toString().padStart(2, '0');
-let currentMonth = `${currentYearStr}-${currentMonthStr}`; 
-let isAdmin = false;
-let dbData = { events: {}, months: [], types: [] };
+    .action-btn {
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+    }
+    .action-btn.primary { background: var(--accent-color); color: #fff; }
+    .action-btn.primary:hover { background: var(--accent-hover); }
+    .action-btn.success { background: #3b82f6; color: #fff; }
+    .action-btn.success:hover { background: #2563eb; }
+    .action-btn.secondary { background: #e5e0d8; color: #2c2420; }
+    .action-btn.secondary:hover { background: #dcd6cd; }
 
-// --- 初始化檢查登入狀態與抓取資料 ---
-async function initPage() {
-    if (client) {
-        const { data: { session } } = await client.auth.getSession();
-        if (session) {
-            isAdmin = true;
-            document.body.classList.add('admin-mode');
+    .detail-action-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .detail-action-buttons button {
+      flex: 1;
+      min-width: 100px;
+    }
+    
+    .paper-sheet { background: #fff; color: var(--text-main); }
+    .detail-grid { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+    .detail-row-2 { display: flex; gap: 16px; }
+    .detail-line { flex: 1; display: flex; align-items: baseline; border-bottom: 1px dotted #e5e0d8; padding-bottom: 4px; font-size: 12px; }
+    .detail-line strong { width: 65px; color: var(--text-sub); flex-shrink: 0; }
+    .line-content { color: var(--text-main); font-weight: 500; }
+    
+    .detail-section { margin-top: 14px; }
+    .section-title { font-weight: bold; color: var(--accent-color); margin-bottom: 4px; font-size: 12px; }
+    .section-content-box { background: var(--tag-bg); border-left: 2px solid var(--accent-color); padding: 8px 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #4a4036; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(44, 36, 32, 0.4); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal-window {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; width: 90%; max-width: 480px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden;
+    }
+    .modal-title-bar { background: var(--tag-bg); color: var(--text-main); padding: 12px 16px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+    .modal-close-btn { background: transparent; color: var(--text-sub); border: none; font-size: 16px; cursor: pointer; }
+    .modal-content { padding: 20px; overflow-y: auto; max-height: 80vh; }
+  </style>
+
+  <script>
+    import { supabase } from '../lib/supabase';
+
+    const LOGS_TABLE = 'reading_record';
+    const MEMBERS_TABLE = 'slowpace_members';
+    let currentUserId: string | null = null;
+    let currentUserName = '熱心讀者';
+    let isOwner = false;
+    let cachedLogs: any[] = [];
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let selectedLogForDownload: any = null;
+
+    const listContainer = document.getElementById('my-logs-list');
+    const submitBtn = document.getElementById('submit-log-btn');
+    const openAddModalBtn = document.getElementById('open-add-modal-btn');
+    const addRecordModal = document.getElementById('add-record-modal');
+    const closeAddModalBtn = document.getElementById('close-add-modal-btn');
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+
+    const detailModal = document.getElementById('log-detail-modal');
+    const detailCloseBtn = document.getElementById('detail-close-btn');
+    const viewModeContainer = document.getElementById('view-mode-container');
+    const editModeContainer = document.getElementById('edit-mode-container');
+    const modalWindowTitle = document.getElementById('modal-window-title');
+    const switchToEditBtn = document.getElementById('switch-to-edit-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const updateLogBtn = document.getElementById('update-log-btn');
+    const finishBookBtn = document.getElementById('finish-book-btn');
+    const ownerActionBar = document.getElementById('owner-action-bar');
+    const downloadCardBtn = document.getElementById('download-card-btn');
+
+    async function initPage() {
+      const { data: { session } } = await supabase.auth.getSession();
+      const guestId = sessionStorage.getItem('space_guest_id');
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetUserId = urlParams.get('user_id');
+
+      if (targetUserId) {
+        currentUserId = targetUserId;
+        isOwner = false;
+      } else if (session && session.user) {
+        currentUserId = session.user.id;
+        isOwner = true;
+      } else if (guestId) {
+        currentUserId = guestId;
+        isOwner = true;
+      } else {
+        window.location.href = '/login';
+        return;
+      }
+
+      if (currentUserId) {
+        const { data: memberData } = await supabase
+          .from(MEMBERS_TABLE)
+          .select('name')
+          .eq('user_id', currentUserId)
+          .single();
+
+        if (memberData && memberData.name) {
+          currentUserName = memberData.name;
+        } else if (session?.user) {
+          currentUserName = session.user.user_metadata?.name || session.user.email?.split('@')[0] || '會員';
         } else {
-            isAdmin = false;
-            document.body.classList.remove('admin-mode');
+          currentUserName = guestId ? '訪客' : '熱心讀者';
         }
-    }
-    await fetchData();
-}
+      }
 
-async function fetchData() {
-    if (!client) return;
-    const { data, error } = await client.from(TABLE_NAME).select('*').eq('id', 1).single();
-    if (!error && data) {
-        dbData = {
-            events: data.calendar_events || {},
-            months: data.calendar_months || [],
-            types: data.calendar_types || []
-        };
-        
-        // 確保當前月份如果不在資料庫的 months 清單內，自動補上並排序
-        if (!dbData.months.includes(currentMonth)) {
-            dbData.months.push(currentMonth);
-            dbData.months.sort();
-        }
+      if (isOwner && openAddModalBtn) {
+        openAddModalBtn.style.display = 'block';
+      }
 
-        renderCalendar();
-        renderLegend();
-        renderMonthList();
-    }
-}
-
-window.addEventListener('DOMContentLoaded', initPage);
-
-// --- 介面渲染 ---
-function renderCalendar() {
-    const calendarEl = document.getElementById('calendar');
-    if (!calendarEl) return;
-    const [year, month] = currentMonth.split('-').map(Number);
-    document.getElementById('month-display').innerText = `${year}年 ${month}月 ▼`;
-
-    const firstDay = new Date(year, month - 1, 1).getDay();
-    const daysInMonth = new Date(year, month, 0).getDate();
-    
-    calendarEl.innerHTML = `<div class="weekday">日</div><div class="weekday">一</div><div class="weekday">二</div><div class="weekday">三</div><div class="weekday">四</div><div class="weekday">五</div><div class="weekday">六</div>`;
-
-    for (let i = 0; i < firstDay; i++) calendarEl.innerHTML += `<div class="cell empty-cell"></div>`;
-    for (let d = 1; d <= daysInMonth; d++) {
-        const dayStr = d.toString().padStart(2, '0');
-        const fullDateStr = `${currentMonth}-${dayStr}`;
-        const isHoliday = holidays.includes(fullDateStr);
-        const holidayClass = isHoliday ? 'holiday' : '';
-
-        const events = (dbData.events[currentMonth] || []).filter(e => e.day === d);
-        let eventsHtml = events.map(e => `
-            <div class="event" style="background:${dbData.types.find(t=>t.name==e.type)?.color || '#dcecfc'}">
-                <span class="evt-time">${e.time}</span><span class="evt-text">${e.text}</span>
-            </div>
-        `).join('');
-        
-        calendarEl.innerHTML += `
-            <div class="cell ${holidayClass}" onclick="handleCellClick(${d})">
-                <div class="day-num">${d}</div>
-                ${eventsHtml}
-            </div>`;
-    }
-}
-
-function renderLegend() {
-    const typeSelect = document.getElementById('e-type');
-    if (typeSelect) {
-        typeSelect.innerHTML = dbData.types.map(t => 
-            `<option value="${t.name}">${t.name}</option>`
-        ).join('');
+      await fetchAndRenderLogs();
     }
 
-    const legendList = document.getElementById('legend-list');
-    if (!legendList) return;
+    async function fetchAndRenderLogs() {
+      if (!currentUserId || !listContainer) return;
+      listContainer.innerHTML = '<div style="text-align:center; color:#8c8275; padding:30px;">載入記錄中...</div>';
 
-    legendList.innerHTML = dbData.types.map((t, index) => `
-        <div class="legend-item" onclick="openTypeModal(${index})" style="${isAdmin ? 'cursor:pointer;' : 'cursor:default;'}">
-            <div class="box" style="background:${t.color}"></div>${t.name}
-        </div>
-    `).join('');
-}
+      const { data, error } = await supabase
+        .from(LOGS_TABLE)
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
 
-// --- 資料庫同步更新 ---
-async function saveDB() {
-    if (!client) return;
-    await client.from(TABLE_NAME).update({
-        calendar_events: dbData.events,
-        calendar_months: dbData.months,
-        calendar_types: dbData.types
-    }).eq('id', 1);
-    fetchData();
-}
-
-// --- 快速新增類型 ---
-window.addType = async function() {
-    if (!isAdmin) return;
-    const nameInput = document.getElementById('new-type');
-    const colorInput = document.getElementById('new-color');
-    const name = nameInput.value.trim();
-    const color = colorInput.value || '#dcecfc';
-
-    if (!name) {
-        alert("請輸入新類型名稱！");
-        nameInput.focus();
+      if (error) {
+        listContainer.innerHTML = '<div style="text-align:center; color:#ef4444; padding:30px;">載入記錄失敗</div>';
         return;
+      }
+
+      cachedLogs = data || [];
+      renderLogs();
     }
 
-    if (dbData.types.some(t => t.name === name)) {
-        alert("此類型名稱已存在，請使用其他名稱！");
+    function renderLogs() {
+      if (!listContainer) return;
+
+      let filtered = cachedLogs.filter(item => {
+        const title = (item.book_title || '').toLowerCase();
+        const author = (item.author || '').toLowerCase();
+        const query = searchQuery.toLowerCase();
+        const curr = item.current_page || 0;
+        const total = item.total_pages || 100;
+        const isFinished = item.finish_date || curr >= total;
+
+        if (currentFilter === 'reading' && isFinished) return false;
+        if (currentFilter === 'finished' && !isFinished) return false;
+        if (currentFilter === 'rating' && (item.rating || 5) < 8) return false;
+        if (currentFilter === 'title' && !title.includes(query)) return false;
+        if (currentFilter === 'author' && !author.includes(query)) return false;
+
+        if (currentFilter === 'all' && query) {
+          return title.includes(query) || author.includes(query);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center; color:#8c8275; padding:30px;">目前尚無符合的閱讀記錄</div>';
         return;
-    }
+      }
 
-    dbData.types.push({ name, color });
-    nameInput.value = '';
-    await saveDB();
-};
-
-// --- 導出本月圖檔 (1080 x 1350 IG 貼文尺寸) ---
-window.exportEventImage = function() {
-    const canvas = document.getElementById('exportCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = 1080;
-    const H = 1350;
-
-    function drawRoundRect(x, y, w, h, r, fillStyle, strokeStyle) {
-        ctx.beginPath();
-        ctx.roundRect(x, y, w, h, r);
-        if (fillStyle) {
-            ctx.fillStyle = fillStyle;
-            ctx.fill();
+      let html = '';
+      filtered.forEach((item) => {
+        const ratingNum = item.rating || 5;
+        const ratingStars = '⭐'.repeat(Math.min(ratingNum, 10)) + ` (${ratingNum}星)`;
+        const curr = item.current_page || 0;
+        const total = item.total_pages || 0;
+        let percent = 0;
+        if (total > 0) {
+          percent = Math.min(100, Math.round((curr / total) * 100));
         }
-        if (strokeStyle) {
-            ctx.strokeStyle = strokeStyle;
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-        }
-    }
+        if (item.finish_date && total > 0) percent = 100;
 
-    // 1. 整體背景
-    ctx.fillStyle = '#ebf3dd';
-    ctx.fillRect(0, 0, W, H);
-
-    const padX = 42;
-    const padTop = 48;
-
-    const logoImgObj = new Image();
-    logoImgObj.src = '/images/logo-small2.png';
-    logoImgObj.onload = function() {
-        const logoSize = 48;
-        const headerY = padTop + 5;
-        ctx.drawImage(logoImgObj, padX, headerY, logoSize, logoSize);
-
-        // 2. 標題與月份
-        const [year, month] = currentMonth.split('-').map(Number);
-        ctx.fillStyle = '#2b579a';
-        ctx.font = 'bold 48px "Noto Sans TC", sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText('客舍時間表', padX + logoSize + 15, headerY + 42);
-
-        ctx.font = 'bold 36px "Noto Sans TC", sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(`${year}年 ${month}月`, W - padX, headerY + 42);
-
-        // 3. 頁首第二列：類型圖示轉新一列（自動折行）
-        let curX = padX;
-        let curY = headerY + logoSize + 25;
-        const legendFont = '20px "Noto Sans TC", sans-serif';
-        ctx.font = legendFont;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-
-        dbData.types.forEach(t => {
-            const textWidth = ctx.measureText(t.name).width;
-            const itemWidth = 22 + 8 + textWidth + 24;
-            if (curX + itemWidth > W - padX) {
-                curX = padX;
-                curY += 34;
-            }
-            drawRoundRect(curX, curY, 22, 22, 4, t.color, 'rgba(0,0,0,0.12)');
-            ctx.fillStyle = '#333333';
-            ctx.fillText(t.name, curX + 30, curY + 12);
-            curX += itemWidth;
-        });
-
-        // 4. 星期列
-        const gridTop = curY + 42;
-        const gridW = W - padX * 2;
-        const gap = 6;
-        const colW = (gridW - gap * 6) / 7;
-        const weekdayH = 44;
-        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-
-        weekdays.forEach((dayName, i) => {
-            const x = padX + i * (colW + gap);
-            drawRoundRect(x, gridTop, colW, weekdayH, 8, '#f0d0d0');
-            ctx.fillStyle = '#333333';
-            ctx.font = 'bold 21px "Noto Sans TC", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(dayName, x + colW / 2, gridTop + weekdayH / 2 + 1);
-        });
-
-        // 5. 計算當月週數與格子高度
-        const firstDay = new Date(year, month - 1, 1).getDay();
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const totalSlots = firstDay + daysInMonth;
-        const rows = Math.ceil(totalSlots / 7);
-
-        const cellsTop = gridTop + weekdayH + gap;
-        const footerH = 38;
-        const availH = H - cellsTop - footerH - 16;
-        const rowH = (availH - gap * (rows - 1)) / rows;
-
-        // 6. 繪製每日格子與活動
-        for (let slot = 0; slot < rows * 7; slot++) {
-            const r = Math.floor(slot / 7);
-            const c = slot % 7;
-            const x = padX + c * (colW + gap);
-            const y = cellsTop + r * (rowH + gap);
-
-            drawRoundRect(x, y, colW, rowH, 10, '#f6f7e9', '#e2e6d5');
-
-            const d = slot - firstDay + 1;
-            if (d < 1 || d > daysInMonth) continue;
-
-            const dayStr = d.toString().padStart(2, '0');
-            const fullDateStr = `${currentMonth}-${dayStr}`;
-            const isHoliday = holidays.includes(fullDateStr);
-
-            if (c === 0 || isHoliday) {
-                ctx.fillStyle = '#d9534f';
-            } else if (c === 6) {
-                ctx.fillStyle = '#2b579a';
-            } else {
-                ctx.fillStyle = '#333333';
-            }
-            ctx.font = 'bold 20px "Noto Sans TC", sans-serif';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'top';
-            ctx.fillText(String(d), x + colW - 8, y + 7);
-
-            const events = (dbData.events[currentMonth] || []).filter(e => e.day === d);
-            let evtY = y + 33;
-            const evtPadX = 5;
-            const evtW = colW - evtPadX * 2;
-
-            events.forEach(e => {
-                if (evtY + 26 > y + rowH - 4) return;
-
-                const typeObj = dbData.types.find(t => t.name === e.type);
-                const bgColor = typeObj ? typeObj.color : '#dcecfc';
-
-                ctx.font = '13px "Noto Sans TC", sans-serif';
-                const lines = [];
-                let currentLine = '';
-                for (const ch of (e.text || '')) {
-                    if (ctx.measureText(currentLine + ch).width > evtW - 10) {
-                        lines.push(currentLine);
-                        currentLine = ch;
-                    } else {
-                        currentLine += ch;
-                    }
-                }
-                if (currentLine) lines.push(currentLine);
-
-                const hasTime = Boolean(e.time && e.time.trim());
-                const lineH = 16;
-                const boxH = (hasTime ? 17 : 0) + lines.length * lineH + 8;
-
-                if (evtY + boxH > y + rowH - 3) return;
-
-                drawRoundRect(x + evtPadX, evtY, evtW, boxH, 5, bgColor);
-
-                ctx.fillStyle = '#222222';
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'top';
-                let textY = evtY + 4;
-
-                if (hasTime) {
-                    ctx.font = 'bold 13px "Noto Sans TC", sans-serif';
-                    ctx.fillText(e.time, x + colW - evtPadX - 5, textY);
-                    textY += 17;
-                }
-
-                ctx.font = '13px "Noto Sans TC", sans-serif';
-                lines.forEach(line => {
-                    ctx.fillText(line, x + colW - evtPadX - 5, textY);
-                    textY += lineH;
-                });
-
-                evtY += boxH + 4;
-            });
-        }
-
-        // 7. 底部浮水印
-        ctx.fillStyle = '#7a8470';
-        ctx.font = '16px "Noto Sans TC", sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText('Slow Pace Studio 空間客舍', W - padX, H - 16);
-
-        // 8. 觸發圖片下載
-        const link = document.createElement('a');
-        link.download = `客舍時間表_${currentMonth}.png`;
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    if (logoImgObj.complete) {
-        logoImgObj.onload();
-    }
-};
-
-// 切換月份下拉選單的顯示與隱藏
-function toggleMonthDropdown() {
-    const list = document.getElementById('popup-month-list');
-    if (list) {
-        list.classList.toggle('show');
-    }
-}
-
-// 點擊畫面其他地方時自動關閉下拉選單
-window.addEventListener('click', function(e) {
-    const container = document.querySelector('.month-dropdown-container');
-    const list = document.getElementById('popup-month-list');
-    if (container && list && !container.contains(e.target)) {
-        list.classList.remove('show');
-    }
-});
-
-// 渲染月份清單的函式
-window.renderMonthList = function() {
-    const container = document.getElementById('popup-month-list');
-    if (!container) return;
-    
-    const sortedMonths = [...dbData.months].sort();
-
-    container.innerHTML = sortedMonths.map(m => `
-        <button class="month-select-btn ${m === currentMonth ? 'active' : ''}" 
-                onclick="switchMonth('${m}')">
-            ${m}
-        </button>
-    `).join('');
-}
-
-window.switchMonth = function(m) {
-    currentMonth = m;
-    fetchData(); 
-    
-    const list = document.getElementById('popup-month-list');
-    if (list) {
-        list.classList.remove('show');
-    }
-};
-
-window.submitAddMonth = function() {
-    const m = document.getElementById('new-month-input').value;
-    if (!m) return;
-
-    if (!dbData.months.includes(m)) {
-        dbData.months.push(m);
-        dbData.months.sort();
-    }
-
-    currentMonth = m;
-    saveDB(); // 關鍵：同步寫入 Supabase 資料庫
-    window.closeModal('monthModal');
-};
-
-window.submitDelMonth = function() {
-    if (!isAdmin) return;
-    dbData.months = dbData.months.filter(m => m !== currentMonth);
-    delete dbData.events[currentMonth];
-    currentMonth = dbData.months.length > 0 ? dbData.months[0] : "";
-    saveDB();
-    window.closeModal('delMonthModal');
-    alert("該月份已刪除");
-};
-
-window.openDelModal = function() {
-    document.querySelectorAll('.text-current-month').forEach(el => el.innerText = currentMonth);
-    window.openModal('delMonthModal');
-};
-
-let editingTypeIndex = -1;
-
-window.openTypeModal = function(index) {
-    if (!isAdmin) return;
-    editingTypeIndex = index;
-    const type = dbData.types[index];
-    document.getElementById('manage-type-target').innerText = type.name;
-    document.getElementById('manage-type-name').value = type.name;
-    document.getElementById('manage-type-color').value = type.color;
-    window.openModal('typeManageModal');
-};
-
-window.submitUpdateType = function() {
-    const newName = document.getElementById('manage-type-name').value;
-    const newColor = document.getElementById('manage-type-color').value;
-    dbData.types[editingTypeIndex] = { name: newName, color: newColor };
-    saveDB();
-    window.closeModal('typeManageModal');
-};
-
-window.submitDeleteType = function() {
-    dbData.types.splice(editingTypeIndex, 1);
-    saveDB();
-    window.closeModal('typeManageModal');
-};
-
-window.moveType = function(direction) {
-    const index = editingTypeIndex;
-    const newIndex = index + direction;
-    if (newIndex >= 0 && newIndex < dbData.types.length) {
-        const temp = dbData.types[index];
-        dbData.types[index] = dbData.types[newIndex];
-        dbData.types[newIndex] = temp;
-        editingTypeIndex = newIndex; 
-        saveDB();
-    }
-};
-
-window.handleCellClick = function(day) {
-    if (isAdmin && document.getElementById('e-day') && document.getElementById('edit-idx-target').value === "-1") {
-        document.getElementById('e-day').value = day;
-    }
-
-    const dayEvents = (dbData.events[currentMonth] || []).filter(e => e.day === day);
-    document.getElementById('modal-action-title').innerText = `${day}日 活動資訊`;
-    const preview = document.getElementById('info-event-preview');
-    const buttons = document.getElementById('modal-action-buttons');
-    
-    if (dayEvents.length === 0) {
-        preview.innerHTML = "今日無活動。";
-        buttons.innerHTML = `<button onclick="window.closeModal('eventActionModal')" style="background:#888; width:100%">關閉</button>`;
-    } else {
-        preview.innerHTML = dayEvents.map((e, idx) => `
-            <div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                <div style="flex: 1; padding-right: 10px;">
-                    <b>${e.time}</b> : ${e.text} <small style="color:#666;">(${e.type})</small>
-                </div>
-                ${isAdmin ? `
-                    <div style="display:flex; gap:5px; flex-shrink:0;">
-                        <button onclick="window.switchToEditMode(${day}, ${idx})" style="background:#f0a818; color:#fff; padding:4px 8px; font-size:12px; border:none; border-radius:4px; cursor:pointer;">✏️</button>
-                        <button onclick="window.deleteSingleEvent(${day}, ${idx})" style="background:var(--danger-red); color:#fff; padding:4px 8px; font-size:12px; border:none; border-radius:4px; cursor:pointer;">🗑️</button>
-                    </div>
-                ` : ''}
+        html += `
+          <div class="log-item-card" data-id="${item.id}">
+            <div class="card-header">
+              <span class="book-title">《${item.book_title || '無題'}》</span>
+              <span style="font-size: 11px; color:#d97706;">${ratingStars}</span>
             </div>
-        `).join('');
-        
-        buttons.innerHTML = `
-            <button onclick="window.closeModal('eventActionModal')" style="background:#888; width:100%;">關閉</button>
-            ${isAdmin ? `<button onclick="deleteEventsOfDay(${day})" style="background:#333; margin-top:8px; font-size:12px; padding:4px;">⚠️ 刪除今日所有活動</button>` : ''}
+            <div class="book-meta">
+              <span>作者：${item.author || '佚名'}</span>
+              <span>${item.finish_date ? '已讀完' : `進度：${curr} / ${total} 頁`}</span>
+            </div>
+            <div class="progress-section">
+              <div class="progress-info">
+                <span>閱讀進度</span>
+                <span>${percent}%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+              </div>
+            </div>
+          </div>
         `;
+      });
+      listContainer.innerHTML = html;
+
+      document.querySelectorAll('.log-item-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const logId = (e.currentTarget as HTMLElement).dataset.id;
+          const log = cachedLogs.find(l => l.id === logId);
+          if (log) {
+            selectedLogForDownload = log;
+            
+            (document.getElementById('modal-book') as HTMLElement).textContent = `《${log.book_title || ''}》`;
+            (document.getElementById('modal-author') as HTMLElement).textContent = log.author || '佚名';
+            (document.getElementById('modal-translator') as HTMLElement).textContent = log.translator || '無';
+            (document.getElementById('modal-progress') as HTMLElement).textContent = `${log.current_page || 0} / ${log.total_pages || 0} 頁`;
+            (document.getElementById('modal-start-date') as HTMLElement).textContent = log.start_date || '未填寫';
+            (document.getElementById('modal-finish-date') as HTMLElement).textContent = log.finish_date || '未填寫';
+            (document.getElementById('modal-publisher') as HTMLElement).textContent = log.publisher || '未填寫';
+            
+            const rNum = log.rating || 5;
+            (document.getElementById('modal-rating') as HTMLElement).textContent = `${'⭐'.repeat(Math.min(rNum, 10))} (${rNum} 星)`;
+
+            (document.getElementById('modal-quote') as HTMLElement).textContent = log.quote || '無記錄字句';
+            (document.getElementById('modal-questions') as HTMLElement).textContent = log.questions || '無記錄疑問';
+            (document.getElementById('modal-review') as HTMLElement).textContent = log.review || '無記錄感受';
+
+            (document.getElementById('edit-log-id') as HTMLInputElement).value = log.id;
+            (document.getElementById('edit-book') as HTMLInputElement).value = log.book_title || '';
+            (document.getElementById('edit-author') as HTMLInputElement).value = log.author || '';
+            (document.getElementById('edit-translator') as HTMLInputElement).value = log.translator || '';
+            (document.getElementById('edit-current-page') as HTMLInputElement).value = log.current_page || 0;
+            (document.getElementById('edit-total-pages') as HTMLInputElement).value = log.total_pages || '';
+            (document.getElementById('edit-start-date') as HTMLInputElement).value = log.start_date || '';
+            (document.getElementById('edit-finish-date') as HTMLInputElement).value = log.finish_date || '';
+            (document.getElementById('edit-publisher') as HTMLInputElement).value = log.publisher || '';
+            (document.getElementById('edit-rating') as HTMLSelectElement).value = log.rating || 5;
+            (document.getElementById('edit-is-public-input') as HTMLInputElement).checked = log.is_public || false;
+
+            (document.getElementById('edit-quote') as HTMLTextAreaElement).value = log.quote || '';
+            (document.getElementById('edit-questions') as HTMLTextAreaElement).value = log.questions || '';
+            (document.getElementById('edit-review') as HTMLTextAreaElement).value = log.review || '';
+
+            if (viewModeContainer) viewModeContainer.style.display = 'block';
+            if (editModeContainer) editModeContainer.style.display = 'none';
+            if (modalWindowTitle) modalWindowTitle.textContent = '📖 閱讀筆記詳情';
+
+            if (ownerActionBar) {
+              ownerActionBar.style.display = isOwner ? 'block' : 'none';
+            }
+
+            if (detailModal) detailModal.style.display = 'flex';
+          }
+        });
+      });
     }
-    window.openModal('eventActionModal');
-};
 
-window.deleteSingleEvent = function(day, index) {
-    const dayEvents = (dbData.events[currentMonth] || []).filter(e => e.day === day);
-    const targetEvent = dayEvents[index];
-    if (!targetEvent) return;
-    if (!confirm(`確定要刪除此筆活動嗎？\n【${targetEvent.time} - ${targetEvent.text}】`)) return;
+    // 下載與詳情排版完全一致的圖片
+    downloadCardBtn?.addEventListener('click', () => {
+      if (!selectedLogForDownload) return;
+      const log = selectedLogForDownload;
 
-    let monthEvents = dbData.events[currentMonth] || [];
-    let currentDayMatchCount = 0;
-    const globalIndex = monthEvents.findIndex(e => {
-        if (e.day === day) {
-            if (currentDayMatchCount === index) return true;
-            currentDayMatchCount++;
-        }
-        return false;
+      const canvas = document.createElement('canvas');
+      canvas.width = 900;
+      canvas.height = 1200;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. 背景與邊框
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#f0ebe1';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+      let currentY = 90;
+
+      // 2. 標題與讀者
+      ctx.fillStyle = '#6b8e23';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(`📖 閱讀筆記詳情`, 70, currentY);
+
+      ctx.fillStyle = '#8c8275';
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`讀者：${log.reader_name || currentUserName}`, canvas.width - 70, currentY);
+      ctx.textAlign = 'left';
+
+      currentY += 35;
+
+      // 3. 資訊區塊 (模擬 .detail-grid)
+      ctx.fillStyle = '#fcfaf7';
+      ctx.fillRect(70, currentY, canvas.width - 140, 220);
+      ctx.strokeStyle = '#f0ebe1';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(70, currentY, canvas.width - 140, 220);
+
+      let gridY = currentY + 30;
+      const drawDetailLine = (label: string, val: string, isHalf = false, xOffset = 70, width = canvas.width - 140) => {
+        ctx.fillStyle = '#8c8275';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.fillText(label, xOffset + 20, gridY);
+        ctx.fillStyle = '#2c2420';
+        ctx.font = '15px sans-serif';
+        ctx.fillText(val, xOffset + 95, gridY);
+
+        // 下虛線
+        ctx.strokeStyle = '#e5e0d8';
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(xOffset + 20, gridY + 12);
+        ctx.lineTo(xOffset + width - 20, gridY + 12);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      };
+
+      drawDetailLine('書名', `《${log.book_title || ''}》`);
+      gridY += 35;
+
+      // 半行排版 (作者 / 譯者)
+      const halfW = (canvas.width - 140) / 2;
+      ctx.fillStyle = '#8c8275';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('作者', 90, gridY);
+      ctx.fillStyle = '#2c2420';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(log.author || '佚名', 165, gridY);
+
+      ctx.fillStyle = '#8c8275';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('譯者', 90 + halfW, gridY);
+      ctx.fillStyle = '#2c2420';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(log.translator || '無', 165 + halfW, gridY);
+
+      ctx.strokeStyle = '#e5e0d8';
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(90, gridY + 12); ctx.lineTo(70 + halfW - 20, gridY + 12);
+      ctx.moveTo(90 + halfW, gridY + 12); ctx.lineTo(canvas.width - 90, gridY + 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      gridY += 35;
+
+      // 閱讀進度 / 出版社
+      ctx.fillStyle = '#8c8275';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('閱讀進度', 90, gridY);
+      ctx.fillStyle = '#2c2420';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(`${log.current_page || 0} / ${log.total_pages || 0} 頁`, 165, gridY);
+
+      ctx.fillStyle = '#8c8275';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('出版社', 90 + halfW, gridY);
+      ctx.fillStyle = '#2c2420';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(log.publisher || '未填寫', 165 + halfW, gridY);
+
+      ctx.strokeStyle = '#e5e0d8';
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(90, gridY + 12); ctx.lineTo(70 + halfW - 20, gridY + 12);
+      ctx.moveTo(90 + halfW, gridY + 12); ctx.lineTo(canvas.width - 90, gridY + 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      gridY += 35;
+
+      // 閱讀日期 / 完成日期
+      ctx.fillStyle = '#8c8275';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('閱讀日期', 90, gridY);
+      ctx.fillStyle = '#2c2420';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(log.start_date || '未填寫', 165, gridY);
+
+      ctx.fillStyle = '#8c8275';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('完成日期', 90 + halfW, gridY);
+      ctx.fillStyle = '#2c2420';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(log.finish_date || '未填寫', 165 + halfW, gridY);
+
+      ctx.strokeStyle = '#e5e0d8';
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(90, gridY + 12); ctx.lineTo(70 + halfW - 20, gridY + 12);
+      ctx.moveTo(90 + halfW, gridY + 12); ctx.lineTo(canvas.width - 90, gridY + 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      gridY += 35;
+
+      // 喜愛程度
+      const rNum = log.rating || 5;
+      drawDetailLine('喜愛程度', '⭐'.repeat(Math.min(rNum, 10)) + ` (${rNum} 星)`);
+
+      currentY += 240;
+
+      // 4. 文字內容區塊函式 (模擬 .section-content-box)
+      const drawTextBox = (title: string, content: string) => {
+        ctx.fillStyle = '#6b8e23';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.fillText(title, 70, currentY);
+        currentY += 24;
+
+        ctx.fillStyle = '#f4efe6';
+        ctx.fillRect(70, currentY, canvas.width - 140, 90);
+        ctx.fillStyle = '#6b8e23';
+        ctx.fillRect(70, currentY, 4, 90);
+
+        ctx.fillStyle = '#4a4036';
+        ctx.font = '14px sans-serif';
+        wrapText(ctx, content || '無記錄', 90, currentY + 25, canvas.width - 180, 20);
+        currentY += 110;
+      };
+
+      drawTextBox('記一些字句：', log.quote);
+      drawTextBox('記一些疑問：', log.questions);
+      drawTextBox('記一些感受：', log.review);
+
+      // 5. 下載
+      const link = document.createElement('a');
+      link.download = `閱讀記錄-${log.book_title || 'book'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
     });
 
-    if (globalIndex !== -1) {
-        monthEvents.splice(globalIndex, 1);
-        const editIdx = document.getElementById('edit-idx-target').value;
-        const editDay = document.getElementById('edit-day-target').value;
-        if (editIdx == index && editDay == day) {
-            window.clearEventForm();
+    function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+      const words = text.split('');
+      let line = '';
+      let currentY = y;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          ctx.fillText(line, x, currentY);
+          line = words[n];
+          currentY += lineHeight;
+        } else {
+          line = testLine;
         }
-        saveDB();
-        window.closeModal('eventActionModal');
+      }
+      ctx.fillText(line, x, currentY);
     }
-};
 
-window.switchToEditMode = function(day, index) {
-    const targetEvent = dbData.events[currentMonth].filter(e => e.day === day)[index];
-    if (!targetEvent) return;
-
-    window.closeModal('eventActionModal');
-
-    document.getElementById('e-day').value = day;
-    document.getElementById('e-time').value = targetEvent.time;
-    document.getElementById('e-text').value = targetEvent.text;
-    document.getElementById('e-type').value = targetEvent.type;
-
-    document.getElementById('edit-day-target').value = day;
-    document.getElementById('edit-idx-target').value = index;
-
-    document.getElementById('edit-mode-badge').style.display = 'inline-block';
-    const saveBtn = document.getElementById('btn-save-event');
-    saveBtn.innerText = "儲存修改";
-    saveBtn.style.background = "#f0a818"; 
-
-    document.getElementById('admin-panel').scrollIntoView({ behavior: 'smooth' });
-};
-
-window.handleEventSubmit = function() {
-    const editIdx = parseInt(document.getElementById('edit-idx-target').value);
-    if (editIdx === -1) {
-        window.addEvent();
-    } else {
-        window.submitUpdateEventFromPanel();
-    }
-};
-
-window.addEvent = function() {
-    const day = parseInt(document.getElementById('e-day').value);
-    const time = document.getElementById('e-time').value;
-    const text = document.getElementById('e-text').value;
-    const type = document.getElementById('e-type').value;
-    if (!dbData.events[currentMonth]) dbData.events[currentMonth] = [];
-    dbData.events[currentMonth].push({ day, time, text, type });
-    saveDB();
-    window.clearEventForm();
-};
-
-window.submitUpdateEventFromPanel = function() {
-    const day = parseInt(document.getElementById('edit-day-target').value);
-    const index = parseInt(document.getElementById('edit-idx-target').value);
-    let monthEvents = dbData.events[currentMonth] || [];
-    
-    let currentDayMatchCount = 0;
-    const globalIndex = monthEvents.findIndex(e => {
-        if (e.day === day) {
-            if (currentDayMatchCount === index) return true;
-            currentDayMatchCount++;
-        }
-        return false;
+    switchToEditBtn?.addEventListener('click', () => {
+      if (viewModeContainer) viewModeContainer.style.display = 'none';
+      if (editModeContainer) editModeContainer.style.display = 'block';
+      if (modalWindowTitle) modalWindowTitle.textContent = '✏️ 編輯閱讀筆記';
     });
 
-    if (globalIndex !== -1) {
-        const newDay = parseInt(document.getElementById('e-day').value) || day;
-        monthEvents[globalIndex] = {
-            day: newDay,
-            time: document.getElementById('e-time').value,
-            text: document.getElementById('e-text').value,
-            type: document.getElementById('e-type').value
-        };
-        saveDB();              
-        window.clearEventForm(); 
-        alert("活動修改成功！");
-    }
-};
+    cancelEditBtn?.addEventListener('click', () => {
+      if (editModeContainer) editModeContainer.style.display = 'none';
+      if (viewModeContainer) viewModeContainer.style.display = 'block';
+      if (modalWindowTitle) modalWindowTitle.textContent = '📖 閱讀筆記詳情';
+    });
 
-window.clearEventForm = function() {
-    document.getElementById('e-day').value = "";
-    document.getElementById('e-time').value = "";
-    document.getElementById('e-text').value = "";
-    if(dbData.types.length > 0) {
-        document.getElementById('e-type').value = dbData.types[0].name;
-    }
-    document.getElementById('edit-day-target').value = "-1";
-    document.getElementById('edit-idx-target').value = "-1";
-    document.getElementById('edit-mode-badge').style.display = 'none';
-    const saveBtn = document.getElementById('btn-save-event');
-    saveBtn.innerText = "新增活動";
-    saveBtn.style.background = "var(--primary-blue)";
-};
+    document.querySelectorAll('.filter-tag').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+        const target = e.currentTarget as HTMLElement;
+        target.classList.add('active');
+        currentFilter = target.dataset.filter || 'all';
+        renderLogs();
+      });
+    });
 
-window.deleteEventsOfDay = function(day) {
-    if (!confirm(`確定要刪除 ${day} 日的所有活動嗎？`)) return;
-    dbData.events[currentMonth] = dbData.events[currentMonth].filter(e => e.day !== day);
-    saveDB(); 
-    window.closeModal('eventActionModal');
-};
+    searchInput?.addEventListener('input', (e) => {
+      searchQuery = (e.target as HTMLInputElement).value;
+      renderLogs();
+    });
 
-window.openModal = (id) => document.getElementById(id).classList.add('active');
-window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-</script>
-</BaseLayout>
+    openAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'flex'; });
+    closeAddModalBtn?.addEventListener('click', () => { if (addRecordModal) addRecordModal.style.display = 'none'; });
+    detailCloseBtn?.addEventListener('click', () => { if (detailModal) detailModal.style.display = 'none'; });
+
+    submitBtn?.addEventListener('click', async () => {
+      const bookTitle = (document.getElementById('book-title-input') as HTMLInputElement).value.trim();
+      const author = (document.getElementById('book-author-input') as HTMLInputElement).value.trim() || '佚名';
+      const translator = (document.getElementById('book-translator-input') as HTMLInputElement).value.trim();
+      const currentPage = parseInt((document.getElementById('current-page-input') as HTMLInputElement).value) || 0;
+      const totalPages = parseInt((document.getElementById('total-pages-input') as HTMLInputElement).value) || 0;
+      const startDate = (document.getElementById('start-date-input') as HTMLInputElement).value;
+      const finishDate = (document.getElementById('finish-date-input') as HTMLInputElement).value;
+      const publisher = (document.getElementById('publisher-input') as HTMLInputElement).value.trim();
+      const rating = parseInt((document.getElementById('rating-input') as HTMLSelectElement).value) || 5;
+      const quote = (document.getElementById('quote-input') as HTMLTextAreaElement).value.trim();
+      const questions = (document.getElementById('questions-input') as HTMLTextAreaElement).value.trim();
+      const review = (document.getElementById('review-input') as HTMLTextAreaElement).value.trim();
+      const isPublic = (document.getElementById('add-is-public-input') as HTMLInputElement).checked;
+
+      if (!bookTitle) {
+        alert('請填寫書名！');
+        return;
+      }
+      if (!currentUserId) return;
+
+      submitBtn.textContent = '儲存中...';
+      const { error } = await supabase.from(LOGS_TABLE).insert({
+        user_id: currentUserId,
+        reader_name: currentUserName,
+        book_title: bookTitle,
+        author: author,
+        translator: translator,
+        current_page: currentPage,
+        total_pages: totalPages,
+        start_date: startDate,
+        finish_date: finishDate,
+        publisher: publisher,
+        rating: rating,
+        quote: quote,
+        questions: questions,
+        review: review,
+        is_public: isPublic
+      });
+
+      submitBtn.textContent = '儲存記錄';
+
+      if (error) {
+        alert('儲存失敗：' + error.message);
+      } else {
+        if (addRecordModal) addRecordModal.style.display = 'none';
+        await fetchAndRenderLogs();
+      }
+    });
+
+    updateLogBtn?.addEventListener('click', async () => {
+      const logId = (document.getElementById('edit-log-id') as HTMLInputElement).value;
+      if (!logId) return;
+
+      const bookTitle = (document.getElementById('edit-book') as HTMLInputElement).value.trim();
+      const author = (document.getElementById('edit-author') as HTMLInputElement).value.trim() || '佚名';
+      const translator = (document.getElementById('edit-translator') as HTMLInputElement).value.trim();
+      const currentPage = parseInt((document.getElementById('edit-current-page') as HTMLInputElement).value) || 0;
+      const totalPages = parseInt((document.getElementById('edit-total-pages') as HTMLInputElement).value) || 0;
+      const startDate = (document.getElementById('edit-start-date') as HTMLInputElement).value;
+      const finishDate = (document.getElementById('edit-finish-date') as HTMLInputElement).value;
+      const publisher = (document.getElementById('edit-publisher') as HTMLInputElement).value.trim();
+      const rating = parseInt((document.getElementById('edit-rating') as HTMLSelectElement).value) || 5;
+      const quote = (document.getElementById('edit-quote') as HTMLTextAreaElement).value.trim();
+      const questions = (document.getElementById('edit-questions') as HTMLTextAreaElement).value.trim();
+      const review = (document.getElementById('edit-review') as HTMLTextAreaElement).value.trim();
+      const isPublic = (document.getElementById('edit-is-public-input') as HTMLInputElement).checked;
+
+      updateLogBtn.textContent = '更新中...';
+      const { error } = await supabase.from(LOGS_TABLE).update({
+        book_title: bookTitle,
+        author: author,
+        translator: translator,
+        current_page: currentPage,
+        total_pages: totalPages,
+        start_date: startDate,
+        finish_date: finishDate,
+        publisher: publisher,
+        rating: rating,
+        quote: quote,
+        questions: questions,
+        review: review,
+        is_public: isPublic,
+        reader_name: currentUserName
+      }).eq('id', logId);
+
+      updateLogBtn.textContent = '儲存修改';
+
+      if (error) {
+        alert('更新失敗：' + error.message);
+      } else {
+        if (detailModal) detailModal.style.display = 'none';
+        await fetchAndRenderLogs();
+      }
+    });
+
+    finishBookBtn?.addEventListener('click', async () => {
+      const logId = (document.getElementById('edit-log-id') as HTMLInputElement).value;
+      const totalPagesInput = document.getElementById('edit-total-pages') as HTMLInputElement;
+      const totalPages = parseInt(totalPagesInput.value) || 0;
+
+      if (totalPages <= 0) {
+        alert('請先填寫正確的「總頁數」才能標記為讀完！');
+        totalPagesInput.focus();
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      
+      (document.getElementById('edit-current-page') as HTMLInputElement).value = totalPages.toString();
+      (document.getElementById('edit-finish-date') as HTMLInputElement).value = today;
+
+      finishBookBtn.textContent = '處理中...';
+      const { error } = await supabase.from(LOGS_TABLE).update({
+        current_page: totalPages,
+        finish_date: today
+      }).eq('id', logId);
+
+      finishBookBtn.textContent = '✨ 一鍵讀完';
+
+      if (error) {
+        alert('操作失敗：' + error.message);
+      } else {
+        alert('恭喜讀完這本書！ 🎉');
+        if (detailModal) detailModal.style.display = 'none';
+        await fetchAndRenderLogs();
+      }
+    });
+
+    initPage();
+  </script>
+</Layout>
