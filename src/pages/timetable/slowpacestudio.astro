@@ -1,7 +1,6 @@
 ---
 // 匯入 Layout
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { supabase } from '../../lib/supabase';
 ---
 <BaseLayout title="客舍時間表 Timetable of Slow Pace Studio">
 <Fragment slot="head">
@@ -515,7 +514,9 @@ import { supabase } from '../../lib/supabase';
     </div>
 </div>
 
-<script define:vars={{ supabase }}>
+<script>
+import { supabase } from '../lib/supabase';
+
 // --- 設定 ---
 const TABLE_NAME = 'events';
 const client = supabase;
