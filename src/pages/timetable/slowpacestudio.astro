@@ -383,7 +383,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
              <!-- 下拉選單容器 -->
             <div class="month-dropdown-container">
                 <span id="month-display" class="rpg-btn" onclick="toggleMonthDropdown()" style="cursor: pointer;">
-                    連線中... ▼
+                    連線中...
                 </span>
                 
                 <!-- 下降展開的月份網格面板 -->
@@ -576,7 +576,7 @@ function renderCalendar() {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     const [year, month] = currentMonth.split('-').map(Number);
-    document.getElementById('month-display').innerText = `${year}年 ${month}月 ▼`;
+    document.getElementById('month-display').innerText = `${year}年 ${month}月`;
 
     const firstDay = new Date(year, month - 1, 1).getDay();
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -866,6 +866,7 @@ function toggleMonthDropdown() {
         list.classList.toggle('show');
     }
 }
+window.toggleMonthDropdown = toggleMonthDropdown;
 
 // 點擊畫面其他地方時自動關閉下拉選單
 window.addEventListener('click', function(e) {
